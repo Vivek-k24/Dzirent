@@ -1,1 +1,1 @@
-"""Phase 0 foundation. Business routes are contract declarations only."""
+"""dzirent Phase 1B API: FastAPI over PostgreSQL with verified identity and owner-scoped CRUD."""
