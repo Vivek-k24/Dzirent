@@ -7,6 +7,6 @@ export default defineConfig([
   js.configs.recommended,
   ...ts.configs.recommended,
   reactHooks.configs.flat.recommended,
-  { languageOptions: { globals: { process: "readonly", console: "readonly" } } },
+  { languageOptions: { globals: { process: "readonly", console: "readonly", URL: "readonly" } } },
   globalIgnores(["**/.next/**", "**/next-env.d.ts", "**/generated/**"]),
 ]);

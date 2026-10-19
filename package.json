@@ -22,6 +22,8 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "build": "pnpm --filter @dzirent/web build",
     "smoke:web": "node scripts/smoke-web.mjs",
+    "test:web": "pnpm --filter @dzirent/web test",
+    "media:check": "node apps/web/scripts/check-media.mjs",
     "check": "node scripts/task.mjs check"
   },
   "devDependencies": {
