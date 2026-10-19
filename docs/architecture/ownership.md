@@ -1,7 +1,10 @@
 # Ownership and baseline registry
 
 This registry is maintained only by Codex. It is a coordination record, not a shared markdown mutex.
-Active integration claim `REL-1`: Codex, `codex/release-integration`, foundation base
+Completed integration claim `REL-1`: Codex, PR #13 merged at
+`baf04b67ccaede358b3e4aab526c0b6889bb09bb`; deployed presentation demo at
+https://dzirent.vercel.app/. Release-record follow-up uses `codex/release-record` from that exact
+merged baseline and changes documentation/evidence only. Original foundation base
 `2ff5cae77ec165637ae02fade6d4619826760f28`. The user's explicit completion instruction authorizes
 the scoped API/QA handoff in ADR 0003; existing role branches and agent logs remain preserved.
 Bootstrap claim `BOOT-0`: Codex integration owner, Phase 0 foundation only, base
@@ -30,8 +33,9 @@ Codex initialized that isolated checkout directly without switching branches or 
 Foundation PR #1 merged at `2ff5cae77ec165637ae02fade6d4619826760f28`. API-1 has separately claimed
 issue #3 under explicit user activation. Under the user's Section 13.2 continuation, Antigravity's
 independent QA lane is explicitly delegated QA-2 / #10 in its assigned checkout, with no frontend/API
-ownership handoff. Each lane's implementation status belongs to its own log/PR. No external role PR has
-yet been integrated; frontend #5 now targets main and dependent QA review is in progress.
+ownership handoff. Each lane's implementation status belongs to its own log/PR. Frontend #5, backend #11 and QA #12 are now merged through REL-1 PR #13. Their role work and
+log entries below remain historical records. New lane work starts from latest origin/main; see
+`docs/PROJECT_STATUS.md` for the deployed code baseline and connected-provider limitations.
 
 | Claim | Agent / branch | Working directory | Ports / database | First scoped task |
 | --- | --- | --- | --- | --- |

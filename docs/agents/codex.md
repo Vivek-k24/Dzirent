@@ -1,5 +1,17 @@
 # Codex Phase 1A status
 
+## REL-1 release completed — 2026-10-19
+
+PR #13 merged frontend #5, backend #11 and QA #12 with their histories intact at
+`baf04b67ccaede358b3e4aab526c0b6889bb09bb`. Candidate `8c6ae70946d52cbcab9280bb11f7348c36f57071`
+passed 156 browser/accessibility checks, 258 PostgreSQL API tests, foundation/contract/security gates,
+and local static/unit/build checks. Public demo: https://dzirent.vercel.app/.
+Production deployment `dpl_EinNXwHamr1YpjVnvMqQmm737RXe` was staged, tested and promoted; public
+smoke passed catalog/search/reloads/bag/sample auth/lender mock CRUD/reset with no application errors.
+Preview protection and Git deploy guards remain. No DNS or connected-provider hosting was added.
+Full evidence and limitations: `docs/qa/release-integration.md`. Documentation follow-up branch
+`codex/release-record` starts at the exact merged/deployed SHA above; no code or dependency changes.
+
 ## Section 13.2 integration continuation
 
 Continuing WEB-1 / #2 under explicit user authorization to integrate reviewed frontend/QA and deploy
