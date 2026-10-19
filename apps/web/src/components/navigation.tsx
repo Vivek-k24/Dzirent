@@ -29,7 +29,7 @@ export function Navigation() {
           {refs?.categories.map(root => <div className="drawer-collection" key={root.id}><button onClick={() => choose(root.slug)}>{root.label}<span>{root.product_count}</span></button><div>{root.children?.map(child => <button key={child.id} onClick={() => choose(root.slug, child.slug)}>{child.label}</button>)}</div></div>)}
         </div><Link href="/auth/lender/login" className="drawer-lender" onClick={() => setDrawer(false)}>Sign in as lender <ArrowRight size={17} /></Link>
       </Modal>
-      <div className="collection-links">{refs ? refs.categories.map(root => <button key={root.id} ref={element => { triggers.current[root.slug] = element; }}
+      <div className="collection-links" role="region" aria-label="Browse collections" tabIndex={0}>{refs ? refs.categories.map(root => <button key={root.id} ref={element => { triggers.current[root.slug] = element; }}
         className={`collection-link ${state.collection === root.slug ? "selected" : ""}`} aria-expanded={active === root.slug} aria-controls={`mega-${root.slug}`}
         onMouseEnter={() => setActive(root.slug)} onFocus={event => { if (!suppressFocus.current && event.currentTarget.matches(":focus-visible")) setActive(root.slug); }}
         onClick={() => setActive(root.slug)} onKeyDown={event => { if (event.key === "ArrowDown") { event.preventDefault(); setActive(root.slug); requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`#mega-${root.slug} button[data-first]`)?.focus()); } }}>

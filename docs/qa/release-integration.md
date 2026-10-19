@@ -30,5 +30,12 @@ GitHub Actions on the committed candidate. Neither unavailable local check is re
 
 ## Release gates
 
+Candidate `4c1651752e289a580e688cd5d9adc66286a25183` passed foundation, security,
+independent contract smoke, and all **258 PostgreSQL API tests** in GitHub Actions. Its full
+browser matrix passed 150 checks and found six instances of the same mobile/tablet loading-nav
+keyboard accessibility failure. The scrolling region now accepts keyboard focus; assertions
+remain unchanged. The protected hosting build identified Node 22.23.2 versus the exact 22.23.3
+engine constraint; the compatible Node 22 patch range is now documented in ADR 0003.
+
 CI results, integrated merge SHA, deployment URL and deployed smoke checks are pending. The web
 release remains explicit demo mode. Live Clerk/hosted API/PostgreSQL UI integration is outstanding.

@@ -17,6 +17,11 @@ the two verified historical test-fixture Gitleaks fingerprints, build before pro
 run real PostgreSQL tests in CI, and update independent API smoke checks for the mounted backend.
 No live identity provider, hosted API/database, payment system, or DNS changes are introduced.
 
+Release validation also covers keyboard focus on the horizontally scrolling collection strip,
+including its loading state. CI and local development retain Node 22.23.3 in `.node-version`;
+the package engine permits compatible Node 22 patches from 22.23.2 because the managed Vercel
+22.x runtime currently supplies 22.23.2. pnpm and dependency lockfiles remain pinned.
+
 The deployed web presentation remains explicit demo mode. Integrated Python code is not a claim of
 live UI/provider/database acceptance. Release records will distinguish executed local/CI checks,
 deployment smoke evidence and outstanding connected-provider setup.
