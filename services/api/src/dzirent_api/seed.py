@@ -38,6 +38,7 @@ class SeedResult:
     subcategories: int
     products: int
     lenders: int
+    studios: int
 
 
 def check_allowed(settings: Settings, *, disposable_staging: bool = False) -> None:
@@ -168,6 +169,25 @@ def seed(session: Session) -> SeedResult:
         ],
     )
 
+    studio = manifest["seed_studio"]
+    upsert(
+        session,
+        orm.Studio,
+        [
+            {
+                "id": UUID(studio["id"]),
+                "lender_profile_id": UUID(lender["id"]),
+                "handle": studio["handle"],
+                "display_name": studio["display_name"],
+                "bio": studio["bio"],
+                "is_public": studio["is_public"],
+                "version": studio["version"],
+                "created_at": datetime.fromisoformat(studio["created_at"]),
+                "updated_at": datetime.fromisoformat(studio["updated_at"]),
+            }
+        ],
+    )
+
     products = manifest["products"]
     upsert(session, orm.Product, [_product(p) for p in products])
     ids = [UUID(p["id"]) for p in products]
@@ -254,6 +274,7 @@ def seed(session: Session) -> SeedResult:
         subcategories=sum(len(root["children"]) for root in roots),
         products=len(products),
         lenders=1,
+        studios=1,
     )
 
 
@@ -332,7 +353,7 @@ def main(argv: list[str]) -> int:
     action = "Restored" if existing else "Seeded"
     print(
         f"{action} {result.roots} roots, {result.subcategories} subcategories, "
-        f"{result.products} garments and {result.lenders} seed lender"
+        f"{result.products} garments, {result.lenders} seed lender and {result.studios} Studio"
     )
     return 0
 

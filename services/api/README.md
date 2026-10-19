@@ -1,7 +1,7 @@
 # dzirent API (Phase 1B)
 
 FastAPI + SQLAlchemy 2 + psycopg 3 + Alembic over PostgreSQL. Owner: Claude Code.
-Contract: `contracts/openapi.json` (`0.1.0-candidate.1`), generated from the runtime routers; see
+Contract: `contracts/openapi.json` (`0.1.0-candidate.2`), generated from the runtime routers; see
 [contracts/README.md](../../contracts/README.md) for semantics and the API-1 implementation notes.
 
 ## Modules
@@ -11,8 +11,9 @@ Contract: `contracts/openapi.json` (`0.1.0-candidate.1`), generated from the run
 | `catalog.py` | Public search/filter/sort/pagination, deduplicated counts, category tree, facets, metros |
 | `profiles.py` | `/me` bootstrap/read/update/deactivate, preferences, lender enrollment |
 | `listings.py` | Owner-scoped listing create/read/update/archive/availability with `expected_version` |
+| `studios.py` | Studio owner settings (`/me/studio`) and public directory/profile/products (`/studios`) |
 | `identity.py` | Clerk session verification (official `clerk-backend-api`), restricted mock identity |
-| `orm.py`, `alembic/` | Phase 1 schema; one Alembic head (`0001_phase1_schema`) |
+| `orm.py`, `alembic/` | Phase 1 schema; one Alembic head (`0002_studios`) |
 | `seed.py` | Idempotent deterministic demo seed from `fixtures/catalog` (local/test only) |
 | `errors.py`, `observability.py` | Error envelope, request IDs, redacted JSON logs, safe 500s |
 | `contract.py` | OpenAPI source: runtime routers plus contract-only upload declarations |

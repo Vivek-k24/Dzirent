@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 
-from . import catalog, listings, profiles
+from . import catalog, listings, profiles, studios
 from .health import router as health_router
 from .identity import bearer
 from .models import (
@@ -60,7 +60,13 @@ def complete_upload(id: UUID, body: UploadComplete) -> Any:
 
 def include_routes(app: FastAPI, *, contract_only: bool = False) -> None:
     app.include_router(health_router, responses=COMMON_ERRORS)
-    for router in (catalog.router, profiles.router, listings.router):
+    for router in (
+        catalog.router,
+        profiles.router,
+        listings.router,
+        studios.router,
+        studios.owner_router,
+    ):
         app.include_router(router, responses=COMMON_ERRORS)
     if contract_only:
         app.include_router(media_declarations, responses=COMMON_ERRORS)
