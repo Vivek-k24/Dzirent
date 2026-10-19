@@ -49,11 +49,32 @@ Production reproduction: set `NEXT_PUBLIC_DZIRENT_MODE=demo`, run `pnpm build`, 
 Owned diff only: assigned shell/catalog/filter/PDP/location/listing/client/token paths, two-scenario
 workflow file and this log. No root/CI/dependency, Claude contract/fixture/MSW/Studio or other-log edits.
 
-Delivery: implementation SHA, PR/CI state and exact-SHA unique demo preview evidence follow in the
-handoff record. Vercel account/team and existing `dzirent` project verified; dry packaging excludes
-credentials/caches and includes the licensed sample assets. No production/DNS/protection/guard changes.
+Delivery: [PR #18](https://github.com/Vivek-k24/Dzirent/pull/18), targeting main and depending on #17.
+Pushed implementation/test SHA: `289be3682e4091eac076d64d535902595939993b`. All seven GitHub checks
+passed at that SHA: [Foundation/browser/PostgreSQL](https://github.com/Vivek-k24/Dzirent/actions/runs/39287903597)
+and [dependency/secrets/source/CodeQL](https://github.com/Vivek-k24/Dzirent/actions/runs/39287903580).
+The later handoff commit changes only this log; it does not change the deployed application or tests.
+
+Unique explicit-demo preview: https://dzirent-8c4cw2bsu-vivekkallakuri-8617.vercel.app/.
+Deployment `dpl_2aEnsE8gHjDNPtNqyeZdQkYTBHJD` is READY, preview environment, source metadata
+`verifiedSourceSha=289be3682e4091eac076d64d535902595939993b`; created from the clean pushed checkout.
+Verified existing team `team_Ur6AwuUGgeBixSwdnTTrTECE` / `vivekkallakuri-8617` and project `dzirent`
+`prj_hG63XH3glAqy9VcyMvLNnY4CLsnI`, root `apps/web`. Build and runtime mode were explicitly demo;
+remote build completed successfully. Dry packaging included all 40 photographs and no credential/cache
+paths. Initial individual-file upload failed with fetch/AbortError before deployment creation; the
+archive upload succeeded. No new provider, production promotion, DNS, guard or protection-level change.
+
+Preview access: signed-out HTTP is 401 under existing Vercel protection; reviewers need authorized
+Vercel access. Authenticated `vercel curl` returned home 200, encoded seed PDP 200, missing PDP 404,
+sample photograph 200 and pending `/studios` 404. The CLI managed an automation bypass credential;
+no secret was printed or committed. An initial curl invocation rejected the CLI's forwarded
+`--non-interactive` flag; removing that flag succeeded. These are HTTP checks, not a remote browser
+or independent QA run. Full interactive browser evidence remains the bounded local production run.
 Pending cross-lane route: `/studios` intentionally awaits Claude's PR, with no duplicate route stub.
-Independent Antigravity verification is deferred until the user launches it after both lanes are ready.
+Ready for later user-launched Antigravity combined review after both lanes are ready; none was started.
+Next action belongs to the integrator: merge green coordination #17 before considering feature lanes,
+then combine the reviewed Claude Studios candidate and this PR and give AG the exact combined SHA.
+No merge, production action or further feature work is performed from this lane.
 
 ## REL-1 release completed — 2026-10-19
 
