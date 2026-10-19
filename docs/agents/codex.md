@@ -24,6 +24,18 @@ No release URL or applied provider settings are claimed yet. No DNS/new services
 Next: review/test exact frontend-plus-QA candidate, merge frontend then QA, check integrated main,
 stage and independently verify the authorized demo, promote/test audience access, tag and document release.
 
+Release preparation finding: the CLI dry run would package 6,476 files / 331,871,220 bytes, including
+ignored `.tools` caches and test artifacts. It uploaded nothing. Added root `.vercelignore` as the smallest
+packaging fix; validate exclusions and required assets with another dry run before deployment. Application
+code/dependencies are unchanged. Existing Vercel root/framework/Node/workspace/build settings have now been
+corrected; the explicit project link is ignored. The CLI-created local env file was removed without reading
+its value and its redundant .gitignore additions were removed. No deployment has been performed.
+
+QA coordination: another external Antigravity session was already active in its assigned checkout. The
+delegated helper stopped all edits/own processes and invalidated its interrupted browser run. User confirmed
+the existing Antigravity session is the sole QA writer; #10 records the handoff. Its completed 15 contract
+checks/source review do not substitute for the sole writer's final full browser report. Preserve all QA work.
+
 ## Archived original candidate handoff
 
 Task / GitHub issue: [WEB-1 / #2](https://github.com/Vivek-k24/Dzirent/issues/2), claimed by Codex.
