@@ -24,9 +24,11 @@ WEB-1 is active under the user's explicit Phase 1A instructions:
 [issue #2](https://github.com/Vivek-k24/Dzirent/issues/2), base
 `37957823213cd2b25e980edad5058becdf9a7fbb`, assigned checkout and branch below. The directory was empty;
 Codex initialized that isolated checkout directly without switching branches or editing the main checkout.
-Foundation PR #1 remains a review/merge dependency. API-1 has separately claimed issue #3 under explicit
-user activation, and the QA framework branch is available. Each lane's implementation status belongs to
-its own log/PR. No agent has been delegated edits by Codex and no external PR has been integrated.
+Foundation PR #1 merged at `2ff5cae77ec165637ae02fade6d4619826760f28`. API-1 has separately claimed
+issue #3 under explicit user activation. Under the user's Section 13.2 continuation, Antigravity's
+independent QA lane is explicitly delegated QA-2 / #10 in its assigned checkout, with no frontend/API
+ownership handoff. Each lane's implementation status belongs to its own log/PR. No external role PR has
+yet been integrated; frontend #5 now targets main and dependent QA review is in progress.
 
 | Claim | Agent / branch | Working directory | Ports / database | First scoped task |
 | --- | --- | --- | --- | --- |

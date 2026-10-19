@@ -1,5 +1,42 @@
 # Project status
 
+## Section 13.2 release integration in progress
+
+Foundation PR [#1](https://github.com/Vivek-k24/Dzirent/pull/1) merged at
+`2ff5cae77ec165637ae02fade6d4619826760f28`. Codex fetched origin and merged main into the assigned
+`codex/web-phase1` branch without rewriting history or editing another checkout. Frontend PR
+[#5](https://github.com/Vivek-k24/Dzirent/pull/5) now targets main. Reconciled candidate:
+`44e408602e54573b4d208aaed5f556c4a51ae406`; its complete tree matches immutable
+`demo-v0.1.0-rc.1` (`47f8aa1f3c2aa7be41384eb34ca8af9df787a377`). The 118-file frontend/integration diff
+contains no API, canonical contract/fixture or independent QA changes. Contract `0.1.0-candidate.1`
+is unchanged. Dependency upgrade PRs #6–#9 are separate and not presentation dependencies.
+
+Antigravity has claimed [QA-2 / #10](https://github.com/Vivek-k24/Dzirent/issues/10), reconciled its
+own clean checkout, and is replacing foundation-skipping acceptance assertions with independent tests
+of the real production UI. A QA PR/report tied to exact candidate and test-code SHAs is required before
+merge/release; no independent acceptance or deployment is claimed yet. All six CI checks passed at
+the reconciled frontend SHA. Codex is rerunning local static/unit/contract checks.
+
+Startup: in `H:\DziRent\worktrees\codex-web`, use Node 22.23.3 / pnpm 10.29.3,
+`pnpm install --frozen-lockfile` then `pnpm dev:web` (3000). Built demo: set
+`NEXT_PUBLIC_DZIRENT_MODE=demo`, run `pnpm build`, then
+`pnpm --filter @dzirent/web start --port 3000`. QA uses its own branch/checkout and port 3100.
+
+The user now explicitly authorizes the verified demo on the existing Vercel project. Read-only CLI/API
+inspection verified account `vivekkallakuri-8617`, team `team_Ur6AwuUGgeBixSwdnTTrTECE`, project
+`dzirent` / `prj_hG63XH3glAqy9VcyMvLNnY4CLsnI`, linked to GitHub `Vivek-k24/Dzirent`.
+The project's root/framework/Node/obsolete production branch need the reviewed configuration in
+[release instructions](../apps/web/DEPLOYMENT.md). Both automatic Git deployment guards stay false;
+the authorized release will use a deliberate staged CLI deployment, so guard relaxation is unnecessary.
+No DNS, new service, backend deployment or payment work is included.
+
+Next: independent QA/source review → fix owned frontend defects → passing CI → merge frontend then QA
+→ rerun integrated checks → stage/test/promote the same demo build → test the public presentation alias
+without Vercel auth → record deployed SHA/URL/report and a new immutable release tag. Claude continues
+API-1 / #3 independently; no unreviewed backend work is required for this presentation.
+
+## Archived pre-merge candidate status
+
 Current update: 2026-10-18 (America/Chicago), Codex integrator.
 Milestone: **Phase 1A local presentation candidate validated; review/public-preview gates remain**.
 

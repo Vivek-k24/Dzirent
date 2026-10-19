@@ -2,6 +2,7 @@ node_modules/
 .next/
 .venv/
 .tools/
+.vercel/
 __pycache__/
 *.py[cod]
 .pytest_cache/

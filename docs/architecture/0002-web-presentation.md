@@ -1,6 +1,6 @@
 # 0002: Phase 1A web candidate
 
-Status: implemented candidate; foundation and web review remain required.
+Status: implemented candidate; foundation merged, independent web/QA review and release in progress.
 Base: `37957823213cd2b25e980edad5058becdf9a7fbb`; contract `0.1.0-candidate.1` unchanged.
 
 Next owns routing/presentation. `packages/client` supplies typed HTTP transport and pure URL/date/cart
@@ -25,11 +25,14 @@ the original forty products. Later queries retain/fade the current results for a
 transition. Connected pagination uses accessible Load more and URL page history. Static category counts
 are never summed across secondary memberships.
 
-Compatible exception: the user's explicit role activation permits this candidate while foundation PR #1
-is still open; it does not authorize merging it or launching other roles. No approved external PR has been
-integrated. Occasion/Fabric are read-only menu metadata because the frozen API has no matching filters.
+The user's original explicit role activation permitted this candidate before foundation PR #1 merged.
+The Section 13.2 continuation now authorizes reviewed frontend/QA integration and deployment of the verified
+demo to the existing Vercel project. No unreviewed backend work is required. Automatic Git deployment
+guards remain off; a deliberate staged CLI release needs no guard relaxation. Occasion/Fabric are
+read-only menu metadata because the frozen API has no matching filters.
 [Contract request #4](https://github.com/Vivek-k24/Dzirent/issues/4) proposes the smallest optional extension
 for Claude's review. Do not substitute search semantics or edit the frozen contract independently.
 
 The immutable presentation tag will remain stable during later Phase 1B adapter/provider integration.
-No deployment, native app, payment, payout, reservation, worker or business policy was added.
+No deployment is claimed until its exact URL/SHA and independent verification are recorded. No native app,
+payment, payout, reservation, worker or business policy was added.
