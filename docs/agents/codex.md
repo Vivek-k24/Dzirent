@@ -1,5 +1,31 @@
 # Codex Phase 1A status
 
+## Section 13.2 integration continuation
+
+Continuing WEB-1 / #2 under explicit user authorization to integrate reviewed frontend/QA and deploy
+the verified demo to the existing dzirent Vercel project. Workspace and branch remain
+`H:\DziRent\worktrees\codex-web` / `codex/web-phase1`; clean starting SHA
+`47f8aa1f3c2aa7be41384eb34ca8af9df787a377`. Read the full brief, root/web AGENTS, current
+architecture/contracts/modes/fixtures, all local logs plus the remote QA log and API issue, PR/CI state.
+Foundation #1 is merged at `2ff5cae77ec165637ae02fade6d4619826760f28`. Ordinary merge produced
+`44e408602e54573b4d208aaed5f556c4a51ae406`; PR #5 now targets main. Tree comparison with
+`demo-v0.1.0-rc.1` passed (exit 0); protected-owner diff is empty. The prior tag remains unchanged.
+
+Independent Antigravity QA is explicitly delegated in its own clean checkout under QA-2 / #10. Its
+tests/report/CI/runbooks stay QA-owned; defects go to Codex. All six GitHub checks passed at the
+reconciled frontend SHA. Local `pnpm check` is in progress, not yet claimed passed. Current edits
+record the reviewed release/rollback plan and ignore local Vercel link files; no dependency upgrade,
+application behavior, canonical contract/fixture or API change is included.
+
+Verified Vercel CLI 59.23.2 account/team/project and GitHub association read-only. Existing project
+uses repository root, Other framework, Node24 and obsolete `bootstrap/brief` production branch; planned
+corrections are in apps/web/DEPLOYMENT.md. No guard relaxation is needed for deliberate CLI deployment.
+No release URL or applied provider settings are claimed yet. No DNS/new services/payment action.
+Next: review/test exact frontend-plus-QA candidate, merge frontend then QA, check integrated main,
+stage and independently verify the authorized demo, promote/test audience access, tag and document release.
+
+## Archived original candidate handoff
+
 Task / GitHub issue: [WEB-1 / #2](https://github.com/Vivek-k24/Dzirent/issues/2), claimed by Codex.
 Branch: `codex/web-phase1`. Workspace: `H:\DziRent\worktrees\codex-web` only.
 Base SHA: `37957823213cd2b25e980edad5058becdf9a7fbb` (`foundation-v0.1.0`).
