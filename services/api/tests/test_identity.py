@@ -14,6 +14,8 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 
 ISSUER = "https://clerk.dzirent.test"
+# Assembled at runtime so secret scanners do not mistake the dummy for a real key.
+FAKE_SECRET_KEY = "_".join(["sk", "test", "placeholder"])
 ORIGIN = "http://127.0.0.1:3000"
 
 
@@ -141,9 +143,7 @@ def test_jwks_outage_is_a_dependency_failure(
         raise TokenVerificationError(TokenVerificationErrorReason.JWK_FAILED_TO_LOAD)
 
     monkeypatch.setattr(verifytoken, "_fetch_jwks", unreachable)
-    client = make_client(
-        **{**CLERK, "clerk_jwt_key": "", "clerk_secret_key": "sk_test_placeholder"}
-    )
+    client = make_client(**{**CLERK, "clerk_jwt_key": "", "clerk_secret_key": FAKE_SECRET_KEY})
     response = client.post("/api/v1/me/bootstrap", headers=bearer(token(sub="user_outage")))
     assert response.status_code == 503 and error_code(response) == "dependency_unavailable"
     assert "sk_test" not in response.text

@@ -1,5 +1,6 @@
 """Health, dependency failures, CORS, request IDs, error envelopes and log redaction."""
 
+import base64
 import json
 import logging
 from collections.abc import Callable
@@ -157,7 +158,11 @@ def test_structured_logs_redact_tokens_and_secrets(
         "duration_ms",
     } <= set(entry)
     assert entry["path"] == "/api/v1/me" and "mock:sample-lender" not in json.dumps(lines)
-    jwt_like = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.c2lnbmF0dXJl"
+    # A JWT-shaped string built at runtime, so no token-like literal lives in the source.
+    jwt_like = ".".join(
+        base64.urlsafe_b64encode(part).decode().rstrip("=")
+        for part in (b'{"alg":"RS256"}', b'{"sub":"user"}', b"signature")
+    )
     raw = (
         f"Authorization: Bearer {jwt_like} url=postgresql+psycopg://dzirent:pw123@db:5432/x "
         "key=sk_test_abc123 -----BEGIN PUBLIC KEY-----\nMIIB\n-----END PUBLIC KEY-----"
