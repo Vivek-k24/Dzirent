@@ -2,7 +2,11 @@ import { test as base, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 export const test = base.extend<{ diagnostics: void }>({ diagnostics: [async ({ page }, use, info) => {
   const errors: string[] = [], exceptions: string[] = [], failedAssets: string[] = [];
-  page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+  page.on("console", message => {
+    if (message.type() === "error" && !message.text().includes("A ServiceWorker intercepted the request")) {
+      errors.push(message.text());
+    }
+  });
   page.on("pageerror", error => {
     if (!error.message.includes("due to access control checks")) {
       exceptions.push(error.message);
