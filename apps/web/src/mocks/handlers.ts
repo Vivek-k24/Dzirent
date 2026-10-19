@@ -4,6 +4,7 @@ import { z } from "zod";
 import { productWriteSchema } from "../lib/listing-schema";
 import { catalogPage, membership, validateCatalogQuery } from "./catalog";
 import { references, sampleProfiles, seedProducts } from "./fixtures";
+import { resetStudios, studioHandlers } from "./studios/handlers";
 
 let products = seedProducts();
 let profiles = structuredClone(sampleProfiles);
@@ -11,10 +12,10 @@ type Preferences = { metro_id: string | null; postal_code: string | null };
 let preferences: Record<string, Preferences> = {};
 let sequence = 1000;
 export const scenario = { catalogError: false, saveError: false };
-export function resetDemo() { products = seedProducts(); profiles = structuredClone(sampleProfiles); preferences = {}; sequence = 1000; scenario.catalogError = false; scenario.saveError = false; }
-function failure(status: number, message: string) {
-  const code = ({ 401: "unauthenticated", 403: "lender_required", 404: "not_found", 409: "stale_version", 422: "validation_error", 503: "dependency_unavailable" } as Record<number, string>)[status] ?? "request_failed";
-  return HttpResponse.json({ error: { code, message, details: [] }, request_id: `demo-request-${++sequence}` }, { status });
+export function resetDemo() { products = seedProducts(); profiles = structuredClone(sampleProfiles); preferences = {}; sequence = 1000; scenario.catalogError = false; scenario.saveError = false; resetStudios(); }
+function failure(status: number, message: string, code?: string, details: Record<string, unknown>[] = []) {
+  code ??= ({ 401: "unauthenticated", 403: "lender_required", 404: "not_found", 409: "stale_version", 422: "validation_error", 503: "dependency_unavailable" } as Record<number, string>)[status] ?? "request_failed";
+  return HttpResponse.json({ error: { code, message, details }, request_id: `demo-request-${++sequence}` }, { status });
 }
 function identity(request: Request): CurrentUser | null {
   const role = request.headers.get("Authorization")?.match(/^Bearer dzirent-demo-(lender|renter)$/)?.[1];
@@ -175,4 +176,5 @@ export const handlers = [
     product.status = "archived"; product.is_available = false; product.version += 1;
     return HttpResponse.json(product);
   }),
+  ...studioHandlers({ products: () => products, identity, owners: () => Object.values(profiles), failure }),
 ];
