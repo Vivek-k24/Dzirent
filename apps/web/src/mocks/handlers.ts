@@ -7,16 +7,17 @@ import { references, sampleProfiles, seedProducts } from "./fixtures";
 
 let products = seedProducts();
 let profiles = structuredClone(sampleProfiles);
-let preferences: { metro_id: string | null; postal_code: string | null } = { metro_id: null, postal_code: null };
+type Preferences = { metro_id: string | null; postal_code: string | null };
+let preferences: Record<string, Preferences> = {};
 let sequence = 1000;
 export const scenario = { catalogError: false, saveError: false };
-export function resetDemo() { products = seedProducts(); profiles = structuredClone(sampleProfiles); preferences = { metro_id: null, postal_code: null }; sequence = 1000; scenario.catalogError = false; scenario.saveError = false; }
+export function resetDemo() { products = seedProducts(); profiles = structuredClone(sampleProfiles); preferences = {}; sequence = 1000; scenario.catalogError = false; scenario.saveError = false; }
 function failure(status: number, message: string) {
   const code = ({ 401: "unauthenticated", 403: "lender_required", 404: "not_found", 409: "stale_version", 422: "validation_error", 503: "dependency_unavailable" } as Record<number, string>)[status] ?? "request_failed";
   return HttpResponse.json({ error: { code, message, details: [] }, request_id: `demo-request-${++sequence}` }, { status });
 }
 function identity(request: Request): CurrentUser | null {
-  const role = request.headers.get("Authorization")?.replace("Bearer dzirent-demo-", "");
+  const role = request.headers.get("Authorization")?.match(/^Bearer dzirent-demo-(lender|renter)$/)?.[1];
   const user = role === "lender" || role === "renter" ? profiles[role] : null;
   return user?.status === "active" ? user : null;
 }
@@ -93,13 +94,14 @@ export const handlers = [
     products.filter(p => p.lender_profile_id === user.lender_profile?.id).forEach(p => { p.status = "archived"; p.version += 1; });
     return HttpResponse.json(user);
   }),
-  http.get("*/api/v1/me/preferences", ({ request }) => identity(request) ? HttpResponse.json(preferences) : failure(401, "Use a sample identity.")),
+  http.get("*/api/v1/me/preferences", ({ request }) => { const user = identity(request); return user ? HttpResponse.json(preferences[user.id] ?? { metro_id: null, postal_code: null }) : failure(401, "Use a sample identity."); }),
   http.patch("*/api/v1/me/preferences", async ({ request }) => {
-    if (!identity(request)) return failure(401, "Use a sample identity.");
+    const user = identity(request);
+    if (!user) return failure(401, "Use a sample identity.");
     const parsed = z.object({ metro_id: z.uuid().nullable().optional(), postal_code: z.string().regex(/^\d{5}$/).nullable().optional() }).strict().safeParse(await request.json());
-    if (!parsed.success) return failure(422, "Enter a valid demo location.");
-    preferences = { ...preferences, ...parsed.data };
-    return HttpResponse.json(preferences);
+    if (!parsed.success || (parsed.data.metro_id && !references.locations.items.some(m => m.id === parsed.data.metro_id))) return failure(422, "Enter a valid demo location.");
+    preferences[user.id] = { ...(preferences[user.id] ?? { metro_id: null, postal_code: null }), ...parsed.data };
+    return HttpResponse.json(preferences[user.id]);
   }),
   http.post("*/api/v1/me/lender-profile", async ({ request }) => {
     const user = identity(request);

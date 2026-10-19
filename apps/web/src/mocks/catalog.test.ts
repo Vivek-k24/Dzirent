@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { setupServer } from "msw/node";
 import { cartIssue, clearOptional, createApiClient, emptySelection, fourDayEnd, minorUnits, parseSelection, safeReturnTo, serializeSelection } from "@dzirent/client";
-import type { ProductDetail, ProductPage } from "@dzirent/client";
+import type { ProductDetail, ProductPage, LenderProductPage, CurrentUser } from "@dzirent/client";
 import { catalogPage, filterCatalog, validateCatalogQuery } from "./catalog";
 import { references, seedProducts } from "./fixtures";
 import { handlers, resetDemo, scenario } from "./handlers";
@@ -78,6 +78,23 @@ describe("safety at client boundaries", () => {
 });
 
 describe("API-shaped MSW mutations", () => {
+  it("isolates enrolled renter ownership and harmless profile preferences", async () => {
+    const renter = createApiClient({ mode: "connected", baseUrl: "http://dzirent.test/api/v1", getToken: async () => "dzirent-demo-renter" });
+    await expect(renter("/lender/products", { protected: true })).rejects.toMatchObject({ status: 403 });
+    await renter("/me/lender-profile", { protected: true, method: "POST", body: JSON.stringify({ display_name: "New sample owner", metro_id: references.locations.items[0].id }) });
+    expect((await renter<CurrentUser>("/me", { protected: true })).roles).toEqual(["renter", "lender"]);
+    expect((await renter<LenderProductPage>("/lender/products", { protected: true })).total).toBe(0);
+    await expect(renter(`/lender/products/${seedProducts()[0].id}`, { protected: true })).rejects.toMatchObject({ status: 404 });
+    await expect(renter(`/lender/products/${seedProducts()[0].id}`, { protected: true, method: "PATCH", body: JSON.stringify({ expected_version: 1, is_available: false }) })).rejects.toMatchObject({ status: 404 });
+    await renter("/me/preferences", { protected: true, method: "PATCH", body: JSON.stringify({ postal_code: "78701" }) });
+    expect(await api("/me/preferences", { protected: true })).toEqual({ metro_id: null, postal_code: null });
+    expect(await renter("/me/preferences", { protected: true })).toEqual({ metro_id: null, postal_code: "78701" });
+  });
+  it("rejects malformed identity headers and owner-controlled write fields", async () => {
+    const response = await fetch("http://dzirent.test/api/v1/me", { headers: { Authorization: "lender" } });
+    expect(response.status).toBe(401);
+    await expect(api("/lender/products", { protected: true, method: "POST", body: JSON.stringify({ title: "Cannot assign ownership", lender_profile_id: seedProducts()[0].lender_profile_id }) })).rejects.toMatchObject({ status: 422 });
+  });
   it("requires an identity and keeps stale/failed updates from changing data", async () => {
     const anonymous = createApiClient({ mode: "connected", baseUrl: "http://dzirent.test/api/v1" });
     await expect(anonymous("/lender/products")).rejects.toMatchObject({ status: 401 });
