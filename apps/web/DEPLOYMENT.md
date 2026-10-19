@@ -4,6 +4,22 @@ The user has authorized the verified Phase 1A demo frontend on the **existing** 
 associated with `Vivek-k24/Dzirent`. No DNS change, new service, backend deployment or payment
 integration is included. Independent QA and passing relevant CI are release gates.
 
+## Released result — 2026-10-19
+
+Public presentation: **https://dzirent.vercel.app/**. Production deployment
+`dpl_EinNXwHamr1YpjVnvMqQmm737RXe` serves merged commit
+`baf04b67ccaede358b3e4aab526c0b6889bb09bb`, tree `2de479c05a32089d5787ad828f471852d0a4447d`.
+The staged production build was browser-tested before promotion; public-origin smoke then passed.
+See [exact evidence](../../docs/qa/release-integration.md). Existing project root/framework/runtime/build
+settings were applied through the authenticated Vercel integration. Standard Protection remains on
+for preview/unique URLs; the production presentation alias is public. Git auto-deploy guards remain
+false. The manual deployment explicitly selected main and its SHA; the obsolete automatic production
+branch setting was not changed or relied upon. No DNS/custom domain was configured.
+
+The verified production deployment above is the rollback reference for future presentation changes.
+No final release tag was published; use the exact SHA/deployment ID. Historical planning below is
+retained for context; the release evidence supersedes its pending status and sequential-PR wording.
+
 ## Verified target and configuration plan
 
 Read-only inspection on 2026-10-18/19 verified both the authenticated CLI account and project:

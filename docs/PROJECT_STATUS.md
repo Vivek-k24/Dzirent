@@ -1,14 +1,35 @@
 # Project status
 
-## REL-1 integration candidate
+## REL-1 released presentation demo — 2026-10-19
 
-Codex is completing the user's explicitly authorized integration/fix/demo-release instruction on
-`codex/release-integration`, preserving frontend PR #5, QA PR #12 and backend PR #11 histories.
-ADR 0003 records the scoped cross-owner handoff. Local frozen installs, static/unit/contract checks
-and production build passed; full PostgreSQL/browser CI and deployment are pending.
-See [release integration verification](qa/release-integration.md) for actual results and limitations.
+**Public URL:** https://dzirent.vercel.app/
 
-## Section 13.2 release integration in progress
+**Deployed code/main baseline:** `baf04b67ccaede358b3e4aab526c0b6889bb09bb`
+
+**Verified candidate:** `8c6ae70946d52cbcab9280bb11f7348c36f57071`
+
+**Shared code tree:** `2de479c05a32089d5787ad828f471852d0a4447d`
+
+**Production deployment:** `dpl_EinNXwHamr1YpjVnvMqQmm737RXe`
+
+Integration PR [#13](https://github.com/Vivek-k24/Dzirent/pull/13) merged frontend #5, backend #11
+and independent QA #12 through their preserved histories; all four PRs now show merged.
+All 156 browser/accessibility checks across Chromium/Firefox/WebKit at four widths and all 258
+PostgreSQL API tests passed, alongside foundation, contract smoke and security checks. The public
+production alias was verified without a Vercel share URL or sign-in. Preview/unique production URL
+protection remains enabled, automatic Git deploy guards remain false, and no DNS was changed.
+
+The frontend is an explicitly labeled presentation demo with sample auth and session-only mock CRUD.
+The Python API is merged and database-tested, but hosted API/PostgreSQL, live Clerk and connected
+browser-to-database persistence are **not released**. No payment integration or native app is claimed.
+Read [release evidence](qa/release-integration.md) for exact SHAs, commands, checks and limitations.
+
+All lanes must fetch latest `origin/main` before new work and record that SHA in their own log.
+The deployed code baseline above remains the reference for this release; later release-record commits
+change documentation only. Preserve source branches and existing immutable candidate tags. Use an
+isolated next-phase branch/worktree, claim scoped work, and agree contract changes before implementation.
+
+## Historical Section 13.2 planning (superseded by REL-1 above)
 
 Foundation PR [#1](https://github.com/Vivek-k24/Dzirent/pull/1) merged at
 `2ff5cae77ec165637ae02fade6d4619826760f28`. Codex fetched origin and merged main into the assigned
