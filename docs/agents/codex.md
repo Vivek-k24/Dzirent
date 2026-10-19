@@ -1,5 +1,32 @@
 # Codex Phase 1A status
 
+## Compact Studio feed — direct coordinator implementation, 2026-10-19
+
+User-approved frontend follow-up / issue #21. Baseline
+`4c5b8864edb7715951cb4d65d0a50fdaea22ca43`; branch `codex/compact-studio-feed`.
+The coordinator implements this directly; no external agent or sub-agent was started.
+Explicit scoped handoff covers shell/catalog/global CSS, Studio directory/carousel/scoped CSS,
+and directly affected workflow assertions. No backend/API/schema/fixture/auth/dependency changes.
+
+Removed the redundant footer line, decorative Explore Studios eyebrow and default-home breadcrumb.
+Moved the announcement to the shared header as “Launching in Texas soon.” beside desktop search,
+wrapping beneath mobile controls. The exact demo banner remains. Preserved the directory's outer
+width; cards use two equal desktop columns and one smaller-screen column, including a half-width
+single seed Studio. Portrait 3:4 previews retain actual title/size and all-product pagination.
+Larger transparent chevrons overlay the photos without circles or a separate control row.
+Hover/focus pauses rotation; reduced motion stops it. A keyboard Space toggle can hold rotation
+paused after focus leaves, with screen-reader instructions and position announcements.
+
+Validation: reused unchanged installed dependencies. Local `pnpm lint`, demo `pnpm build`
+(including TypeScript) and `git diff --check` passed on Node 22.23.3 / pnpm 10.29.3.
+Local browser execution is blocked: Chromium download failed through the environment proxy and
+then DNS on a clean-network attempt. No browser pass is claimed locally. Updated the existing
+collection/Studio E2E cases for copy, responsive card/photo/arrow bounds, all-product navigation,
+auto-rotation, hover/focus pause, persistent keyboard pause and reduced motion. The existing bounded
+Chromium CI job is the browser acceptance gate. No unit tests, full legacy matrix, API changes,
+new packages, merge or deployment were performed. Publish the PR and record CI status there.
+
+
 ## COLL-2 / issue #15: rental collection candidate — 2026-10-19
 
 Workspace: `H:\DziRent\worktrees\codex-web`; branch: `codex/rental-collections`.

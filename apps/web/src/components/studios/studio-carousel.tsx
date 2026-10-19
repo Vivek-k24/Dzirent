@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { useRuntime } from "../providers";
 import { StudioImage, useNarrowViewport, usePrefersReducedMotion } from "./studio-image";
@@ -41,7 +41,7 @@ function Slide({ product }: { product: StudioProduct }) {
   // Preview content is deliberately limited to portrait photo, title and listed size.
   return <li className={styles.slide} data-product-id={product.id}>
     <Link className={styles.slideLink} href={`/products/${product.slug}`}>
-      <StudioImage product={product} sizes="(min-width: 640px) 30vw, 45vw" />
+      <StudioImage product={product} sizes="(min-width: 1440px) 210px, (min-width: 1024px) 15vw, (min-width: 640px) 30vw, 45vw" />
       <span className={styles.slideTitle}>{product.title}</span>
       <span className={styles.size}>{sizeLabel(product.size)}</span>
     </Link>
@@ -51,6 +51,7 @@ function Slide({ product }: { product: StudioProduct }) {
 export function StudioCarousel({ studio }: { studio: Studio }) {
   const { query, items, total = studio.published_product_count } = useStudioProducts(studio.handle, STUDIO_CAROUSEL_PAGE, true);
   const reducedMotion = usePrefersReducedMotion(), narrow = useNarrowViewport();
+  const instructionsId = useId();
   const visible = narrow ? 2 : 3;
   const [start, setStart] = useState(0), [paused, setPaused] = useState(false), [hovered, setHovered] = useState(false), [focused, setFocused] = useState(false);
   const count = items.length, canRotate = count > visible;
@@ -68,19 +69,19 @@ export function StudioCarousel({ studio }: { studio: Studio }) {
 
   const indices = Array.from({ length: Math.min(visible, count) }, (_, i) => (first + i) % count);
   const step = (delta: number) => setStart(value => ((value % count) + delta + count) % count);
-  return <section className={styles.carousel} aria-roledescription="carousel" aria-label={label} data-studio-carousel={studio.handle}
+  return <section className={styles.carousel} aria-roledescription="carousel" aria-label={label} aria-describedby={instructionsId} data-studio-carousel={studio.handle}
+    tabIndex={canRotate && !reducedMotion ? 0 : undefined}
+    onKeyDown={event => { if (event.target === event.currentTarget && event.key === " ") { event.preventDefault(); setPaused(value => !value); } }}
     onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
     onFocus={() => setFocused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false); }}>
     <ul className={styles.track}>{indices.map(index => <Slide key={items[index].id} product={items[index]} />)}</ul>
-    <div className={styles.controls}>
-      <button type="button" className={styles.control} aria-label="Previous outfit" disabled={!canRotate} onClick={() => step(-1)}><ChevronLeft size={18} aria-hidden="true" /></button>
-      <button type="button" className={styles.control} aria-label="Next outfit" disabled={!canRotate} onClick={() => step(1)}><ChevronRight size={18} aria-hidden="true" /></button>
-      <button type="button" className={styles.control} disabled={!canRotate || reducedMotion} aria-pressed={canRotate && !reducedMotion ? paused : undefined} onClick={() => setPaused(value => !value)}>
-        {reducedMotion ? <>Auto-rotation off (reduced motion)</> : paused ? <><Play size={15} aria-hidden="true" />Resume rotation</> : <><Pause size={15} aria-hidden="true" />Pause rotation</>}
-      </button>
-      <p className={styles.position} aria-live={automatic ? "off" : "polite"} aria-atomic="true">
-        {positions(indices, total)}{count < total ? ` · loading ${total - count} more` : ""}
-      </p>
+    <div className={styles.imageControls}>
+      <button type="button" className={styles.control} aria-label="Previous outfit" disabled={!canRotate} onClick={() => step(-1)}><ChevronLeft size={34} strokeWidth={2.5} aria-hidden="true" /></button>
+      <button type="button" className={styles.control} aria-label="Next outfit" disabled={!canRotate} onClick={() => step(1)}><ChevronRight size={34} strokeWidth={2.5} aria-hidden="true" /></button>
     </div>
+    <p id={instructionsId} className={styles.srOnly}>Outfits rotate automatically unless reduced motion is enabled. Hover or focus to pause. Focus this carousel and press Space to keep rotation paused or resume it after leaving.</p>
+    <p className={styles.srOnly} data-studio-position aria-live={automatic ? "off" : "polite"} aria-atomic="true">
+      {positions(indices, total)}{count < total ? ` · loading ${total - count} more` : ""}
+    </p>
   </section>;
 }

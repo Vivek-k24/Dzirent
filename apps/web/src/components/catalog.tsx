@@ -35,8 +35,8 @@ export function Catalog() {
   };
   return <main id="main-content" className="catalog-main content-width">
     <section className="catalog-context" aria-label="Catalog context" data-section="context">
-      <div className="breadcrumbs"><Link href="/">All collections</Link>{root ? <><ChevronRight size={12} /><span>{root.label}</span></> : null}</div>
-      <div className="catalog-heading"><div><p className="texas-note">Only in Texas</p><h1>{root?.label ?? "All collections"} <span>({total ?? "…"})</span></h1><p className="catalog-intro">Find a rental for your next occasion. Explore listed sizes, measurements and four-day dates.</p></div>
+      {root ? <div className="breadcrumbs"><Link href="/">All collections</Link><ChevronRight size={12} /><span>{root.label}</span></div> : null}
+      <div className="catalog-heading"><div><h1>{root?.label ?? "All collections"} <span>({total ?? "…"})</span></h1><p className="catalog-intro">Find a rental for your next occasion. Explore listed sizes, measurements and four-day dates.</p></div>
         <p className="available-count" aria-live="polite">{first && !query.isPlaceholderData ? <><span className="status-dot" />{first.available_total} {first.available_total === 1 ? "outfit" : "outfits"} available<span className="tiny muted">{state.start ? "for your demo dates" : "in the demo catalog"}</span></> : "Loading the rental collection…"}</p>
       </div>
     </section>

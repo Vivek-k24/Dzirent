@@ -40,7 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <header className="site-header">
       <div className="demo-bar"><div className="content-width"><strong>DEMO ONLY. NOT A REAL BUSINESS.</strong>{demo ? <button id="demo-controls-trigger" onClick={() => setControls(true)}><SlidersHorizontal size={13} />Demo controls</button> : null}</div></div>
       <div className="main-header content-width"><Link href="/" className="wordmark" aria-label="dzirent home">dzirent<span className="wordmark-period">.</span></Link>
-        <div className="desktop-search"><SearchInput /></div>
+        <div className="header-search-area"><div className="desktop-search"><SearchInput /></div><p className="launch-note">Launching in Texas soon.</p></div>
         <div className="header-actions"><button className="header-action mobile-search-trigger" id="header-search" aria-label="Open search" onClick={() => setSearch(true)}><Search size={20} /><span>Search</span></button>
           <Popover title={user ? "Your demo account" : "Welcome to dzirent"} trigger={<button id="header-account" className="header-action" aria-label="Account"><UserRound size={21} /><span>Account</span></button>}>
             {user ? <div className="account-options"><p className="account-name">{user.display_name}</p><p className="tiny muted">{demo ? "Sample identity" : "Signed in"} · {user.roles.join(" / ")}</p>{user.lender_profile ? <PopoverClose asChild><Link href="/lender/dashboard"><LayoutDashboard size={16} /> Lender dashboard</Link></PopoverClose> : <PopoverClose asChild><Link href="/lender/signup">Become a lender <ArrowRight size={16} /></Link></PopoverClose>}
@@ -54,7 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div><Navigation />
     </header>
     {children}
-    <footer className="site-footer"><div className="content-width footer-inner"><div><Link href="/" className="wordmark">dzirent.</Link><p>A fresh look. A shared wardrobe.</p></div><div><Link href="/credits">Photography & demo details</Link><Link href="/lender/signup">Share an outfit <ArrowRight size={15} /></Link><span>Texas · Presentation prototype</span></div></div><div className="content-width footer-note">Sample listings, prices, ratings and availability. No reservations, payments or delivery promises.</div></footer>
+    <footer className="site-footer"><div className="content-width footer-inner"><div><Link href="/" className="wordmark">dzirent.</Link><p>A fresh look. A shared wardrobe.</p></div><div><Link href="/credits">Photography & demo details</Link><Link href="/lender/signup">Share an outfit <ArrowRight size={15} /></Link></div></div><div className="content-width footer-note">Sample listings, prices, ratings and availability. No reservations, payments or delivery promises.</div></footer>
     {notice ? <div className="toast"><p key={notice.id} role="status" aria-live="polite">{notice.text}</p><button className="icon-button" aria-label="Dismiss notification" onClick={() => useSession.getState().dismiss()}><X size={17} /></button></div> : null}
     {search ? <Modal open onOpenChange={setSearch} title="Find your next look" description="Search sample titles, brands and descriptions." restoreId="header-search"><SearchInput mobile done={() => setSearch(false)} /></Modal> : null}
     {location ? <LocationDialog close={() => setLocation(false)} /> : null}
