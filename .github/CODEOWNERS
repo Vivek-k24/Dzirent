@@ -1,0 +1,18 @@
+# Actual GitHub reviewer account. AI role names are not GitHub accounts.
+# Domain ownership is enforced by AGENTS.md and docs/architecture/ownership.md.
+# Replace/add real collaborators through an integrator PR when accounts are assigned.
+* @Vivek-k24
+# Codex: apps/web, apps/mobile, packages/*, root coordination
+/apps/ @Vivek-k24
+/packages/ @Vivek-k24
+# Claude after foundation merge: API/runtime/contracts/fixtures
+/services/ @Vivek-k24
+/contracts/ @Vivek-k24
+/fixtures/catalog/ @Vivek-k24
+/infra/runtime/ @Vivek-k24
+# Antigravity after foundation merge: independent checks and CI
+/tests/ @Vivek-k24
+/docs/qa/ @Vivek-k24
+/docs/runbooks/ @Vivek-k24
+/.github/workflows/ @Vivek-k24
+/infra/ci/ @Vivek-k24

@@ -1,0 +1,38 @@
+name: Foundation
+
+on:
+  pull_request:
+  push:
+    branches: [main, bootstrap/brief, bootstrap/foundation]
+
+permissions:
+  contents: read
+
+jobs:
+  foundation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      DZIRENT_MODE: demo
+      DZIRENT_ENVIRONMENT: test
+      DZIRENT_IDENTITY_MODE: mock
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.29.3
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: 0.13.1
+          python-version: 3.12.15
+          enable-cache: true
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm api:sync
+      - run: pnpm check
+      - run: pnpm build
+      - run: docker compose config --quiet

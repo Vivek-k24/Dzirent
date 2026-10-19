@@ -1,0 +1,682 @@
+{
+  "contract_version": "0.1.0-candidate.1",
+  "categories": {
+    "items": [
+      {
+        "id": "ecb1300d-666e-5b1b-9ac6-2b586b5ccc29",
+        "slug": "women",
+        "label": "Women",
+        "parent_id": null,
+        "sort_order": 0,
+        "product_count": 5,
+        "children": [
+          {
+            "id": "93a38458-276f-5ceb-b6e9-f3ec973bff50",
+            "slug": "women-dresses",
+            "label": "Dresses",
+            "parent_id": "ecb1300d-666e-5b1b-9ac6-2b586b5ccc29",
+            "sort_order": 0,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "a061d7ad-7a5b-5311-8069-7f0b991bbe6f",
+            "slug": "women-gowns",
+            "label": "Gowns",
+            "parent_id": "ecb1300d-666e-5b1b-9ac6-2b586b5ccc29",
+            "sort_order": 1,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "9696fcd9-35eb-558c-a8c0-c216d9e8fb64",
+            "slug": "women-jumpsuits",
+            "label": "Jumpsuits",
+            "parent_id": "ecb1300d-666e-5b1b-9ac6-2b586b5ccc29",
+            "sort_order": 2,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "bb2f79cc-47c6-5861-8c15-bc8568fc4356",
+            "slug": "women-co-ords",
+            "label": "Co-ords",
+            "parent_id": "ecb1300d-666e-5b1b-9ac6-2b586b5ccc29",
+            "sort_order": 3,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "5d9079f4-c8ce-5a4f-89e9-f0ff834499e3",
+            "slug": "women-skirts-tops",
+            "label": "Skirts & Tops",
+            "parent_id": "ecb1300d-666e-5b1b-9ac6-2b586b5ccc29",
+            "sort_order": 4,
+            "product_count": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+        "slug": "men",
+        "label": "Men",
+        "parent_id": null,
+        "sort_order": 1,
+        "product_count": 5,
+        "children": [
+          {
+            "id": "8818ed76-3b64-5a9d-bb30-fce5cf7e2f2a",
+            "slug": "men-blazers",
+            "label": "Blazers",
+            "parent_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+            "sort_order": 0,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "bd631156-7525-5ff9-a400-c1d52ec4866c",
+            "slug": "men-dress-shirts",
+            "label": "Dress Shirts",
+            "parent_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+            "sort_order": 1,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "a5179222-319c-5224-87c6-52389a0eb361",
+            "slug": "men-trousers",
+            "label": "Trousers",
+            "parent_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+            "sort_order": 2,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "8f1150e3-3fb4-5e52-9390-e5240790d00d",
+            "slug": "men-waistcoats",
+            "label": "Waistcoats",
+            "parent_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+            "sort_order": 3,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "7b16df07-4113-529d-a6fa-cb8be459d012",
+            "slug": "men-ensembles",
+            "label": "Ensembles",
+            "parent_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+            "sort_order": 4,
+            "product_count": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "27218440-5363-51de-8c00-41432198a3cf",
+        "slug": "party-cocktail",
+        "label": "Party & Cocktail",
+        "parent_id": null,
+        "sort_order": 2,
+        "product_count": 5,
+        "children": [
+          {
+            "id": "0c9b6308-f143-51bd-a842-13b32da62b82",
+            "slug": "party-cocktail-mini-dresses",
+            "label": "Mini Dresses",
+            "parent_id": "27218440-5363-51de-8c00-41432198a3cf",
+            "sort_order": 0,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "aebfe4fb-980f-56b3-92d5-c216ab6008f4",
+            "slug": "party-cocktail-midi-dresses",
+            "label": "Midi Dresses",
+            "parent_id": "27218440-5363-51de-8c00-41432198a3cf",
+            "sort_order": 1,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "28435d6d-4107-5229-9d73-5821a262d2bd",
+            "slug": "party-cocktail-sequin-outfits",
+            "label": "Sequin Outfits",
+            "parent_id": "27218440-5363-51de-8c00-41432198a3cf",
+            "sort_order": 2,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "3a102ab1-5500-5bf4-9698-419ab17ddf52",
+            "slug": "party-cocktail-party-sets",
+            "label": "Party Sets",
+            "parent_id": "27218440-5363-51de-8c00-41432198a3cf",
+            "sort_order": 3,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "5db54851-fc75-53e7-9284-f8b61e6be399",
+            "slug": "party-cocktail-evening-separates",
+            "label": "Evening Separates",
+            "parent_id": "27218440-5363-51de-8c00-41432198a3cf",
+            "sort_order": 4,
+            "product_count": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "5dcf3761-0bf0-5a75-a6b6-47dd360a4f36",
+        "slug": "suits-tuxedos",
+        "label": "Suits & Tuxedos",
+        "parent_id": null,
+        "sort_order": 3,
+        "product_count": 5,
+        "children": [
+          {
+            "id": "816d82fb-d833-50fc-9225-3da66bba612f",
+            "slug": "suits-tuxedos-two-piece-suits",
+            "label": "Two-Piece Suits",
+            "parent_id": "5dcf3761-0bf0-5a75-a6b6-47dd360a4f36",
+            "sort_order": 0,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "c7b0d36f-10b7-52be-b7a7-aa582afa7dd7",
+            "slug": "suits-tuxedos-three-piece-suits",
+            "label": "Three-Piece Suits",
+            "parent_id": "5dcf3761-0bf0-5a75-a6b6-47dd360a4f36",
+            "sort_order": 1,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "a5fd08d3-da4f-57f7-bdc4-8d0d1d326c7e",
+            "slug": "suits-tuxedos-tuxedos",
+            "label": "Tuxedos",
+            "parent_id": "5dcf3761-0bf0-5a75-a6b6-47dd360a4f36",
+            "sort_order": 2,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "80b0ec94-8036-5c21-b402-847bafd8b1e6",
+            "slug": "suits-tuxedos-dinner-jackets",
+            "label": "Dinner Jackets",
+            "parent_id": "5dcf3761-0bf0-5a75-a6b6-47dd360a4f36",
+            "sort_order": 3,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "c4b74363-28a9-52c7-b01c-3cc86bccec2b",
+            "slug": "suits-tuxedos-suit-separates",
+            "label": "Suit Separates",
+            "parent_id": "5dcf3761-0bf0-5a75-a6b6-47dd360a4f36",
+            "sort_order": 4,
+            "product_count": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "45724d17-811a-5746-8f1a-0361028d57b1",
+        "slug": "wedding-guest",
+        "label": "Wedding Guest",
+        "parent_id": null,
+        "sort_order": 4,
+        "product_count": 5,
+        "children": [
+          {
+            "id": "457c4ddf-81e6-58c6-97f1-075499b08759",
+            "slug": "wedding-guest-daytime",
+            "label": "Daytime",
+            "parent_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+            "sort_order": 0,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "9416f41f-6d77-5d8b-8511-64d1dbea3ef5",
+            "slug": "wedding-guest-formal",
+            "label": "Formal",
+            "parent_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+            "sort_order": 1,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "a66980e9-ed6b-5e5f-bdd8-5f8cdb300cec",
+            "slug": "wedding-guest-black-tie",
+            "label": "Black Tie",
+            "parent_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+            "sort_order": 2,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "917b4efa-c62e-5ea4-811f-cc706d231a9c",
+            "slug": "wedding-guest-outdoor",
+            "label": "Outdoor",
+            "parent_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+            "sort_order": 3,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "301f005f-acb6-5b6c-a16c-73f62ec3d01e",
+            "slug": "wedding-guest-festive",
+            "label": "Festive",
+            "parent_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+            "sort_order": 4,
+            "product_count": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "4975793f-c24a-5fe9-b729-5962eef11354",
+        "slug": "indian-cultural",
+        "label": "Indian & Cultural",
+        "parent_id": null,
+        "sort_order": 5,
+        "product_count": 5,
+        "children": [
+          {
+            "id": "befd78f5-3f7e-57c8-9af9-178d7a9771c1",
+            "slug": "indian-cultural-sarees",
+            "label": "Sarees",
+            "parent_id": "4975793f-c24a-5fe9-b729-5962eef11354",
+            "sort_order": 0,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "780b50c6-4ad4-5fd1-982e-1127572a6977",
+            "slug": "indian-cultural-lehengas",
+            "label": "Lehengas",
+            "parent_id": "4975793f-c24a-5fe9-b729-5962eef11354",
+            "sort_order": 1,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "946cc51b-7e06-59c6-8f03-af2033f86c61",
+            "slug": "indian-cultural-sherwanis",
+            "label": "Sherwanis",
+            "parent_id": "4975793f-c24a-5fe9-b729-5962eef11354",
+            "sort_order": 2,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "3dfcde2a-fdc4-522d-ade3-5e3af27c6033",
+            "slug": "indian-cultural-kurta-sets",
+            "label": "Kurta Sets",
+            "parent_id": "4975793f-c24a-5fe9-b729-5962eef11354",
+            "sort_order": 3,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "56de52b4-be7f-546d-9b1a-4353c8eac088",
+            "slug": "indian-cultural-anarkalis",
+            "label": "Anarkalis",
+            "parent_id": "4975793f-c24a-5fe9-b729-5962eef11354",
+            "sort_order": 4,
+            "product_count": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+        "slug": "designer",
+        "label": "Designer",
+        "parent_id": null,
+        "sort_order": 6,
+        "product_count": 7,
+        "children": [
+          {
+            "id": "ee4bfb3b-20d4-5e98-89bb-1470cfbdecd4",
+            "slug": "designer-dresses",
+            "label": "Dresses",
+            "parent_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+            "sort_order": 0,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "acbf685e-5f07-5e31-a431-b5233d83a028",
+            "slug": "designer-gowns",
+            "label": "Gowns",
+            "parent_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+            "sort_order": 1,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "8bc1c8b5-e801-588d-8d58-b943e4690b58",
+            "slug": "designer-suits",
+            "label": "Suits",
+            "parent_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+            "sort_order": 2,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "55f2ddb8-8a3d-53cc-aeb9-7bd9df6e216f",
+            "slug": "designer-sets",
+            "label": "Sets",
+            "parent_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+            "sort_order": 3,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "0146fb14-b739-51de-b22e-1106376cc32a",
+            "slug": "designer-statement-pieces",
+            "label": "Statement Pieces",
+            "parent_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+            "sort_order": 4,
+            "product_count": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+        "slug": "bridal",
+        "label": "Bridal",
+        "parent_id": null,
+        "sort_order": 7,
+        "product_count": 5,
+        "children": [
+          {
+            "id": "b39f3276-914f-5814-86d4-6b6779d62b1c",
+            "slug": "bridal-wedding-gowns",
+            "label": "Wedding Gowns",
+            "parent_id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+            "sort_order": 0,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "4af953bb-fdc8-5d51-b569-fc4a738b3f49",
+            "slug": "bridal-reception-looks",
+            "label": "Reception Looks",
+            "parent_id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+            "sort_order": 1,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "12c571b5-56b6-5213-a836-5049f6c23a63",
+            "slug": "bridal-bridal-separates",
+            "label": "Bridal Separates",
+            "parent_id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+            "sort_order": 2,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "84946d08-e1c9-51ff-91e4-56356ceb1dbf",
+            "slug": "bridal-veils-capes",
+            "label": "Veils & Capes",
+            "parent_id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+            "sort_order": 3,
+            "product_count": 1,
+            "children": []
+          },
+          {
+            "id": "54f58c5f-6037-5666-8f39-e77b950fbbbf",
+            "slug": "bridal-bridal-ensembles",
+            "label": "Bridal Ensembles",
+            "parent_id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+            "sort_order": 4,
+            "product_count": 1,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "facets": {
+    "brands": [
+      {
+        "id": "2b2e1d33-f4da-589c-9883-c7b36081a517",
+        "slug": "sample-studio-1",
+        "label": "Sample Studio 1"
+      },
+      {
+        "id": "0bc973c2-3bba-50a0-b813-960ed8cc62b6",
+        "slug": "sample-studio-2",
+        "label": "Sample Studio 2"
+      },
+      {
+        "id": "17cc5fbb-7e28-5bd9-ac8d-f69b4120b802",
+        "slug": "sample-studio-3",
+        "label": "Sample Studio 3"
+      },
+      {
+        "id": "da95741e-1621-5d0d-a810-eb546f862bca",
+        "slug": "sample-studio-4",
+        "label": "Sample Studio 4"
+      },
+      {
+        "id": "76016a14-8995-5858-8f68-88f839a4f6dc",
+        "slug": "sample-studio-5",
+        "label": "Sample Studio 5"
+      },
+      {
+        "id": "6b4f90e0-0ada-571f-a945-a0a7277d7ce1",
+        "slug": "sample-studio-6",
+        "label": "Sample Studio 6"
+      },
+      {
+        "id": "4bb1cad9-2410-5881-92ae-900468e4c4a5",
+        "slug": "sample-studio-7",
+        "label": "Sample Studio 7"
+      },
+      {
+        "id": "6688dc36-6cf1-57f5-8bf6-ae0b149de344",
+        "slug": "sample-studio-8",
+        "label": "Sample Studio 8"
+      }
+    ],
+    "colors": [
+      {
+        "id": "15b2c2d3-33b0-521a-9fcf-07a65375bc9b",
+        "slug": "black",
+        "label": "Black",
+        "swatch_hex": "#111111"
+      },
+      {
+        "id": "f81bfb3d-b657-534a-a69d-9df1104b6f1a",
+        "slug": "gold",
+        "label": "Gold",
+        "swatch_hex": "#b28a43"
+      },
+      {
+        "id": "b35302f0-ba8d-5da5-a84d-d02b20383120",
+        "slug": "gray",
+        "label": "Gray",
+        "swatch_hex": "#888888"
+      },
+      {
+        "id": "d74a43d3-6883-5de5-95d6-c585e1370a75",
+        "slug": "green",
+        "label": "Green",
+        "swatch_hex": "#386b50"
+      },
+      {
+        "id": "14a6c3a0-b5c6-5682-a9ec-ffa42c1ca599",
+        "slug": "ivory",
+        "label": "Ivory",
+        "swatch_hex": "#f6f1e6"
+      },
+      {
+        "id": "ef315ecb-2ec5-5c16-b04a-5cd5779501ea",
+        "slug": "navy",
+        "label": "Navy",
+        "swatch_hex": "#253b60"
+      },
+      {
+        "id": "4a811fa0-4012-5fdf-bc83-8cb60caed93c",
+        "slug": "pink",
+        "label": "Pink",
+        "swatch_hex": "#dca0ae"
+      },
+      {
+        "id": "7358190c-06eb-556d-8894-f3c9b9ec2349",
+        "slug": "red",
+        "label": "Red",
+        "swatch_hex": "#a72e35"
+      }
+    ],
+    "sizes": [
+      {
+        "id": "ba0af206-f4d9-5d70-af75-30bad76ae4c3",
+        "sizing_system": "US-men",
+        "label": "38"
+      },
+      {
+        "id": "406cc9bf-dfc6-5c1a-b9a0-243baeddd15b",
+        "sizing_system": "US-men",
+        "label": "42"
+      },
+      {
+        "id": "2cd66e37-7c58-51d7-b6a5-eb239ef5b48f",
+        "sizing_system": "US-women",
+        "label": "4"
+      },
+      {
+        "id": "0d63ff32-b23b-5bc7-bd6b-f440c2f42a3d",
+        "sizing_system": "US-women",
+        "label": "8"
+      },
+      {
+        "id": "bcbc9755-139b-5802-ba9e-613e8ae9d010",
+        "sizing_system": "alpha",
+        "label": "L"
+      },
+      {
+        "id": "ad5303d3-53c6-5a85-9436-1fc8b1e4b6b6",
+        "sizing_system": "alpha",
+        "label": "M"
+      },
+      {
+        "id": "a1c10cb9-1d83-5479-a2f0-7234d2684743",
+        "sizing_system": "alpha",
+        "label": "S"
+      },
+      {
+        "id": "65eb35f9-ed4f-5712-87e4-802929a57936",
+        "sizing_system": "alpha",
+        "label": "XL"
+      },
+      {
+        "id": "fad513c5-2212-5849-8580-15dfd11028f0",
+        "sizing_system": "alpha",
+        "label": "XS"
+      }
+    ],
+    "bands": [
+      {
+        "id": "A",
+        "label": "Band A · sample",
+        "min_minor": 0,
+        "max_minor_exclusive": 5000
+      },
+      {
+        "id": "B",
+        "label": "Band B · sample",
+        "min_minor": 5000,
+        "max_minor_exclusive": 10000
+      },
+      {
+        "id": "C",
+        "label": "Band C · sample",
+        "min_minor": 10000,
+        "max_minor_exclusive": 15000
+      },
+      {
+        "id": "D",
+        "label": "Band D · sample",
+        "min_minor": 15000,
+        "max_minor_exclusive": null
+      }
+    ],
+    "occasions": [
+      "Celebration",
+      "Dinner",
+      "Formal",
+      "Outdoor",
+      "Wedding"
+    ],
+    "fabrics": [
+      "Brocade",
+      "Chiffon",
+      "Cotton",
+      "Linen",
+      "Satin",
+      "Silk",
+      "Velvet",
+      "Wool"
+    ]
+  },
+  "locations": {
+    "items": [
+      {
+        "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+        "slug": "austin",
+        "label": "Austin",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      {
+        "id": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+        "slug": "dallas-fort-worth",
+        "label": "Dallas–Fort Worth",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      {
+        "id": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+        "slug": "houston",
+        "label": "Houston",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      {
+        "id": "b716c482-5802-5139-b1f3-89abf3046354",
+        "slug": "san-antonio",
+        "label": "San Antonio",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      {
+        "id": "fb8e2027-b92c-5cb8-9323-b84b154c5706",
+        "slug": "other-texas",
+        "label": "Other Texas",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      }
+    ],
+    "demo_zip_map": {
+      "78701": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+      "75201": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+      "77002": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+      "78205": "b716c482-5802-5139-b1f3-89abf3046354"
+    },
+    "unmapped_zip_metro_id": "fb8e2027-b92c-5cb8-9323-b84b154c5706"
+  }
+}

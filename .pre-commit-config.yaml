@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: contract-drift
+        name: Generated OpenAPI and TypeScript drift
+        entry: pnpm contracts:check
+        language: system
+        pass_filenames: false
+        files: ^(services/api/src/dzirent_api/(models|contract|health)\.py|contracts/|packages/client/src/generated/)
