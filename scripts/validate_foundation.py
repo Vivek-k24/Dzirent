@@ -88,7 +88,7 @@ operations = {
     op["operationId"]: (path, method, op)
     for path, methods in contract["paths"].items()
     for method, op in methods.items()
-    if method in {"get", "post", "patch", "delete"}
+    if method in {"get", "post", "put", "patch", "delete"}
 }
 assert (
     len(operations) == len(examples["cases"]) == len({e["operation_id"] for e in examples["cases"]})

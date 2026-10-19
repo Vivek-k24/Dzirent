@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0-candidate.1",
+  "version": "0.1.0-candidate.2",
   "values": ["demo", "connected"],
   "default": "demo",
   "web_mode_env": "NEXT_PUBLIC_DZIRENT_MODE",

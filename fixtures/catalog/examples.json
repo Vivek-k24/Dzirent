@@ -1,5 +1,5 @@
 {
-  "contract_version": "0.1.0-candidate.1",
+  "contract_version": "0.1.0-candidate.2",
   "cases": [
     {
       "operation_id": "getLiveness",
@@ -14,7 +14,7 @@
         "status": 200,
         "body": {
           "status": "live",
-          "contract_version": "0.1.0-candidate.1"
+          "contract_version": "0.1.0-candidate.2"
         }
       }
     },
@@ -31,7 +31,7 @@
         "status": 200,
         "body": {
           "status": "ready",
-          "contract_version": "0.1.0-candidate.1"
+          "contract_version": "0.1.0-candidate.2"
         }
       }
     },
@@ -7478,6 +7478,792 @@
             }
           ],
           "date_blocks": []
+        }
+      }
+    },
+    {
+      "operation_id": "getMyStudio",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/me/studio",
+        "query": "",
+        "body": null,
+        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "93e4022f-9375-5dd4-9acf-0f5f5974216c",
+          "handle": "sample-lender",
+          "display_name": "Sample Lender",
+          "bio": "A fictional demo Studio. Every outfit here is an illustrative sample listing; no rental, payment or delivery is offered.",
+          "state_code": "TX",
+          "published_product_count": 40,
+          "is_public": true,
+          "version": 1,
+          "created_at": "2026-10-01T12:00:00+00:00",
+          "updated_at": "2026-10-01T12:00:00+00:00"
+        }
+      }
+    },
+    {
+      "operation_id": "saveMyStudio",
+      "request": {
+        "method": "PUT",
+        "path": "/api/v1/me/studio",
+        "query": "",
+        "body": {
+          "display_name": "Sample Lender Studio",
+          "bio": "A fictional demo Studio. Every outfit here is an illustrative sample listing; no rental, payment or delivery is offered.",
+          "is_public": true,
+          "expected_version": 1
+        },
+        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "93e4022f-9375-5dd4-9acf-0f5f5974216c",
+          "handle": "sample-lender",
+          "display_name": "Sample Lender Studio",
+          "bio": "A fictional demo Studio. Every outfit here is an illustrative sample listing; no rental, payment or delivery is offered.",
+          "state_code": "TX",
+          "published_product_count": 40,
+          "is_public": true,
+          "version": 2,
+          "created_at": "2026-10-01T12:00:00+00:00",
+          "updated_at": "2026-11-02T12:00:00Z"
+        }
+      }
+    },
+    {
+      "operation_id": "listStudios",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/studios",
+        "query": "page=1&page_size=24",
+        "body": null,
+        "identity": "anonymous"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "id": "93e4022f-9375-5dd4-9acf-0f5f5974216c",
+              "handle": "sample-lender",
+              "display_name": "Sample Lender",
+              "bio": "A fictional demo Studio. Every outfit here is an illustrative sample listing; no rental, payment or delivery is offered.",
+              "state_code": "TX",
+              "published_product_count": 40
+            }
+          ],
+          "total": 1,
+          "page": 1,
+          "page_size": 24
+        }
+      }
+    },
+    {
+      "operation_id": "getStudio",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/studios/sample-lender",
+        "query": "",
+        "body": null,
+        "identity": "anonymous"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "93e4022f-9375-5dd4-9acf-0f5f5974216c",
+          "handle": "sample-lender",
+          "display_name": "Sample Lender",
+          "bio": "A fictional demo Studio. Every outfit here is an illustrative sample listing; no rental, payment or delivery is offered.",
+          "state_code": "TX",
+          "published_product_count": 40
+        }
+      }
+    },
+    {
+      "operation_id": "listStudioProducts",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/studios/sample-lender/products",
+        "query": "page=1&page_size=12",
+        "body": null,
+        "identity": "anonymous"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "id": "10b9bedc-b760-57d3-834f-905ce14b85c4",
+              "slug": "demo-party-cocktail-midi-dresses-12",
+              "title": "Red Midi Dresses 12",
+              "brand": {
+                "id": "da95741e-1621-5d0d-a810-eb546f862bca",
+                "slug": "sample-studio-4",
+                "label": "Sample Studio 4"
+              },
+              "primary_collection_id": "27218440-5363-51de-8c00-41432198a3cf",
+              "primary_category_id": "aebfe4fb-980f-56b3-92d5-c216ab6008f4",
+              "secondary_category_ids": [],
+              "size": {
+                "id": "65eb35f9-ed4f-5712-87e4-802929a57936",
+                "sizing_system": "alpha",
+                "label": "XL"
+              },
+              "colors": [
+                {
+                  "id": "7358190c-06eb-556d-8894-f3c9b9ec2349",
+                  "slug": "red",
+                  "label": "Red",
+                  "swatch_hex": "#a72e35"
+                }
+              ],
+              "metro": {
+                "id": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+                "slug": "dallas-fort-worth",
+                "label": "Dallas–Fort Worth",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "D",
+              "rental_price_minor": 17600,
+              "retail_price_minor": 31000,
+              "currency": "USD",
+              "sample_rating": 4.6,
+              "sample_rating_count": 14,
+              "featured_rank": 29,
+              "status": "published",
+              "is_available": true,
+              "image": {
+                "id": "20123b73-8ad8-5b98-b326-31cdfa56e252",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 4 Red Midi Dresses 12 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-12T12:00:00Z",
+              "updated_at": "2026-10-12T12:00:00Z"
+            },
+            {
+              "id": "985a4676-f2e4-5571-8d9d-44ddecce24f6",
+              "slug": "demo-wedding-guest-outdoor-24",
+              "title": "Gray Outdoor 24",
+              "brand": {
+                "id": "6688dc36-6cf1-57f5-8bf6-ae0b149de344",
+                "slug": "sample-studio-8",
+                "label": "Sample Studio 8"
+              },
+              "primary_collection_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+              "primary_category_id": "917b4efa-c62e-5ea4-811f-cc706d231a9c",
+              "secondary_category_ids": [],
+              "size": {
+                "id": "ad5303d3-53c6-5a85-9436-1fc8b1e4b6b6",
+                "sizing_system": "alpha",
+                "label": "M"
+              },
+              "colors": [
+                {
+                  "id": "b35302f0-ba8d-5da5-a84d-d02b20383120",
+                  "slug": "gray",
+                  "label": "Gray",
+                  "swatch_hex": "#888888"
+                }
+              ],
+              "metro": {
+                "id": "b716c482-5802-5139-b1f3-89abf3046354",
+                "slug": "san-antonio",
+                "label": "San Antonio",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "D",
+              "rental_price_minor": 17750,
+              "retail_price_minor": 43000,
+              "currency": "USD",
+              "sample_rating": 4.2,
+              "sample_rating_count": 26,
+              "featured_rank": 17,
+              "status": "published",
+              "is_available": true,
+              "image": {
+                "id": "7e3f3e4b-e758-5e3c-8d1a-042c08b89970",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 8 Gray Outdoor 24 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-12T12:00:00Z",
+              "updated_at": "2026-10-12T12:00:00Z"
+            },
+            {
+              "id": "a372115c-a075-5a49-ab50-f05c893c0c7d",
+              "slug": "demo-bridal-wedding-gowns-36",
+              "title": "Red Wedding Gowns 36",
+              "brand": {
+                "id": "da95741e-1621-5d0d-a810-eb546f862bca",
+                "slug": "sample-studio-4",
+                "label": "Sample Studio 4"
+              },
+              "primary_collection_id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+              "primary_category_id": "b39f3276-914f-5814-86d4-6b6779d62b1c",
+              "secondary_category_ids": [],
+              "size": {
+                "id": "fad513c5-2212-5849-8580-15dfd11028f0",
+                "sizing_system": "alpha",
+                "label": "XS"
+              },
+              "colors": [
+                {
+                  "id": "7358190c-06eb-556d-8894-f3c9b9ec2349",
+                  "slug": "red",
+                  "label": "Red",
+                  "swatch_hex": "#a72e35"
+                }
+              ],
+              "metro": {
+                "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+                "slug": "austin",
+                "label": "Austin",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "D",
+              "rental_price_minor": 17900,
+              "retail_price_minor": 55000,
+              "currency": "USD",
+              "sample_rating": 3.8,
+              "sample_rating_count": 38,
+              "featured_rank": 5,
+              "status": "published",
+              "is_available": false,
+              "image": {
+                "id": "7d9edb7e-3eb1-5350-82cc-284896a1b2f0",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 4 Red Wedding Gowns 36 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-12T12:00:00Z",
+              "updated_at": "2026-10-12T12:00:00Z"
+            },
+            {
+              "id": "1502e2a8-2938-57ef-8992-234d746cce2e",
+              "slug": "demo-wedding-guest-black-tie-23",
+              "title": "Pink Black Tie 23",
+              "brand": {
+                "id": "4bb1cad9-2410-5881-92ae-900468e4c4a5",
+                "slug": "sample-studio-7",
+                "label": "Sample Studio 7"
+              },
+              "primary_collection_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+              "primary_category_id": "a66980e9-ed6b-5e5f-bdd8-5f8cdb300cec",
+              "secondary_category_ids": [],
+              "size": {
+                "id": "a1c10cb9-1d83-5479-a2f0-7234d2684743",
+                "sizing_system": "alpha",
+                "label": "S"
+              },
+              "colors": [
+                {
+                  "id": "4a811fa0-4012-5fdf-bc83-8cb60caed93c",
+                  "slug": "pink",
+                  "label": "Pink",
+                  "swatch_hex": "#dca0ae"
+                }
+              ],
+              "metro": {
+                "id": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+                "slug": "houston",
+                "label": "Houston",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "C",
+              "rental_price_minor": 12750,
+              "retail_price_minor": 42000,
+              "currency": "USD",
+              "sample_rating": 4.0,
+              "sample_rating_count": 25,
+              "featured_rank": 18,
+              "status": "published",
+              "is_available": true,
+              "image": {
+                "id": "3e15b405-e9f0-5cd4-8ac5-f7df4fc530ea",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 7 Pink Black Tie 23 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-11T12:00:00Z",
+              "updated_at": "2026-10-11T12:00:00Z"
+            },
+            {
+              "id": "52aadf98-a510-5e40-8ddd-0e9647a2eb90",
+              "slug": "demo-designer-statement-pieces-35",
+              "title": "Navy Statement Pieces 35",
+              "brand": {
+                "id": "17cc5fbb-7e28-5bd9-ac8d-f69b4120b802",
+                "slug": "sample-studio-3",
+                "label": "Sample Studio 3"
+              },
+              "primary_collection_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+              "primary_category_id": "0146fb14-b739-51de-b22e-1106376cc32a",
+              "secondary_category_ids": [],
+              "size": {
+                "id": "0d63ff32-b23b-5bc7-bd6b-f440c2f42a3d",
+                "sizing_system": "US-women",
+                "label": "8"
+              },
+              "colors": [
+                {
+                  "id": "ef315ecb-2ec5-5c16-b04a-5cd5779501ea",
+                  "slug": "navy",
+                  "label": "Navy",
+                  "swatch_hex": "#253b60"
+                }
+              ],
+              "metro": {
+                "id": "fb8e2027-b92c-5cb8-9323-b84b154c5706",
+                "slug": "other-texas",
+                "label": "Other Texas",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "C",
+              "rental_price_minor": 12900,
+              "retail_price_minor": 54000,
+              "currency": "USD",
+              "sample_rating": 5.0,
+              "sample_rating_count": 37,
+              "featured_rank": 6,
+              "status": "published",
+              "is_available": true,
+              "image": {
+                "id": "5337221c-2d8a-589c-9844-338ab765f851",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 3 Navy Statement Pieces 35 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-11T12:00:00Z",
+              "updated_at": "2026-10-11T12:00:00Z"
+            },
+            {
+              "id": "785a4261-1d4f-5bc3-ab5a-fa7d5cecaeb3",
+              "slug": "demo-party-cocktail-mini-dresses-11",
+              "title": "Navy Mini Dresses 11",
+              "brand": {
+                "id": "17cc5fbb-7e28-5bd9-ac8d-f69b4120b802",
+                "slug": "sample-studio-3",
+                "label": "Sample Studio 3"
+              },
+              "primary_collection_id": "27218440-5363-51de-8c00-41432198a3cf",
+              "primary_category_id": "0c9b6308-f143-51bd-a842-13b32da62b82",
+              "secondary_category_ids": [
+                "b7962f7c-ed49-5418-8cc7-acf57d61229a"
+              ],
+              "size": {
+                "id": "bcbc9755-139b-5802-ba9e-613e8ae9d010",
+                "sizing_system": "alpha",
+                "label": "L"
+              },
+              "colors": [
+                {
+                  "id": "ef315ecb-2ec5-5c16-b04a-5cd5779501ea",
+                  "slug": "navy",
+                  "label": "Navy",
+                  "swatch_hex": "#253b60"
+                }
+              ],
+              "metro": {
+                "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+                "slug": "austin",
+                "label": "Austin",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "C",
+              "rental_price_minor": 12600,
+              "retail_price_minor": 30000,
+              "currency": "USD",
+              "sample_rating": 4.4,
+              "sample_rating_count": 13,
+              "featured_rank": 30,
+              "status": "published",
+              "is_available": true,
+              "image": {
+                "id": "efdcc8cf-f89a-53ea-8206-2770ce2e77d8",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 3 Navy Mini Dresses 11 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-11T12:00:00Z",
+              "updated_at": "2026-10-11T12:00:00Z"
+            },
+            {
+              "id": "02e91b8c-cc68-5106-a7f3-fbf9d9063295",
+              "slug": "demo-men-ensembles-10",
+              "title": "Ivory Ensembles 10",
+              "brand": {
+                "id": "0bc973c2-3bba-50a0-b813-960ed8cc62b6",
+                "slug": "sample-studio-2",
+                "label": "Sample Studio 2"
+              },
+              "primary_collection_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+              "primary_category_id": "7b16df07-4113-529d-a6fa-cb8be459d012",
+              "secondary_category_ids": [],
+              "size": {
+                "id": "406cc9bf-dfc6-5c1a-b9a0-243baeddd15b",
+                "sizing_system": "US-men",
+                "label": "42"
+              },
+              "colors": [
+                {
+                  "id": "14a6c3a0-b5c6-5682-a9ec-ffa42c1ca599",
+                  "slug": "ivory",
+                  "label": "Ivory",
+                  "swatch_hex": "#f6f1e6"
+                }
+              ],
+              "metro": {
+                "id": "fb8e2027-b92c-5cb8-9323-b84b154c5706",
+                "slug": "other-texas",
+                "label": "Other Texas",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "B",
+              "rental_price_minor": 7600,
+              "retail_price_minor": 29000,
+              "currency": "USD",
+              "sample_rating": null,
+              "sample_rating_count": 0,
+              "featured_rank": 31,
+              "status": "published",
+              "is_available": true,
+              "image": {
+                "id": "42a0ee02-61f6-5f5f-829d-98062f57fd35",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 2 Ivory Ensembles 10 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-10T12:00:00Z",
+              "updated_at": "2026-10-10T12:00:00Z"
+            },
+            {
+              "id": "0e481a59-48fa-5a67-9d81-d541837eac77",
+              "slug": "demo-designer-sets-34",
+              "title": "Ivory Sets 34",
+              "brand": {
+                "id": "0bc973c2-3bba-50a0-b813-960ed8cc62b6",
+                "slug": "sample-studio-2",
+                "label": "Sample Studio 2"
+              },
+              "primary_collection_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+              "primary_category_id": "55f2ddb8-8a3d-53cc-aeb9-7bd9df6e216f",
+              "secondary_category_ids": [],
+              "size": {
+                "id": "2cd66e37-7c58-51d7-b6a5-eb239ef5b48f",
+                "sizing_system": "US-women",
+                "label": "4"
+              },
+              "colors": [
+                {
+                  "id": "14a6c3a0-b5c6-5682-a9ec-ffa42c1ca599",
+                  "slug": "ivory",
+                  "label": "Ivory",
+                  "swatch_hex": "#f6f1e6"
+                }
+              ],
+              "metro": {
+                "id": "b716c482-5802-5139-b1f3-89abf3046354",
+                "slug": "san-antonio",
+                "label": "San Antonio",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "B",
+              "rental_price_minor": 7900,
+              "retail_price_minor": 53000,
+              "currency": "USD",
+              "sample_rating": 4.8,
+              "sample_rating_count": 36,
+              "featured_rank": 7,
+              "status": "published",
+              "is_available": true,
+              "image": {
+                "id": "490d66e9-75ec-5cde-9f8a-fd429e5c7091",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 2 Ivory Sets 34 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-10T12:00:00Z",
+              "updated_at": "2026-10-10T12:00:00Z"
+            },
+            {
+              "id": "f20c6359-48be-5f48-9a1c-3a687f0c36bc",
+              "slug": "demo-wedding-guest-formal-22",
+              "title": "Gold Formal 22",
+              "brand": {
+                "id": "6b4f90e0-0ada-571f-a945-a0a7277d7ce1",
+                "slug": "sample-studio-6",
+                "label": "Sample Studio 6"
+              },
+              "primary_collection_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+              "primary_category_id": "9416f41f-6d77-5d8b-8511-64d1dbea3ef5",
+              "secondary_category_ids": [],
+              "size": {
+                "id": "fad513c5-2212-5849-8580-15dfd11028f0",
+                "sizing_system": "alpha",
+                "label": "XS"
+              },
+              "colors": [
+                {
+                  "id": "f81bfb3d-b657-534a-a69d-9df1104b6f1a",
+                  "slug": "gold",
+                  "label": "Gold",
+                  "swatch_hex": "#b28a43"
+                }
+              ],
+              "metro": {
+                "id": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+                "slug": "dallas-fort-worth",
+                "label": "Dallas–Fort Worth",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "B",
+              "rental_price_minor": 7750,
+              "retail_price_minor": 41000,
+              "currency": "USD",
+              "sample_rating": 3.8,
+              "sample_rating_count": 24,
+              "featured_rank": 19,
+              "status": "published",
+              "is_available": false,
+              "image": {
+                "id": "5e206369-099d-597c-b3ef-78043d7f34b6",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 6 Gold Formal 22 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-10T12:00:00Z",
+              "updated_at": "2026-10-10T12:00:00Z"
+            },
+            {
+              "id": "0e8e8d01-5494-5b55-83ce-10cd23659d9a",
+              "slug": "demo-designer-suits-33",
+              "title": "Black Suits 33",
+              "brand": {
+                "id": "2b2e1d33-f4da-589c-9883-c7b36081a517",
+                "slug": "sample-studio-1",
+                "label": "Sample Studio 1"
+              },
+              "primary_collection_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+              "primary_category_id": "8bc1c8b5-e801-588d-8d58-b943e4690b58",
+              "secondary_category_ids": [],
+              "size": {
+                "id": "65eb35f9-ed4f-5712-87e4-802929a57936",
+                "sizing_system": "alpha",
+                "label": "XL"
+              },
+              "colors": [
+                {
+                  "id": "15b2c2d3-33b0-521a-9fcf-07a65375bc9b",
+                  "slug": "black",
+                  "label": "Black",
+                  "swatch_hex": "#111111"
+                }
+              ],
+              "metro": {
+                "id": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+                "slug": "houston",
+                "label": "Houston",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "A",
+              "rental_price_minor": 3900,
+              "retail_price_minor": 52000,
+              "currency": "USD",
+              "sample_rating": 4.6,
+              "sample_rating_count": 35,
+              "featured_rank": 8,
+              "status": "published",
+              "is_available": true,
+              "image": {
+                "id": "3775b692-6458-5036-95cc-06c057c5d0a5",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 1 Black Suits 33 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-09T12:00:00Z",
+              "updated_at": "2026-10-09T12:00:00Z"
+            },
+            {
+              "id": "32eff2de-205b-53f0-b4cd-88333c62b84c",
+              "slug": "demo-men-waistcoats-09",
+              "title": "Black Waistcoats 09",
+              "brand": {
+                "id": "2b2e1d33-f4da-589c-9883-c7b36081a517",
+                "slug": "sample-studio-1",
+                "label": "Sample Studio 1"
+              },
+              "primary_collection_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+              "primary_category_id": "8f1150e3-3fb4-5e52-9390-e5240790d00d",
+              "secondary_category_ids": [],
+              "size": {
+                "id": "ba0af206-f4d9-5d70-af75-30bad76ae4c3",
+                "sizing_system": "US-men",
+                "label": "38"
+              },
+              "colors": [
+                {
+                  "id": "15b2c2d3-33b0-521a-9fcf-07a65375bc9b",
+                  "slug": "black",
+                  "label": "Black",
+                  "swatch_hex": "#111111"
+                }
+              ],
+              "metro": {
+                "id": "b716c482-5802-5139-b1f3-89abf3046354",
+                "slug": "san-antonio",
+                "label": "San Antonio",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "A",
+              "rental_price_minor": 3600,
+              "retail_price_minor": 28000,
+              "currency": "USD",
+              "sample_rating": 4.0,
+              "sample_rating_count": 11,
+              "featured_rank": 32,
+              "status": "published",
+              "is_available": true,
+              "image": {
+                "id": "b7f54ed9-5f4d-5555-bf8e-0d16894be38e",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 1 Black Waistcoats 09 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-09T12:00:00Z",
+              "updated_at": "2026-10-09T12:00:00Z"
+            },
+            {
+              "id": "61b830f9-4634-5ea6-9a15-79c2f9d477f3",
+              "slug": "demo-wedding-guest-daytime-21",
+              "title": "Green Daytime 21",
+              "brand": {
+                "id": "76016a14-8995-5858-8f68-88f839a4f6dc",
+                "slug": "sample-studio-5",
+                "label": "Sample Studio 5"
+              },
+              "primary_collection_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+              "primary_category_id": "457c4ddf-81e6-58c6-97f1-075499b08759",
+              "secondary_category_ids": [],
+              "size": {
+                "id": "0d63ff32-b23b-5bc7-bd6b-f440c2f42a3d",
+                "sizing_system": "US-women",
+                "label": "8"
+              },
+              "colors": [
+                {
+                  "id": "d74a43d3-6883-5de5-95d6-c585e1370a75",
+                  "slug": "green",
+                  "label": "Green",
+                  "swatch_hex": "#386b50"
+                }
+              ],
+              "metro": {
+                "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+                "slug": "austin",
+                "label": "Austin",
+                "region": "TX",
+                "country_code": "US",
+                "location_note": "Demo location; no delivery coverage inferred."
+              },
+              "band": "A",
+              "rental_price_minor": 3750,
+              "retail_price_minor": 40000,
+              "currency": "USD",
+              "sample_rating": 5.0,
+              "sample_rating_count": 23,
+              "featured_rank": 20,
+              "status": "published",
+              "is_available": true,
+              "image": {
+                "id": "d381a210-2df7-5c47-a8cd-cf6a8e1de9d4",
+                "url": "/fixtures/garment-placeholder.svg",
+                "alt_text": "Sample Studio 5 Green Daytime 21 — demo placeholder",
+                "width": 900,
+                "height": 1200,
+                "sort_order": 0,
+                "media_status": "fixture"
+              },
+              "version": 1,
+              "created_at": "2026-10-09T12:00:00Z",
+              "updated_at": "2026-10-09T12:00:00Z"
+            }
+          ],
+          "total": 40,
+          "page": 1,
+          "page_size": 12
         }
       }
     }

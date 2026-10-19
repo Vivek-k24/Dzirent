@@ -274,6 +274,21 @@ user = {
     "created_at": timestamp.isoformat(),
     "updated_at": timestamp.isoformat(),
 }
+# One real seeded Studio: the existing seed lender's public profile. Counts are derived, never padded.
+seed_studio = {
+    "id": uid("studio:seed"),
+    "handle": "sample-lender",
+    "display_name": "Sample Lender",
+    "bio": "A fictional demo Studio. Every outfit here is an illustrative sample listing; "
+    "no rental, payment or delivery is offered.",
+    "state_code": "TX",
+    "published_product_count": sum(item["status"] == "published" for item in products),
+    "is_public": True,
+    "version": 1,
+    "created_at": timestamp.isoformat(),
+    "updated_at": timestamp.isoformat(),
+}
+manifest["seed_studio"] = seed_studio
 manifest["sample_profiles"] = {
     "lender": user,
     "renter": {
@@ -492,6 +507,48 @@ example(
     },
     body={"upload_id": upload_id, "alt_text": "Sample garment", "expected_version": 1},
     protected=True,
+)
+public_studio = {
+    k: seed_studio[k]
+    for k in ["id", "handle", "display_name", "bio", "state_code", "published_product_count"]
+}
+studio_cards = sorted(
+    card_list,
+    key=lambda item: (-datetime.fromisoformat(item["created_at"]).timestamp(), item["id"]),
+)
+example("getMyStudio", "GET", "/me/studio", seed_studio, protected=True)
+example(
+    "saveMyStudio",
+    "PUT",
+    "/me/studio",
+    {
+        **seed_studio,
+        "display_name": "Sample Lender Studio",
+        "version": 2,
+        "updated_at": "2026-11-02T12:00:00Z",
+    },
+    body={
+        "display_name": "Sample Lender Studio",
+        "bio": seed_studio["bio"],
+        "is_public": True,
+        "expected_version": 1,
+    },
+    protected=True,
+)
+example(
+    "listStudios",
+    "GET",
+    "/studios",
+    {"items": [public_studio], "total": 1, "page": 1, "page_size": 24},
+    query="page=1&page_size=24",
+)
+example("getStudio", "GET", f"/studios/{seed_studio['handle']}", public_studio)
+example(
+    "listStudioProducts",
+    "GET",
+    f"/studios/{seed_studio['handle']}/products",
+    {"items": studio_cards[:12], "total": len(studio_cards), "page": 1, "page_size": 12},
+    query="page=1&page_size=12",
 )
 errors = [
     {
