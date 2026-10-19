@@ -5,4 +5,16 @@
   --color-border: #dedbd7;
   --color-category: #f7f5f2;
   --content-max: 1440px;
+  --color-subtle: #f6f5f3;
+  --color-soft: #efede9;
+  --color-error: #9b2525;
+  --space-page: 32px;
+  --space-card-x: 24px;
+  --space-card-y: 40px;
+  --radius-card: 8px;
+  --radius-control: 5px;
+  --radius-pill: 999px;
+  --shadow-overlay: 0 16px 60px #0000001f;
+  --motion-fast: 150ms;
+  --motion-sheet: 250ms;
 }

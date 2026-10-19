@@ -3,7 +3,7 @@
 Task / GitHub issue: [WEB-1 / #2](https://github.com/Vivek-k24/Dzirent/issues/2), claimed by Codex.
 Branch: `codex/web-phase1`. Workspace: `H:\DziRent\worktrees\codex-web` only.
 Base SHA: `37957823213cd2b25e980edad5058becdf9a7fbb` (`foundation-v0.1.0`).
-Current pushed SHA: first implementation batch in progress, not yet pushed.
+Current local adapter artifact: `c4c3ff0`. UI/verification batches are being committed; no branch push yet.
 Owned paths: apps/web/**, packages/client/**, packages/design-tokens/**, integration root manifests/lockfile,
 this log and docs/PROJECT_STATUS.md. No API, canonical contract/fixture, QA or other-agent log edits.
 Milestone/status: Phase 1A, in progress.
@@ -18,14 +18,18 @@ wire models, canonical taxonomy/manifest/example metadata, project status and al
 Contract: `0.1.0-candidate.1`, consumed unchanged; no generated types hand-edited.
 Implemented: typed transport, canonical URL/date/money helpers, cart eligibility, contract-shaped MSW
 catalog and owner CRUD/reset/failure simulation, forty locally bundled licensed photographs and two OFL fonts.
-UI pages, catalog/navigation, dialogs, PDP/bag/preview and lender forms are implemented; browser validation is in progress.
-Checks on Windows / Node 22.23.3 / pnpm 10.29.3: `pnpm --filter @dzirent/web test` passed 12 tests;
-`pnpm typecheck` passed; `pnpm lint` passed after fixing a control-character regex and replacing RHF watch
-with useWatch. Chromium initial catalog: 40 cards, correct title/count, first four images decoded, no console errors.
-Earlier browser build failed on MSW 3's Node-blocked browser export; fixed with Next's documented no-SSR boundary.
-Full build and all interactive/cross-browser checks are not yet run. No public preview exists.
+UI pages, catalog/navigation, dialogs, PDP/bag/preview and lender forms are implemented.
+Checks on Windows / Node 22.23.3 / pnpm 10.29.3 / Python 3.12.15 / uv 0.13.1: frozen install,
+`pnpm check` (14 web tests, 8 Python tests, Ruff/mypy, generated-contract and fixture checks),
+`pnpm audit --audit-level high`, production build and media integrity checks passed.
+Chromium end-to-end demo workflows passed; final replay with added form/focus checks is in progress.
+Firefox 157 and WebKit 27.2 passed catalog/accessibility checks at 390/768/1100/1440 with zero console errors.
+Loading/image/404 checks passed; same-browser demo-to-connected restart passed with no mock fallback.
+Earlier failures found/fixed: MSW 3 Node-blocked browser export, text contrast/visible labels,
+WebKit hydration timing, streamed 404 status, and a redundant demo-control navigation race.
+Final production-server replay, final validation record and PR publication remain. No public preview exists.
 Contract request: Occasion/Fabric metadata has no filter parameters; menus show informative text and do not
-invent query semantics. A backward-compatible extension request is queued for Claude.
+invent query semantics. [Request #4](https://github.com/Vivek-k24/Dzirent/issues/4) is queued for Claude.
 Next: validate full browser stories, fix findings, record evidence and prepare a reviewable release candidate.
 No deployment authorization; keep no-deploy guards. No role-agent delegation requested or started.
 
