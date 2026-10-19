@@ -4,7 +4,8 @@ Task / GitHub issue: API-1 / [#3](https://github.com/Vivek-k24/Dzirent/issues/3)
 Branch: `claude/api-phase1`. Workspace: `H:\DziRent\worktrees\claude-api` (isolated clone; main checkout untouched).
 Base SHA: `37957823213cd2b25e980edad5058becdf9a7fbb` (`foundation-v0.1.0`), fast-forwarded to merged main
 `2ff5caefe2ea2bc9d0bbd00be1e2b7bdc9cf55b4` (identical tree) before committing.
-Validated implementation SHA: `980b9014dbbfb1158015fe86ca66bdfb584c2598`; the PR head adds only this log.
+Validated implementation SHA: `980b9014dbbfb1158015fe86ca66bdfb584c2598`; `c07e49a` then rebuilt two dummy
+test fixtures at runtime (Gitleaks findings, not credentials), revalidated with the full suite. PR: [#11](https://github.com/Vivek-k24/Dzirent/pull/11).
 Owned paths: services/api/**, services/worker/**, infra/runtime/**, contracts/**, fixtures/catalog/**, this log.
 Milestone: Phase 1B. Status: ready for review (local PostgreSQL verified; live Clerk/hosted services unverified).
 
@@ -50,8 +51,10 @@ Issue #4 (optional `occasion`/`fabric` filters) is a contract change and is deli
   run (uid 10001, healthy, ready) and `docker compose -f compose.yaml -f infra/runtime/compose.api.yaml up`.
 - Clerk tests sign tokens with locally generated RSA keys through the real SDK path (networkless
   `jwt_key`). No live Clerk instance was used; JWKS outage was simulated by patching the SDK fetch.
-- Not run locally: `pnpm contracts:check` TypeScript half (host Node is 18; openapi.json is unchanged, so
-  no type drift is possible) and `pnpm check` as a whole. GitHub CI on the PR runs them.
+- Not run locally: `pnpm check` (host Node is 18). GitHub CI at `c07e49a`: `foundation` (full `pnpm check`,
+  including TypeScript contract drift), `dependencies` and `source-scan` passed. `secrets` fails only on two fake
+  fixtures in historical commit `77a329d`; the tip scans clean (Gitleaks v8.28.0). The user chose a root
+  `.gitleaksignore` from Codex over rewriting history; fingerprints are posted on PR #11.
 
 ## Known gaps / dependencies
 
@@ -64,7 +67,7 @@ Issue #4 (optional `occasion`/`fabric` filters) is a contract change and is deli
 
 ## Requested changes from other owners
 
-- Codex: integrate `infra/runtime/compose.api.yaml` into root `compose.yaml` (or keep as override); consider
+- Codex: add root `.gitleaksignore` with the two fingerprints posted on PR #11 (or squash-merge). integrate `infra/runtime/compose.api.yaml` into root `compose.yaml` (or keep as override); consider
   root scripts `db:migrate`, `db:seed`, `test:api`; mirror the contract README implementation notes in MSW
   (subcategory narrowing, additive error codes); confirm the issue #4 URL names before I publish that change.
 - Antigravity: `tests/contracts/api-smoke.spec.ts` pins Phase 0 behavior (readiness `foundation_not_connected`,
