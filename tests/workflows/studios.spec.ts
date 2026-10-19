@@ -47,7 +47,7 @@ test("lender edits their Studio and the public directory and profile reflect it"
   await page.getByRole("button", { name: "Save Studio" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Studio saved · version 3." })).toBeVisible();
   await expect(page.getByRole("link", { name: "View public Studio" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Explore Studios" }).click();
+  await page.locator("#main-content").getByRole("link", { name: "Explore Studios" }).click();
   await expect(page.getByRole("heading", { name: "No public Studios yet" })).toBeVisible();
   expect(exceptions).toEqual([]);
 });
