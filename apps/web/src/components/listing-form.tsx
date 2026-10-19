@@ -15,7 +15,7 @@ const amount = z.string().refine(value => minorUnits(value) !== null, "Enter a n
 const formSchema = z.object({
   title: z.string().trim().min(1, "Enter an outfit title.").max(160), description: z.string().trim().min(1, "Describe this outfit.").max(5000),
   primary_category_id: z.uuid("Choose a subcategory."), brand_id: z.uuid("Choose a brand."), size_id: z.uuid("Choose the one listed size."),
-  color_ids: z.array(z.string()).min(1, "Choose at least one color."), metro_id: z.uuid("Choose a metro."),
+  color_ids: z.array(z.string()).min(1, "Choose at least one color."), metro_id: z.uuid("Listing location is unavailable."),
   secondary_category_ids: z.array(z.string()), band: z.enum(["A", "B", "C", "D"]), rental: amount, retail: amount,
   garment_type: z.string().trim().min(1, "Enter a garment type."), audience: z.enum(["women", "men", "unisex"]),
   fabric: z.string().trim().min(1, "Enter a fabric."), occasion: z.string().trim().min(1, "Enter an occasion."),
@@ -85,12 +85,11 @@ export function ListingForm({ product, refs, pending, close, save }: {
         <div className="form-grid"><label htmlFor="listing-stretch">Stretch<input id="listing-stretch" {...form.register("stretch")} placeholder="e.g. non-stretch" /></label><label htmlFor="listing-alterations">Alterations<input id="listing-alterations" {...form.register("alterations")} placeholder="Describe any alterations" /></label></div>
         <label htmlFor="listing-wear">Known wear<textarea id="listing-wear" rows={2} {...form.register("known_wear")} placeholder="Describe condition honestly" /></label>
       </section>
-      <section className="form-section"><h3>Sample pricing & location</h3><p className="tiny muted">Display amounts only. No payout, tax calculation or payment is created.</p><div className="form-grid">
+      <section className="form-section"><h3>Sample rental amounts</h3><p className="tiny muted">Display amounts only. No payout, tax calculation or payment is created.</p><input type="hidden" {...form.register("metro_id")} /><div className="form-grid">
         <label htmlFor="listing-band">Sample price band<select id="listing-band" {...form.register("band")}><option value="A">A · under $50</option><option value="B">B · $50–$99.99</option><option value="C">C · $100–$149.99</option><option value="D">D · $150+</option></select></label>
         <label htmlFor="listing-rental">Four-day sample rental ($)<input id="listing-rental" inputMode="decimal" {...form.register("rental")} aria-invalid={!!fieldError("rental")} /><span className="field-error">{fieldError("rental")}</span></label>
         <label htmlFor="listing-retail">Sample retail ($)<input id="listing-retail" inputMode="decimal" {...form.register("retail")} aria-invalid={!!fieldError("retail")} /><span className="field-error">{fieldError("retail")}</span></label>
-        <label htmlFor="listing-metro">Metro<select id="listing-metro" {...form.register("metro_id")}>{refs.locations.items.map(m => <option value={m.id} key={m.id}>{m.label}</option>)}</select></label>
-      </div></section>
+      </div><p className="tiny muted">Only in Texas. Delivery estimate unavailable in this demo.</p></section>
       <section className="form-section"><h3>Availability</h3><label className="choice"><input type="checkbox" {...form.register("is_available")} />Available for demo date selection</label>
         <p className="tiny muted">Date blocks include both endpoints. They affect the availability filter and bag validation.</p>
         <div className="form-grid block-inputs"><label htmlFor="block-start">Unavailable from<input id="block-start" type="date" value={blockStart} onChange={event => setBlockStart(event.target.value)} /></label><label htmlFor="block-end">Unavailable through<input id="block-end" type="date" value={blockEnd} onChange={event => setBlockEnd(event.target.value)} /></label></div>

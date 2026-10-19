@@ -7,7 +7,7 @@ import { serializeSelection } from "@dzirent/client";
 import { Search, UserRound, Shirt, Plus, ShoppingBag, MapPin, ArrowRight, SlidersHorizontal, RotateCcw, X, LogOut, LayoutDashboard } from "lucide-react";
 import { useCatalogState } from "@/lib/use-catalog";
 import { useBag, useSession } from "@/lib/store";
-import { useRuntime, useReferences } from "./providers";
+import { useRuntime } from "./providers";
 import { Button, Modal, Popover, PopoverClose } from "./ui/primitives";
 import { Navigation } from "./navigation";
 import { LocationDialog } from "./location-dialog";
@@ -29,16 +29,16 @@ function SearchInput({ mobile = false, done }: { mobile?: boolean; done?: () => 
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { demo, ready, reset, simulate } = useRuntime(), { refs } = useReferences(), { state } = useCatalogState();
+  const { demo, ready, reset, simulate } = useRuntime(), { state } = useCatalogState();
   const user = useSession(s => s.user), notice = useSession(s => s.notice), lines = useBag(s => s.lines);
   const [search, setSearch] = useState(false), [location, setLocation] = useState(false), [controls, setControls] = useState(false);
   const router = useRouter(), pathname = usePathname(), mutating = useIsMutating();
   const returnTo = `${pathname}${serializeSelection(state) ? `?${serializeSelection(state)}` : ""}`;
-  const city = refs?.locations.items.find(m => m.slug === state.metro)?.label;
+  const deliveryZip = useBag(s => s.location.zip);
   return <>
     <a className="skip-link" href="#main-content">Skip to content</a>
     <header className="site-header">
-      <div className="demo-bar"><div className="content-width"><span><span className="status-dot" />{demo ? "DEMO PREVIEW" : "CONNECTED"}<span className="demo-explanation">{demo ? " · Sample outfits. No bookings or payments." : " · Live API; no mock fallback."}</span></span>{demo ? <button id="demo-controls-trigger" onClick={() => setControls(true)}><SlidersHorizontal size={13} />Demo controls</button> : null}</div></div>
+      <div className="demo-bar"><div className="content-width"><strong>DEMO ONLY. NOT A REAL BUSINESS.</strong>{demo ? <button id="demo-controls-trigger" onClick={() => setControls(true)}><SlidersHorizontal size={13} />Demo controls</button> : null}</div></div>
       <div className="main-header content-width"><Link href="/" className="wordmark" aria-label="dzirent home">dzirent<span className="wordmark-period">.</span></Link>
         <div className="desktop-search"><SearchInput /></div>
         <div className="header-actions"><button className="header-action mobile-search-trigger" id="header-search" aria-label="Open search" onClick={() => setSearch(true)}><Search size={20} /><span>Search</span></button>
@@ -49,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Popover>
           <Link className="header-action" href={user?.lender_profile ? "/lender/dashboard" : "/lender/signup"} aria-label="List an outfit"><span className="shirt-icon"><Shirt size={22} /><Plus size={11} /></span><span>List an Outfit</span></Link>
           <Link className="header-action bag-action" href="/cart" aria-label={`Bag ${ready ? lines.length : 0} ${lines.length === 1 ? "item" : "items"}`}><ShoppingBag size={21} /><span>Bag </span>{ready && lines.length ? <span className="bag-badge" aria-hidden="true">{lines.length}</span> : null}</Link>
-          <button id="header-location" className="header-action" aria-label={`Location${city ? `, ${city}` : ""}`} onClick={() => setLocation(true)}><MapPin size={21} /><span>{city ?? "Location"}</span></button>
+          <button id="header-location" className="header-action" aria-label={`Delivery ZIP${deliveryZip ? `, ${deliveryZip}` : ""}`} onClick={() => setLocation(true)}><MapPin size={21} /><span>{deliveryZip || "Delivery ZIP"}</span></button>
         </div>
       </div><Navigation />
     </header>

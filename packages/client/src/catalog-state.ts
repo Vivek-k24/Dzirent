@@ -61,12 +61,18 @@ export function serializeSelection(state: CatalogSelection, api = false): string
     if (api && key === "view") continue;
     const value = state[key];
     if (Array.isArray(value)) [...new Set(value)].sort().forEach(v => params.append(key, v));
-    else if (value !== defaults[key] && value !== "") params.set(key, String(value));
+    // Browser and API defaults differ; an explicit choice must survive either parser.
+    else if (key === "sort" || (value !== defaults[key] && value !== "")) params.set(key, String(value));
   }
   return params.toString();
 }
 export function clearOptional(state: CatalogSelection): CatalogSelection {
   return { ...emptySelection(), collection: state.collection, sort: state.sort, view: state.view };
+}
+export function productHref(slug: string, start = "", end = ""): string {
+  const dates = new URLSearchParams();
+  if (start && end) { dates.set("start", start); dates.set("end", end); }
+  return `/products/${encodeURIComponent(slug)}${dates.size ? `?${dates}` : ""}`;
 }
 export function safeReturnTo(value: string | null | undefined): string {
   if (!value?.startsWith("/") || value.startsWith("//") || value.includes("\\") || Array.from(value).some(char => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)) return "/";

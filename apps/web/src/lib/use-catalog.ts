@@ -6,7 +6,12 @@ import { useReferences } from "@/components/providers";
 
 export function useCatalogState() {
   const params = useSearchParams(), router = useRouter(), pathname = usePathname(), { refs } = useReferences();
-  const state = parseSelection(new URLSearchParams(params.toString()), refs);
+  const browserParams = new URLSearchParams(params.toString());
+  // These are UI defaults only. The shared parser also serves MSW and keeps the
+  // existing API's featured default and legacy location semantics unchanged.
+  if (!browserParams.has("sort")) browserParams.set("sort", "newest");
+  browserParams.delete("metro"); browserParams.delete("zip");
+  const state = parseSelection(browserParams, refs);
   function apply(next: CatalogSelection, replace = false) {
     const query = serializeSelection(next);
     const url = query ? `/?${query}` : "/";
