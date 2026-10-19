@@ -24,13 +24,14 @@ WEB-1 is active under the user's explicit Phase 1A instructions:
 [issue #2](https://github.com/Vivek-k24/Dzirent/issues/2), base
 `37957823213cd2b25e980edad5058becdf9a7fbb`, assigned checkout and branch below. The directory was empty;
 Codex initialized that isolated checkout directly without switching branches or editing the main checkout.
-Foundation PR #1 remains a review/merge dependency. Other lanes remain queued until their authorized
-activation and foundation review; no agent has been delegated edits by Codex.
+Foundation PR #1 remains a review/merge dependency. API-1 has separately claimed issue #3 under explicit
+user activation, and the QA framework branch is available. Each lane's implementation status belongs to
+its own log/PR. No agent has been delegated edits by Codex and no external PR has been integrated.
 
 | Claim | Agent / branch | Working directory | Ports / database | First scoped task |
 | --- | --- | --- | --- | --- |
 | WEB-1 / #2 | Codex / `codex/web-phase1` | `H:\DziRent\worktrees\codex-web` | web 3000 | Active Phase 1A web candidate; review, independent QA, authorized preview |
-| API-1 | Claude / `claude/api-phase1` | `H:\DziRent\worktrees\claude-api` | API 8000; PG 5432 / `dzirent_dev` | Adopt candidate contracts/fixtures, migrations/schema/seed, catalog and protected own-profile/listing CRUD |
+| API-1 / #3 | Claude / `claude/api-phase1` | `H:\DziRent\worktrees\claude-api` | API 8000; PG 5432 / `dzirent_dev` | Separately claimed; approved catalog and protected own-profile/listing CRUD handoff |
 | QA-1 | Antigravity / `antigravity/qa-phase1` | `H:\DziRent\worktrees\antigravity-qa` | web 3100, API 8100; PG 55432 / `dzirent_qa` | Independent requirements-to-tests matrix; contract/browser acceptance tests and CI/security checks |
 
 After merge, fetch and resolve **one** foundation SHA. Create only missing role checkouts/branches;

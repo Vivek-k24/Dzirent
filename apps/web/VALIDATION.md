@@ -2,8 +2,9 @@
 
 Production-server replay passed using `pnpm --filter @dzirent/web start --port 3000` after the final
 production build. This document covers Codex's integration checks. Antigravity owns independent
-acceptance tests, browser coverage and CI policy. Resolve the immutable implementation SHA from the
-Codex agent log and the presentation candidate tag; no public deployment is claimed.
+acceptance tests, browser coverage and CI policy. Validated implementation artifact:
+`e238261fec9789940e71e4a6ba28ede256bc212b`; [web PR #5](https://github.com/Vivek-k24/Dzirent/pull/5).
+The immutable `demo-v0.1.0-rc.1` tag includes final handoff metadata; no public deployment is claimed.
 
 Environment: Windows, Node 22.23.3, pnpm 10.29.3, Python 3.12.15, uv 0.13.1. Commands ran only in
 `H:\DziRent\worktrees\codex-web`, branch `codex/web-phase1`, based on
@@ -16,6 +17,7 @@ uv bootstrap live under ignored `.tools`; frozen API dependencies are in ignored
 | `pnpm check` | Passed: ESLint, TS, 14 web tests, local media integrity, Ruff/format/mypy, 8 Python foundation tests, OpenAPI/generated TS drift, deterministic fixture regeneration |
 | `pnpm build` | Passed; all web routes and the scoped demo 404 proxy built |
 | `pnpm audit --audit-level high` | Passed; no known vulnerabilities reported |
+| GitHub checks at the implementation artifact | Foundation, dependency audit, secrets, source-scan and CodeQL all passed |
 | `node apps/web/scripts/check-media.mjs` | 40 unique local JPEGs, canonical product/image IDs, SHA256/source/license metadata and two OFL fonts verified |
 | `pnpm smoke:web` on the production server / Chromium 156.0.8078.4 | Passed all four widths and full keyboard/PLP facets/history/drafts/sort/dates/location/error recovery, PDP/bag/preview/auth/enrollment, form accessibility and lender CRUD/reset workflows, followed by loading/image/HTTP 404 checks |
 | `DZIRENT_SMOKE_BROWSERS=firefox,webkit node apps/web/scripts/verify-web.mjs` on the production server | Firefox 157.0 / WebKit 27.2 passed 390/768/1100/1440 responsive catalog/axe checks plus small-screen search/drawer; no console errors |
@@ -41,6 +43,13 @@ Not run: Antigravity's independent acceptance/contract/browser suite, Android/iO
 Clerk/API/PostgreSQL/media integration, deployed Vercel smoke, DNS, payments or business integrations.
 Public-preview exit gate remains incomplete until deployment is authorized and its URL/SHA tested.
 No external approved PR has been integrated; foundation PR #1 remains unmerged.
+
+Read-only QA handoff review at branch `75d7184f3d03189e0d6187b4cbf7a97d0fdddc58`: its Phase 0 early-return
+gates are framework evidence, not acceptance of this client. The final suite needs alignment with accessible
+roles/labels or existing `data-section` markers, collection-button → mega-menu → Shop the collection navigation,
+Account → renter/lender choice → centered auth, sign-in before expecting forty owner listings, and adding a
+bag item before asserting its summary. Calendar tests should consume the canonical demo dates. No QA file
+was changed and no unrun independent test is claimed to pass; this remains Antigravity's review lane.
 
 Contract issue [#4](https://github.com/Vivek-k24/Dzirent/issues/4): Occasion/Fabric have metadata but no
 filter query parameters. Current menus display informative text; Codex did not invent API fields.

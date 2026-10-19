@@ -3,10 +3,12 @@
 Task / GitHub issue: [WEB-1 / #2](https://github.com/Vivek-k24/Dzirent/issues/2), claimed by Codex.
 Branch: `codex/web-phase1`. Workspace: `H:\DziRent\worktrees\codex-web` only.
 Base SHA: `37957823213cd2b25e980edad5058becdf9a7fbb` (`foundation-v0.1.0`).
-Current local adapter artifact: `c4c3ff0`. UI/verification batches are being committed; no branch push yet.
+Validated/pushed implementation artifact: `e238261fec9789940e71e4a6ba28ede256bc212b`.
+Presentation tag: `demo-v0.1.0-rc.1` (immutable; final metadata head resolves through the tag).
+Review PR: [#5](https://github.com/Vivek-k24/Dzirent/pull/5), stacked on foundation PR #1.
 Owned paths: apps/web/**, packages/client/**, packages/design-tokens/**, integration root manifests/lockfile,
 this log and docs/PROJECT_STATUS.md. No API, canonical contract/fixture, QA or other-agent log edits.
-Milestone/status: Phase 1A, in progress.
+Milestone/status: Phase 1A local release candidate validated; public-preview gate incomplete.
 
 The user explicitly activated this role on 2026-10-18. The assigned directory was empty; initialized an
 isolated checkout directly on the assigned branch from the tagged baseline, without switching branches
@@ -22,15 +24,22 @@ UI pages, catalog/navigation, dialogs, PDP/bag/preview and lender forms are impl
 Checks on Windows / Node 22.23.3 / pnpm 10.29.3 / Python 3.12.15 / uv 0.13.1: frozen install,
 `pnpm check` (14 web tests, 8 Python tests, Ruff/mypy, generated-contract and fixture checks),
 `pnpm audit --audit-level high`, production build and media integrity checks passed.
-Chromium end-to-end demo workflows passed; final replay with added form/focus checks is in progress.
-Firefox 157 and WebKit 27.2 passed catalog/accessibility checks at 390/768/1100/1440 with zero console errors.
+Production-server Chromium 156 end-to-end demo workflows passed, including form/overlay focus checks.
+Firefox 157 and WebKit 27.2 passed production catalog/accessibility checks at 390/768/1100/1440 with zero console errors.
 Loading/image/404 checks passed; same-browser demo-to-connected restart passed with no mock fallback.
 Earlier failures found/fixed: MSW 3 Node-blocked browser export, text contrast/visible labels,
-WebKit hydration timing, streamed 404 status, and a redundant demo-control navigation race.
-Final production-server replay, final validation record and PR publication remain. No public preview exists.
+WebKit hydration timing, streamed 404 status, overlay focus and a cold dev route assertion timeout.
+Removed redundant demo-control home navigation. Production replay and PR publication are complete.
+GitHub checks at the implementation artifact passed: foundation, dependencies, secrets, source-scan and CodeQL.
+No public preview exists. [Actual validation/evidence](../../apps/web/VALIDATION.md).
 Contract request: Occasion/Fabric metadata has no filter parameters; menus show informative text and do not
 invent query semantics. [Request #4](https://github.com/Vivek-k24/Dzirent/issues/4) is queued for Claude.
-Next: validate full browser stories, fix findings, record evidence and prepare a reviewable release candidate.
+Latest coordination read: API-1 [#3](https://github.com/Vivek-k24/Dzirent/issues/3) is separately active under
+explicit user instructions. QA branch `75d7184f3d03189e0d6187b4cbf7a97d0fdddc58` was inspected read-only;
+its baseline-gated acceptance tests need final-UI selector/navigation/auth alignment before independent acceptance.
+No approved API/QA PR is available or integrated. Other-agent files and logs are unchanged.
+Next: review foundation #1 and web #5, then independent QA against this candidate and an explicitly authorized
+Vercel preview. Keep the presentation tag stable during later approved Phase 1B adapter integration.
 No deployment authorization; keep no-deploy guards. No role-agent delegation requested or started.
 
 ## Archived bootstrap handoff
