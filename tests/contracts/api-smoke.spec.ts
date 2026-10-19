@@ -9,7 +9,7 @@ test.describe("Independent Contract Verification: Live API Smoke", () => {
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(body.status).toBe("live");
-    expect(body.contract_version).toBe("0.1.0-candidate.1");
+    expect(body.contract_version).toBe("0.1.0-candidate.2");
   });
 
   test("Database readiness reflects the explicitly configured test environment", async ({ request }) => {
