@@ -4,7 +4,7 @@ Task / issue: QA-1 claimed (independent verification, architectural alignment, t
 Branch: `antigravity/qa-phase1`
 Worktree: `H:\DziRent\worktrees\antigravity-qa`
 Base SHA: `37957823213cd2b25e980edad5058becdf9a7fbb` (`foundation-v0.1.0`)
-Current pushed SHA: in progress on `antigravity/qa-phase1` (PR queued against main).
+Current pushed SHA: `f0550c81d5e034236e034c0403c382998a1fcb90` (branch `antigravity/qa-phase1`). PR target: main.
 Owned paths: `tests/e2e/**`, `tests/contracts/**`, `tests/native/**`, `docs/qa/**`, `docs/runbooks/**`, `.github/workflows/**`, `infra/ci/**`, `docs/agents/antigravity.md`.
 Milestone: Phase 0 verified / Phase 1 verification framework ready.
 Status: ready for review / monitoring parallel Phase 1A (Codex) and Phase 1B (Claude Code) PRs.
