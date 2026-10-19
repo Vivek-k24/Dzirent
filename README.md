@@ -50,6 +50,7 @@ No provider account, external API key, database, or Docker is needed to start th
 | `pnpm fixtures:check` | Cardinalities, references, example schemas, deterministic regeneration |
 | `pnpm check` | JS lint/typecheck; Python Ruff/mypy/pytest; contract/fixture checks |
 | `pnpm build` | Build the minimal Next.js shell; does not prove Phase 1A |
+| `pnpm smoke:web` | Chromium/axe shell smoke at port 3100 (after `pnpm exec playwright install chromium` and `pnpm dev:qa:web`) |
 | `pnpm db:up` / `pnpm db:down` | Optional loopback-only PostgreSQL 17.11; down preserves the volume |
 
 Environment templates: `apps/web/.env.example`, `services/api/.env.example`.
@@ -75,6 +76,12 @@ Read [AGENTS.md](AGENTS.md), [architecture](docs/architecture/0001-foundation.md
 Actual commands/results and untested gates are recorded in [bootstrap validation](docs/qa/bootstrap-validation.md).
 Provider setup dependencies are listed in [setup](docs/architecture/setup-dependencies.md).
 
-The provided GitHub repository was empty. `bootstrap/brief` holds only the unchanged brief;
-the foundation PR targets it. After review/merge, rename that default branch to `main`, protect it,
-and require CI/owner review. No direct push to `main` is part of this bootstrap.
+The remote was initially empty. The brief-only base was preserved on `bootstrap/brief`.
+A concurrent user commit created `main` (`bb77fb86b53b2086caf5a65f99614170a2d2c371`),
+which is preserved as the foundation PR base. Protect main and require CI/owner review after the
+reviewed foundation lands. This agent did not push or merge changes directly to main.
+
+An attached Vercel GitHub integration reported a failed automatic deployment when the first foundation
+commit was pushed. Root and web-app `vercel.json` files now disable all automatic Git deployments.
+Re-enabling them is a later reviewed, explicitly authorized release change. No successful deployment,
+Vercel project configuration, DNS or cloud service creation is claimed by bootstrap.

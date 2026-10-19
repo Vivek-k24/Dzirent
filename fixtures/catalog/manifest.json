@@ -1,0 +1,3662 @@
+{
+  "contract_version": "0.1.0-candidate.1",
+  "fixture_version": "0.1.0",
+  "uuid_namespace": "6b20db36-0e5a-4d6a-a484-9dfd13f269f9",
+  "demo_start_date": "2026-11-02",
+  "demo_end_date": "2026-11-05",
+  "notice": "Fictional public display data only. No prices, ratings, location coverage, or booking promises are approved business rules.",
+  "sample_summary_lines": {
+    "cleaning_minor": 0,
+    "tax_minor": 0,
+    "label": "Sample amounts; final terms not configured"
+  },
+  "seed_user_id": "40eb3b71-183d-5b4c-b7ec-0a49b539f0b8",
+  "seed_lender": {
+    "id": "d9927684-1454-51bb-9491-d2d5032e6820",
+    "display_name": "Sample Lender",
+    "metro_id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+    "status": "active"
+  },
+  "products": [
+    {
+      "id": "e2579a80-fb94-53d7-a29c-8c8ed5d529dc",
+      "slug": "demo-women-dresses-01",
+      "title": "Black Dresses 01",
+      "brand": {
+        "id": "2b2e1d33-f4da-589c-9883-c7b36081a517",
+        "slug": "sample-studio-1",
+        "label": "Sample Studio 1"
+      },
+      "primary_collection_id": "ecb1300d-666e-5b1b-9ac6-2b586b5ccc29",
+      "primary_category_id": "93a38458-276f-5ceb-b6e9-f3ec973bff50",
+      "secondary_category_ids": [
+        "b7962f7c-ed49-5418-8cc7-acf57d61229a"
+      ],
+      "size": {
+        "id": "fad513c5-2212-5849-8580-15dfd11028f0",
+        "sizing_system": "alpha",
+        "label": "XS"
+      },
+      "colors": [
+        {
+          "id": "15b2c2d3-33b0-521a-9fcf-07a65375bc9b",
+          "slug": "black",
+          "label": "Black",
+          "swatch_hex": "#111111"
+        }
+      ],
+      "metro": {
+        "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+        "slug": "austin",
+        "label": "Austin",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "A",
+      "rental_price_minor": 3500,
+      "retail_price_minor": 20000,
+      "currency": "USD",
+      "sample_rating": null,
+      "sample_rating_count": 0,
+      "featured_rank": 40,
+      "status": "published",
+      "is_available": false,
+      "image": {
+        "id": "6c650bcd-0dc8-5d89-984a-4f669c9f152b",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 1 Black Dresses 01 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-01T12:00:00+00:00",
+      "updated_at": "2026-10-01T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample dresses for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Dresses",
+      "audience": "women",
+      "fabric": "Cotton",
+      "occasion": "Dinner",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 82,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 90,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "6c650bcd-0dc8-5d89-984a-4f669c9f152b",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 1 Black Dresses 01 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "742ea3cf-199e-5703-944b-d2654ffb4c3c",
+      "slug": "demo-women-gowns-02",
+      "title": "Ivory Gowns 02",
+      "brand": {
+        "id": "0bc973c2-3bba-50a0-b813-960ed8cc62b6",
+        "slug": "sample-studio-2",
+        "label": "Sample Studio 2"
+      },
+      "primary_collection_id": "ecb1300d-666e-5b1b-9ac6-2b586b5ccc29",
+      "primary_category_id": "a061d7ad-7a5b-5311-8069-7f0b991bbe6f",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "a1c10cb9-1d83-5479-a2f0-7234d2684743",
+        "sizing_system": "alpha",
+        "label": "S"
+      },
+      "colors": [
+        {
+          "id": "14a6c3a0-b5c6-5682-a9ec-ffa42c1ca599",
+          "slug": "ivory",
+          "label": "Ivory",
+          "swatch_hex": "#f6f1e6"
+        }
+      ],
+      "metro": {
+        "id": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+        "slug": "dallas-fort-worth",
+        "label": "Dallas–Fort Worth",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "B",
+      "rental_price_minor": 7500,
+      "retail_price_minor": 21000,
+      "currency": "USD",
+      "sample_rating": 4.0,
+      "sample_rating_count": 4,
+      "featured_rank": 39,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "5579329b-3085-586e-93e1-5c804bc3ca99",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 2 Ivory Gowns 02 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-02T12:00:00+00:00",
+      "updated_at": "2026-10-02T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample gowns for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Gowns",
+      "audience": "women",
+      "fabric": "Silk",
+      "occasion": "Celebration",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 83,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 91,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "5579329b-3085-586e-93e1-5c804bc3ca99",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 2 Ivory Gowns 02 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "e50af395-1491-5af3-9f03-6d9a46928a9b",
+      "slug": "demo-women-jumpsuits-03",
+      "title": "Navy Jumpsuits 03",
+      "brand": {
+        "id": "17cc5fbb-7e28-5bd9-ac8d-f69b4120b802",
+        "slug": "sample-studio-3",
+        "label": "Sample Studio 3"
+      },
+      "primary_collection_id": "ecb1300d-666e-5b1b-9ac6-2b586b5ccc29",
+      "primary_category_id": "9696fcd9-35eb-558c-a8c0-c216d9e8fb64",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "ad5303d3-53c6-5a85-9436-1fc8b1e4b6b6",
+        "sizing_system": "alpha",
+        "label": "M"
+      },
+      "colors": [
+        {
+          "id": "ef315ecb-2ec5-5c16-b04a-5cd5779501ea",
+          "slug": "navy",
+          "label": "Navy",
+          "swatch_hex": "#253b60"
+        }
+      ],
+      "metro": {
+        "id": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+        "slug": "houston",
+        "label": "Houston",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "C",
+      "rental_price_minor": 12500,
+      "retail_price_minor": 22000,
+      "currency": "USD",
+      "sample_rating": 4.2,
+      "sample_rating_count": 5,
+      "featured_rank": 38,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "215a8c45-c519-5188-ae50-7836424cf0c0",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 3 Navy Jumpsuits 03 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-03T12:00:00+00:00",
+      "updated_at": "2026-10-03T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample jumpsuits for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Jumpsuits",
+      "audience": "women",
+      "fabric": "Linen",
+      "occasion": "Formal",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 84,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 92,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "215a8c45-c519-5188-ae50-7836424cf0c0",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 3 Navy Jumpsuits 03 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "c8e1d626-c199-58b3-8133-1fce0852e2be",
+      "slug": "demo-women-co-ords-04",
+      "title": "Red Co-ords 04",
+      "brand": {
+        "id": "da95741e-1621-5d0d-a810-eb546f862bca",
+        "slug": "sample-studio-4",
+        "label": "Sample Studio 4"
+      },
+      "primary_collection_id": "ecb1300d-666e-5b1b-9ac6-2b586b5ccc29",
+      "primary_category_id": "bb2f79cc-47c6-5861-8c15-bc8568fc4356",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "bcbc9755-139b-5802-ba9e-613e8ae9d010",
+        "sizing_system": "alpha",
+        "label": "L"
+      },
+      "colors": [
+        {
+          "id": "7358190c-06eb-556d-8894-f3c9b9ec2349",
+          "slug": "red",
+          "label": "Red",
+          "swatch_hex": "#a72e35"
+        }
+      ],
+      "metro": {
+        "id": "b716c482-5802-5139-b1f3-89abf3046354",
+        "slug": "san-antonio",
+        "label": "San Antonio",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "D",
+      "rental_price_minor": 17500,
+      "retail_price_minor": 23000,
+      "currency": "USD",
+      "sample_rating": 4.4,
+      "sample_rating_count": 6,
+      "featured_rank": 37,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "79b258ea-4e2b-5a49-afcc-008716074018",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 4 Red Co-ords 04 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-04T12:00:00+00:00",
+      "updated_at": "2026-10-04T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample co-ords for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Co-ords",
+      "audience": "women",
+      "fabric": "Velvet",
+      "occasion": "Wedding",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 85,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 93,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "79b258ea-4e2b-5a49-afcc-008716074018",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 4 Red Co-ords 04 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "e7f81364-5121-50dc-9ddc-91ca9a78f999",
+      "slug": "demo-women-skirts-tops-05",
+      "title": "Green Skirts & Tops 05",
+      "brand": {
+        "id": "76016a14-8995-5858-8f68-88f839a4f6dc",
+        "slug": "sample-studio-5",
+        "label": "Sample Studio 5"
+      },
+      "primary_collection_id": "ecb1300d-666e-5b1b-9ac6-2b586b5ccc29",
+      "primary_category_id": "5d9079f4-c8ce-5a4f-89e9-f0ff834499e3",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "65eb35f9-ed4f-5712-87e4-802929a57936",
+        "sizing_system": "alpha",
+        "label": "XL"
+      },
+      "colors": [
+        {
+          "id": "d74a43d3-6883-5de5-95d6-c585e1370a75",
+          "slug": "green",
+          "label": "Green",
+          "swatch_hex": "#386b50"
+        }
+      ],
+      "metro": {
+        "id": "fb8e2027-b92c-5cb8-9323-b84b154c5706",
+        "slug": "other-texas",
+        "label": "Other Texas",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "A",
+      "rental_price_minor": 3550,
+      "retail_price_minor": 24000,
+      "currency": "USD",
+      "sample_rating": 4.6,
+      "sample_rating_count": 7,
+      "featured_rank": 36,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "5d4aa4a7-2e93-502e-86d8-a253d86822c1",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 5 Green Skirts & Tops 05 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-05T12:00:00+00:00",
+      "updated_at": "2026-10-05T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample skirts & tops for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Skirts & Tops",
+      "audience": "women",
+      "fabric": "Wool",
+      "occasion": "Outdoor",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 86,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 94,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "5d4aa4a7-2e93-502e-86d8-a253d86822c1",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 5 Green Skirts & Tops 05 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "34b73caa-536d-55c3-a6ac-50c2460b42bd",
+      "slug": "demo-men-blazers-06",
+      "title": "Gold Blazers 06",
+      "brand": {
+        "id": "6b4f90e0-0ada-571f-a945-a0a7277d7ce1",
+        "slug": "sample-studio-6",
+        "label": "Sample Studio 6"
+      },
+      "primary_collection_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+      "primary_category_id": "8818ed76-3b64-5a9d-bb30-fce5cf7e2f2a",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "406cc9bf-dfc6-5c1a-b9a0-243baeddd15b",
+        "sizing_system": "US-men",
+        "label": "42"
+      },
+      "colors": [
+        {
+          "id": "f81bfb3d-b657-534a-a69d-9df1104b6f1a",
+          "slug": "gold",
+          "label": "Gold",
+          "swatch_hex": "#b28a43"
+        }
+      ],
+      "metro": {
+        "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+        "slug": "austin",
+        "label": "Austin",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "B",
+      "rental_price_minor": 7550,
+      "retail_price_minor": 25000,
+      "currency": "USD",
+      "sample_rating": 4.8,
+      "sample_rating_count": 8,
+      "featured_rank": 35,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "d5944500-db88-57df-b3e3-f5c64b2c497d",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 6 Gold Blazers 06 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-06T12:00:00+00:00",
+      "updated_at": "2026-10-06T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample blazers for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Blazers",
+      "audience": "men",
+      "fabric": "Satin",
+      "occasion": "Dinner",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 87,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 95,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "d5944500-db88-57df-b3e3-f5c64b2c497d",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 6 Gold Blazers 06 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "f61e1f35-3e33-5d35-8f5b-138aac99967d",
+      "slug": "demo-men-dress-shirts-07",
+      "title": "Pink Dress Shirts 07",
+      "brand": {
+        "id": "4bb1cad9-2410-5881-92ae-900468e4c4a5",
+        "slug": "sample-studio-7",
+        "label": "Sample Studio 7"
+      },
+      "primary_collection_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+      "primary_category_id": "bd631156-7525-5ff9-a400-c1d52ec4866c",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "ba0af206-f4d9-5d70-af75-30bad76ae4c3",
+        "sizing_system": "US-men",
+        "label": "38"
+      },
+      "colors": [
+        {
+          "id": "4a811fa0-4012-5fdf-bc83-8cb60caed93c",
+          "slug": "pink",
+          "label": "Pink",
+          "swatch_hex": "#dca0ae"
+        }
+      ],
+      "metro": {
+        "id": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+        "slug": "dallas-fort-worth",
+        "label": "Dallas–Fort Worth",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "C",
+      "rental_price_minor": 12550,
+      "retail_price_minor": 26000,
+      "currency": "USD",
+      "sample_rating": 5.0,
+      "sample_rating_count": 9,
+      "featured_rank": 34,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "fdc27663-9006-5db2-a5f1-19fed69baf32",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 7 Pink Dress Shirts 07 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-07T12:00:00+00:00",
+      "updated_at": "2026-10-07T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample dress shirts for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Dress Shirts",
+      "audience": "men",
+      "fabric": "Chiffon",
+      "occasion": "Celebration",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 88,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 96,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "fdc27663-9006-5db2-a5f1-19fed69baf32",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 7 Pink Dress Shirts 07 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "5e652e67-bc3e-5208-85d3-bbdbc2779e26",
+      "slug": "demo-men-trousers-08",
+      "title": "Gray Trousers 08",
+      "brand": {
+        "id": "6688dc36-6cf1-57f5-8bf6-ae0b149de344",
+        "slug": "sample-studio-8",
+        "label": "Sample Studio 8"
+      },
+      "primary_collection_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+      "primary_category_id": "a5179222-319c-5224-87c6-52389a0eb361",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "406cc9bf-dfc6-5c1a-b9a0-243baeddd15b",
+        "sizing_system": "US-men",
+        "label": "42"
+      },
+      "colors": [
+        {
+          "id": "b35302f0-ba8d-5da5-a84d-d02b20383120",
+          "slug": "gray",
+          "label": "Gray",
+          "swatch_hex": "#888888"
+        }
+      ],
+      "metro": {
+        "id": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+        "slug": "houston",
+        "label": "Houston",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "D",
+      "rental_price_minor": 17550,
+      "retail_price_minor": 27000,
+      "currency": "USD",
+      "sample_rating": 3.8,
+      "sample_rating_count": 10,
+      "featured_rank": 33,
+      "status": "published",
+      "is_available": false,
+      "image": {
+        "id": "ec3277ac-0710-5296-8d65-ae49d09967c4",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 8 Gray Trousers 08 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-08T12:00:00+00:00",
+      "updated_at": "2026-10-08T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample trousers for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Trousers",
+      "audience": "men",
+      "fabric": "Brocade",
+      "occasion": "Formal",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 89,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 97,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "ec3277ac-0710-5296-8d65-ae49d09967c4",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 8 Gray Trousers 08 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "32eff2de-205b-53f0-b4cd-88333c62b84c",
+      "slug": "demo-men-waistcoats-09",
+      "title": "Black Waistcoats 09",
+      "brand": {
+        "id": "2b2e1d33-f4da-589c-9883-c7b36081a517",
+        "slug": "sample-studio-1",
+        "label": "Sample Studio 1"
+      },
+      "primary_collection_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+      "primary_category_id": "8f1150e3-3fb4-5e52-9390-e5240790d00d",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "ba0af206-f4d9-5d70-af75-30bad76ae4c3",
+        "sizing_system": "US-men",
+        "label": "38"
+      },
+      "colors": [
+        {
+          "id": "15b2c2d3-33b0-521a-9fcf-07a65375bc9b",
+          "slug": "black",
+          "label": "Black",
+          "swatch_hex": "#111111"
+        }
+      ],
+      "metro": {
+        "id": "b716c482-5802-5139-b1f3-89abf3046354",
+        "slug": "san-antonio",
+        "label": "San Antonio",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "A",
+      "rental_price_minor": 3600,
+      "retail_price_minor": 28000,
+      "currency": "USD",
+      "sample_rating": 4.0,
+      "sample_rating_count": 11,
+      "featured_rank": 32,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "b7f54ed9-5f4d-5555-bf8e-0d16894be38e",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 1 Black Waistcoats 09 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-09T12:00:00+00:00",
+      "updated_at": "2026-10-09T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample waistcoats for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Waistcoats",
+      "audience": "men",
+      "fabric": "Cotton",
+      "occasion": "Wedding",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 90,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 98,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "b7f54ed9-5f4d-5555-bf8e-0d16894be38e",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 1 Black Waistcoats 09 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "02e91b8c-cc68-5106-a7f3-fbf9d9063295",
+      "slug": "demo-men-ensembles-10",
+      "title": "Ivory Ensembles 10",
+      "brand": {
+        "id": "0bc973c2-3bba-50a0-b813-960ed8cc62b6",
+        "slug": "sample-studio-2",
+        "label": "Sample Studio 2"
+      },
+      "primary_collection_id": "6d64f7d6-5e85-5629-88dd-9f3231e6b78c",
+      "primary_category_id": "7b16df07-4113-529d-a6fa-cb8be459d012",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "406cc9bf-dfc6-5c1a-b9a0-243baeddd15b",
+        "sizing_system": "US-men",
+        "label": "42"
+      },
+      "colors": [
+        {
+          "id": "14a6c3a0-b5c6-5682-a9ec-ffa42c1ca599",
+          "slug": "ivory",
+          "label": "Ivory",
+          "swatch_hex": "#f6f1e6"
+        }
+      ],
+      "metro": {
+        "id": "fb8e2027-b92c-5cb8-9323-b84b154c5706",
+        "slug": "other-texas",
+        "label": "Other Texas",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "B",
+      "rental_price_minor": 7600,
+      "retail_price_minor": 29000,
+      "currency": "USD",
+      "sample_rating": null,
+      "sample_rating_count": 0,
+      "featured_rank": 31,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "42a0ee02-61f6-5f5f-829d-98062f57fd35",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 2 Ivory Ensembles 10 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-10T12:00:00+00:00",
+      "updated_at": "2026-10-10T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample ensembles for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Ensembles",
+      "audience": "men",
+      "fabric": "Silk",
+      "occasion": "Outdoor",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 91,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 99,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "42a0ee02-61f6-5f5f-829d-98062f57fd35",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 2 Ivory Ensembles 10 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "785a4261-1d4f-5bc3-ab5a-fa7d5cecaeb3",
+      "slug": "demo-party-cocktail-mini-dresses-11",
+      "title": "Navy Mini Dresses 11",
+      "brand": {
+        "id": "17cc5fbb-7e28-5bd9-ac8d-f69b4120b802",
+        "slug": "sample-studio-3",
+        "label": "Sample Studio 3"
+      },
+      "primary_collection_id": "27218440-5363-51de-8c00-41432198a3cf",
+      "primary_category_id": "0c9b6308-f143-51bd-a842-13b32da62b82",
+      "secondary_category_ids": [
+        "b7962f7c-ed49-5418-8cc7-acf57d61229a"
+      ],
+      "size": {
+        "id": "bcbc9755-139b-5802-ba9e-613e8ae9d010",
+        "sizing_system": "alpha",
+        "label": "L"
+      },
+      "colors": [
+        {
+          "id": "ef315ecb-2ec5-5c16-b04a-5cd5779501ea",
+          "slug": "navy",
+          "label": "Navy",
+          "swatch_hex": "#253b60"
+        }
+      ],
+      "metro": {
+        "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+        "slug": "austin",
+        "label": "Austin",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "C",
+      "rental_price_minor": 12600,
+      "retail_price_minor": 30000,
+      "currency": "USD",
+      "sample_rating": 4.4,
+      "sample_rating_count": 13,
+      "featured_rank": 30,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "efdcc8cf-f89a-53ea-8206-2770ce2e77d8",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 3 Navy Mini Dresses 11 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-11T12:00:00+00:00",
+      "updated_at": "2026-10-11T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample mini dresses for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Mini Dresses",
+      "audience": "women",
+      "fabric": "Linen",
+      "occasion": "Dinner",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 92,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 100,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "efdcc8cf-f89a-53ea-8206-2770ce2e77d8",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 3 Navy Mini Dresses 11 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "10b9bedc-b760-57d3-834f-905ce14b85c4",
+      "slug": "demo-party-cocktail-midi-dresses-12",
+      "title": "Red Midi Dresses 12",
+      "brand": {
+        "id": "da95741e-1621-5d0d-a810-eb546f862bca",
+        "slug": "sample-studio-4",
+        "label": "Sample Studio 4"
+      },
+      "primary_collection_id": "27218440-5363-51de-8c00-41432198a3cf",
+      "primary_category_id": "aebfe4fb-980f-56b3-92d5-c216ab6008f4",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "65eb35f9-ed4f-5712-87e4-802929a57936",
+        "sizing_system": "alpha",
+        "label": "XL"
+      },
+      "colors": [
+        {
+          "id": "7358190c-06eb-556d-8894-f3c9b9ec2349",
+          "slug": "red",
+          "label": "Red",
+          "swatch_hex": "#a72e35"
+        }
+      ],
+      "metro": {
+        "id": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+        "slug": "dallas-fort-worth",
+        "label": "Dallas–Fort Worth",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "D",
+      "rental_price_minor": 17600,
+      "retail_price_minor": 31000,
+      "currency": "USD",
+      "sample_rating": 4.6,
+      "sample_rating_count": 14,
+      "featured_rank": 29,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "20123b73-8ad8-5b98-b326-31cdfa56e252",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 4 Red Midi Dresses 12 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-12T12:00:00+00:00",
+      "updated_at": "2026-10-12T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample midi dresses for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Midi Dresses",
+      "audience": "women",
+      "fabric": "Velvet",
+      "occasion": "Celebration",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 93,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 101,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "20123b73-8ad8-5b98-b326-31cdfa56e252",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 4 Red Midi Dresses 12 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "844f0c0f-cf9f-569c-bad3-3917bf7ce160",
+      "slug": "demo-party-cocktail-sequin-outfits-13",
+      "title": "Green Sequin Outfits 13",
+      "brand": {
+        "id": "76016a14-8995-5858-8f68-88f839a4f6dc",
+        "slug": "sample-studio-5",
+        "label": "Sample Studio 5"
+      },
+      "primary_collection_id": "27218440-5363-51de-8c00-41432198a3cf",
+      "primary_category_id": "28435d6d-4107-5229-9d73-5821a262d2bd",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "2cd66e37-7c58-51d7-b6a5-eb239ef5b48f",
+        "sizing_system": "US-women",
+        "label": "4"
+      },
+      "colors": [
+        {
+          "id": "d74a43d3-6883-5de5-95d6-c585e1370a75",
+          "slug": "green",
+          "label": "Green",
+          "swatch_hex": "#386b50"
+        }
+      ],
+      "metro": {
+        "id": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+        "slug": "houston",
+        "label": "Houston",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "A",
+      "rental_price_minor": 3650,
+      "retail_price_minor": 32000,
+      "currency": "USD",
+      "sample_rating": 4.8,
+      "sample_rating_count": 15,
+      "featured_rank": 28,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "8eac47f0-daf9-5b18-8fa4-c91397615ebe",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 5 Green Sequin Outfits 13 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-01T12:00:00+00:00",
+      "updated_at": "2026-10-01T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample sequin outfits for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Sequin Outfits",
+      "audience": "women",
+      "fabric": "Wool",
+      "occasion": "Formal",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 94,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 102,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "8eac47f0-daf9-5b18-8fa4-c91397615ebe",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 5 Green Sequin Outfits 13 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "f3a854ba-f85c-530e-9c9f-160beae53ce5",
+      "slug": "demo-party-cocktail-party-sets-14",
+      "title": "Gold Party Sets 14",
+      "brand": {
+        "id": "6b4f90e0-0ada-571f-a945-a0a7277d7ce1",
+        "slug": "sample-studio-6",
+        "label": "Sample Studio 6"
+      },
+      "primary_collection_id": "27218440-5363-51de-8c00-41432198a3cf",
+      "primary_category_id": "3a102ab1-5500-5bf4-9698-419ab17ddf52",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "0d63ff32-b23b-5bc7-bd6b-f440c2f42a3d",
+        "sizing_system": "US-women",
+        "label": "8"
+      },
+      "colors": [
+        {
+          "id": "f81bfb3d-b657-534a-a69d-9df1104b6f1a",
+          "slug": "gold",
+          "label": "Gold",
+          "swatch_hex": "#b28a43"
+        }
+      ],
+      "metro": {
+        "id": "b716c482-5802-5139-b1f3-89abf3046354",
+        "slug": "san-antonio",
+        "label": "San Antonio",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "B",
+      "rental_price_minor": 7650,
+      "retail_price_minor": 33000,
+      "currency": "USD",
+      "sample_rating": 5.0,
+      "sample_rating_count": 16,
+      "featured_rank": 27,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "aad975f2-2f49-5620-8aa3-8bd98d10d750",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 6 Gold Party Sets 14 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-02T12:00:00+00:00",
+      "updated_at": "2026-10-02T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample party sets for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Party Sets",
+      "audience": "women",
+      "fabric": "Satin",
+      "occasion": "Wedding",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 95,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 103,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "aad975f2-2f49-5620-8aa3-8bd98d10d750",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 6 Gold Party Sets 14 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "fe3ad113-0ea7-598f-b971-b24c0bf57f1e",
+      "slug": "demo-party-cocktail-evening-separates-15",
+      "title": "Pink Evening Separates 15",
+      "brand": {
+        "id": "4bb1cad9-2410-5881-92ae-900468e4c4a5",
+        "slug": "sample-studio-7",
+        "label": "Sample Studio 7"
+      },
+      "primary_collection_id": "27218440-5363-51de-8c00-41432198a3cf",
+      "primary_category_id": "5db54851-fc75-53e7-9284-f8b61e6be399",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "fad513c5-2212-5849-8580-15dfd11028f0",
+        "sizing_system": "alpha",
+        "label": "XS"
+      },
+      "colors": [
+        {
+          "id": "4a811fa0-4012-5fdf-bc83-8cb60caed93c",
+          "slug": "pink",
+          "label": "Pink",
+          "swatch_hex": "#dca0ae"
+        }
+      ],
+      "metro": {
+        "id": "fb8e2027-b92c-5cb8-9323-b84b154c5706",
+        "slug": "other-texas",
+        "label": "Other Texas",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "C",
+      "rental_price_minor": 12650,
+      "retail_price_minor": 34000,
+      "currency": "USD",
+      "sample_rating": 3.8,
+      "sample_rating_count": 17,
+      "featured_rank": 26,
+      "status": "published",
+      "is_available": false,
+      "image": {
+        "id": "f73c24a2-c6ce-526e-ac0c-d6cd688876ad",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 7 Pink Evening Separates 15 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-03T12:00:00+00:00",
+      "updated_at": "2026-10-03T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample evening separates for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Evening Separates",
+      "audience": "women",
+      "fabric": "Chiffon",
+      "occasion": "Outdoor",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 96,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 104,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "f73c24a2-c6ce-526e-ac0c-d6cd688876ad",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 7 Pink Evening Separates 15 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "44e303a0-ed08-54b7-9b64-c30c6ab8b359",
+      "slug": "demo-suits-tuxedos-two-piece-suits-16",
+      "title": "Gray Two-Piece Suits 16",
+      "brand": {
+        "id": "6688dc36-6cf1-57f5-8bf6-ae0b149de344",
+        "slug": "sample-studio-8",
+        "label": "Sample Studio 8"
+      },
+      "primary_collection_id": "5dcf3761-0bf0-5a75-a6b6-47dd360a4f36",
+      "primary_category_id": "816d82fb-d833-50fc-9225-3da66bba612f",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "406cc9bf-dfc6-5c1a-b9a0-243baeddd15b",
+        "sizing_system": "US-men",
+        "label": "42"
+      },
+      "colors": [
+        {
+          "id": "b35302f0-ba8d-5da5-a84d-d02b20383120",
+          "slug": "gray",
+          "label": "Gray",
+          "swatch_hex": "#888888"
+        }
+      ],
+      "metro": {
+        "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+        "slug": "austin",
+        "label": "Austin",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "D",
+      "rental_price_minor": 17650,
+      "retail_price_minor": 35000,
+      "currency": "USD",
+      "sample_rating": 4.0,
+      "sample_rating_count": 18,
+      "featured_rank": 25,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "39b5684a-c51c-565a-82a9-e672adec2888",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 8 Gray Two-Piece Suits 16 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-04T12:00:00+00:00",
+      "updated_at": "2026-10-04T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample two-piece suits for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Two-Piece Suits",
+      "audience": "men",
+      "fabric": "Brocade",
+      "occasion": "Dinner",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 82,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 105,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "39b5684a-c51c-565a-82a9-e672adec2888",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 8 Gray Two-Piece Suits 16 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "4975ae96-0689-5dd9-85c7-eecca4bd5189",
+      "slug": "demo-suits-tuxedos-three-piece-suits-17",
+      "title": "Black Three-Piece Suits 17",
+      "brand": {
+        "id": "2b2e1d33-f4da-589c-9883-c7b36081a517",
+        "slug": "sample-studio-1",
+        "label": "Sample Studio 1"
+      },
+      "primary_collection_id": "5dcf3761-0bf0-5a75-a6b6-47dd360a4f36",
+      "primary_category_id": "c7b0d36f-10b7-52be-b7a7-aa582afa7dd7",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "ba0af206-f4d9-5d70-af75-30bad76ae4c3",
+        "sizing_system": "US-men",
+        "label": "38"
+      },
+      "colors": [
+        {
+          "id": "15b2c2d3-33b0-521a-9fcf-07a65375bc9b",
+          "slug": "black",
+          "label": "Black",
+          "swatch_hex": "#111111"
+        }
+      ],
+      "metro": {
+        "id": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+        "slug": "dallas-fort-worth",
+        "label": "Dallas–Fort Worth",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "A",
+      "rental_price_minor": 3700,
+      "retail_price_minor": 36000,
+      "currency": "USD",
+      "sample_rating": 4.2,
+      "sample_rating_count": 19,
+      "featured_rank": 24,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "d8633c42-1ff2-5c8a-8633-6566a10a823b",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 1 Black Three-Piece Suits 17 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-05T12:00:00+00:00",
+      "updated_at": "2026-10-05T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample three-piece suits for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Three-Piece Suits",
+      "audience": "men",
+      "fabric": "Cotton",
+      "occasion": "Celebration",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 83,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 106,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "d8633c42-1ff2-5c8a-8633-6566a10a823b",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 1 Black Three-Piece Suits 17 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "69dfff0a-2005-5d83-b317-304aff6a17fc",
+      "slug": "demo-suits-tuxedos-tuxedos-18",
+      "title": "Ivory Tuxedos 18",
+      "brand": {
+        "id": "0bc973c2-3bba-50a0-b813-960ed8cc62b6",
+        "slug": "sample-studio-2",
+        "label": "Sample Studio 2"
+      },
+      "primary_collection_id": "5dcf3761-0bf0-5a75-a6b6-47dd360a4f36",
+      "primary_category_id": "a5fd08d3-da4f-57f7-bdc4-8d0d1d326c7e",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "406cc9bf-dfc6-5c1a-b9a0-243baeddd15b",
+        "sizing_system": "US-men",
+        "label": "42"
+      },
+      "colors": [
+        {
+          "id": "14a6c3a0-b5c6-5682-a9ec-ffa42c1ca599",
+          "slug": "ivory",
+          "label": "Ivory",
+          "swatch_hex": "#f6f1e6"
+        }
+      ],
+      "metro": {
+        "id": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+        "slug": "houston",
+        "label": "Houston",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "B",
+      "rental_price_minor": 7700,
+      "retail_price_minor": 37000,
+      "currency": "USD",
+      "sample_rating": 4.4,
+      "sample_rating_count": 20,
+      "featured_rank": 23,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "79dc8d75-dbee-51ab-9315-9855b3d02bc3",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 2 Ivory Tuxedos 18 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-06T12:00:00+00:00",
+      "updated_at": "2026-10-06T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample tuxedos for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Tuxedos",
+      "audience": "men",
+      "fabric": "Silk",
+      "occasion": "Formal",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 84,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 107,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "79dc8d75-dbee-51ab-9315-9855b3d02bc3",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 2 Ivory Tuxedos 18 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "fefffa78-2d24-5ab8-b0b7-5b4735f71fe3",
+      "slug": "demo-suits-tuxedos-dinner-jackets-19",
+      "title": "Navy Dinner Jackets 19",
+      "brand": {
+        "id": "17cc5fbb-7e28-5bd9-ac8d-f69b4120b802",
+        "slug": "sample-studio-3",
+        "label": "Sample Studio 3"
+      },
+      "primary_collection_id": "5dcf3761-0bf0-5a75-a6b6-47dd360a4f36",
+      "primary_category_id": "80b0ec94-8036-5c21-b402-847bafd8b1e6",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "ba0af206-f4d9-5d70-af75-30bad76ae4c3",
+        "sizing_system": "US-men",
+        "label": "38"
+      },
+      "colors": [
+        {
+          "id": "ef315ecb-2ec5-5c16-b04a-5cd5779501ea",
+          "slug": "navy",
+          "label": "Navy",
+          "swatch_hex": "#253b60"
+        }
+      ],
+      "metro": {
+        "id": "b716c482-5802-5139-b1f3-89abf3046354",
+        "slug": "san-antonio",
+        "label": "San Antonio",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "C",
+      "rental_price_minor": 12700,
+      "retail_price_minor": 38000,
+      "currency": "USD",
+      "sample_rating": null,
+      "sample_rating_count": 0,
+      "featured_rank": 22,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "aa619fd4-3f38-5a0b-9060-130d94e8b8b9",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 3 Navy Dinner Jackets 19 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-07T12:00:00+00:00",
+      "updated_at": "2026-10-07T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample dinner jackets for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Dinner Jackets",
+      "audience": "men",
+      "fabric": "Linen",
+      "occasion": "Wedding",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 85,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 108,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "aa619fd4-3f38-5a0b-9060-130d94e8b8b9",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 3 Navy Dinner Jackets 19 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "543271a3-acc9-5d9c-8808-f1cd6b941cb4",
+      "slug": "demo-suits-tuxedos-suit-separates-20",
+      "title": "Red Suit Separates 20",
+      "brand": {
+        "id": "da95741e-1621-5d0d-a810-eb546f862bca",
+        "slug": "sample-studio-4",
+        "label": "Sample Studio 4"
+      },
+      "primary_collection_id": "5dcf3761-0bf0-5a75-a6b6-47dd360a4f36",
+      "primary_category_id": "c4b74363-28a9-52c7-b01c-3cc86bccec2b",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "406cc9bf-dfc6-5c1a-b9a0-243baeddd15b",
+        "sizing_system": "US-men",
+        "label": "42"
+      },
+      "colors": [
+        {
+          "id": "7358190c-06eb-556d-8894-f3c9b9ec2349",
+          "slug": "red",
+          "label": "Red",
+          "swatch_hex": "#a72e35"
+        }
+      ],
+      "metro": {
+        "id": "fb8e2027-b92c-5cb8-9323-b84b154c5706",
+        "slug": "other-texas",
+        "label": "Other Texas",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "D",
+      "rental_price_minor": 17700,
+      "retail_price_minor": 39000,
+      "currency": "USD",
+      "sample_rating": 4.8,
+      "sample_rating_count": 22,
+      "featured_rank": 21,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "41e2045a-e32f-520a-8869-40f7728f2702",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 4 Red Suit Separates 20 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-08T12:00:00+00:00",
+      "updated_at": "2026-10-08T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample suit separates for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Suit Separates",
+      "audience": "men",
+      "fabric": "Velvet",
+      "occasion": "Outdoor",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 86,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 109,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "41e2045a-e32f-520a-8869-40f7728f2702",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 4 Red Suit Separates 20 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "61b830f9-4634-5ea6-9a15-79c2f9d477f3",
+      "slug": "demo-wedding-guest-daytime-21",
+      "title": "Green Daytime 21",
+      "brand": {
+        "id": "76016a14-8995-5858-8f68-88f839a4f6dc",
+        "slug": "sample-studio-5",
+        "label": "Sample Studio 5"
+      },
+      "primary_collection_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+      "primary_category_id": "457c4ddf-81e6-58c6-97f1-075499b08759",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "0d63ff32-b23b-5bc7-bd6b-f440c2f42a3d",
+        "sizing_system": "US-women",
+        "label": "8"
+      },
+      "colors": [
+        {
+          "id": "d74a43d3-6883-5de5-95d6-c585e1370a75",
+          "slug": "green",
+          "label": "Green",
+          "swatch_hex": "#386b50"
+        }
+      ],
+      "metro": {
+        "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+        "slug": "austin",
+        "label": "Austin",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "A",
+      "rental_price_minor": 3750,
+      "retail_price_minor": 40000,
+      "currency": "USD",
+      "sample_rating": 5.0,
+      "sample_rating_count": 23,
+      "featured_rank": 20,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "d381a210-2df7-5c47-a8cd-cf6a8e1de9d4",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 5 Green Daytime 21 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-09T12:00:00+00:00",
+      "updated_at": "2026-10-09T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample daytime for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Daytime",
+      "audience": "women",
+      "fabric": "Wool",
+      "occasion": "Dinner",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 87,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 110,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "d381a210-2df7-5c47-a8cd-cf6a8e1de9d4",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 5 Green Daytime 21 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "f20c6359-48be-5f48-9a1c-3a687f0c36bc",
+      "slug": "demo-wedding-guest-formal-22",
+      "title": "Gold Formal 22",
+      "brand": {
+        "id": "6b4f90e0-0ada-571f-a945-a0a7277d7ce1",
+        "slug": "sample-studio-6",
+        "label": "Sample Studio 6"
+      },
+      "primary_collection_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+      "primary_category_id": "9416f41f-6d77-5d8b-8511-64d1dbea3ef5",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "fad513c5-2212-5849-8580-15dfd11028f0",
+        "sizing_system": "alpha",
+        "label": "XS"
+      },
+      "colors": [
+        {
+          "id": "f81bfb3d-b657-534a-a69d-9df1104b6f1a",
+          "slug": "gold",
+          "label": "Gold",
+          "swatch_hex": "#b28a43"
+        }
+      ],
+      "metro": {
+        "id": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+        "slug": "dallas-fort-worth",
+        "label": "Dallas–Fort Worth",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "B",
+      "rental_price_minor": 7750,
+      "retail_price_minor": 41000,
+      "currency": "USD",
+      "sample_rating": 3.8,
+      "sample_rating_count": 24,
+      "featured_rank": 19,
+      "status": "published",
+      "is_available": false,
+      "image": {
+        "id": "5e206369-099d-597c-b3ef-78043d7f34b6",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 6 Gold Formal 22 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-10T12:00:00+00:00",
+      "updated_at": "2026-10-10T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample formal for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Formal",
+      "audience": "women",
+      "fabric": "Satin",
+      "occasion": "Celebration",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 88,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 111,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "5e206369-099d-597c-b3ef-78043d7f34b6",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 6 Gold Formal 22 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "1502e2a8-2938-57ef-8992-234d746cce2e",
+      "slug": "demo-wedding-guest-black-tie-23",
+      "title": "Pink Black Tie 23",
+      "brand": {
+        "id": "4bb1cad9-2410-5881-92ae-900468e4c4a5",
+        "slug": "sample-studio-7",
+        "label": "Sample Studio 7"
+      },
+      "primary_collection_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+      "primary_category_id": "a66980e9-ed6b-5e5f-bdd8-5f8cdb300cec",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "a1c10cb9-1d83-5479-a2f0-7234d2684743",
+        "sizing_system": "alpha",
+        "label": "S"
+      },
+      "colors": [
+        {
+          "id": "4a811fa0-4012-5fdf-bc83-8cb60caed93c",
+          "slug": "pink",
+          "label": "Pink",
+          "swatch_hex": "#dca0ae"
+        }
+      ],
+      "metro": {
+        "id": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+        "slug": "houston",
+        "label": "Houston",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "C",
+      "rental_price_minor": 12750,
+      "retail_price_minor": 42000,
+      "currency": "USD",
+      "sample_rating": 4.0,
+      "sample_rating_count": 25,
+      "featured_rank": 18,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "3e15b405-e9f0-5cd4-8ac5-f7df4fc530ea",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 7 Pink Black Tie 23 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-11T12:00:00+00:00",
+      "updated_at": "2026-10-11T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample black tie for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Black Tie",
+      "audience": "women",
+      "fabric": "Chiffon",
+      "occasion": "Formal",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 89,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 112,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "3e15b405-e9f0-5cd4-8ac5-f7df4fc530ea",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 7 Pink Black Tie 23 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "985a4676-f2e4-5571-8d9d-44ddecce24f6",
+      "slug": "demo-wedding-guest-outdoor-24",
+      "title": "Gray Outdoor 24",
+      "brand": {
+        "id": "6688dc36-6cf1-57f5-8bf6-ae0b149de344",
+        "slug": "sample-studio-8",
+        "label": "Sample Studio 8"
+      },
+      "primary_collection_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+      "primary_category_id": "917b4efa-c62e-5ea4-811f-cc706d231a9c",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "ad5303d3-53c6-5a85-9436-1fc8b1e4b6b6",
+        "sizing_system": "alpha",
+        "label": "M"
+      },
+      "colors": [
+        {
+          "id": "b35302f0-ba8d-5da5-a84d-d02b20383120",
+          "slug": "gray",
+          "label": "Gray",
+          "swatch_hex": "#888888"
+        }
+      ],
+      "metro": {
+        "id": "b716c482-5802-5139-b1f3-89abf3046354",
+        "slug": "san-antonio",
+        "label": "San Antonio",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "D",
+      "rental_price_minor": 17750,
+      "retail_price_minor": 43000,
+      "currency": "USD",
+      "sample_rating": 4.2,
+      "sample_rating_count": 26,
+      "featured_rank": 17,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "7e3f3e4b-e758-5e3c-8d1a-042c08b89970",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 8 Gray Outdoor 24 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-12T12:00:00+00:00",
+      "updated_at": "2026-10-12T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample outdoor for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Outdoor",
+      "audience": "women",
+      "fabric": "Brocade",
+      "occasion": "Wedding",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 90,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 113,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "7e3f3e4b-e758-5e3c-8d1a-042c08b89970",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 8 Gray Outdoor 24 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "b9034c91-8398-5293-bafe-43a973392c7c",
+      "slug": "demo-wedding-guest-festive-25",
+      "title": "Black Festive 25",
+      "brand": {
+        "id": "2b2e1d33-f4da-589c-9883-c7b36081a517",
+        "slug": "sample-studio-1",
+        "label": "Sample Studio 1"
+      },
+      "primary_collection_id": "45724d17-811a-5746-8f1a-0361028d57b1",
+      "primary_category_id": "301f005f-acb6-5b6c-a16c-73f62ec3d01e",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "bcbc9755-139b-5802-ba9e-613e8ae9d010",
+        "sizing_system": "alpha",
+        "label": "L"
+      },
+      "colors": [
+        {
+          "id": "15b2c2d3-33b0-521a-9fcf-07a65375bc9b",
+          "slug": "black",
+          "label": "Black",
+          "swatch_hex": "#111111"
+        }
+      ],
+      "metro": {
+        "id": "fb8e2027-b92c-5cb8-9323-b84b154c5706",
+        "slug": "other-texas",
+        "label": "Other Texas",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "A",
+      "rental_price_minor": 3800,
+      "retail_price_minor": 44000,
+      "currency": "USD",
+      "sample_rating": 4.4,
+      "sample_rating_count": 27,
+      "featured_rank": 16,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "6abcc993-4a4c-5592-bdf8-84a6c04d64e1",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 1 Black Festive 25 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-01T12:00:00+00:00",
+      "updated_at": "2026-10-01T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample festive for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Festive",
+      "audience": "women",
+      "fabric": "Cotton",
+      "occasion": "Outdoor",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 91,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 114,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "6abcc993-4a4c-5592-bdf8-84a6c04d64e1",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 1 Black Festive 25 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "e67cdbca-1c0f-5a6f-aa85-75ac8997deaf",
+      "slug": "demo-indian-cultural-sarees-26",
+      "title": "Ivory Sarees 26",
+      "brand": {
+        "id": "0bc973c2-3bba-50a0-b813-960ed8cc62b6",
+        "slug": "sample-studio-2",
+        "label": "Sample Studio 2"
+      },
+      "primary_collection_id": "4975793f-c24a-5fe9-b729-5962eef11354",
+      "primary_category_id": "befd78f5-3f7e-57c8-9af9-178d7a9771c1",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "65eb35f9-ed4f-5712-87e4-802929a57936",
+        "sizing_system": "alpha",
+        "label": "XL"
+      },
+      "colors": [
+        {
+          "id": "14a6c3a0-b5c6-5682-a9ec-ffa42c1ca599",
+          "slug": "ivory",
+          "label": "Ivory",
+          "swatch_hex": "#f6f1e6"
+        }
+      ],
+      "metro": {
+        "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+        "slug": "austin",
+        "label": "Austin",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "B",
+      "rental_price_minor": 7800,
+      "retail_price_minor": 45000,
+      "currency": "USD",
+      "sample_rating": 4.6,
+      "sample_rating_count": 28,
+      "featured_rank": 15,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "35f722e5-abf2-5715-b875-e59d3a226d2e",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 2 Ivory Sarees 26 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-02T12:00:00+00:00",
+      "updated_at": "2026-10-02T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample sarees for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Sarees",
+      "audience": "women",
+      "fabric": "Silk",
+      "occasion": "Dinner",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 92,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 115,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "35f722e5-abf2-5715-b875-e59d3a226d2e",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 2 Ivory Sarees 26 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "295adbff-4e64-5943-b86e-6248e8f4c2cc",
+      "slug": "demo-indian-cultural-lehengas-27",
+      "title": "Navy Lehengas 27",
+      "brand": {
+        "id": "17cc5fbb-7e28-5bd9-ac8d-f69b4120b802",
+        "slug": "sample-studio-3",
+        "label": "Sample Studio 3"
+      },
+      "primary_collection_id": "4975793f-c24a-5fe9-b729-5962eef11354",
+      "primary_category_id": "780b50c6-4ad4-5fd1-982e-1127572a6977",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "2cd66e37-7c58-51d7-b6a5-eb239ef5b48f",
+        "sizing_system": "US-women",
+        "label": "4"
+      },
+      "colors": [
+        {
+          "id": "ef315ecb-2ec5-5c16-b04a-5cd5779501ea",
+          "slug": "navy",
+          "label": "Navy",
+          "swatch_hex": "#253b60"
+        }
+      ],
+      "metro": {
+        "id": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+        "slug": "dallas-fort-worth",
+        "label": "Dallas–Fort Worth",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "C",
+      "rental_price_minor": 12800,
+      "retail_price_minor": 46000,
+      "currency": "USD",
+      "sample_rating": 4.8,
+      "sample_rating_count": 29,
+      "featured_rank": 14,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "c8c72b12-d02e-5407-b790-6d7759b4acf9",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 3 Navy Lehengas 27 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-03T12:00:00+00:00",
+      "updated_at": "2026-10-03T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample lehengas for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Lehengas",
+      "audience": "women",
+      "fabric": "Linen",
+      "occasion": "Celebration",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 93,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 116,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "c8c72b12-d02e-5407-b790-6d7759b4acf9",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 3 Navy Lehengas 27 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "e8639b06-0187-5154-ae3e-4dc74ec6df44",
+      "slug": "demo-indian-cultural-sherwanis-28",
+      "title": "Red Sherwanis 28",
+      "brand": {
+        "id": "da95741e-1621-5d0d-a810-eb546f862bca",
+        "slug": "sample-studio-4",
+        "label": "Sample Studio 4"
+      },
+      "primary_collection_id": "4975793f-c24a-5fe9-b729-5962eef11354",
+      "primary_category_id": "946cc51b-7e06-59c6-8f03-af2033f86c61",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "0d63ff32-b23b-5bc7-bd6b-f440c2f42a3d",
+        "sizing_system": "US-women",
+        "label": "8"
+      },
+      "colors": [
+        {
+          "id": "7358190c-06eb-556d-8894-f3c9b9ec2349",
+          "slug": "red",
+          "label": "Red",
+          "swatch_hex": "#a72e35"
+        }
+      ],
+      "metro": {
+        "id": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+        "slug": "houston",
+        "label": "Houston",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "D",
+      "rental_price_minor": 17800,
+      "retail_price_minor": 47000,
+      "currency": "USD",
+      "sample_rating": null,
+      "sample_rating_count": 0,
+      "featured_rank": 13,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "043af56f-90a4-5b7c-a02b-91db783dc90f",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 4 Red Sherwanis 28 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-04T12:00:00+00:00",
+      "updated_at": "2026-10-04T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample sherwanis for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Sherwanis",
+      "audience": "women",
+      "fabric": "Velvet",
+      "occasion": "Formal",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 94,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 117,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "043af56f-90a4-5b7c-a02b-91db783dc90f",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 4 Red Sherwanis 28 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "9f31d921-9343-5dfd-bc1c-ebdcc4151bf0",
+      "slug": "demo-indian-cultural-kurta-sets-29",
+      "title": "Green Kurta Sets 29",
+      "brand": {
+        "id": "76016a14-8995-5858-8f68-88f839a4f6dc",
+        "slug": "sample-studio-5",
+        "label": "Sample Studio 5"
+      },
+      "primary_collection_id": "4975793f-c24a-5fe9-b729-5962eef11354",
+      "primary_category_id": "3dfcde2a-fdc4-522d-ade3-5e3af27c6033",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "fad513c5-2212-5849-8580-15dfd11028f0",
+        "sizing_system": "alpha",
+        "label": "XS"
+      },
+      "colors": [
+        {
+          "id": "d74a43d3-6883-5de5-95d6-c585e1370a75",
+          "slug": "green",
+          "label": "Green",
+          "swatch_hex": "#386b50"
+        }
+      ],
+      "metro": {
+        "id": "b716c482-5802-5139-b1f3-89abf3046354",
+        "slug": "san-antonio",
+        "label": "San Antonio",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "A",
+      "rental_price_minor": 3850,
+      "retail_price_minor": 48000,
+      "currency": "USD",
+      "sample_rating": 3.8,
+      "sample_rating_count": 31,
+      "featured_rank": 12,
+      "status": "published",
+      "is_available": false,
+      "image": {
+        "id": "30047fe3-844f-52cf-b3d3-438dcfaac538",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 5 Green Kurta Sets 29 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-05T12:00:00+00:00",
+      "updated_at": "2026-10-05T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample kurta sets for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Kurta Sets",
+      "audience": "women",
+      "fabric": "Wool",
+      "occasion": "Wedding",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 95,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 118,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "30047fe3-844f-52cf-b3d3-438dcfaac538",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 5 Green Kurta Sets 29 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "94c85d12-da8e-5d2e-957d-a2d54e42472a",
+      "slug": "demo-indian-cultural-anarkalis-30",
+      "title": "Gold Anarkalis 30",
+      "brand": {
+        "id": "6b4f90e0-0ada-571f-a945-a0a7277d7ce1",
+        "slug": "sample-studio-6",
+        "label": "Sample Studio 6"
+      },
+      "primary_collection_id": "4975793f-c24a-5fe9-b729-5962eef11354",
+      "primary_category_id": "56de52b4-be7f-546d-9b1a-4353c8eac088",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "a1c10cb9-1d83-5479-a2f0-7234d2684743",
+        "sizing_system": "alpha",
+        "label": "S"
+      },
+      "colors": [
+        {
+          "id": "f81bfb3d-b657-534a-a69d-9df1104b6f1a",
+          "slug": "gold",
+          "label": "Gold",
+          "swatch_hex": "#b28a43"
+        }
+      ],
+      "metro": {
+        "id": "fb8e2027-b92c-5cb8-9323-b84b154c5706",
+        "slug": "other-texas",
+        "label": "Other Texas",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "B",
+      "rental_price_minor": 7850,
+      "retail_price_minor": 49000,
+      "currency": "USD",
+      "sample_rating": 4.0,
+      "sample_rating_count": 32,
+      "featured_rank": 11,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "f3b2edb5-4f71-5068-acac-33c44d02eb6c",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 6 Gold Anarkalis 30 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-06T12:00:00+00:00",
+      "updated_at": "2026-10-06T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample anarkalis for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Anarkalis",
+      "audience": "women",
+      "fabric": "Satin",
+      "occasion": "Outdoor",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 96,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 119,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "f3b2edb5-4f71-5068-acac-33c44d02eb6c",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 6 Gold Anarkalis 30 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "fd3714ad-670f-5cb9-95de-48f6e869a001",
+      "slug": "demo-designer-dresses-31",
+      "title": "Pink Dresses 31",
+      "brand": {
+        "id": "4bb1cad9-2410-5881-92ae-900468e4c4a5",
+        "slug": "sample-studio-7",
+        "label": "Sample Studio 7"
+      },
+      "primary_collection_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+      "primary_category_id": "ee4bfb3b-20d4-5e98-89bb-1470cfbdecd4",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "ad5303d3-53c6-5a85-9436-1fc8b1e4b6b6",
+        "sizing_system": "alpha",
+        "label": "M"
+      },
+      "colors": [
+        {
+          "id": "4a811fa0-4012-5fdf-bc83-8cb60caed93c",
+          "slug": "pink",
+          "label": "Pink",
+          "swatch_hex": "#dca0ae"
+        }
+      ],
+      "metro": {
+        "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+        "slug": "austin",
+        "label": "Austin",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "C",
+      "rental_price_minor": 12850,
+      "retail_price_minor": 50000,
+      "currency": "USD",
+      "sample_rating": 4.2,
+      "sample_rating_count": 33,
+      "featured_rank": 10,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "de427b79-aa2e-5dcf-a10d-5c95ae89519a",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 7 Pink Dresses 31 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-07T12:00:00+00:00",
+      "updated_at": "2026-10-07T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample dresses for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Dresses",
+      "audience": "women",
+      "fabric": "Chiffon",
+      "occasion": "Dinner",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 82,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 90,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "de427b79-aa2e-5dcf-a10d-5c95ae89519a",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 7 Pink Dresses 31 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "3774ca13-3b66-503d-b93a-d112c58a6f34",
+      "slug": "demo-designer-gowns-32",
+      "title": "Gray Gowns 32",
+      "brand": {
+        "id": "6688dc36-6cf1-57f5-8bf6-ae0b149de344",
+        "slug": "sample-studio-8",
+        "label": "Sample Studio 8"
+      },
+      "primary_collection_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+      "primary_category_id": "acbf685e-5f07-5e31-a431-b5233d83a028",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "bcbc9755-139b-5802-ba9e-613e8ae9d010",
+        "sizing_system": "alpha",
+        "label": "L"
+      },
+      "colors": [
+        {
+          "id": "b35302f0-ba8d-5da5-a84d-d02b20383120",
+          "slug": "gray",
+          "label": "Gray",
+          "swatch_hex": "#888888"
+        }
+      ],
+      "metro": {
+        "id": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+        "slug": "dallas-fort-worth",
+        "label": "Dallas–Fort Worth",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "D",
+      "rental_price_minor": 17850,
+      "retail_price_minor": 51000,
+      "currency": "USD",
+      "sample_rating": 4.4,
+      "sample_rating_count": 34,
+      "featured_rank": 9,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "65293a60-dfed-59e5-9a03-e47da6d99b29",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 8 Gray Gowns 32 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-08T12:00:00+00:00",
+      "updated_at": "2026-10-08T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample gowns for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Gowns",
+      "audience": "women",
+      "fabric": "Brocade",
+      "occasion": "Celebration",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 83,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 91,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "65293a60-dfed-59e5-9a03-e47da6d99b29",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 8 Gray Gowns 32 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "0e8e8d01-5494-5b55-83ce-10cd23659d9a",
+      "slug": "demo-designer-suits-33",
+      "title": "Black Suits 33",
+      "brand": {
+        "id": "2b2e1d33-f4da-589c-9883-c7b36081a517",
+        "slug": "sample-studio-1",
+        "label": "Sample Studio 1"
+      },
+      "primary_collection_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+      "primary_category_id": "8bc1c8b5-e801-588d-8d58-b943e4690b58",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "65eb35f9-ed4f-5712-87e4-802929a57936",
+        "sizing_system": "alpha",
+        "label": "XL"
+      },
+      "colors": [
+        {
+          "id": "15b2c2d3-33b0-521a-9fcf-07a65375bc9b",
+          "slug": "black",
+          "label": "Black",
+          "swatch_hex": "#111111"
+        }
+      ],
+      "metro": {
+        "id": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+        "slug": "houston",
+        "label": "Houston",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "A",
+      "rental_price_minor": 3900,
+      "retail_price_minor": 52000,
+      "currency": "USD",
+      "sample_rating": 4.6,
+      "sample_rating_count": 35,
+      "featured_rank": 8,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "3775b692-6458-5036-95cc-06c057c5d0a5",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 1 Black Suits 33 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-09T12:00:00+00:00",
+      "updated_at": "2026-10-09T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample suits for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Suits",
+      "audience": "women",
+      "fabric": "Cotton",
+      "occasion": "Formal",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 84,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 92,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "3775b692-6458-5036-95cc-06c057c5d0a5",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 1 Black Suits 33 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "0e481a59-48fa-5a67-9d81-d541837eac77",
+      "slug": "demo-designer-sets-34",
+      "title": "Ivory Sets 34",
+      "brand": {
+        "id": "0bc973c2-3bba-50a0-b813-960ed8cc62b6",
+        "slug": "sample-studio-2",
+        "label": "Sample Studio 2"
+      },
+      "primary_collection_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+      "primary_category_id": "55f2ddb8-8a3d-53cc-aeb9-7bd9df6e216f",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "2cd66e37-7c58-51d7-b6a5-eb239ef5b48f",
+        "sizing_system": "US-women",
+        "label": "4"
+      },
+      "colors": [
+        {
+          "id": "14a6c3a0-b5c6-5682-a9ec-ffa42c1ca599",
+          "slug": "ivory",
+          "label": "Ivory",
+          "swatch_hex": "#f6f1e6"
+        }
+      ],
+      "metro": {
+        "id": "b716c482-5802-5139-b1f3-89abf3046354",
+        "slug": "san-antonio",
+        "label": "San Antonio",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "B",
+      "rental_price_minor": 7900,
+      "retail_price_minor": 53000,
+      "currency": "USD",
+      "sample_rating": 4.8,
+      "sample_rating_count": 36,
+      "featured_rank": 7,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "490d66e9-75ec-5cde-9f8a-fd429e5c7091",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 2 Ivory Sets 34 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-10T12:00:00+00:00",
+      "updated_at": "2026-10-10T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample sets for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Sets",
+      "audience": "women",
+      "fabric": "Silk",
+      "occasion": "Wedding",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 85,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 93,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "490d66e9-75ec-5cde-9f8a-fd429e5c7091",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 2 Ivory Sets 34 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "52aadf98-a510-5e40-8ddd-0e9647a2eb90",
+      "slug": "demo-designer-statement-pieces-35",
+      "title": "Navy Statement Pieces 35",
+      "brand": {
+        "id": "17cc5fbb-7e28-5bd9-ac8d-f69b4120b802",
+        "slug": "sample-studio-3",
+        "label": "Sample Studio 3"
+      },
+      "primary_collection_id": "b7962f7c-ed49-5418-8cc7-acf57d61229a",
+      "primary_category_id": "0146fb14-b739-51de-b22e-1106376cc32a",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "0d63ff32-b23b-5bc7-bd6b-f440c2f42a3d",
+        "sizing_system": "US-women",
+        "label": "8"
+      },
+      "colors": [
+        {
+          "id": "ef315ecb-2ec5-5c16-b04a-5cd5779501ea",
+          "slug": "navy",
+          "label": "Navy",
+          "swatch_hex": "#253b60"
+        }
+      ],
+      "metro": {
+        "id": "fb8e2027-b92c-5cb8-9323-b84b154c5706",
+        "slug": "other-texas",
+        "label": "Other Texas",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "C",
+      "rental_price_minor": 12900,
+      "retail_price_minor": 54000,
+      "currency": "USD",
+      "sample_rating": 5.0,
+      "sample_rating_count": 37,
+      "featured_rank": 6,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "5337221c-2d8a-589c-9844-338ab765f851",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 3 Navy Statement Pieces 35 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-11T12:00:00+00:00",
+      "updated_at": "2026-10-11T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample statement pieces for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Statement Pieces",
+      "audience": "women",
+      "fabric": "Linen",
+      "occasion": "Outdoor",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 86,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 94,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "5337221c-2d8a-589c-9844-338ab765f851",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 3 Navy Statement Pieces 35 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "a372115c-a075-5a49-ab50-f05c893c0c7d",
+      "slug": "demo-bridal-wedding-gowns-36",
+      "title": "Red Wedding Gowns 36",
+      "brand": {
+        "id": "da95741e-1621-5d0d-a810-eb546f862bca",
+        "slug": "sample-studio-4",
+        "label": "Sample Studio 4"
+      },
+      "primary_collection_id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+      "primary_category_id": "b39f3276-914f-5814-86d4-6b6779d62b1c",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "fad513c5-2212-5849-8580-15dfd11028f0",
+        "sizing_system": "alpha",
+        "label": "XS"
+      },
+      "colors": [
+        {
+          "id": "7358190c-06eb-556d-8894-f3c9b9ec2349",
+          "slug": "red",
+          "label": "Red",
+          "swatch_hex": "#a72e35"
+        }
+      ],
+      "metro": {
+        "id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+        "slug": "austin",
+        "label": "Austin",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "D",
+      "rental_price_minor": 17900,
+      "retail_price_minor": 55000,
+      "currency": "USD",
+      "sample_rating": 3.8,
+      "sample_rating_count": 38,
+      "featured_rank": 5,
+      "status": "published",
+      "is_available": false,
+      "image": {
+        "id": "7d9edb7e-3eb1-5350-82cc-284896a1b2f0",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 4 Red Wedding Gowns 36 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-12T12:00:00+00:00",
+      "updated_at": "2026-10-12T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample wedding gowns for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Wedding Gowns",
+      "audience": "women",
+      "fabric": "Velvet",
+      "occasion": "Dinner",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 87,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 95,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "7d9edb7e-3eb1-5350-82cc-284896a1b2f0",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 4 Red Wedding Gowns 36 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "247059c4-43cb-528a-8e6e-6155a92b1874",
+      "slug": "demo-bridal-reception-looks-37",
+      "title": "Green Reception Looks 37",
+      "brand": {
+        "id": "76016a14-8995-5858-8f68-88f839a4f6dc",
+        "slug": "sample-studio-5",
+        "label": "Sample Studio 5"
+      },
+      "primary_collection_id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+      "primary_category_id": "4af953bb-fdc8-5d51-b569-fc4a738b3f49",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "a1c10cb9-1d83-5479-a2f0-7234d2684743",
+        "sizing_system": "alpha",
+        "label": "S"
+      },
+      "colors": [
+        {
+          "id": "d74a43d3-6883-5de5-95d6-c585e1370a75",
+          "slug": "green",
+          "label": "Green",
+          "swatch_hex": "#386b50"
+        }
+      ],
+      "metro": {
+        "id": "df6e8eea-fe77-5663-a5f7-c291bae96e3b",
+        "slug": "dallas-fort-worth",
+        "label": "Dallas–Fort Worth",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "A",
+      "rental_price_minor": 3950,
+      "retail_price_minor": 56000,
+      "currency": "USD",
+      "sample_rating": null,
+      "sample_rating_count": 0,
+      "featured_rank": 4,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "e1b974dc-59aa-5778-863b-0d8796df6c07",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 5 Green Reception Looks 37 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-01T12:00:00+00:00",
+      "updated_at": "2026-10-01T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample reception looks for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Reception Looks",
+      "audience": "women",
+      "fabric": "Wool",
+      "occasion": "Celebration",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 88,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 96,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "e1b974dc-59aa-5778-863b-0d8796df6c07",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 5 Green Reception Looks 37 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    },
+    {
+      "id": "f89d4d01-be23-5359-a1db-f42c4cdcebcb",
+      "slug": "demo-bridal-bridal-separates-38",
+      "title": "Gold Bridal Separates 38",
+      "brand": {
+        "id": "6b4f90e0-0ada-571f-a945-a0a7277d7ce1",
+        "slug": "sample-studio-6",
+        "label": "Sample Studio 6"
+      },
+      "primary_collection_id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+      "primary_category_id": "12c571b5-56b6-5213-a836-5049f6c23a63",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "ad5303d3-53c6-5a85-9436-1fc8b1e4b6b6",
+        "sizing_system": "alpha",
+        "label": "M"
+      },
+      "colors": [
+        {
+          "id": "f81bfb3d-b657-534a-a69d-9df1104b6f1a",
+          "slug": "gold",
+          "label": "Gold",
+          "swatch_hex": "#b28a43"
+        }
+      ],
+      "metro": {
+        "id": "9b4f0c8b-16ab-5235-8f83-6a24d24bb3c2",
+        "slug": "houston",
+        "label": "Houston",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "B",
+      "rental_price_minor": 7950,
+      "retail_price_minor": 57000,
+      "currency": "USD",
+      "sample_rating": 4.2,
+      "sample_rating_count": 40,
+      "featured_rank": 3,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "989ad8be-a8a4-53bc-a6a7-d1b3933381e6",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 6 Gold Bridal Separates 38 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-02T12:00:00+00:00",
+      "updated_at": "2026-10-02T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample bridal separates for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Bridal Separates",
+      "audience": "women",
+      "fabric": "Satin",
+      "occasion": "Formal",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 89,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 97,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "989ad8be-a8a4-53bc-a6a7-d1b3933381e6",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 6 Gold Bridal Separates 38 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "df618818-2c18-53b2-bb8b-3178f2b53a0b",
+      "slug": "demo-bridal-veils-capes-39",
+      "title": "Pink Veils & Capes 39",
+      "brand": {
+        "id": "4bb1cad9-2410-5881-92ae-900468e4c4a5",
+        "slug": "sample-studio-7",
+        "label": "Sample Studio 7"
+      },
+      "primary_collection_id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+      "primary_category_id": "84946d08-e1c9-51ff-91e4-56356ceb1dbf",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "bcbc9755-139b-5802-ba9e-613e8ae9d010",
+        "sizing_system": "alpha",
+        "label": "L"
+      },
+      "colors": [
+        {
+          "id": "4a811fa0-4012-5fdf-bc83-8cb60caed93c",
+          "slug": "pink",
+          "label": "Pink",
+          "swatch_hex": "#dca0ae"
+        }
+      ],
+      "metro": {
+        "id": "b716c482-5802-5139-b1f3-89abf3046354",
+        "slug": "san-antonio",
+        "label": "San Antonio",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "C",
+      "rental_price_minor": 12950,
+      "retail_price_minor": 58000,
+      "currency": "USD",
+      "sample_rating": 4.4,
+      "sample_rating_count": 41,
+      "featured_rank": 2,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "63b25ba7-23f1-506a-909f-736d699d7f26",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 7 Pink Veils & Capes 39 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-03T12:00:00+00:00",
+      "updated_at": "2026-10-03T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample veils & capes for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Veils & Capes",
+      "audience": "women",
+      "fabric": "Chiffon",
+      "occasion": "Wedding",
+      "stretch": "No stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "None recorded — sample",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 90,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 98,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "63b25ba7-23f1-506a-909f-736d699d7f26",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 7 Pink Veils & Capes 39 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": []
+    },
+    {
+      "id": "e98c8681-1a34-5b65-8af2-cdd1c2709418",
+      "slug": "demo-bridal-bridal-ensembles-40",
+      "title": "Gray Bridal Ensembles 40",
+      "brand": {
+        "id": "6688dc36-6cf1-57f5-8bf6-ae0b149de344",
+        "slug": "sample-studio-8",
+        "label": "Sample Studio 8"
+      },
+      "primary_collection_id": "e399ec17-506d-571c-ae2c-4c5eda744c98",
+      "primary_category_id": "54f58c5f-6037-5666-8f39-e77b950fbbbf",
+      "secondary_category_ids": [],
+      "size": {
+        "id": "65eb35f9-ed4f-5712-87e4-802929a57936",
+        "sizing_system": "alpha",
+        "label": "XL"
+      },
+      "colors": [
+        {
+          "id": "b35302f0-ba8d-5da5-a84d-d02b20383120",
+          "slug": "gray",
+          "label": "Gray",
+          "swatch_hex": "#888888"
+        }
+      ],
+      "metro": {
+        "id": "fb8e2027-b92c-5cb8-9323-b84b154c5706",
+        "slug": "other-texas",
+        "label": "Other Texas",
+        "region": "TX",
+        "country_code": "US",
+        "location_note": "Demo location; no delivery coverage inferred."
+      },
+      "band": "D",
+      "rental_price_minor": 17950,
+      "retail_price_minor": 59000,
+      "currency": "USD",
+      "sample_rating": 4.6,
+      "sample_rating_count": 42,
+      "featured_rank": 1,
+      "status": "published",
+      "is_available": true,
+      "image": {
+        "id": "e436a537-3325-5384-b1ae-54a092f51810",
+        "url": "/fixtures/garment-placeholder.svg",
+        "alt_text": "Sample Studio 8 Gray Bridal Ensembles 40 — demo placeholder",
+        "width": 900,
+        "height": 1200,
+        "sort_order": 0,
+        "media_status": "fixture"
+      },
+      "version": 1,
+      "created_at": "2026-10-04T12:00:00+00:00",
+      "updated_at": "2026-10-04T12:00:00+00:00",
+      "lender_profile_id": "d9927684-1454-51bb-9491-d2d5032e6820",
+      "description": "Fictional sample bridal ensembles for local demonstration. No policy or transaction is implied.",
+      "garment_type": "Bridal Ensembles",
+      "audience": "women",
+      "fabric": "Brocade",
+      "occasion": "Outdoor",
+      "stretch": "Slight stretch",
+      "alterations": "None recorded — sample",
+      "known_wear": "Light sample wear",
+      "measurements": [
+        {
+          "key": "chest",
+          "value": 91,
+          "unit": "cm"
+        },
+        {
+          "key": "length",
+          "value": 99,
+          "unit": "cm"
+        }
+      ],
+      "images": [
+        {
+          "id": "e436a537-3325-5384-b1ae-54a092f51810",
+          "url": "/fixtures/garment-placeholder.svg",
+          "alt_text": "Sample Studio 8 Gray Bridal Ensembles 40 — demo placeholder",
+          "width": 900,
+          "height": 1200,
+          "sort_order": 0,
+          "media_status": "fixture"
+        }
+      ],
+      "date_blocks": [
+        {
+          "start": "2026-11-05",
+          "end": "2026-11-08",
+          "reason": "demo-block"
+        }
+      ]
+    }
+  ],
+  "sample_profiles": {
+    "lender": {
+      "id": "40eb3b71-183d-5b4c-b7ec-0a49b539f0b8",
+      "display_name": "Sample Lender",
+      "email": "lender@example.invalid",
+      "roles": [
+        "renter",
+        "lender"
+      ],
+      "status": "active",
+      "lender_profile": {
+        "id": "d9927684-1454-51bb-9491-d2d5032e6820",
+        "display_name": "Sample Lender",
+        "metro_id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
+        "status": "active"
+      },
+      "created_at": "2026-10-01T12:00:00+00:00",
+      "updated_at": "2026-10-01T12:00:00+00:00"
+    },
+    "renter": {
+      "id": "85ba0e7f-87cb-5504-ab8c-4acbfab654da",
+      "display_name": "Sample Renter",
+      "email": "renter@example.invalid",
+      "roles": [
+        "renter"
+      ],
+      "status": "active",
+      "lender_profile": null,
+      "created_at": "2026-10-01T12:00:00+00:00",
+      "updated_at": "2026-10-01T12:00:00+00:00"
+    }
+  }
+}
