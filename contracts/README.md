@@ -6,10 +6,12 @@ Source declarations: `services/api/src/dzirent_api/models.py` and `contract.py`.
 Derived files: `openapi.json`, then `packages/client/src/generated/api.ts`.
 Run `pnpm contracts:generate`; CI runs `pnpm contracts:check`. Do not hand-edit derived files.
 
-OpenAPI describes the candidate Phase 1 API, not the delivered runtime. Only health routes are mounted
-in Phase 0; schema-only declarations never serve as a working catalog backend. The endpoint fixtures in
-`fixtures/catalog/examples.json` include one request/response per declared operation, plus common errors.
-MSW and the connected backend must consume the same wire shapes and stable reference IDs.
+Since API-1 (issue #3), `contracts/openapi.json` is generated from the **runtime** FastAPI routers and
+is byte-identical to the foundation candidate. Every operation is implemented against PostgreSQL except
+the two upload operations, which remain contract-only declarations for the connected media milestone and
+are not mounted at runtime (404). The endpoint fixtures in `fixtures/catalog/examples.json` include one
+request/response per declared operation, plus common errors. MSW and the connected backend must consume
+the same wire shapes and stable reference IDs. Implementation clarifications are listed at the end.
 
 ## Routes and ownership
 
@@ -114,3 +116,42 @@ Connected requests never fall back to mock success; periodic refresh is 5 second
 Version changes require an approved architecture/change note and consumer notification. Regenerate
 OpenAPI/types in one reviewed change; Claude publishes compatible contract additions before consumers
 depend on them. The foundation candidate is not a claim that three agents have already agreed.
+
+## API-1 implementation notes (no wire-shape change)
+
+Change note for contract `0.1.0-candidate.1`, published with the Phase 1B API (issue #3). OpenAPI and
+generated TypeScript are unchanged. These clarify behavior that MSW and acceptance tests should mirror.
+
+- **Subcategory narrows.** With `subcategory` set, results are that leaf's primary or secondary members
+  only, even if `category` lists several roots; the leaf must belong to an effective root or 422.
+- **Facets without `category`** return every configured brand/color/size reference value; occasions and
+  fabrics are distinct values from public listings. With `category`, all arrays come from that context.
+- **Additive error codes** (stable `error.code`, same envelope): 404 `profile_not_found` (call
+  `POST /me/bootstrap` first); 403 `account_inactive` (deactivated profile; reads allowed, writes refused);
+  503 `schema_not_current` (readiness only); 405 `method_not_allowed`; 500 `internal_error`.
+- **Error details.** 422 items are `{field, issue, message}` with dotted fields such as
+  `body.data.band` or `query.start`; inputs are never echoed. 401 details are `[{reason}]` (e.g.
+  `missing`, `malformed`, `token-expired`). 409 details are `[{field: "expected_version", current_version}]`.
+- **Readiness** returns 200 `{status: "ready"}` only when PostgreSQL is reachable and at the expected
+  migration head. The readiness fixture example now shows that success case.
+- **Demo identity** (API side): `Authorization: Bearer mock:<subject>`, accepted only with `mode=demo` and
+  `environment=local|test`. The seed lender is `mock:sample-lender`. Clerk mode accepts only Clerk
+  session JWTs from the Authorization header (no cookie fallback, no machine tokens) and checks issuer,
+  expiry, signature and authorized party.
+- **Profiles.** Bootstrap is idempotent, grants `renter`, and never reactivates an inactive profile.
+  `DELETE /me` sets the user and lender profile inactive; owned listings keep their status but leave the
+  public catalog. Preferences PATCH changes only supplied fields (explicit null clears) and rejects a ZIP
+  whose demo metro differs from the stored/supplied metro. Lender enrollment returns an existing profile
+  unchanged.
+- **Listing writes.** Server-assigned slug `<title-slug>-<8 hex>` that stays stable on edits; new listings
+  get `featured_rank = max + 1` and null sample rating. Limits: title 160, short attributes 120,
+  alterations/known wear 500, description 5000 (trimmed, no control characters); amounts ≤ 100,000,000
+  minor units; ≤ 8 secondary categories (no duplicates, primary leaf, or its own root); ≤ 20
+  measurements with keys normalized to lowercase `[a-z][a-z0-9_-]*`, values rounded to 0.01 cm and in
+  (0, 1000]; ≤ 50 date blocks between 2000 and 2100 that may not overlap; ≤ 12 images.
+- **Images.** `image_ids` may reference images already attached to the listing (reorder/remove). Only in
+  demo + local/test may they also reference seed fixture images, which are copied with new IDs. Otherwise
+  422 `issue: image_not_allowed`. A listing without images returns `images: []` and a deterministic local
+  placeholder as `image` (`media_status: "fixture"`).
+- **Concurrency.** Writes lock the row, compare `expected_version`, then increment it; concurrent edits
+  with the same version admit exactly one. Re-archiving at the current version is a no-op (no increment).
