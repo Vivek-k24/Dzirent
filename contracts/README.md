@@ -1,4 +1,8 @@
-# Candidate API contract 0.1.0-candidate.1
+# Candidate API contract 0.1.0-candidate.2
+
+Current version: `0.1.0-candidate.2` = `0.1.0-candidate.1` plus the additive Studio routes in
+[changes/0002-studios.md](changes/0002-studios.md). Everything below about catalog, profile and listing
+behavior is unchanged.
 
 Status: proposed common Phase 0 baseline, frozen for role work only after foundation review/merge.
 Temporary author: Codex integrator. Owner after merge: Claude Code.

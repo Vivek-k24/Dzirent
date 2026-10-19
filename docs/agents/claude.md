@@ -1,81 +1,58 @@
 # Claude Code status
 
-Task / GitHub issue: API-1 / [#3](https://github.com/Vivek-k24/Dzirent/issues/3), claimed by Claude Code.
-Branch: `claude/api-phase1`. Workspace: `H:\DziRent\worktrees\claude-api` (isolated clone; main checkout untouched).
-Base SHA: `37957823213cd2b25e980edad5058becdf9a7fbb` (`foundation-v0.1.0`), fast-forwarded to merged main
-`2ff5caefe2ea2bc9d0bbd00be1e2b7bdc9cf55b4` (identical tree) before committing.
-Validated implementation SHA: `980b9014dbbfb1158015fe86ca66bdfb584c2598`; `c07e49a` then rebuilt two dummy
-test fixtures at runtime (Gitleaks findings, not credentials), revalidated with the full suite. PR: [#11](https://github.com/Vivek-k24/Dzirent/pull/11).
-Owned paths: services/api/**, services/worker/**, infra/runtime/**, contracts/**, fixtures/catalog/**, this log.
-Milestone: Phase 1B. Status: ready for review (local PostgreSQL verified; live Clerk/hosted services unverified).
+## STUDIO-2 — lender Studio management and public exploration (current)
 
-## Implemented behavior
+Task / issue: [#16](https://github.com/Vivek-k24/Dzirent/issues/16). PR: [#19](https://github.com/Vivek-k24/Dzirent/pull/19) → main (do not merge before #17).
+Branch: `claude/studio-workflow` in `H:\DziRent\worktrees\claude-api` (clean checkout; previous branch merged as #11).
+Base SHA: `ffd4b96e4a24a741f0597faf514533f0c20bd33b` (PR #17 head, verified after fetch, per the issue amendment).
+Feature SHA: `ead93c72ecb52b876190edd59cd2ea9f9eba8f7c` (checks and preview below); the PR head adds only this log.
+Milestone / status: rental refresh batch, **ready for review and for Antigravity once both lane candidates exist.**
 
-- Schema: SQLAlchemy 2 + psycopg 3 models for the brief section 7 Phase 1 tables plus a small
-  `metro_postal_codes` demo ZIP map. One Alembic head, `0001_phase1_schema`. No password, payment or
-  later-phase tables. UUID keys, timestamptz audit fields, FKs, check/unique constraints, required indexes.
-- Seed: `python -m dzirent_api.seed`, deterministic upserts of 8 roots, 40 subcategories, 40 garments and
-  one seed lender (`mock:sample-lender`). Restores seed rows, keeps user rows, refuses production, needs
-  `--disposable-staging` for staging.
-- Public: `GET /catalog/products` (q, collection, category, subcategory, brand, color, band, size,
-  start/end, metro, zip, sort, page, page_size; deduplicated `total`, `collection_total`,
-  `available_total`), `/catalog/products/{slug}`, `/catalog/categories`, `/catalog/facets`,
-  `/locations/metros`, `/health/live`, `/health/ready` (200 only with DB reachable and at the migration head).
-- Protected: `POST /me/bootstrap`, `GET/PATCH/DELETE /me`, `GET/PATCH /me/preferences`,
-  `POST /me/lender-profile`, `GET/POST /lender/products`, `GET/PATCH/DELETE /lender/products/{id}`.
-  Ownership derives from the verified subject; cross-owner access is a non-enumerating 404; missing
-  enrollment 403; stale `expected_version` 409 with a row lock so concurrent edits admit exactly one.
-- Identity: official `clerk-backend-api` 7.0.0, Authorization header only, session tokens only, issuer,
-  expiry, signature and authorized party checked; JWKS outage is 503. Mock identity only in demo + local/test.
-- Platform: stable error envelope (normalized 422s, no input echo), request IDs, redacted JSON logs, safe
-  500s, exact CORS, statement/connect timeouts, Docker image, secret-free `.env.example`.
-- Not mounted: upload intent/complete (contract-declared for the connected media milestone; return 404).
+Implemented:
+- API: `studios` table via migration `0002_studios` (single head); owner `GET/PUT /me/studio` (verified principal,
+  stable server-assigned handle, `expected_version` → 409); public `GET /studios`, `/studios/{handle}`,
+  `/studios/{handle}/products` (distinct published counts; private/inactive/missing → 404; drafts/archived never
+  public; zero-product Studios have a profile but are not listed). Seed adds Studio `sample-lender` for the existing
+  seed lender; 40 product IDs, ownership and licensed photos unchanged.
+- Contract `0.1.0-candidate.2`, additive (no removed/changed path, operation or schema). OpenAPI, client types and
+  26 examples regenerated through repository commands. Exact diff: `contracts/changes/0002-studios.md`.
+- Web: `/lender/studio` (linked from the lender dashboard), `/studios`, `/studios/[handle]`; carousel pages through
+  every published outfit (photo/title/size only, pause/manual controls, hover/focus pause, reduced-motion stop,
+  reserved 3:4). Scoped CSS module, no new package. MSW handlers mirror the API for the public demo.
 
-## Contract
+Checks (Windows 11; Node 22.23.3, pnpm 10.29.3, Python 3.12.15/uv 0.13.1, Playwright 1.64.1 Chromium, PostgreSQL 17.11):
+- Real PostgreSQL (own disposable `*_test` DBs): CI selection `pytest -q tests/test_listings.py::test_create_persists_and_server_assigns_identity
+  tests/test_listings.py::test_cross_owner_access_is_non_enumerating_404 tests/workflows` with `DZIRENT_REQUIRE_DB_TESTS=1`:
+  **6 passed** (4 Studio cases). Selected migration/contract cases (single head, metadata parity, downgrade/upgrade,
+  contract reproduction): **4 passed**. Uvicorn on 8200: upgrade 0001→0002 on seeded data, seed ×2, edit, stale 409.
+- MSW browser demo (not DB evidence): `pnpm exec playwright test --config tests/workflows/playwright.config.ts`
+  → **6 passed in 15.3 s, 0 retries** (storefront smoke + 2 Studio scenarios × desktop 1440 / mobile 390).
+- `pnpm check` pass; `pnpm build` pass; Gitleaks v8.28.0 on changed directories: no leaks. No unit tests run/added.
 
-`contracts/openapi.json` is now generated from the runtime routers and is byte-identical to
-`0.1.0-candidate.1`; generated TypeScript is unchanged. Behavioral clarifications (additive error codes,
-subcategory narrowing, limits, image rules) are in `contracts/README.md` under "API-1 implementation notes".
-Only fixture change: the `getReadiness` example now shows the 200 success response instead of Phase 0's 503.
-Issue #4 (optional `occasion`/`fabric` filters) is a contract change and is deliberately not in this PR.
+Preview: https://dzirent-klq31u6o9-vivekkallakuri-8617.vercel.app/studios — `dpl_F9iVYUwGbpzrFKQft6BwHLGkmRST`,
+target preview, READY, uploaded from a clean worktree at `ead93c7` (Vercel records no commit SHA for CLI uploads).
+Dry-run file list inspected (261 files; no `.tools`/`.env`/`.vercel`). `vercel curl` (authenticated) returned 200 for
+`/studios`, `/studios/sample-lender`, `/lender/studio`, a seed PDP and `/`. Unauthenticated access is 401 under the
+project's existing preview protection (unchanged), so the preview itself was not browser-tested. No production
+alias/protection/DNS/Git-guard change; `dzirent.vercel.app` still serves the previous release. The preview uses the
+old shell; the header "Explore Studios" link arrives with Codex's PR (#15).
 
-## Checks (Windows 11, Python 3.12.15 via uv 0.13.1, PostgreSQL 17.11 in Docker Compose)
+Boundaries / handoffs:
+- No hosted database or identity; connected mode stays fail-closed. Demo persistence is per browser session (MSW).
+- Cross-lane (user-approved): one token in integrator-owned `scripts/validate_foundation.py` so `put` operations
+  are counted. Integrator may accept or replace it.
+- Antigravity (later, combined QA): legacy manual `tests/contracts/api-smoke.spec.ts` pins `0.1.0-candidate.1`
+  and Phase 0 readiness; realign it to `0.1.0-candidate.2`. No QA work was started here.
+- Codex: no Codex-owned files edited; Studio pages don't import `product-card.tsx` or rely on PDP markup.
 
-- `pytest -q` with `DZIRENT_TEST_DATABASE_URL=...dzirent_api_test` and `DZIRENT_REQUIRE_DB_TESTS=1`:
-  **254 passed**, 1 warning (Starlette TestClient httpx deprecation), 136 s. Real PostgreSQL throughout.
-- `pytest -q` without a database (CI shape): 26 passed, 228 skipped. Skips are not passes.
-- `ruff check`, `ruff format --check` (API, fixture generator, validator): pass. `mypy` strict: pass.
-- `python -m dzirent_api.export_contract --check`: OpenAPI matches. `scripts/validate_foundation.py`: PASS.
-- `pip-audit --skip-editable`: no known vulnerabilities.
-- `alembic upgrade head` on empty DB, seed twice, Uvicorn on 8000 over HTTP; `docker build` and container
-  run (uid 10001, healthy, ready) and `docker compose -f compose.yaml -f infra/runtime/compose.api.yaml up`.
-- Clerk tests sign tokens with locally generated RSA keys through the real SDK path (networkless
-  `jwt_key`). No live Clerk instance was used; JWKS outage was simulated by patching the SDK fetch.
-- Not run locally: `pnpm check` (host Node is 18). GitHub CI at `c07e49a`: `foundation` (full `pnpm check`,
-  including TypeScript contract drift), `dependencies` and `source-scan` passed. `secrets` fails only on two fake
-  fixtures in historical commit `77a329d`; the tip scans clean (Gitleaks v8.28.0). The user chose a root
-  `.gitleaksignore` from Codex over rewriting history; fingerprints are posted on PR #11.
+Next action: review of #19 after #17 merges; integrate with Codex's candidate; then Antigravity combined QA.
 
-## Known gaps / dependencies
+## Archive: API-1 Phase 1B backend (merged as #11)
 
-- No live Clerk development instance, issuer, authorized parties or keys were provided. Connected mode
-  refuses to start without them. Real provider verification is unrun.
-- No hosted Neon/Render/S3. No deployment, DNS or cloud resource was created.
-- Not implemented: rate limiting (429) at a trusted boundary, idempotency keys for duplicate create
-  submissions (UI-side guard expected), image uploads/S3, Sentry. Backup/restore not configured or rehearsed.
-- The UI → API → PostgreSQL → reload acceptance gate needs Codex's connected adapter plus a Clerk instance.
-
-## Requested changes from other owners
-
-- Codex: add root `.gitleaksignore` with the two fingerprints posted on PR #11 (or squash-merge). integrate `infra/runtime/compose.api.yaml` into root `compose.yaml` (or keep as override); consider
-  root scripts `db:migrate`, `db:seed`, `test:api`; mirror the contract README implementation notes in MSW
-  (subcategory narrowing, additive error codes); confirm the issue #4 URL names before I publish that change.
-- Antigravity: `tests/contracts/api-smoke.spec.ts` pins Phase 0 behavior (readiness `foundation_not_connected`,
-  catalog 404). Against this API, readiness without a database is 503 `dependency_unavailable` and with one is
-  200; the catalog is mounted (503 without a database). Please add a PostgreSQL service to CI and set
-  `DZIRENT_TEST_DATABASE_URL` (a `*_test` database) with `DZIRENT_REQUIRE_DB_TESTS=1` so the 228 DB tests run.
-
-## Next action
-
-Review of this PR. Then the issue #4 contract extension as a separate, coordinated PR, and connected
-verification once a Clerk development instance is configured.
+Issue [#3](https://github.com/Vivek-k24/Dzirent/issues/3); PR [#11](https://github.com/Vivek-k24/Dzirent/pull/11), merged 2026-10-19 (`4c16517`).
+FastAPI/SQLAlchemy/Alembic Phase 1 schema (`0001_phase1_schema`), restricted idempotent seed, public catalog,
+own-profile/preferences/lender enrollment and owner listing CRUD with row-locked versioning, Clerk SDK verification,
+error envelope, redacted logs, readiness, Docker runtime. Validation then: 254 PostgreSQL tests passed; static,
+contract, fixture and dependency checks passed. Remaining from that milestone: no live Clerk instance or hosted
+database/services; no 429 rate limiting, create idempotency keys, uploads or Sentry; issue #4 occasion/fabric
+filters pending confirmation.
