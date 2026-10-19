@@ -1,74 +1,66 @@
 # Antigravity status
 
-Task / issue: QA-1 claimed (independent verification, architectural alignment, test suites, CI workflows, QA reports, and deployment runbooks).
+Task / issue: QA-2 claimed (independent Phase 1A presentation verification, browser CI fix, multi-browser acceptance, and release verdict; GitHub Issue #10).
 Branch: `antigravity/qa-phase1`
 Worktree: `H:\DziRent\worktrees\antigravity-qa`
-Base SHA: `37957823213cd2b25e980edad5058becdf9a7fbb` (`foundation-v0.1.0`)
-Current pushed SHA: `f0550c81d5e034236e034c0403c382998a1fcb90` (branch `antigravity/qa-phase1`). PR target: main.
+Foundation Base SHA: `2ff5cae77ec165637ae02fade6d4619826760f28` (`main` post-Foundation PR #1 merge)
+Frontend Release Candidate Tested: `aa495e1c26307323b9139aa0dafc7c54cfc9e268` (Codex `codex/web-phase1`, PR #5)
+Tested Integration Candidate SHA: `5561c82e1b45ab69acd312aa6df2498634d23c2e`
+PR target: `main` (integration base `2ff5cae77ec165637ae02fade6d4619826760f28`).
 Owned paths: `tests/e2e/**`, `tests/contracts/**`, `tests/native/**`, `docs/qa/**`, `docs/runbooks/**`, `.github/workflows/**`, `infra/ci/**`, `docs/agents/antigravity.md`.
-Milestone: Phase 0 verified / Phase 1 verification framework ready.
-Status: ready for review / monitoring parallel Phase 1A (Codex) and Phase 1B (Claude Code) PRs.
+Milestone: Phase 1A presentation release candidate independently verified and APPROVED FOR DEMO RELEASE; Phase 1B connected persistence gated.
+Status: QA review complete; QA PR ready for integration; PR #5 review feedback posted.
 
 Implemented behavior:
-- Created and initialized isolated QA worktree at `H:\DziRent\worktrees\antigravity-qa` on `antigravity/qa-phase1` from baseline `37957823213cd2b25e980edad5058becdf9a7fbb`.
-- Installed and pinned browser automation engines: Chromium 156.0.8078.4, Firefox 157.0 (v1555), WebKit 27.2 (v2370).
-- Built comprehensive Requirements-to-Tests Matrix (`docs/qa/requirements-matrix.md`) mapping brief requirements REQ-1A-01 through REQ-1B-08 to test suites and gates.
-- Built independent Contract Verification Suite (`tests/contracts/`):
-  - `taxonomy-fixtures.spec.ts`: Asserts exactly 8 roots, 40 subcategories, 40 garments, 1 seed lender, 3:4 aspect ratio, non-overlapping Price Bands A-D.
-  - `openapi-contracts.spec.ts`: Asserts candidate OpenAPI `/api/v1` routes, Error envelopes, and absence of caller-controlled ownership fields in write schemas.
-  - `api-smoke.spec.ts`: Asserts `/health/live` returns 200, `/health/ready` returns 503 (fail-closed), and unmounted routes return 404.
-  - `playwright.config.ts`: Independent test runner config with API webServer integration.
-- Built multi-browser & accessibility E2E suite (`tests/e2e/`):
-  - `playwright.config.ts`: Multi-browser projects (Chromium, Firefox, WebKit) across viewports 390, 768, 1100, 1440 px, reporting to `playwright-report` and `test-results/artifacts`.
-  - `foundation-baseline.spec.ts`: Multi-browser verification with axe-core (0 violations, 0 console errors, 0 failed network requests, verified screenshots).
-  - `phase1a-acceptance.spec.ts`: Full Phase 1A presentation acceptance suite covering 4 content sections, header search/location, drawer, URL state, 4-day dates, sorting, views, PDP, cart, auth modals, and lender dashboard.
-- Configured CI workflows:
-  - `.github/workflows/qa-acceptance.yml`: GitHub Actions workflow running contracts, multi-browser E2E, accessibility checks, artifact uploads, and preview deployment smoke checks.
-  - `infra/ci/container-scan.sh`: Container vulnerability scanner.
-- Authored Deployment & Rollback Runbooks (`docs/runbooks/`):
-  - `presentation-deployment.md`: Vercel prototype deployment, environment variables, DNS setup for `demo.dzirent.com`, and preview smoke verification.
-  - `connected-deployment.md`: Render Docker API, Neon PostgreSQL connection pooling, Clerk identity, and migration sequence.
-  - `rollback-and-recovery.md`: Web/API instant rollback, expand/contract database evolution rules, and disaster recovery rehearsal.
-- Authored QA Report (`docs/qa/phase1-qa-report.md`) recording exact test results, environment details, defect classification, architectural boundary verification, and release verdict.
+- Fixed Browser CI run failure: Updated `.github/workflows/qa-acceptance.yml` to pin verified release `actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02` (`v4.6.2`). Verified all other action pins against official repository release tags.
+- Eliminated all false-pass fallbacks: Rewrote `tests/e2e/phase1a-acceptance.spec.ts` removing early returns and shell-skipping branches. Tests assert real UI behavior and fail immediately if controls or mutations are absent.
+- Codified full behavioral acceptance suite:
+  - Sorting physically reorders product cards (`price_asc`).
+  - Search and facet filters alter card counts and URL history (`?q=`, browser Back/Forward).
+  - Cart actions increment cart badge and block duplicate overlapping 4-day rentals.
+  - Centered sample authentication simulation enforces focus trap and redirects to `/lender/dashboard`.
+  - Lender dashboard executes full CRUD simulation (seed 40 -> optimistic 503 rollback -> draft save -> edit to published -> archive -> reset).
+  - Unknown outfit slug `/products/unknown-outfit-slug` returns true HTTP 404 with "Outfit not found" heading.
+  - `axe-core` accessibility checks confirm 0 violations across primary routes.
+  - Loading suite (`tests/e2e/loading.spec.ts`) verifies exactly 8 skeletons, $\ge$ 300ms feedback, and 1 catalog request.
+- Independent Contract Verification Suite (`tests/contracts/`):
+  - Updated `openapi-contracts.spec.ts` to assert that write schemas (`ProductWrite`, `ProductPatch`, `ProfilePatch`, `LenderEnrollment`) explicitly exist in OpenAPI before inspecting fields.
+  - Added unknown product slug 404 test in `api-smoke.spec.ts`.
+- Reconciled cleanly with Codex frontend candidate `aa495e1c26307323b9139aa0dafc7c54cfc9e268` (PR #5) without modifying production code.
+- Authored QA Report Version 2.0.0 (`docs/qa/phase1-qa-report.md`) detailing all test execution records, environment parameters, browser engines, defect classification, and release verdict.
 
 Files changed:
-- `docs/agents/antigravity.md`
-- `docs/qa/requirements-matrix.md`
-- `docs/qa/phase1-qa-report.md`
-- `tests/contracts/playwright.config.ts`
-- `tests/contracts/taxonomy-fixtures.spec.ts`
+- `.github/workflows/qa-acceptance.yml`
 - `tests/contracts/openapi-contracts.spec.ts`
 - `tests/contracts/api-smoke.spec.ts`
-- `tests/e2e/playwright.config.ts`
-- `tests/e2e/foundation-baseline.spec.ts`
 - `tests/e2e/phase1a-acceptance.spec.ts`
-- `.github/workflows/qa-acceptance.yml`
-- `infra/ci/container-scan.sh`
-- `docs/runbooks/presentation-deployment.md`
-- `docs/runbooks/connected-deployment.md`
-- `docs/runbooks/rollback-and-recovery.md`
+- `tests/e2e/support.ts`
+- `tests/e2e/loading.spec.ts`
+- `docs/qa/phase1-qa-report.md`
+- `docs/agents/antigravity.md`
 
 Contract version / compatibility notes:
 - Contract version `0.1.0-candidate.1` verified; candidate taxonomy and 40-item fixtures verified.
-- ErrorEnvelope schema (`Error`, `ErrorBody`) verified. Write schemas verified to deny caller-controlled owner ID, lender ID, or admin role.
+- Write schemas verified to deny caller-controlled owner ID, lender ID, or admin role.
+- Fail-closed readiness probe returns 503 until PostgreSQL is connected.
 
 Checks:
-- `pnpm install --frozen-lockfile`: exit 0, all packages resolved and verified.
-- `pnpm api:sync`: exit 0, Python 3.12.15 environment synced via uv.
-- `pnpm check`: exit 0 (ESLint clean, TypeScript 0 errors, Ruff clean, mypy clean, pytest 8 passed, contract generation, fixtures check).
-- `pnpm exec playwright test --config tests/contracts/playwright.config.ts`: exit 0 (**14 passed in 4.2s**).
-- `pnpm exec playwright test tests/e2e/foundation-baseline.spec.ts --config tests/e2e/playwright.config.ts`: exit 0 (**7 passed in 1.2m across Chromium, Firefox, WebKit at 390, 768, 1100, 1440 px; 0 axe violations, 0 console errors, 0 failed requests**).
-- `pnpm exec playwright test tests/e2e/phase1a-acceptance.spec.ts --project chromium-1440 --config tests/e2e/playwright.config.ts`: exit 0 (**11 passed in 21.4s**).
+- `pnpm check`: exit 0 (ESLint clean, TypeScript 0 errors, Vitest 14/14 passed, media check 40 photos/2 fonts, Ruff clean, mypy clean, pytest 8 passed, contracts:check, fixtures:check).
+- `pnpm build`: exit 0 (Next.js Turbopack production build clean).
+- `pnpm exec playwright test --config tests/contracts/playwright.config.ts`: exit 0 (**15 passed in 3.6s**).
+- `pnpm exec playwright test tests/e2e/foundation-baseline.spec.ts --config tests/e2e/playwright.config.ts`: exit 0 (**12 passed in 3.4m across Chromium, Firefox, WebKit at 390, 768, 1100, 1440 px; 0 axe violations, 0 console errors, 0 failed requests**).
+- `pnpm exec playwright test tests/e2e/phase1a-acceptance.spec.ts --project chromium-1440 --project firefox-1440 --project webkit-1440 --config tests/e2e/playwright.config.ts`: exit 0 (**33 passed in 3.3m across all 3 browser engines**).
+- `pnpm exec playwright test tests/e2e/loading.spec.ts --project chromium-1440 --project firefox-1440 --project webkit-1440 --config tests/e2e/playwright.config.ts`: exit 0 (**3 passed in 16.4s**).
 
 Known failures / blockers:
-- Phase 1A presentation catalog is pending Codex's `WEB-1` implementation in `codex/web-phase1`.
-- Phase 1B connected persistence and Clerk integration is pending Claude Code's `API-1` implementation in `claude/api-phase1`.
-- Attached external Vercel integration automatic deployment failure was observed on the initial push; repository guards in `vercel.json` (`git.deploymentEnabled=false`) correctly disable automatic Git deployments until authorized.
+- Phase 1A presentation release candidate has 0 blockers and is APPROVED FOR DEMO RELEASE.
+- Phase 1B connected persistence and Clerk integration is gated until Claude Code's `API-1` candidate (`claude/api-phase1`) is ready.
 
 Requested changes from another owner:
-- None at this time; all test paths, runbooks, QA documentation, and CI workflows are self-contained within Antigravity's owned paths.
+- None. Codex may proceed to integrate PR #5 and deploy the demo presentation build to Vercel.
 
 Next action:
-- Commit and push `antigravity/qa-phase1` work.
-- Open PR for independent verification and CI lane.
-- Await Phase 1A PR from Codex to execute multi-browser acceptance suite against interactive prototype.
+- Commit and push `antigravity/qa-phase1` work to `origin`.
+- Open reviewable QA PR targeting `main` referencing Issue #10 (`QA-2`).
+- Post review comment on PR #5 linking to QA Report v2.0.0.
+- Execute live URL smoke checks following Codex's authorized deployment.
