@@ -34,3 +34,8 @@ Fixture dates default to 2026-11-02 through 2026-11-05 inclusive, with some bloc
 
 Refer to `contracts/README.md` for sorting, visibility, counts, location, dates and URL semantics.
 The integrator validator is a foundation consistency check, not independent Antigravity acceptance.
+
+The API seed (`python -m dzirent_api.seed`, run from `services/api`) upserts these stable IDs into
+PostgreSQL, restores seed-owned rows on rerun and leaves user-created rows untouched. It refuses
+production and needs `--disposable-staging` for staging. Since API-1 the `getReadiness` example shows
+the connected success response instead of the Phase 0 503.
