@@ -4,12 +4,14 @@ Task / issue: BOOT-0, integrator-controlled Phase 0 bootstrap claim; no role imp
 Branch: `bootstrap/foundation`. Phase 1 reservation: `codex/web-phase1` in `H:\DziRent\worktrees\codex-web`.
 Base SHA: `bb77fb86b53b2086caf5a65f99614170a2d2c371` (preserved user main commit).
 Current pushed SHA: resolve the reviewed foundation PR head / immutable `foundation-v0.1.0` tag after push.
+Immutable implementation artifact: `8108879639ccb17b50e076a9e0f8d14f5c081cef`; PR #1 targets main.
 Owned paths: all initial bootstrap artifacts temporarily; post-merge ownership is in architecture/ownership.md.
 Milestone/status: Phase 0, ready for review after validation; role Phase 1A has not started.
 
 Implemented behavior: workspace tooling, status page, API health (ready=503), schema-only candidate
 contract, deterministic taxonomy/40-item fixtures, type generation, mode guards, ownership/docs and first CI.
 Files changed: review foundation PR diff; no application CRUD or external provider/deployment behavior.
+An attached integration's failed automatic Vercel check was observed; repository guards disable automatic Git deployments.
 Contract: `0.1.0-candidate.1`; candidate clarifications in ADR 0001 require baseline review.
 Checks: exact commands/results/environment and known earlier failures are in `docs/qa/bootstrap-validation.md`.
 Failures/blockers: Phase 1 acceptance is unimplemented/unrun; photography is placeholder; providers unconfigured/unverified.

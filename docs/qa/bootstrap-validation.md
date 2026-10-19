@@ -3,7 +3,9 @@
 Date: 2026-10-18 (America/Chicago). Tester: Codex bootstrap integrator, **not independent Antigravity QA**.
 Checkout: `H:\DziRent\Dzirent_dev`, `bootstrap/foundation`; preserved main base
 `bb77fb86b53b2086caf5a65f99614170a2d2c371`. These initial results were collected on the foundation
-working tree; an immutable artifact commit reference is added in the final handoff record.
+working tree, committed unchanged as implementation artifact
+`8108879639ccb17b50e076a9e0f8d14f5c081cef`. The final candidate adds the validation receipt
+and no-deploy guard; its exact SHA is the immutable `foundation-v0.1.0` tag / final PR head.
 Contract: `0.1.0-candidate.1`; fixtures `0.1.0`.
 
 Environment: Windows PowerShell, Node 22.23.3 (checksummed portable official distribution), pnpm
@@ -56,9 +58,8 @@ Clerk token validation, row ownership, persistence or database correctness.
 
 ## Boundaries still untested/unimplemented
 
-GitHub Actions runs, CodeQL, Trivy and hosted Gitleaks results are pending the foundation push/PR;
-workflow configuration is not a passing scan. A local staged/history Gitleaks result is recorded below
-only after execution. Dependabot support was checked against GitHub's current ecosystem documentation;
+Hosted check outcomes and local staged/history Gitleaks are recorded below only after execution.
+Workflow configuration alone is not a passing scan. Dependabot support was checked against GitHub's current ecosystem documentation;
 actual scheduled updates have not run. No application Dockerfile exists, so no application container
 image can be scanned/built yet; the first Trivy job scans source/dependencies/configuration.
 
@@ -70,3 +71,25 @@ fashion photography required for the eventual presentation. Browser axe is not s
 
 Phase 0 review verdict: foundation artifacts are locally consistent; candidate contract/ADR review and
 the foundation PR/CI review are required before role work. Phase 1 gates remain open.
+
+## Immutable and hosted evidence
+
+- Implementation artifact: `8108879639ccb17b50e076a9e0f8d14f5c081cef`.
+- `git diff --cached --check`: exit 0 for all staged foundation files before artifact commit.
+- Gitleaks 8.30.1 Windows release verified against publisher SHA256 checksums.
+- `gitleaks git --pre-commit --staged --redact --no-banner`: exit 0, no leaks, ~994 KB scanned.
+- `gitleaks git --redact --no-banner`: exit 0, no leaks across 3 commits / ~1.06 MB, including artifact.
+- [Linux foundation run](https://github.com/Vivek-k24/Dzirent/actions/runs/39182873701): **success**
+  at the artifact SHA; frozen installs, `pnpm check`, build and Compose parse passed on Ubuntu 24.04.
+- [Security run](https://github.com/Vivek-k24/Dzirent/actions/runs/39182873736): dependency audits,
+  Gitleaks, Trivy source/dependency/configuration scan and CodeQL all **success** at the artifact SHA.
+  No application container image exists to scan.
+- PR: https://github.com/Vivek-k24/Dzirent/pull/1.
+- GitHub also reported an attached Vercel integration's automatic deployment **failure** for the first push
+  (`dpl_HEytRmSwYN65zbmgXKsGV8paWeDk`). No deployment command/API was invoked by this agent and
+  no successful deployment is claimed. Root and web-app `vercel.json` disable automatic Git deployments
+  per the provider's documented switch. This external integration check is not foundation CI; hosting
+  repair/redeployment is outside Phase 0.
+- Both no-deploy JSON files were validated with jsonschema against the live official
+  `https://openapi.vercel.sh/vercel.json` schema; assertions confirmed `git.deploymentEnabled=false`.
+- Temporary local smoke servers were stopped by their verified process IDs after the checks.

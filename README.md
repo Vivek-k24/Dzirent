@@ -80,3 +80,8 @@ The remote was initially empty. The brief-only base was preserved on `bootstrap/
 A concurrent user commit created `main` (`bb77fb86b53b2086caf5a65f99614170a2d2c371`),
 which is preserved as the foundation PR base. Protect main and require CI/owner review after the
 reviewed foundation lands. This agent did not push or merge changes directly to main.
+
+An attached Vercel GitHub integration reported a failed automatic deployment when the first foundation
+commit was pushed. Root and web-app `vercel.json` files now disable all automatic Git deployments.
+Re-enabling them is a later reviewed, explicitly authorized release change. No successful deployment,
+Vercel project configuration, DNS or cloud service creation is claimed by bootstrap.

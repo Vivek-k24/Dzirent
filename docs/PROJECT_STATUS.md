@@ -9,6 +9,9 @@ Repository: https://github.com/Vivek-k24/Dzirent. PR base:
 Candidate baseline: immutable `foundation-v0.1.0` tag; exact full SHA is given by
 `git rev-parse 'foundation-v0.1.0^{commit}'` and the foundation PR head.
 Contract version: **0.1.0-candidate.1**. This is a proposed freeze, not an assertion of prior joint approval.
+Implementation artifact commit: `8108879639ccb17b50e076a9e0f8d14f5c081cef` (immutable local/CI evidence).
+Foundation PR: https://github.com/Vivek-k24/Dzirent/pull/1. The final tagged candidate additionally
+records this evidence and disables attached automatic Vercel deployments.
 
 Delivered: workspace/version baseline and exact lockfiles; minimal Next status shell/API health;
 candidate schema-only OpenAPI with generated TypeScript; deterministic 8-root/40-leaf/40-garment
@@ -16,8 +19,13 @@ manifest with one lender and 21 operation examples; canonical modes and startup 
 ownership/agent handoff, architecture notes, first CI/security configuration and actual bootstrap validation.
 
 Read [validation](qa/bootstrap-validation.md) for real commands/results and untested checks.
+Artifact Linux foundation CI and dependency/Gitleaks/Trivy/CodeQL checks passed at the immutable
+implementation SHA above; final PR-head checks are visible on PR #1.
 No full application, CRUD/database schema/migrations, provider authentication, cloud service,
 deployment, DNS, native build, reservation or payment work was performed. Readiness remains 503.
+An attached Vercel integration automatically attempted and failed a deployment on the initial push;
+no deployment command was invoked by the agent. Root/web-app guards now disable automatic Git
+deployments. Keep that external check distinct from the foundation/security CI results.
 
 Merge gate: review ADR 0001's navigation/availability clarifications, candidate contract and fixture set;
 review CI results, then merge the foundation. All roles subsequently start from the **same exact**

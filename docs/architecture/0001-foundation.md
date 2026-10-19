@@ -69,6 +69,12 @@ There are no pre-existing code conflicts. These brief ambiguities need one commo
    high-severity braces advisory. Use ESLint 10 with compatible TypeScript/React Hooks rules for the
    foundation instead; independent axe/browser checks remain Antigravity's lane. Do not disable strict
    peers or suppress the advisory. Add Next-specific lint rules once the upstream dependency set is fixed.
+7. **Attached deployment automation.** The first foundation push exposed an existing Vercel GitHub
+   integration: its automatic deployment check failed. No deployment was invoked by the agent. To
+   honor the explicit no-deploy boundary, root and web-app `vercel.json` set `git.deploymentEnabled=false`.
+   This is the smallest repository-level compatibility change; no provider account/DNS was modified.
+   Re-enable only in a later reviewed release with deployment authorization. See the
+   [official Git configuration](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments).
 
 Merge accepts the candidate contract version `0.1.0-candidate.1` without inventing prior consensus.
 Before merging, owner/reviewer should assess these clarifications. Contract changes after merge belong
