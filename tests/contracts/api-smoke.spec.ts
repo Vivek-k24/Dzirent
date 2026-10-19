@@ -26,6 +26,11 @@ test.describe("Independent Contract Verification: Live API Smoke", () => {
     expect(res.status()).toBe(404);
   });
 
+  test("GET /api/v1/catalog/products/unknown-outfit-slug returns HTTP 404", async ({ request }) => {
+    const res = await request.get(`${API_BASE}/api/v1/catalog/products/unknown-outfit-slug`);
+    expect(res.status()).toBe(404);
+  });
+
   test("Non-existent route returns 404", async ({ request }) => {
     const res = await request.get(`${API_BASE}/api/v1/nonexistent-route-check`);
     expect(res.status()).toBe(404);

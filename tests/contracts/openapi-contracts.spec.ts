@@ -65,30 +65,33 @@ test.describe("Independent Contract Verification: OpenAPI Schemas and Fixtures",
     expect(errorBodySchema.properties?.details).toBeDefined();
   });
 
-  test("Write schemas do not accept caller-controlled owner ID, lender ID, or admin role", () => {
+  test("Write schemas exist and do not accept caller-controlled owner ID, lender ID, or admin role", () => {
     const schemas = openapi.components?.schemas;
-    const writeSchemas = ["ProductWrite", "UserWrite", "LenderProfileWrite", "ProductPatch"];
+    expect(schemas, "components.schemas must be defined in openapi.json").toBeDefined();
+
+    const writeSchemas = ["ProductWrite", "ProductPatch", "ProfilePatch", "LenderEnrollment"];
 
     for (const name of writeSchemas) {
       const schema = schemas[name];
-      if (schema?.properties) {
-        expect(
-          schema.properties.user_id,
-          `${name} must not allow client user_id`
-        ).toBeUndefined();
-        expect(
-          schema.properties.lender_profile_id,
-          `${name} must not allow client lender_profile_id`
-        ).toBeUndefined();
-        expect(
-          schema.properties.is_admin,
-          `${name} must not allow client is_admin`
-        ).toBeUndefined();
-        expect(
-          schema.properties.role,
-          `${name} must not allow client role string override`
-        ).toBeUndefined();
-      }
+      expect(schema, `Write schema ${name} must be defined in openapi.json`).toBeDefined();
+      expect(schema.properties, `Write schema ${name} must have properties defined`).toBeDefined();
+
+      expect(
+        schema.properties.user_id,
+        `${name} must not allow client user_id`
+      ).toBeUndefined();
+      expect(
+        schema.properties.lender_profile_id,
+        `${name} must not allow client lender_profile_id`
+      ).toBeUndefined();
+      expect(
+        schema.properties.is_admin,
+        `${name} must not allow client is_admin`
+      ).toBeUndefined();
+      expect(
+        schema.properties.role,
+        `${name} must not allow client role string override`
+      ).toBeUndefined();
     }
   });
 

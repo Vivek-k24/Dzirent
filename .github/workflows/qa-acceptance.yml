@@ -66,7 +66,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium firefox webkit
       - name: Run E2E Test Suite
         run: pnpm exec playwright test --config tests/e2e/playwright.config.ts
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2b6fb6f7922e # v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: playwright-report
