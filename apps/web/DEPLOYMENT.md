@@ -55,6 +55,10 @@ team-wide protection or assume an authenticated test proves public access.
    (that exposes source files), deploy dirty source, upload `.tools`/environment secrets, or assign domains yet.
    Record the exact deployment ID, URL, Git SHA and build result. A remote Vercel build is a separate check
    from the local Next production build. If a platform-specific build issue occurs, fix/review/retest it first.
+   Before upload, run `vercel deploy --dry --json` and inspect its file list. The CLI does not inherit
+   `.gitignore`; root `.vercelignore` explicitly excludes local tools, caches, reports, dependency installs
+   and environment files. Verify all forty photos, both fonts, canonical fixture JSON, shared packages,
+   workspace manifests/lockfile and web source remain included. A dry run creates no deployment.
 6. Verify the staged build with authorized protected-preview access, then promote that **same production
    deployment**, avoiding a preview-to-production rebuild. Repeat independent browser acceptance on the
    actual public alias without Vercel cookies or bypass headers: homepage, shared filtered links, PDP URL
