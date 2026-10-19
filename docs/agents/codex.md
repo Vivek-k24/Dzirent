@@ -1,5 +1,60 @@
 # Codex Phase 1A status
 
+## COLL-2 / issue #15: rental collection candidate — 2026-10-19
+
+Workspace: `H:\DziRent\worktrees\codex-web`; branch: `codex/rental-collections`.
+Exact fixed base: `ffd4b96e4a24a741f0597faf514533f0c20bd33b` from coordination PR #17.
+The issue's launch amendment authorizes this unmerged baseline; it supersedes the launch document's
+assumed-merged wording. #17 is OPEN with all seven reported checks successful at the latest read.
+Do not merge either PR from this lane. Previous branches, user work and presentation tags are preserved.
+
+Implemented: two normal route links with active indicators, warm neutral tokens/surfaces, rental catalog
+introduction, eight-root/five-leaf category tree, default-open/collapsible desktop sidebar and accessible
+mobile drawer. Real parent checkboxes preserve repeated-category filtering; leaf buttons select one
+subcategory. Filters/chips/draft apply-discard, URL history/reload, search and actual grid/list remain.
+The UI requests newest explicitly, while shared parsing and API sort meanings/defaults remain unchanged.
+All sort choices serialize explicitly so selecting Featured survives the UI's different initial default.
+Removed hero/offer/editorial/mega-menu/pill layout and prominent retail/location clutter from owned paths.
+
+The shared shell always renders `DEMO ONLY. NOT A REAL BUSINESS.` in either mode. `Only in Texas` appears
+at the catalog introduction. Delivery ZIP is an optional saved preference, never an inventory filter;
+legacy metro/ZIP query parameters are ignored by the UI adapter. No ZIP map, city selection or estimate
+is fabricated. Listing CRUD retains its hidden legacy `metro_id` for wire compatibility. Full verified
+address migration and delivery service integration remain pending; no contract or API edits were made.
+
+PDP diagnosis: the existing public seed `/products/demo-women-dresses-01` returned 200, while its encoded
+equivalent `/products/%64emo-women-dresses-01` returned 404. The routing guard compared a raw encoded
+pathname with decoded seed slugs. Decode once before the existing guard; photo/title links share a
+canonical encoded href. No catalog/auth backend was added. All 40 published photo/title links and direct
+reloads now pass, including unavailable outfits; genuine missing outfits still return HTTP 404.
+
+Actual local validation (Windows, Node 22.23.3, pnpm 10.29.3, Python 3.12.15, uv 0.13.1):
+- `pnpm install --frozen-lockfile`: passed; dependencies and lockfiles unchanged.
+- `pnpm check`: passed once (lint/types, 40 licensed media/two fonts, Ruff/mypy, contracts and fixtures).
+  No unit tests or broad API matrix ran. The shared-parser correction received focused ESLint checks.
+- `pnpm audit --audit-level high`: passed, no known vulnerabilities.
+- Explicit-demo `pnpm build`: passed. Final review then found Featured could be omitted from the URL;
+  after correcting that serialization, affected ESLint and production build passed again.
+- `pnpm exec playwright test --config tests/workflows/playwright.config.ts`: six passed in 1.5 minutes,
+  zero retries, Chromium 1440/390 only. Two new scenarios plus existing smoke; all 40 published outfits
+  tested per width, with image loading, correct title/photo targets, reloads, encoded link and true 404.
+- After the sort correction, only the affected collection-tree/filter scenario reran at both widths:
+  `pnpm exec playwright test --config tests/workflows/playwright.config.ts tests/workflows/collections.spec.ts --grep 'collection tree, rental filters'`:
+  two passed in 8.8 seconds, including Featured and price/newest ordering. Unchanged PDP evidence reused.
+- No captured uncaught browser exceptions, failed media/assets or page overflow in those scenarios.
+
+Startup: `pnpm install --frozen-lockfile`, then `pnpm dev:web` (explicit local demo, port 3000).
+Production reproduction: set `NEXT_PUBLIC_DZIRENT_MODE=demo`, run `pnpm build`, then
+`pnpm --filter @dzirent/web start --port 3300`. No API credentials are needed for mock work.
+Owned diff only: assigned shell/catalog/filter/PDP/location/listing/client/token paths, two-scenario
+workflow file and this log. No root/CI/dependency, Claude contract/fixture/MSW/Studio or other-log edits.
+
+Delivery: implementation SHA, PR/CI state and exact-SHA unique demo preview evidence follow in the
+handoff record. Vercel account/team and existing `dzirent` project verified; dry packaging excludes
+credentials/caches and includes the licensed sample assets. No production/DNS/protection/guard changes.
+Pending cross-lane route: `/studios` intentionally awaits Claude's PR, with no duplicate route stub.
+Independent Antigravity verification is deferred until the user launches it after both lanes are ready.
+
 ## REL-1 release completed — 2026-10-19
 
 PR #13 merged frontend #5, backend #11 and QA #12 with their histories intact at

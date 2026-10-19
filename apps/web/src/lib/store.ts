@@ -35,7 +35,8 @@ export const useBag = create<BagState>()(persist((set, get) => ({
   },
   remove: key => set(s => ({ lines: s.lines.filter(x => x.key !== key) })),
   toggleSaved: id => set(s => ({ wishlist: s.wishlist.includes(id) ? s.wishlist.filter(x => x !== id) : [...s.wishlist, id] })),
-  setLocation: location => set({ location }), reset: () => set({ lines: [], wishlist: [], location: { metro: "", zip: "" } }),
+  // Preserve the legacy shape, but never use its metro as a delivery/stock rule.
+  setLocation: location => set({ location: { metro: "", zip: /^\d{5}$/.test(location.zip) ? location.zip : "" } }), reset: () => set({ lines: [], wishlist: [], location: { metro: "", zip: "" } }),
 }), {
   name: `dzirent-${process.env.NEXT_PUBLIC_DZIRENT_MODE ?? "demo"}-preferences-v1`, version: 1,
   storage: createJSONStorage(() => localStorage), skipHydration: true,
@@ -44,6 +45,6 @@ export const useBag = create<BagState>()(persist((set, get) => ({
     const value = stored as Partial<BagState> | undefined;
     const lines = Array.isArray(value?.lines) ? value.lines.filter(x => x && typeof x.key === "string" && typeof x.product?.id === "string" && Number.isSafeInteger(x.product.rental_price_minor) && x.product.rental_price_minor >= 0 && typeof x.product.brand?.label === "string" && typeof x.product.title === "string" && typeof x.product.slug === "string" && typeof x.product.image?.url === "string" && typeof x.product.size?.label === "string" && typeof x.start === "string" && typeof x.end === "string" && dateOnly(x.start) && dateOnly(x.end) && !rangeError(x.start, x.end)) : [];
     return { ...current, lines, wishlist: Array.isArray(value?.wishlist) ? value.wishlist.filter(x => typeof x === "string") : [],
-      location: value?.location && typeof value.location.metro === "string" && typeof value.location.zip === "string" ? value.location : current.location };
+      location: { metro: "", zip: typeof value?.location?.zip === "string" && /^\d{5}$/.test(value.location.zip) ? value.location.zip : "" } };
   },
 }));
