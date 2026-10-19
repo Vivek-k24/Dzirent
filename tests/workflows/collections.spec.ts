@@ -15,7 +15,10 @@ test("collection tree, rental filters, statewide ZIP, newest order and history w
   await page.goto("/");
   await expect(cards(page)).toHaveCount(40);
   await expect(page.getByText("DEMO ONLY. NOT A REAL BUSINESS.", { exact: true })).toBeVisible();
-  await expect(page.getByText("Only in Texas", { exact: true })).toBeVisible();
+  await expect(page.locator("header").getByText("Launching in Texas soon.", { exact: true })).toBeVisible();
+  await expect(page.locator("#main-content .breadcrumbs")).toHaveCount(0);
+  await expect(page.getByText("Only in Texas", { exact: true })).toHaveCount(0);
+  await expect(page.locator("footer")).not.toContainText("Texas · Presentation prototype");
   await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link")).toHaveCount(2);
   await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "All collections", exact: true })).toHaveAttribute("href", "/");
   await expect(page.getByRole("link", { name: "Explore Studios", exact: true })).toHaveAttribute("href", "/studios");

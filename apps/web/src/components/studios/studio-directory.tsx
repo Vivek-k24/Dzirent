@@ -15,10 +15,10 @@ function StudioCard({ studio }: { studio: Studio }) {
       <div>
         <h2 className={styles.studioName}><Link href={href}>{studio.display_name}</Link></h2>
         <p className={styles.meta}><span>Texas</span><span data-testid="studio-count">{outfitCount(studio.published_product_count)}</span></p>
-        {studio.bio ? <p className={`${styles.bio} ${styles.clamp}`}>{studio.bio}</p> : null}
       </div>
       <Link className={`${styles.button} ${styles.buttonOutline}`} href={href} aria-label={`Visit ${studio.display_name}`}>Visit Studio</Link>
     </div>
+    {studio.bio ? <p className={`${styles.bio} ${styles.clamp}`}>{studio.bio}</p> : null}
     <StudioCarousel studio={studio} />
   </li>;
 }
@@ -38,7 +38,6 @@ export function StudioDirectory() {
   return <main id="main-content" className={styles.page}>
     <div className={styles.intro}>
       <div>
-        <p className={styles.eyebrow}>Explore Studios</p>
         <h1 className={styles.title}>Lender Studios in Texas</h1>
         <p className={styles.lede}>A Studio is a lender’s public profile. Each preview rotates through every outfit that lender has published.</p>
       </div>

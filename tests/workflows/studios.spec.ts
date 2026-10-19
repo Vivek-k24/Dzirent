@@ -62,7 +62,7 @@ test("Studio preview rotates through every published outfit across API pages and
   const carousel = card.locator('[data-studio-carousel="sample-lender"]');
   const window = testInfo.project.name === "mobile" ? 2 : 3;
   // All four 12-item API pages load before the position reports the full set.
-  await expect(carousel.getByText(`Outfits 1–${window} of 40`, { exact: true })).toBeVisible();
+  await expect(carousel.locator("[data-studio-position]")).toHaveText(`Outfits 1–${window} of 40`);
   const slides = carousel.locator("li[data-product-id]");
   await expect(slides).toHaveCount(window);
   // Preview content is image, title and size only: no price, retail or rating overlays.
@@ -70,7 +70,23 @@ test("Studio preview rotates through every published outfit across API pages and
   await expect(carousel).not.toContainText(/retail|rating|band/i);
   await expect(slides.first().getByRole("img")).toHaveAttribute("alt", /.+/);
   // Reduced motion (configured for this suite) stops automatic rotation; manual controls remain.
-  await expect(carousel.getByRole("button", { name: "Auto-rotation off (reduced motion)" })).toBeDisabled();
+  await expect(carousel.getByRole("button", { name: /rotation/i })).toHaveCount(0);
+  await expect(carousel.locator("[data-studio-position]")).toHaveAttribute("aria-live", "polite");
+  await expect(page.locator("#main-content p").filter({ hasText: /^Explore Studios$/ })).toHaveCount(0);
+  const directory = page.getByRole("list", { name: "Studios", exact: true });
+  const columns = await directory.evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length);
+  expect(columns).toBe(testInfo.project.name === "mobile" ? 1 : 2);
+  const directoryBox = (await directory.boundingBox())!, cardBox = (await card.boundingBox())!;
+  expect(cardBox.width / directoryBox.width).toBeLessThan(testInfo.project.name === "mobile" ? 1.01 : 0.51);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  const photo = (await slides.first().getByRole("img").boundingBox())!;
+  expect(photo.width / photo.height).toBeCloseTo(3 / 4, 2);
+  const arrow = carousel.getByRole("button", { name: "Next outfit" });
+  await expect(arrow).toHaveCSS("border-radius", "0px");
+  await expect(arrow).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  const arrowBox = (await arrow.boundingBox())!;
+  expect(arrowBox.y + arrowBox.height / 2).toBeGreaterThan(photo.y);
+  expect(arrowBox.y + arrowBox.height / 2).toBeLessThan(photo.y + photo.height);
 
   const seen = new Set<string>();
   const next = carousel.getByRole("button", { name: "Next outfit" });
@@ -79,9 +95,9 @@ test("Studio preview rotates through every published outfit across API pages and
     await next.click();
   }
   expect(seen.size).toBe(40);
-  await expect(carousel.getByText(`Outfits 1–${window} of 40`, { exact: true })).toBeVisible();
+  await expect(carousel.locator("[data-studio-position]")).toHaveText(`Outfits 1–${window} of 40`);
   await carousel.getByRole("button", { name: "Previous outfit" }).click();
-  await expect(carousel.getByText(new RegExp(`^Outfits? 40.* of 40$`))).toBeVisible();
+  await expect(carousel.locator("[data-studio-position]")).toHaveText(/^Outfits? 40.* of 40$/);
 
   const preview = slides.first().getByRole("link");
   const href = await preview.getAttribute("href");
@@ -104,5 +120,36 @@ test("Studio preview rotates through every published outfit across API pages and
 
   expect((await page.goto("/studios/not-a-real-studio"))?.status()).toBe(200);
   await expect(page.getByRole("heading", { name: "Studio not available" })).toBeVisible();
+
+  // Exercise actual rotation timing and pause behavior without waiting through real intervals.
+  await page.goto("/studios");
+  const position = carousel.locator("[data-studio-position]");
+  await expect(position).toHaveText(`Outfits 1–${window} of 40`);
+  await page.clock.install();
+  await page.clock.fastForward(6000);
+  await expect(position).toHaveText(`Outfits 1–${window} of 40`);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.locator(".launch-note").hover();
+  await expect(position).toHaveAttribute("aria-live", "off");
+  await page.clock.fastForward(5100);
+  await expect(position).toHaveText(`Outfits 2–${window + 1} of 40`);
+  await carousel.hover();
+  await expect(position).toHaveAttribute("aria-live", "polite");
+  await page.clock.fastForward(10000);
+  await expect(position).toHaveText(`Outfits 2–${window + 1} of 40`);
+  await carousel.focus();
+  await page.locator(".launch-note").hover();
+  await page.clock.fastForward(6000);
+  await expect(position).toHaveText(`Outfits 2–${window + 1} of 40`);
+  await page.keyboard.press("Space");
+  await page.getByRole("link", { name: "dzirent home", exact: true }).focus();
+  await page.clock.fastForward(6000);
+  await expect(position).toHaveText(`Outfits 2–${window + 1} of 40`);
+  await carousel.focus();
+  await page.keyboard.press("Space");
+  await page.getByRole("link", { name: "dzirent home", exact: true }).focus();
+  await expect(position).toHaveAttribute("aria-live", "off");
+  await page.clock.fastForward(5100);
+  await expect(position).toHaveText(`Outfits 3–${window + 2} of 40`);
   expect(exceptions).toEqual([]);
 });
