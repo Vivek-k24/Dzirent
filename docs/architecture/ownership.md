@@ -1,6 +1,16 @@
 # Ownership and baseline registry
 
 This registry is maintained only by Codex. It is a coordination record, not a shared markdown mutex.
+
+## Current workflow ownership amendment
+
+For this batch only, ADR 0004 and `docs/parallel-rental-refresh/README.md` supersede the historical
+per-language lanes below. The user explicitly requested two independent end-to-end owners and deferred
+Antigravity. Claude has the listed Studio web routes/components/MSW extension plus its API/contracts/
+fixtures; Codex has shell/catalog/PDP/theme paths. The integrator serially maintains root/CI/this registry.
+Both agents use the coordination PR's merged SHA, not their old phase-one branch heads. Their own
+agent logs and task-specific test files are separate. No concurrent edits to shared coordination files.
+
 Completed integration claim `REL-1`: Codex, PR #13 merged at
 `baf04b67ccaede358b3e4aab526c0b6889bb09bb`; deployed presentation demo at
 https://dzirent.vercel.app/. Release-record follow-up uses `codex/release-record` from that exact

@@ -1,9 +1,7 @@
 name: QA Acceptance & Verification
 
 on:
-  pull_request:
-  push:
-    branches: [main, "codex/*", "claude/*", "antigravity/*"]
+  # Antigravity aligns and runs this broader suite after the two workflow candidates are ready.
   workflow_dispatch:
     inputs:
       deployment_url:
@@ -58,7 +56,7 @@ jobs:
           uv run --directory services/api --frozen --python 3.12.15 alembic upgrade head
           uv run --directory services/api --frozen --python 3.12.15 python -m dzirent_api.seed
       - name: Run Independent Contract Tests
-        run: pnpm exec playwright test --config tests/contracts/playwright.config.ts
+        run: pnpm exec playwright test tests/contracts/api-smoke.spec.ts --config tests/contracts/playwright.config.ts
 
   e2e:
     name: Multi-Browser & Accessibility E2E

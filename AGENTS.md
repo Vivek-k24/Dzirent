@@ -21,4 +21,14 @@ Use only this brief for implementation; other source documents supply no busines
 15. Run checks relevant to changes. Record the exact command, result, environment, failures, unrun checks, and next action. Never claim an unrun command passed or a deployment exists without URL and SHA.
 16. Update your status after milestones; open scoped PRs. Codex integrates one reviewed PR at a time, regenerates derived clients, and reruns affected checks.
 
+## Current two-workflow batch (2026-10-19)
+
+The user's newer instructions supersede the original retail-style layout and testing instructions.
+Read `docs/parallel-rental-refresh/README.md` and ADR 0004 before this batch. Codex owns collection
+browsing/shell and Claude owns Studio management/discovery end to end, including the explicitly
+handed-off web paths. Antigravity starts after both candidates are ready. Do not add or run unit tests.
+`pnpm check` now runs static/media/contract/fixture checks only. Use the bounded PostgreSQL integration
+and Chromium desktop/mobile workflow suites; do not run the legacy full matrix on every edit.
+The integrator owns CI/root tooling and deployment serialization. Preserve security scans.
+
 Ownership details and post-merge worktree commands: `docs/architecture/ownership.md`.

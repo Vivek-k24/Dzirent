@@ -4,6 +4,12 @@ Version 1.0 | Prepared October 18, 2026 | Status: proposed implementation baseli
 
 This document structures the application requirements. It does not claim that code, infrastructure, accounts, or deployments already exist. Sections 1–12 are the common specification. Section 13 contains the bootstrap prompt and three agent prompts. Section 14 contains hosting instructions. Section 15 lists documentation checked for this recommendation.
 
+> Current implementation amendment (2026-10-19): the user has replaced the retail merchandising/category
+> bars with All collections + Explore Studios, a collapsible filter sidebar, warm neutral surfaces, and
+> bounded integration/E2E-only checks. `docs/parallel-rental-refresh/README.md` and ADR 0004 are the
+> current scoped instructions; historical section 13 prompts are not the launch instructions for this batch.
+> Azure provisioning and real authentication remain a separate pending milestone.
+
 ## 1. Purpose and authority
 
 Build dzirent, a clothing and fashion rental application connecting renters with lenders. A person can browse garments, inspect photos and measurements, choose a size and rental dates, and maintain a cart. A lender can create and maintain their own garment listings. Web, Android, and iOS are clients of the same Python API and database.
