@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-CONTRACT_VERSION = "0.1.0-candidate.1"
+CONTRACT_VERSION = "0.1.0-candidate.2"
 MinorUnits = Annotated[int, Field(strict=True, ge=0)]
 Band = Literal["A", "B", "C", "D"]
 ProductStatus = Literal["draft", "published", "archived"]
@@ -252,3 +252,39 @@ class UploadComplete(WireModel):
     upload_id: UUID
     alt_text: str = Field(min_length=1, max_length=500)
     expected_version: int = Field(ge=1)
+
+
+# Studio workflow (contract 0.1.0-candidate.2, additive). A Studio is a lender's public profile.
+StudioHandle = Annotated[str, Field(pattern=r"^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$")]
+
+
+class Studio(WireModel):
+    id: UUID
+    handle: StudioHandle
+    display_name: str = Field(min_length=1, max_length=80)
+    bio: str = Field(max_length=600)
+    state_code: Literal["TX"] = "TX"
+    published_product_count: int = Field(ge=0)
+
+
+class StudioPage(Pagination):
+    items: list[Studio]
+
+
+class StudioProductPage(Pagination):
+    items: list[ProductCard]
+
+
+class StudioSettings(Studio):
+    is_public: bool
+    version: int = Field(ge=1)
+    created_at: datetime
+    updated_at: datetime
+
+
+class StudioUpdate(WireModel):
+    display_name: str = Field(min_length=1, max_length=80)
+    bio: str = Field(default="", max_length=600)
+    is_public: bool
+    # Omit or null to create the Studio; required and must match to update it.
+    expected_version: int | None = Field(default=None, ge=1)

@@ -323,3 +323,25 @@ class ProductUnavailability(Base):
     start_date: Mapped[date] = mapped_column(Date)
     end_date: Mapped[date] = mapped_column(Date)
     reason: Mapped[str] = mapped_column(String(32))
+
+
+class Studio(Base):
+    __tablename__ = "studios"
+    __table_args__ = (
+        CheckConstraint("handle ~ '^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$'", name="handle"),
+        CheckConstraint("length(btrim(display_name)) > 0", name="display_name"),
+        CheckConstraint("length(bio) <= 600", name="bio_length"),
+        CheckConstraint("version >= 1", name="version"),
+    )
+    # One optional public profile per lender. The handle is server-assigned and stays stable when
+    # the display name changes, so public URLs never break.
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    lender_profile_id: Mapped[UUID] = mapped_column(ForeignKey("lender_profiles.id"), unique=True)
+    handle: Mapped[str] = mapped_column(String(64), unique=True)
+    display_name: Mapped[str] = mapped_column(String(80))
+    bio: Mapped[str] = mapped_column(Text, default="")
+    is_public: Mapped[bool] = mapped_column(Boolean, default=False)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = created_column()
+    updated_at: Mapped[datetime] = updated_column()
+    lender_profile: Mapped[LenderProfile] = relationship()
