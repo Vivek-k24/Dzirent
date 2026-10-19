@@ -16,10 +16,12 @@ export function Modal({ open, onOpenChange, title, description, children, side =
   return <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
     {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
     <DialogPrimitive.Portal><DialogPrimitive.Overlay className="dialog-overlay" /><DialogPrimitive.Content className={`dialog-content dialog-${side}`} onOpenAutoFocus={() => {
-      previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      previousFocus.current = restoreId ? document.getElementById(restoreId) : document.activeElement instanceof HTMLElement ? document.activeElement : null;
     }} onCloseAutoFocus={event => {
-      let target = restoreId ? document.getElementById(restoreId) : previousFocus.current;
+      if (trigger && !restoreId) return; // Radix restores its own trigger, including Safari mouse activation.
+      let target = previousFocus.current;
       if (target?.matches(":disabled")) target = target.closest("article, section")?.querySelector<HTMLElement>("button:not(:disabled), a[href]") ?? null;
+      if (!target?.isConnected) target = document.querySelector<HTMLElement>("#main-content button:not(:disabled)");
       if (target?.isConnected) { event.preventDefault(); target.focus(); }
     }}>
       <div className="dialog-heading"><div><DialogPrimitive.Title>{title}</DialogPrimitive.Title><DialogPrimitive.Description className={description ? "muted" : "sr-only"}>{description ?? title}</DialogPrimitive.Description></div><DialogPrimitive.Close className="icon-button" aria-label={`Close ${title}`}><X size={20} /></DialogPrimitive.Close></div>
