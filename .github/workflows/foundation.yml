@@ -36,3 +36,35 @@ jobs:
       - run: pnpm check
       - run: pnpm build
       - run: docker compose config --quiet
+
+  api-postgres:
+    name: PostgreSQL API integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dzirent_ci_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dzirent_ci_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      DZIRENT_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/dzirent_ci_test
+      DZIRENT_REQUIRE_DB_TESTS: "1"
+      DZIRENT_MODE: demo
+      DZIRENT_ENVIRONMENT: test
+      DZIRENT_IDENTITY_MODE: mock
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: 0.13.1
+          python-version: 3.12.15
+          enable-cache: true
+      - run: uv sync --directory services/api --frozen --python 3.12.15
+      - name: Require the full API suite against real PostgreSQL
+        run: uv run --directory services/api --frozen --python 3.12.15 pytest -q

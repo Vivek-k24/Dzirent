@@ -71,6 +71,8 @@ switch (task) {
   case "check":
     pnpm(["lint"]);
     pnpm(["typecheck"]);
+    pnpm(["test:web"]);
+    pnpm(["media:check"]);
     api(["ruff", "check", ".", "../../fixtures/catalog/generate.py", "../../scripts/validate_foundation.py"]);
     api(["ruff", "format", "--check", ".", "../../fixtures/catalog/generate.py", "../../scripts/validate_foundation.py"]);
     api(["mypy"]);

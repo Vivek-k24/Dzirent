@@ -1,6 +1,9 @@
 # Ownership and baseline registry
 
 This registry is maintained only by Codex. It is a coordination record, not a shared markdown mutex.
+Active integration claim `REL-1`: Codex, `codex/release-integration`, foundation base
+`2ff5cae77ec165637ae02fade6d4619826760f28`. The user's explicit completion instruction authorizes
+the scoped API/QA handoff in ADR 0003; existing role branches and agent logs remain preserved.
 Bootstrap claim `BOOT-0`: Codex integration owner, Phase 0 foundation only, base
 `bb77fb86b53b2086caf5a65f99614170a2d2c371`, branch `bootstrap/foundation` (preserves concurrent user main commit).
 It expires on foundation merge. No other agent is running or has been asked to edit shared files.
@@ -20,17 +23,25 @@ enforceable separate domain review. Keep root and `.github/CODEOWNERS` synchroni
 
 ## Reserved role work
 
-All claims below are **queued, inactive until foundation merge**. On activation, choose/create a scoped
-GitHub issue and record its link plus the exact baseline SHA in the lane's own status file.
-No branch or worktree below has been started by the bootstrap.
+WEB-1 is active under the user's explicit Phase 1A instructions:
+[issue #2](https://github.com/Vivek-k24/Dzirent/issues/2), base
+`37957823213cd2b25e980edad5058becdf9a7fbb`, assigned checkout and branch below. The directory was empty;
+Codex initialized that isolated checkout directly without switching branches or editing the main checkout.
+Foundation PR #1 merged at `2ff5cae77ec165637ae02fade6d4619826760f28`. API-1 has separately claimed
+issue #3 under explicit user activation. Under the user's Section 13.2 continuation, Antigravity's
+independent QA lane is explicitly delegated QA-2 / #10 in its assigned checkout, with no frontend/API
+ownership handoff. Each lane's implementation status belongs to its own log/PR. No external role PR has
+yet been integrated; frontend #5 now targets main and dependent QA review is in progress.
 
 | Claim | Agent / branch | Working directory | Ports / database | First scoped task |
 | --- | --- | --- | --- | --- |
-| WEB-1 | Codex / `codex/web-phase1` | `H:\DziRent\worktrees\codex-web` | web 3000 | MSW contract adapter + reset, licensed fixture photography; header/nav/PLP/URL state |
-| API-1 | Claude / `claude/api-phase1` | `H:\DziRent\worktrees\claude-api` | API 8000; PG 5432 / `dzirent_dev` | Adopt candidate contracts/fixtures, migrations/schema/seed, catalog and protected own-profile/listing CRUD |
+| WEB-1 / #2 | Codex / `codex/web-phase1` | `H:\DziRent\worktrees\codex-web` | web 3000 | Active Phase 1A web candidate; review, independent QA, authorized preview |
+| API-1 / #3 | Claude / `claude/api-phase1` | `H:\DziRent\worktrees\claude-api` | API 8000; PG 5432 / `dzirent_dev` | Separately claimed; approved catalog and protected own-profile/listing CRUD handoff |
 | QA-1 | Antigravity / `antigravity/qa-phase1` | `H:\DziRent\worktrees\antigravity-qa` | web 3100, API 8100; PG 55432 / `dzirent_qa` | Independent requirements-to-tests matrix; contract/browser acceptance tests and CI/security checks |
 
-After merge, fetch and resolve **one** foundation SHA. The tag must point to the PR's reviewed commit;
+After merge, fetch and resolve **one** foundation SHA. Create only missing role checkouts/branches;
+do not rerun the Codex creation command against its existing assigned checkout.
+The tag must point to the PR's reviewed commit;
 if the review changes it, use a new candidate tag rather than moving the old one. Do not use three
 independently chosen branch tips. Start in the integration checkout:
 

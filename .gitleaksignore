@@ -1,0 +1,4 @@
+# Synthetic JWT used only by the historical log-redaction test; not a signed credential.
+77a329d6c881998dbec98c28119bd5ec59061e02:services/api/tests/test_platform.py:jwt:160
+# Literal placeholder passed to an isolated SDK outage test; never a provider credential.
+77a329d6c881998dbec98c28119bd5ec59061e02:services/api/tests/test_identity.py:stripe-access-token:145

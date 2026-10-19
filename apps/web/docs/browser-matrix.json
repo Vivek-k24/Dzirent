@@ -1,0 +1,70 @@
+{
+  "base": "http://127.0.0.1:3000",
+  "manifestProducts": 40,
+  "reports": [
+    {
+      "browser": "firefox",
+      "version": "157.0",
+      "width": 390,
+      "status": "passed",
+      "exceptions": [],
+      "consoleErrors": []
+    },
+    {
+      "browser": "firefox",
+      "version": "157.0",
+      "width": 768,
+      "status": "passed",
+      "exceptions": [],
+      "consoleErrors": []
+    },
+    {
+      "browser": "firefox",
+      "version": "157.0",
+      "width": 1100,
+      "status": "passed",
+      "exceptions": [],
+      "consoleErrors": []
+    },
+    {
+      "browser": "firefox",
+      "version": "157.0",
+      "width": 1440,
+      "status": "passed",
+      "exceptions": [],
+      "consoleErrors": []
+    },
+    {
+      "browser": "webkit",
+      "version": "27.2",
+      "width": 390,
+      "status": "passed",
+      "exceptions": [],
+      "consoleErrors": []
+    },
+    {
+      "browser": "webkit",
+      "version": "27.2",
+      "width": 768,
+      "status": "passed",
+      "exceptions": [],
+      "consoleErrors": []
+    },
+    {
+      "browser": "webkit",
+      "version": "27.2",
+      "width": 1100,
+      "status": "passed",
+      "exceptions": [],
+      "consoleErrors": []
+    },
+    {
+      "browser": "webkit",
+      "version": "27.2",
+      "width": 1440,
+      "status": "passed",
+      "exceptions": [],
+      "consoleErrors": []
+    }
+  ]
+}

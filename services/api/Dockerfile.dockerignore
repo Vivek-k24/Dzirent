@@ -1,0 +1,15 @@
+# BuildKit reads this file for services/api/Dockerfile (context = repository root).
+# Allowlist only what the API image needs; never send .env files, .venv or other apps.
+**
+!services/api/pyproject.toml
+!services/api/uv.lock
+!services/api/alembic.ini
+!services/api/alembic/**
+!services/api/src/**
+!contracts/modes.json
+!fixtures/catalog/taxonomy.json
+!fixtures/catalog/manifest.json
+**/__pycache__
+**/*.pyc
+**/.env
+**/.env.*
