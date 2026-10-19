@@ -1,5 +1,13 @@
 # Project status
 
+## REL-1 integration candidate
+
+Codex is completing the user's explicitly authorized integration/fix/demo-release instruction on
+`codex/release-integration`, preserving frontend PR #5, QA PR #12 and backend PR #11 histories.
+ADR 0003 records the scoped cross-owner handoff. Local frozen installs, static/unit/contract checks
+and production build passed; full PostgreSQL/browser CI and deployment are pending.
+See [release integration verification](qa/release-integration.md) for actual results and limitations.
+
 ## Section 13.2 release integration in progress
 
 Foundation PR [#1](https://github.com/Vivek-k24/Dzirent/pull/1) merged at

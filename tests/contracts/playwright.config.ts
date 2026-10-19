@@ -21,7 +21,7 @@ export default defineConfig({
   webServer: process.env.DZIRENT_SKIP_WEBSERVER
     ? undefined
     : {
-        command: "node scripts/task.mjs api demo 8100",
+        command: "pnpm dev:qa:api",
         cwd: rootDir,
         url: `${API_BASE}/api/v1/health/live`,
         reuseExistingServer: !process.env.CI,

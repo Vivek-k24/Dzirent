@@ -1,6 +1,9 @@
 # Ownership and baseline registry
 
 This registry is maintained only by Codex. It is a coordination record, not a shared markdown mutex.
+Active integration claim `REL-1`: Codex, `codex/release-integration`, foundation base
+`2ff5cae77ec165637ae02fade6d4619826760f28`. The user's explicit completion instruction authorizes
+the scoped API/QA handoff in ADR 0003; existing role branches and agent logs remain preserved.
 Bootstrap claim `BOOT-0`: Codex integration owner, Phase 0 foundation only, base
 `bb77fb86b53b2086caf5a65f99614170a2d2c371`, branch `bootstrap/foundation` (preserves concurrent user main commit).
 It expires on foundation merge. No other agent is running or has been asked to edit shared files.

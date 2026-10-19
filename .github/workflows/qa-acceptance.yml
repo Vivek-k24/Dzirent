@@ -19,11 +19,24 @@ jobs:
     name: Independent Contract Smoke
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dzirent_contract_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dzirent_contract_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
     env:
       DZIRENT_MODE: demo
       DZIRENT_ENVIRONMENT: test
       DZIRENT_IDENTITY_MODE: mock
       NEXT_TELEMETRY_DISABLED: "1"
+      DZIRENT_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/dzirent_contract_test
+      DZIRENT_CONTRACT_DB_READY: "1"
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
@@ -40,6 +53,10 @@ jobs:
           enable-cache: true
       - run: pnpm install --frozen-lockfile
       - run: pnpm api:sync
+      - name: Migrate and seed the disposable contract database
+        run: |
+          uv run --directory services/api --frozen --python 3.12.15 alembic upgrade head
+          uv run --directory services/api --frozen --python 3.12.15 python -m dzirent_api.seed
       - name: Run Independent Contract Tests
         run: pnpm exec playwright test --config tests/contracts/playwright.config.ts
 
@@ -64,6 +81,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Install Playwright Browsers with Dependencies
         run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - name: Build the demo before starting its production server
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_DZIRENT_MODE: demo
       - name: Run E2E Test Suite
         run: pnpm exec playwright test --config tests/e2e/playwright.config.ts
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -92,6 +113,7 @@ jobs:
       - name: Run Smoke Verification on Deployed URL
         env:
           DZIRENT_SMOKE_URL: "${{ github.event.inputs.deployment_url }}"
+          DZIRENT_TEST_URL: "${{ github.event.inputs.deployment_url }}"
           DZIRENT_SKIP_WEBSERVER: "1"
         run: |
           pnpm smoke:web

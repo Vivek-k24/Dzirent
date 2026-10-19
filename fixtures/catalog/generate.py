@@ -363,15 +363,7 @@ example(
     "getReadiness",
     "GET",
     "/health/ready",
-    {
-        "error": {
-            "code": "foundation_not_connected",
-            "message": "Database readiness is not implemented in Phase 0.",
-            "details": [],
-        },
-        "request_id": "demo-request-ready",
-    },
-    status=503,
+    {"status": "ready", "contract_version": CONTRACT_VERSION},
 )
 example(
     "listCatalogProducts",

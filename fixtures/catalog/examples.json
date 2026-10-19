@@ -28,14 +28,10 @@
         "identity": "anonymous"
       },
       "response": {
-        "status": 503,
+        "status": 200,
         "body": {
-          "error": {
-            "code": "foundation_not_connected",
-            "message": "Database readiness is not implemented in Phase 0.",
-            "details": []
-          },
-          "request_id": "demo-request-ready"
+          "status": "ready",
+          "contract_version": "0.1.0-candidate.1"
         }
       }
     },
