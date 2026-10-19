@@ -1,5 +1,18 @@
 # Project status
 
+## Rental refresh: two independent workflow assignments
+
+User-authorized batch from code baseline `a63acc0e9d55d79a918775a57d09bcec63cd3726`.
+The coordination PR establishes one shared start SHA; use its merged SHA from the launch handoff.
+Codex: collection sidebar/shell/palette/product-page reliability. Claude Code: Studio management,
+public directory/profile/API/database and per-Studio rotating outfit previews. Antigravity is deferred
+until both candidates are ready. See [assignments and ownership](parallel-rental-refresh/README.md).
+No claim that external agents have started. No unit tests; bounded workflow integration/E2E only.
+`pnpm check` is static/media/contract/fixture validation. Automatic full QA matrix is now manual;
+routine CI runs a small PostgreSQL integration selection and Chromium desktop/mobile workflow smoke.
+The user reports www.dzirent.com and dzirent.com are now live. No domain changes are needed in this batch.
+
+
 ## REL-1 released presentation demo — 2026-10-19
 
 **Public URL:** https://dzirent.vercel.app/
