@@ -109,7 +109,7 @@ test("collection tree, rental filters, statewide ZIP, newest order and history w
   await search.fill("Sherwanis"); if (mobile) await search.press("Enter");
   await expect(cards(page)).toHaveCount(1);
   await page.getByRole("button", { name: "Remove Search: Sherwanis", exact: true }).click(); await expect(cards(page)).toHaveCount(40);
-  await page.getByRole("button", { name: "Delivery ZIP", exact: true }).click();
+  await page.getByRole("button", { name: "Pickup area", exact: true }).click();
   const delivery = page.getByRole("dialog", { name: "Delivery ZIP", exact: true });
   await expect(delivery.getByRole("combobox")).toHaveCount(0);
   await delivery.getByLabel("Delivery ZIP code", { exact: false }).fill("78701");
@@ -117,7 +117,7 @@ test("collection tree, rental filters, statewide ZIP, newest order and history w
   await delivery.getByRole("button", { name: "Save delivery ZIP", exact: true }).click();
   await expect(cards(page)).toHaveCount(40);
   await page.goto("/?metro=austin&zip=78701"); await expect(cards(page)).toHaveCount(40);
-  await expect(page.getByRole("button", { name: "Delivery ZIP, 78701", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Pickup area, 78701", exact: true })).toBeVisible();
   expect(catalogRequests.every(url => !url.searchParams.has("metro") && !url.searchParams.has("zip") && url.searchParams.has("sort"))).toBe(true);
   await noOverflow(page);
   expect(exceptions).toEqual([]);
