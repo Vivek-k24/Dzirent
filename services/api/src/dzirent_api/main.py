@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from . import dev_photo_quality
 from .contract import include_routes
 from .db import create_db_engine, session_factory
 from .errors import install_error_handlers
@@ -39,6 +40,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.verifier = build_verifier(settings)
     install_error_handlers(app)
     include_routes(app)
+    # Local/test-only experimental route; never mounted in staging/production (Settings refuses it).
+    app.state.photo_quality_transport = None
+    if settings.photo_quality_url and not settings.deployed:
+        app.include_router(dev_photo_quality.router)
     app.add_middleware(RequestContextMiddleware)
     # Added last so it is outermost: error and 500 responses still carry CORS headers.
     app.add_middleware(
