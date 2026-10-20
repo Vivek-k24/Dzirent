@@ -1,5 +1,62 @@
 # Codex Phase 1A status
 
+## AZ-DISC / issue #23 — read-only Azure discovery, 2026-10-19
+
+Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/azure-discovery`; exact fixed base
+`9581874f0653e2ecfae278472a84bcca775e632a`, confirmed against the single fetch. Existing clean
+collection branch and all history preserved. [Claim #23](https://github.com/Vivek-k24/Dzirent/issues/23).
+The user's focused assignment replaces broad historical context/test requirements for this task.
+Read the five required files once; further exploration was limited to toolchain/SDK dependencies,
+applicable instruction boundaries, local evidence and the own-log insertion point.
+
+First updated AGENTS and the ownership registry for required-context-once, explicit owned paths,
+dependency-driven exploration, bounded verification and a stopping point, preserving security,
+contract and history protections. Other changes are only the permitted `infra/azure` tool/dependency/
+README/example/ignore files, `docs/infra/azure-discovery.md` and this entry. Web/backend behavior,
+canonical contracts, fixtures, application locks, CI and other-agent logs are unchanged.
+
+Implemented isolated pinned Python Azure SDK discovery with a GET-only subscription/endpoint
+transport, silent VS Code preference, bounded existing-CLI fallback, exact enabled-subscription and
+tenant gate, separate section statuses, sanitized summaries and ignored local raw evidence.
+Budgets: hard wall clock, request/connect/read/retry/page/record limits. Section reruns preserve earlier
+observations/tool hashes. No generic ARM mutation or credential/key retrieval operation is exposed.
+
+Actually worked: **VisualStudioCodeCredential** + broker through the existing Azure Resources account;
+no interactive login or CLI fallback needed. Confirmed target `c4de17fc-7a0d-4376-8758-ba2b4f79b7c6`,
+Enabled, tenant/token equality (sanitized tenant fingerprint `5e8e56408505`), Students offer policy,
+spending limit On. Inventory: 1 RG / 0 Dzirent heuristic matches, 0 PG Flexible Servers, 0 storage accounts.
+DBforPostgreSQL/Storage/Network are NotRegistered. PG17 and Burstable B1ms/B2s/B2ms advertised in
+southcentralus/eastus2; StorageV2 Standard_LRS advertised without listed SKU restrictions. Permission
+actions show grant evidence, not guaranteed creation/RBAC authority. Both PG quota endpoints returned
+empty HTTP-200 lists: numeric quota, spare capacity and benefit eligibility remain unknown.
+
+Actual checks on Windows / Python 3.12.15 / uv 0.13.1: isolated lock/install once passed (19 runtime
+packages); syntax/help passed. One full bounded live run: 14 ARM GET attempts / about 18 seconds.
+Original 500-record storage processing cap caused partial data (1,544 advertised SKUs returned).
+Fixed only the storage cap (2,000) and explicit empty-quota evidence status; focused Ruff and syntax
+passed, then reran only storage-SKUs/PG-quota plus mandatory subscription verification with resume:
+4 GETs / about 10 seconds. Storage complete; quota remains partial/unknown; documented exit 2.
+Unchanged successful findings reused. No observed 403/network error; error/timeout paths not live-tested.
+No local unit tests/browser suites/application builds, write trials, migrations/seeds, Azure mutations, other agents,
+merges or Vercel deployment performed. Raw identities/responses and environments remain ignored.
+
+Evidence/commands and minimal conditional plan: [sanitized discovery report](../infra/azure-discovery.md).
+Start: frozen isolated uv sync, then `infra/azure/.venv/Scripts/python.exe infra/azure/discover.py --help`;
+usage and affected-section reruns are in [tool README](../../infra/azure/README.md).
+Final observed script SHA256: `e9001ac310e75226e6c228a9851fb7794051e818cb1ef419b6f96453548550a5`.
+The pushed commit/PR are recorded on #23 at delivery. Reviewable discovery is the stopping point.
+Provisioning is blocked pending a new authorized plan, actual quota/capacity/Students checks, required
+provider registration and scoped permission/network/backup/consumer decisions. Keep hosting on Vercel;
+propose PG17 only if hosted persistence is approved and defer storage until connected uploads require it.
+
+PR #24 review blocker: the existing secret scan matched ordinary prose in the original addition to
+this log at line 15. No credential was present; current wording is clarified. The pinned action scans
+all commits in the PR, so the original finding remains in preserved history. The exact historical
+fingerprint/job evidence is on #23 and PR #24 for integrator review. A narrowly reviewed root
+`.gitleaksignore` decision would need an explicit ownership handoff; that file is outside this task.
+No scanner setting/allowlist change or force-push was made. Automatic CI is reported separately from
+the completed focused discovery checks; do not claim the PR is green or merge it while blocked.
+
 ## Compact Studio feed — direct coordinator implementation, 2026-10-19
 
 User-approved frontend follow-up / issue #21. Baseline

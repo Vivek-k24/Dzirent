@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "example_only": true,
+  "status": "not_performed",
+  "subscription_id": "c4de17fc-7a0d-4376-8758-ba2b4f79b7c6",
+  "regions": ["southcentralus", "eastus2"],
+  "authentication": {"status": "not_performed", "method": null, "attempts": []},
+  "sections": {
+    "subscription": {"status": "not_performed"},
+    "inventory.resource_groups": {"status": "not_performed"},
+    "inventory.postgresql": {"status": "not_performed"},
+    "inventory.storage": {"status": "not_performed"},
+    "provider.Microsoft.DBforPostgreSQL": {"status": "not_performed"},
+    "provider.Microsoft.Storage": {"status": "not_performed"},
+    "provider.Microsoft.Network": {"status": "not_performed"},
+    "regions": {"status": "not_performed"},
+    "postgres-capabilities.southcentralus": {"status": "not_performed"},
+    "postgres-capabilities.eastus2": {"status": "not_performed"},
+    "postgres-quota.southcentralus": {"status": "not_performed"},
+    "postgres-quota.eastus2": {"status": "not_performed"},
+    "storage-skus": {"status": "not_performed"},
+    "permissions.subscription": {"status": "not_performed"}
+  },
+  "unknowns": ["Quota, capacity, Students entitlement and effective creation authority are unverified in this example."],
+  "provisioning": {"ready": false, "authorization": "not_requested"}
+}
