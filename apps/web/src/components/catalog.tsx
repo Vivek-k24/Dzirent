@@ -29,10 +29,7 @@ export function Catalog() {
   const root = refs?.categories.find(c => c.slug === (state.category.length === 1 ? state.category[0] : state.collection));
   const total = root ? root.product_count : !query.isPlaceholderData ? first?.collection_total : undefined;
   const clear = () => apply(clearOptional(state));
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-    requestAnimationFrame(() => document.getElementById(sidebarOpen ? "show-categories" : "hide-categories")?.focus());
-  };
+  const toggleSidebar = () => setSidebarOpen(current => !current);
   return <main id="main-content" className="catalog-main content-width">
     <section className="catalog-context" aria-label="Catalog context" data-section="context">
       {root ? <div className="breadcrumbs"><Link href="/">All collections</Link><ChevronRight size={12} /><span>{root.label}</span></div> : null}
@@ -42,7 +39,7 @@ export function Catalog() {
     </section>
     <div className={`catalog-layout ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
       <CollectionSidebar open={sidebarOpen} toggleSidebar={toggleSidebar} />
-      <div className="catalog-content"><FilterBar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+      <div className="catalog-content"><FilterBar />
         <section className={`catalog-results ${state.view === "list" ? "list-view" : ""}`} aria-label="Outfit results" data-section="results" data-updating={query.isPlaceholderData} aria-busy={query.isFetching}>
           {invalid ? <div className="date-error" role="alert"><h2>Check your rental dates</h2><p>{invalid}</p><Button variant="outline" onClick={() => patch({ start: "", end: "" })}>Clear invalid dates</Button></div>
             : referenceError ? <ErrorState message={referenceError} retry={retry} />

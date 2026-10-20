@@ -32,11 +32,21 @@ test("collection tree, rental filters, statewide ZIP, newest order and history w
 
   const mobile = isMobile || (page.viewportSize()?.width ?? 1440) < 1024;
   if (!mobile) {
-    await page.getByRole("button", { name: "Hide categories", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Show categories", exact: true })).toBeFocused();
-    await expect(page.locator("#collection-sidebar")).toBeHidden();
-    await page.getByRole("button", { name: "Show categories", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Hide categories", exact: true })).toBeFocused();
+    const sidebar = page.locator("#collection-sidebar");
+    await expect(sidebar).toBeVisible();
+    await expect(sidebar.getByRole("button", { name: "Hide categories", exact: true })).toHaveText("Categories");
+    await expect(sidebar.getByRole("button", { name: "Hide categories", exact: true })).toHaveAttribute("aria-expanded", "true");
+    await expect(sidebar.getByRole("checkbox")).toHaveCount(8);
+    await sidebar.getByRole("button", { name: "Hide categories", exact: true }).click();
+    await expect(sidebar.getByRole("button", { name: "Show categories", exact: true })).toBeFocused();
+    await expect(sidebar.getByRole("button", { name: "Show categories", exact: true })).toHaveAttribute("aria-expanded", "false");
+    await expect(sidebar).toBeVisible();
+    await expect(sidebar.locator("#category-sidebar-content")).toBeHidden();
+    await expect(page.locator(".catalog-layout")).toHaveClass(/sidebar-collapsed/);
+    await sidebar.getByRole("button", { name: "Show categories", exact: true }).click();
+    await expect(sidebar.getByRole("button", { name: "Hide categories", exact: true })).toBeFocused();
+    await expect(sidebar.locator("#category-sidebar-content")).toBeVisible();
+    await expect(page.locator(".catalog-layout")).not.toHaveClass(/sidebar-collapsed/);
   }
   const openTree = async () => {
     if (mobile) { await page.getByRole("button", { name: "Categories", exact: true }).click(); return page.getByRole("dialog", { name: "Categories", exact: true }); }

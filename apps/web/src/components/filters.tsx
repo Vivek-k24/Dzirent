@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, ChevronDown, LayoutGrid, List, PanelLeftClose, PanelLeftOpen, SlidersHorizontal, X } from "lucide-react";
+import { CalendarDays, ChevronDown, LayoutGrid, List, PanelLeftOpen, SlidersHorizontal, X } from "lucide-react";
 import { clearOptional, emptySelection, money, rangeError, serializeSelection } from "@dzirent/client";
 import type { CatalogSelection, ProductPage } from "@dzirent/client";
 import { api } from "@/lib/api";
@@ -38,9 +38,13 @@ function CategoryTree({ prefix }: { prefix: string }) {
 }
 
 export function CollectionSidebar({ open, toggleSidebar }: { open: boolean; toggleSidebar: () => void }) {
-  return <aside id="collection-sidebar" className="collection-sidebar" aria-labelledby="category-heading" hidden={!open}>
-    <div className="sidebar-heading"><h2 id="category-heading">Categories</h2><button id="hide-categories" className="icon-button" type="button" aria-label="Hide categories" aria-expanded={open} aria-controls="collection-sidebar" onClick={toggleSidebar}><PanelLeftClose size={19} /></button></div>
-    <CategoryTree prefix="desktop-categories" />
+  return <aside id="collection-sidebar" className={`collection-sidebar ${open ? "is-open" : "is-collapsed"}`} aria-label="Categories navigation">
+    <button id="toggle-categories" className="category-sidebar-toggle" type="button"
+      aria-label={open ? "Hide categories" : "Show categories"}
+      aria-expanded={open} aria-controls="category-sidebar-content" onClick={toggleSidebar}>
+      <span>Categories</span><ChevronDown className="category-sidebar-chevron" size={18} aria-hidden="true" />
+    </button>
+    <div id="category-sidebar-content" hidden={!open}><CategoryTree prefix="desktop-categories" /></div>
   </aside>;
 }
 
@@ -58,7 +62,7 @@ export function FilterChoices({ group, value, onChange }: { group: Group; value:
   </fieldset>;
 }
 
-export function FilterBar({ sidebarOpen, toggleSidebar }: { sidebarOpen: boolean; toggleSidebar: () => void }) {
+export function FilterBar() {
   const { state, apply, patch } = useCatalogState(), { refs } = useReferences(), runtime = useRuntime();
   const [sheet, setSheet] = useState(false), [categories, setCategories] = useState(false);
   const [draft, setDraft] = useState<CatalogSelection>(emptySelection);
@@ -78,7 +82,6 @@ export function FilterBar({ sidebarOpen, toggleSidebar }: { sidebarOpen: boolean
   if (state.start || state.end) chips.push({ key: "dates", label: `${state.start || "Start?"} – ${state.end || "End?"}`, remove: () => patch({ start: "", end: "" }) });
   return <section className="catalog-controls" aria-label="Catalog controls" data-section="controls">
     <div className="filter-toolbar">
-      {!sidebarOpen ? <button id="show-categories" type="button" className="all-filters desktop-category-trigger" aria-expanded="false" aria-controls="collection-sidebar" onClick={toggleSidebar}><PanelLeftOpen size={17} />Show categories</button> : null}
       <Modal side="left" open={categories} onOpenChange={setCategories} title="Categories" description="Browse collections together, or choose one subcategory." trigger={<button className="all-filters mobile-category-trigger" type="button"><PanelLeftOpen size={17} />Categories</button>}>
         <CategoryTree prefix="mobile-categories" /><Button onClick={() => setCategories(false)}>View outfits</Button>
       </Modal>
