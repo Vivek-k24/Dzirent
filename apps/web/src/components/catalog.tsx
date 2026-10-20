@@ -30,16 +30,17 @@ export function Catalog() {
   const total = root ? root.product_count : !query.isPlaceholderData ? first?.collection_total : undefined;
   const clear = () => apply(clearOptional(state));
   const toggleSidebar = () => setSidebarOpen(current => !current);
-  return <main id="main-content" className="catalog-main content-width">
-    <section className="catalog-context" aria-label="Catalog context" data-section="context">
+  return <main id="main-content" className="catalog-main">
+    <div className={`catalog-layout ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
+      <CollectionSidebar open={sidebarOpen} toggleSidebar={toggleSidebar} />
+      <div className="catalog-page-body">
+        <section className="catalog-context" aria-label="Catalog context" data-section="context">
       {root ? <div className="breadcrumbs"><Link href="/">All collections</Link><ChevronRight size={12} /><span>{root.label}</span></div> : null}
       <div className="catalog-heading"><div><h1>{root?.label ?? "All collections"} <span>({total ?? "…"})</span></h1><p className="catalog-intro">Find a rental for your next occasion. Explore listed sizes, measurements and four-day dates.</p></div>
         <p className="available-count" aria-live="polite">{first && !query.isPlaceholderData ? <><span className="status-dot" />{first.available_total} {first.available_total === 1 ? "outfit" : "outfits"} available<span className="tiny muted">{state.start ? "for your demo dates" : "in the demo catalog"}</span></> : "Loading the rental collection…"}</p>
       </div>
-    </section>
-    <div className={`catalog-layout ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
-      <CollectionSidebar open={sidebarOpen} toggleSidebar={toggleSidebar} />
-      <div className="catalog-content"><FilterBar />
+        </section>
+        <div className="catalog-content"><FilterBar />
         <section className={`catalog-results ${state.view === "list" ? "list-view" : ""}`} aria-label="Outfit results" data-section="results" data-updating={query.isPlaceholderData} aria-busy={query.isFetching}>
           {invalid ? <div className="date-error" role="alert"><h2>Check your rental dates</h2><p>{invalid}</p><Button variant="outline" onClick={() => patch({ start: "", end: "" })}>Clear invalid dates</Button></div>
             : referenceError ? <ErrorState message={referenceError} retry={retry} />
@@ -48,6 +49,7 @@ export function Catalog() {
             : !items.length ? <div className="empty-state"><SearchX size={35} strokeWidth={1.3} /><h2>No outfits for these filters</h2><p>Try another date or remove a filter to explore more of the collection.</p><Button variant="outline" onClick={clear}>Clear all filters</Button></div>
             : <><div className="results-caption"><span>{first?.total} {first?.total === 1 ? "outfit" : "outfits"}</span><span className="tiny">Sample amounts · 4-day rentals</span></div><div className="product-grid" aria-busy={query.isFetchingNextPage}>{items.map((product, index) => <ProductCard product={product} index={index} key={product.id} start={state.start} end={state.end} />)}</div><div className="results-end"><p>Showing {items.length} of {first?.total} outfits</p>{query.hasNextPage && state.page <= loadedPages ? <Button variant="outline" disabled={query.isFetchingNextPage} onClick={() => patch({ page: loadedPages + 1 })}>{query.isFetchingNextPage ? "Loading…" : "Load more"}</Button> : <span className="end-mark" aria-hidden="true" />}</div></>}
         </section>
+        </div>
       </div>
     </div>
   </main>;

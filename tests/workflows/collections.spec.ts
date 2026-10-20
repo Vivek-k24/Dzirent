@@ -34,6 +34,15 @@ test("collection tree, rental filters, statewide ZIP, newest order and history w
   if (!mobile) {
     const sidebar = page.locator("#collection-sidebar");
     await expect(sidebar).toBeVisible();
+    // The category rail must occupy the browser's extreme left edge immediately under navigation.
+    const rail = await sidebar.boundingBox();
+    const navBottom = await page.getByRole("navigation", { name: "Main navigation" }).evaluate(node => node.getBoundingClientRect().bottom);
+    expect(rail).not.toBeNull();
+    expect(Math.abs(rail!.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(rail!.y - navBottom)).toBeLessThanOrEqual(2);
+    expect(rail!.width).toBe(212);
+    expect((await page.locator(".catalog-page-body").boundingBox())!.x).toBeGreaterThanOrEqual(rail!.width);
+    expect((await page.locator(".catalog-heading").boundingBox())!.y).toBeGreaterThanOrEqual(rail!.y);
     await expect(sidebar.getByRole("button", { name: "Hide categories", exact: true })).toHaveText("Categories");
     await expect(sidebar.getByRole("button", { name: "Hide categories", exact: true })).toHaveAttribute("aria-expanded", "true");
     await expect(sidebar.getByRole("checkbox")).toHaveCount(8);
@@ -43,6 +52,9 @@ test("collection tree, rental filters, statewide ZIP, newest order and history w
     await expect(sidebar).toBeVisible();
     await expect(sidebar.locator("#category-sidebar-content")).toBeHidden();
     await expect(page.locator(".catalog-layout")).toHaveClass(/sidebar-collapsed/);
+    const collapsedRail = await sidebar.boundingBox();
+    expect(Math.abs(collapsedRail!.x)).toBeLessThanOrEqual(1);
+    expect(collapsedRail!.width).toBe(72);
     await sidebar.getByRole("button", { name: "Show categories", exact: true }).click();
     await expect(sidebar.getByRole("button", { name: "Hide categories", exact: true })).toBeFocused();
     await expect(sidebar.locator("#category-sidebar-content")).toBeVisible();
