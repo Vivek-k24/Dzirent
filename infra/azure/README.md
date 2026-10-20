@@ -105,6 +105,44 @@ Do not repeat the successful broad scan or add unit/browser/application build su
 An SDK/API failure should be a precise section error, not a reason to create resources or change access.
 The task ends at the pushed discovery PR and sanitized setup report; provisioning needs a later assignment.
 
+## Issue #25 staging preflight (no provisioning)
+
+The historical discovery assignment above ended at its PR. Issue #25 separately authorizes staging
+setup only after its security, eligibility, quota and cost gates pass. The companion tool collects
+bounded read-only billing/benefit, hosting, policy/deny and public-price evidence:
+
+```powershell
+& infra/azure/.venv/Scripts/python.exe infra/azure/staging_preflight.py --help
+& infra/azure/.venv/Scripts/python.exe infra/azure/staging_preflight.py `
+  --output-dir .local/staging-preflight-new --timeout 180
+# Affected-section reruns always recheck the subscription/tenant and use new output directories:
+& infra/azure/.venv/Scripts/python.exe infra/azure/staging_preflight.py `
+  --hosting-skus-only --output-dir .local/staging-hosting-new --timeout 60
+& infra/azure/.venv/Scripts/python.exe infra/azure/staging_preflight.py `
+  --benefits-only --output-dir .local/staging-benefits-new --timeout 90
+```
+
+Reuses the isolated pinned environment and existing discovery helpers without changing discovery.
+Authentication is VS Code only, with no interactive login or CLI fallback. A fresh exact subscription/
+tenant gate precedes all other ARM calls. Fixed additional GET paths cover billing property, free
+service resources, Web/App inventory/providers, Web SKUs, policy/deny assignments, permissions and
+a usage sample. Credit/lots reads follow **only the billing profile linked by that verified
+subscription**, with an exact profile-path allowlist; no arbitrary scope or unrelated-account
+enumeration is accepted. Tokens stay in memory.
+
+Public prices use a separate unauthenticated HTTPS client to `prices.azure.com`, no redirects,
+15-second request timeout, at most three requests and 2 MB per response. A price next page makes
+the result partial. Inherited ARM request/retry/list bounds apply and a supervisor enforces the
+wall limit. Only new ignored `.local` directories receive output; raw billing responses may contain
+private IDs/addresses and must stay local. Findings contain allowlisted summaries. No keys requested.
+
+Exit **2 / blocked is expected**, even when useful reads succeed: the tool always leaves
+`provisioning_ready=false` and cannot approve or prove allocation. Empty quota/SKU/usage lists do not
+prove eligibility, capacity or free meters. No creation/registration, roles, migration, networking
+change or deployment operation is implemented. The dated [staging handoff](../../docs/infra/azure-staging-handoff.md)
+records actual credit/expiry, rates, unresolved gates, proposed security/cleanup and unrun hosted
+acceptance. Clear that gate before issue #26; the existing demo stays unchanged.
+
 ## Official references
 
 - [VS Code credential](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.visualstudiocodecredential?view=azure-python)

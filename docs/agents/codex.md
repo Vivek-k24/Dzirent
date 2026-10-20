@@ -1,5 +1,40 @@
 # Codex Phase 1A status
 
+## Azure staging / issue #25 — approval gate, 2026-10-20
+
+Exact starting main commit: `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c` after fetch.
+Worktree `H:\DziRent\worktrees\codex-web`; branch `codex/azure-staging-setup`.
+Claim and explicit owned paths recorded on #25. Preserved the clean prior branch/history. Read
+the focused setup context once; expanded reads only for SDK billing, hosting, current prices,
+runtime/config dependencies and the own-log insertion point. No other agent started.
+
+Added read-only staging preflight using existing pinned isolated Azure tooling and the VS Code
+broker. Fresh subscription/tenant checks passed. Positive current credit and unexpired allowance
+were verified; exact financial values stay local. Free-service meters remain unverified (404 InvalidResourceType). Numeric
+PG regional quota is absent from HTTP-200 empty lists; F1/B1 eligibility/capacity also unknown.
+South Central US advertises PG17/B1ms and appears in the returned allowed-region policy. Grants
+alone do not prove effective write authority. No existing Dzirent-hosted API/DB was found.
+
+Costed PG17/B1ms/32 GB at USD 19.308 per 730-hour month before benefits; a conditional Linux B1
+API worker adds USD 13.14. F1 eligibility must be verified first. Cost/credit-use and permitted Students
+use decisions precede creation; usage overages/extra services need explicit scope. Created resources:
+zero. No cloud write, migration, image push, application/contract change, dependency upgrade,
+Vercel/DNS change, merge or issue #26 implementation occurred.
+
+Actual Windows/Python 3.12.15 checks: Ruff, syntax and help passed after the changes. Fresh discovery
+used 15 ARM attempts / 41 seconds and was partial (East US 2 capability timeout; numeric quotas
+unknown). Extra gates used 13 ARM attempts + 3 unauthenticated retail reads / 16 seconds, blocked.
+Fixed the empty Web SKU parser; focused identity/SKU rerun used 2 GETs / 1 second, partial. Added
+linked-profile benefit reads; focused run used 5 GETs / 11 seconds, confirmed credit/expiry, but not
+service entitlement. Both focused preflight runs exited 2 as documented. Original successful evidence
+retains its timestamps/hash. Raw billing details remain ignored. No unit/app/browser suite or hosted
+acceptance pass is claimed. Final commit, diff/guard checks and CI are recorded on the PR/#25.
+
+Reviewable plan, commands, per-resource costs, blockers and operational acceptance/rollback:
+[Azure staging handoff](../infra/azure-staging-handoff.md). Stop at the owner's cost/offer decision;
+then clear remaining quota/capacity/policy and staging Clerk prerequisites. Issue #26 starts only
+after real hosted API/PostgreSQL acceptance passes. The public presentation remains in place.
+
 ## AZ-DISC / issue #23 — read-only Azure discovery, 2026-10-19
 
 Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/azure-discovery`; exact fixed base
