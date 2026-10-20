@@ -1,0 +1,15 @@
+[project]
+name = "dzirent-azure-discovery"
+version = "0.1.0"
+description = "Read-only, local Azure subscription discovery; no application dependencies"
+requires-python = "==3.12.15"
+dependencies = [
+  "azure-core==1.41.0",
+  "azure-identity==1.26.0",
+  "azure-identity-broker==1.3.0",
+  "azure-mgmt-resource==26.0.0",
+]
+
+[tool.uv]
+package = false
+required-version = "==0.13.1"

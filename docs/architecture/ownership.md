@@ -2,6 +2,36 @@
 
 This registry is maintained only by Codex. It is a coordination record, not a shared markdown mutex.
 
+## Focused assignments
+
+The current explicit assignment defines required context, exact baseline, owned files, verification
+budget and stopping point. Read required context once. Inspect other files only for a demonstrated
+dependency, instruction boundary or failure. Historical lane/batch instructions below do not require
+unrelated exploration or override a newer scoped handoff. Preserve security, contract ownership and
+history protections; expand file ownership only through an explicit recorded handoff.
+
+### AZ-DISC / issue #23 — read-only Azure discovery
+
+Owner: Codex. [Issue #23](https://github.com/Vivek-k24/Dzirent/issues/23).
+Workspace `H:\DziRent\worktrees\codex-web`, branch `codex/azure-discovery`, exact baseline
+`9581874f0653e2ecfae278472a84bcca775e632a`; verified against one fetch. Existing work/branches preserved.
+
+Required context once: root `AGENTS.md`, this registry, `docs/architecture/version-matrix.md`,
+`docs/architecture/setup-dependencies.md`, `infra/runtime/README.md`. No business-rule work is assigned.
+
+Exclusive edits: `AGENTS.md`, this registry, `infra/azure/discover.py`, `infra/azure/pyproject.toml`,
+`infra/azure/uv.lock`, `infra/azure/discovery.example.json`, `infra/azure/README.md`,
+`infra/azure/.gitignore`, `docs/infra/azure-discovery.md`, `docs/agents/codex.md` (preserve history).
+Infrastructure Python dependencies are isolated from the application. Raw local evidence belongs only
+in ignored `infra/azure/.local/`; committed findings/configuration are sanitized.
+
+Verify syntax/help and perform one bounded live read-only SDK run; install isolated dependencies once,
+then rerun only affected failed sections. No unit tests, browser suites or application builds. Stop at
+one pushed reviewable PR with actual authentication/results, explicit unknowns and a conditional minimal
+PostgreSQL-17/storage setup plan. No Azure create/update/delete/register/deploy, RBAC/network changes,
+secret retrieval, hosted migrations, app/contract/fixture/lock changes, other agents, merges or Vercel
+deployment. Provisioning requires the next assignment. Application hosting remains on Vercel.
+
 ## Current workflow ownership amendment
 
 For this batch only, ADR 0004 and `docs/parallel-rental-refresh/README.md` supersede the historical
