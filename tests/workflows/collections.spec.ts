@@ -14,7 +14,7 @@ test("collection tree, rental filters, statewide ZIP, newest order and history w
   page.on("request", request => { const url = new URL(request.url()); if (url.pathname === "/api/v1/catalog/products") catalogRequests.push(url); });
   await page.goto("/");
   await expect(cards(page)).toHaveCount(40);
-  await expect(page.getByText("DEMO ONLY. NOT A REAL BUSINESS.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Prototype. Sample listings shown.", { exact: true })).toBeVisible();
   await expect(page.locator("header").getByText("Launching in Texas soon.", { exact: true })).toBeVisible();
   await expect(page.locator("#main-content .breadcrumbs")).toHaveCount(0);
   await expect(page.getByText("Only in Texas", { exact: true })).toHaveCount(0);
@@ -142,7 +142,7 @@ test("all 40 published photo/title links resolve to their own PDP, reload, and e
     expect(new URL(page.url()).pathname).toBe(record.photo);
     expect((await page.reload())?.status()).toBe(200);
     await expect(page.locator(".detail-copy h1")).toHaveText(product.title);
-    await expect(page.getByText("DEMO ONLY. NOT A REAL BUSINESS.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Prototype. Sample listings shown.", { exact: true })).toBeVisible();
     await expect(page.locator(".detail-photo img")).toBeVisible();
     await expect.poll(() => page.locator(".detail-photo img").evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBe(true);
     if (!product.is_available) await expect(page.getByRole("button", { name: "Currently unavailable", exact: true })).toBeDisabled();
@@ -156,7 +156,7 @@ test("all 40 published photo/title links resolve to their own PDP, reload, and e
   await expect(page.locator(".detail-copy h1")).toHaveText(published[0].title);
   expect((await page.goto("/products/not-a-real-outfit"))?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "Outfit not found", exact: true })).toBeVisible();
-  await expect(page.getByText("DEMO ONLY. NOT A REAL BUSINESS.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Prototype. Sample listings shown.", { exact: true })).toBeVisible();
   expect(failedAssets).toEqual([]);
   expect(exceptions).toEqual([]);
 });
