@@ -2,3 +2,5 @@
 77a329d6c881998dbec98c28119bd5ec59061e02:services/api/tests/test_platform.py:jwt:160
 # Literal placeholder passed to an isolated SDK outage test; never a provider credential.
 77a329d6c881998dbec98c28119bd5ec59061e02:services/api/tests/test_identity.py:stripe-access-token:145
+# Historical prose listing unchanged application paths; contains no credential.
+103dab457a9aa279bd6bb46a5cb1c5f0d6f3e3cb:docs/agents/codex.md:generic-api-key:15
