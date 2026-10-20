@@ -38,9 +38,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return <>
     <a className="skip-link" href="#main-content">Skip to content</a>
     <header className="site-header">
-      <div className="demo-bar"><div className="content-width"><strong>DEMO ONLY. NOT A REAL BUSINESS.</strong>{demo ? <button id="demo-controls-trigger" onClick={() => setControls(true)}><SlidersHorizontal size={13} />Demo controls</button> : null}</div></div>
+      <div className="demo-bar"><div className="content-width"><strong>Prototype. Sample listings shown.</strong>{demo ? <button id="demo-controls-trigger" onClick={() => setControls(true)}><SlidersHorizontal size={13} />Demo controls</button> : null}</div></div>
       <div className="main-header content-width"><Link href="/" className="wordmark" aria-label="dzirent home">dzirent<span className="wordmark-period">.</span></Link>
-        <div className="header-search-area"><div className="desktop-search"><SearchInput /></div><p className="launch-note">Launching in Texas soon.</p></div>
+        <div className="header-search-area"><div className="desktop-search"><SearchInput /></div><p className="launch-note" style={{ whiteSpace: "nowrap" }}>Launching in Texas soon.</p></div>
         <div className="header-actions"><button className="header-action mobile-search-trigger" id="header-search" aria-label="Open search" onClick={() => setSearch(true)}><Search size={20} /><span>Search</span></button>
           <Popover title={user ? "Your demo account" : "Welcome to dzirent"} trigger={<button id="header-account" className="header-action" aria-label="Account"><UserRound size={21} /><span>Account</span></button>}>
             {user ? <div className="account-options"><p className="account-name">{user.display_name}</p><p className="tiny muted">{demo ? "Sample identity" : "Signed in"} · {user.roles.join(" / ")}</p>{user.lender_profile ? <PopoverClose asChild><Link href="/lender/dashboard"><LayoutDashboard size={16} /> Lender dashboard</Link></PopoverClose> : <PopoverClose asChild><Link href="/lender/signup">Become a lender <ArrowRight size={16} /></Link></PopoverClose>}
@@ -49,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Popover>
           <Link className="header-action" href={user?.lender_profile ? "/lender/dashboard" : "/lender/signup"} aria-label="List an outfit"><span className="shirt-icon"><Shirt size={22} /><Plus size={11} /></span><span>List an Outfit</span></Link>
           <Link className="header-action bag-action" href="/cart" aria-label={`Bag ${ready ? lines.length : 0} ${lines.length === 1 ? "item" : "items"}`}><ShoppingBag size={21} /><span>Bag </span>{ready && lines.length ? <span className="bag-badge" aria-hidden="true">{lines.length}</span> : null}</Link>
-          <button id="header-location" className="header-action" aria-label={`Delivery ZIP${deliveryZip ? `, ${deliveryZip}` : ""}`} onClick={() => setLocation(true)}><MapPin size={21} /><span>{deliveryZip || "Delivery ZIP"}</span></button>
+          <button id="header-location" className="header-action" aria-label={`Pickup area${deliveryZip ? `, ${deliveryZip}` : ""}`} onClick={() => setLocation(true)}><MapPin size={21} /><span>{deliveryZip || "Pickup area"}</span></button>
         </div>
       </div><Navigation />
     </header>
