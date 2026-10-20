@@ -4,5 +4,10 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm --filter @dzirent/web build",
   "outputDirectory": ".next",
-  "git": { "deploymentEnabled": false }
+  "git": {
+    "deploymentEnabled": {
+      "*": false,
+      "main": true
+    }
+  }
 }
