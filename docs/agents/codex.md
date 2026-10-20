@@ -12,8 +12,8 @@ applicable instruction boundaries, local evidence and the own-log insertion poin
 First updated AGENTS and the ownership registry for required-context-once, explicit owned paths,
 dependency-driven exploration, bounded verification and a stopping point, preserving security,
 contract and history protections. Other changes are only the permitted `infra/azure` tool/dependency/
-README/example/ignore files, `docs/infra/azure-discovery.md` and this entry. No frontend/API behavior,
-contracts/fixtures/application locks/CI or other-agent log was edited.
+README/example/ignore files, `docs/infra/azure-discovery.md` and this entry. Web/backend behavior,
+canonical contracts, fixtures, application locks, CI and other-agent logs are unchanged.
 
 Implemented isolated pinned Python Azure SDK discovery with a GET-only subscription/endpoint
 transport, silent VS Code preference, bounded existing-CLI fallback, exact enabled-subscription and
@@ -37,7 +37,7 @@ Fixed only the storage cap (2,000) and explicit empty-quota evidence status; foc
 passed, then reran only storage-SKUs/PG-quota plus mandatory subscription verification with resume:
 4 GETs / about 10 seconds. Storage complete; quota remains partial/unknown; documented exit 2.
 Unchanged successful findings reused. No observed 403/network error; error/timeout paths not live-tested.
-No unit/browser/application builds, write trials, migrations/seeds, Azure mutations, other agents,
+No local unit tests/browser suites/application builds, write trials, migrations/seeds, Azure mutations, other agents,
 merges or Vercel deployment performed. Raw identities/responses and environments remain ignored.
 
 Evidence/commands and minimal conditional plan: [sanitized discovery report](../infra/azure-discovery.md).
@@ -48,6 +48,14 @@ The pushed commit/PR are recorded on #23 at delivery. Reviewable discovery is th
 Provisioning is blocked pending a new authorized plan, actual quota/capacity/Students checks, required
 provider registration and scoped permission/network/backup/consumer decisions. Keep hosting on Vercel;
 propose PG17 only if hosted persistence is approved and defer storage until connected uploads require it.
+
+PR #24 review blocker: the existing secret scan matched ordinary prose in the original addition to
+this log at line 15. No credential was present; current wording is clarified. The pinned action scans
+all commits in the PR, so the original finding remains in preserved history. The exact historical
+fingerprint/job evidence is on #23 and PR #24 for integrator review. A narrowly reviewed root
+`.gitleaksignore` decision would need an explicit ownership handoff; that file is outside this task.
+No scanner setting/allowlist change or force-push was made. Automatic CI is reported separately from
+the completed focused discovery checks; do not claim the PR is green or merge it while blocked.
 
 ## Compact Studio feed — direct coordinator implementation, 2026-10-19
 

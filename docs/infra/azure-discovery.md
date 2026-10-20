@@ -153,9 +153,24 @@ ten permitted deliverables, owned-path diff and `git diff --check`. These are so
 not unit tests or proof of unexercised cloud behavior. The staged whitespace check initially found
 extra EOF blank lines in three new text files; those were normalized and the affected check passed.
 
-Not run: unit tests, browser suites, application builds, hosted connectivity/migrations/seeds, write
+Not run locally: unit tests, browser suites, application builds, hosted connectivity/migrations/seeds, write
 permission trials, provider registration, real capacity allocation, benefit/billing consumption checks,
 role/policy mutation, secret retrieval or Vercel deployment. No other agent was started or PR merged.
 
-Stop: review this discovery PR and evaluate the unknowns above. Provisioning is a separate assignment.
+## Review handoff / security check blocker
+
+[PR #24](https://github.com/Vivek-k24/Dzirent/pull/24) is reviewable, but its existing automatic secret
+check reports a prose false positive in the original status-log addition (`docs/agents/codex.md`,
+line 15). The match is the sentence/list describing unchanged application paths, not a credential.
+The current wording is clarified, but the pinned action scans every commit in the PR; a follow-up
+commit does not erase the historical finding. Exact fingerprint and job evidence are recorded on
+the issue/PR. No real credential rotation is indicated by that prose-only finding.
+
+The integrator must review the finding and authorize any exact historical allowlist entry before
+merge. Root `.gitleaksignore` / CI are outside the permitted files here. They remain unchanged;
+no security check was weakened and no pushed history was rewritten. Existing automatic Foundation/
+Security workflows are separate from the bounded local verification; their unresolved status is not
+claimed passed and does not justify rerunning application builds or Azure discovery from this lane.
+
+Stop: review this discovery PR, the security finding and the unknowns above. Provisioning is a separate assignment.
 Tool usage, safety limits and official SDK/API links: [infra/azure/README.md](../../infra/azure/README.md).
