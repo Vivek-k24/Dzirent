@@ -27,7 +27,7 @@ def upgrade() -> None:
         raise RuntimeError(
             "Unreconciled legacy identity rows exist; stop and plan their account migration."
         )
-    op.drop_constraint("ck_users_auth_provider", "users", type_="check")
+    op.drop_constraint(op.f("ck_users_auth_provider"), "users", type_="check")
     op.create_check_constraint(
         op.f("ck_users_auth_provider"),
         "users",
@@ -44,7 +44,7 @@ def downgrade() -> None:
         raise RuntimeError(
             "First-party accounts exist; do not downgrade the provider constraint without a data plan."
         )
-    op.drop_constraint("ck_users_auth_provider", "users", type_="check")
+    op.drop_constraint(op.f("ck_users_auth_provider"), "users", type_="check")
     # Restores the original constraint for the already-applied, immutable historical revision.
     op.create_check_constraint(
         op.f("ck_users_auth_provider"),
