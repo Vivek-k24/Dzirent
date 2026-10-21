@@ -318,8 +318,10 @@ export function GarmentMeasureScreen() {
               intrinsicWidth={intrinsicWidth}
               intrinsicHeight={intrinsicHeight}
               corners={paperCorners}
-              onChangeCorners={setPaperCorners}
+              onChangeCorners={next => { setPaperCorners(next); setPaperConfirmed(false); }}
               landmarks={landmarks}
+              onChangeLandmarks={setLandmarks}
+              onInvalidateLandmark={key => setReviewedLandmarks(previous => ({ ...previous, [key]: false }))}
               activeStep={activeStep === "paper" ? "paper" : "landmarks"}
             />
           </div>
@@ -345,6 +347,9 @@ export function GarmentMeasureScreen() {
             )}
 
             {activeStep === "landmarks" && (
+              <><button type="button" className={styles.retakeButton}
+                onClick={() => { setPaperConfirmed(false); setReviewedLandmarks({}); setResults(null); setActiveStep("paper"); }}
+                data-testid="adjust-paper-button">Recheck Paper Corners</button>
               <LandmarkEditor
                 landmarks={landmarks}
                 onChangeLandmarks={setLandmarks}
@@ -355,7 +360,7 @@ export function GarmentMeasureScreen() {
                 imageWidth={intrinsicWidth}
                 imageHeight={intrinsicHeight}
                 paperConfirmed={paperConfirmed}
-              />
+              /></>
             )}
 
             {activeStep === "results" && results && (
