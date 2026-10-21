@@ -13,12 +13,8 @@ from dzirent_api.reference import BAND_LABELS, BANDS, UNMAPPED_METRO_SLUG
 from dzirent_api.settings import Settings
 
 ROOT = Path(__file__).resolve().parents[3]
-CLERK = {
-    "identity_mode": "clerk",
-    "clerk_issuer": "https://clerk.dzirent.test",
-    "clerk_authorized_parties": ["https://app.dzirent.test"],
-    "clerk_jwt_key": "-----BEGIN PUBLIC KEY-----\nplaceholder\n-----END PUBLIC KEY-----",
-}
+NATIVE = {"identity_mode": "native"}
+
 
 
 @pytest.mark.parametrize(
@@ -29,32 +25,17 @@ def test_mock_identity_refused(mode: str, environment: str) -> None:
         Settings(_env_file=None, mode=mode, environment=environment, identity_mode="mock")
 
 
-def test_connected_missing_dependencies_refused() -> None:
+def test_connected_missing_database_refused() -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, mode="connected", identity_mode="native", database_url="")
+
+
+def test_connected_mock_identity_refused() -> None:
     with pytest.raises(ValidationError):
         Settings(
-            _env_file=None,
-            mode="connected",
-            identity_mode="clerk",
-            database_url="",
-            clerk_issuer="",
-            clerk_authorized_parties=[],
+            _env_file=None, mode="connected", identity_mode="mock",
+            database_url="postgresql://u:p@db/x",
         )
-
-
-@pytest.mark.parametrize(
-    "overrides",
-    [
-        {"clerk_jwt_key": "", "clerk_secret_key": ""},
-        {"clerk_issuer": "http://clerk.dzirent.test"},
-        {"clerk_authorized_parties": ["https://*.dzirent.test"]},
-        {"clerk_authorized_parties": ["https://app.dzirent.test/"]},
-        {"database_url": ""},
-    ],
-)
-def test_connected_clerk_configuration_validated(overrides: dict[str, object]) -> None:
-    values = {**CLERK, "mode": "connected", "database_url": "postgresql://u:p@db/x", **overrides}
-    with pytest.raises(ValidationError):
-        Settings(_env_file=None, **values)  # type: ignore[arg-type]
 
 
 def test_valid_connected_configuration_accepted() -> None:
@@ -64,10 +45,11 @@ def test_valid_connected_configuration_accepted() -> None:
         environment="production",
         database_url="postgresql://u:p@db/x",
         cors_origins=["https://app.dzirent.test"],
-        **CLERK,  # type: ignore[arg-type]
+        **NATIVE,  # type: ignore[arg-type]
     )
     assert not settings.mock_identity_allowed and settings.deployed
-    assert "u:p" not in repr(settings) and "placeholder" not in repr(settings)
+    assert "u:p" not in repr(settings)
+
 
 
 def test_unknown_mode_refused() -> None:
@@ -88,7 +70,7 @@ def test_unknown_mode_refused() -> None:
 def test_inexact_cors_refused(origins: list[str], environment: str) -> None:
     values: dict[str, object] = {"cors_origins": origins, "environment": environment}
     if environment == "production":
-        values.update(CLERK, mode="connected", database_url="postgresql://u:p@db/x")
+        values.update(NATIVE, mode="connected", database_url="postgresql://u:p@db/x")
     with pytest.raises(ValidationError):
         Settings(_env_file=None, **values)  # type: ignore[arg-type]
 

@@ -2,13 +2,13 @@ import modes from "../../../contracts/modes.json";
 
 export type ModeConfig =
   | { mode: "demo" }
-  | { mode: "connected"; apiBaseUrl: string; clerkPublishableKey: string };
+  | { mode: "connected"; apiBaseUrl: string };
 
-export function readMode(input: { mode: string; apiBaseUrl?: string; clerkPublishableKey?: string }): ModeConfig {
+export function readMode(input: { mode: string; apiBaseUrl?: string }): ModeConfig {
   if (!modes.values.includes(input.mode)) throw new Error("Invalid dzirent mode");
   if (input.mode === "demo") return { mode: "demo" };
-  if (!input.apiBaseUrl || !input.clerkPublishableKey?.startsWith("pk_")) {
-    throw new Error("Connected mode requires an API URL and Clerk publishable key");
+  if (!input.apiBaseUrl) {
+    throw new Error("Connected mode requires an API URL");
   }
   const url = new URL(input.apiBaseUrl);
   const local = ["localhost", "127.0.0.1"].includes(url.hostname);
@@ -18,5 +18,5 @@ export function readMode(input: { mode: string; apiBaseUrl?: string; clerkPublis
   if (!url.pathname.endsWith("/api/v1") || url.username || url.password || url.search || url.hash) {
     throw new Error("API base URL must end in /api/v1 without credentials, query, or fragment");
   }
-  return { mode: "connected", apiBaseUrl: input.apiBaseUrl, clerkPublishableKey: input.clerkPublishableKey };
+  return { mode: "connected", apiBaseUrl: input.apiBaseUrl };
 }
