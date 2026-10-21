@@ -10,6 +10,7 @@ on:
       - 'apps/web/src/app/dev/garment-measure/**'
       - 'apps/web/next.config.ts'
       - 'tests/workflows/garment-measure.spec.ts'
+      - 'tests/workflows/paper-calibrate.spec.ts'
       - 'scripts/generate_ai_measure_fixtures.py'
       - '.github/workflows/ai-measure-integration.yml'
 
@@ -51,7 +52,7 @@ jobs:
       - name: Targeted backend measurement and dev-proxy unit tests
         run: |
           uv run --directory services/ai-measure --frozen pytest -q
-          uv run --directory services/api --frozen pytest -q tests/test_dev_garment_measure.py
+          uv run --directory services/api --frozen pytest -q tests/test_dev_garment_measure.py tests/test_dev_paper_calibrate.py
       - name: Targeted frontend measurement unit tests
         run: pnpm --filter @dzirent/web exec vitest run src/lib/ai-measure
       - name: Generate synthetic garment with exact landmark/paper calibration and build frontend
@@ -66,8 +67,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          uv run --directory services/ai-measure --frozen python -m dzirent_ai_measure --port 8310 >/tmp/ai-measure.log 2>&1 &
-          uv run --directory services/api --frozen uvicorn dzirent_api.main:app --host 127.0.0.1 --port 8000 >/tmp/ai-measure-api.log 2>&1 &
+          # Spawn the installed Python programs directly, so killing the AI-measure
+          # PID later really takes the OpenCV service offline (no mock 503).
+          services/ai-measure/.venv/bin/python -m dzirent_ai_measure --port 8310 >/tmp/ai-measure.log 2>&1 &
+          measure_pid=$!
+          services/api/.venv/bin/uvicorn dzirent_api.main:app --host 127.0.0.1 --port 8000 >/tmp/ai-measure-api.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$measure_pid" "$api_pid" 2>/dev/null || true' EXIT
           for i in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:8310/health >/dev/null && curl -fsS http://127.0.0.1:8000/api/v1/health/live >/dev/null; then
               break
@@ -76,7 +82,41 @@ jobs:
           done
           curl -fsS http://127.0.0.1:8310/health
           curl -fsS http://127.0.0.1:8000/api/v1/health/live
+          # Preserve the original known-centimetre garment measurement regression.
           pnpm exec playwright test tests/workflows/garment-measure.spec.ts --config tests/workflows/playwright.config.ts
+          # New Phase 2B: actual browser -> loopback Next -> API -> OpenCV paper snapping.
+          pnpm exec playwright test tests/workflows/paper-calibrate.spec.ts --project=desktop --config tests/workflows/playwright.config.ts
+          # Service-down evidence: the real child process is killed, while FastAPI stays up.
+          kill "$measure_pid"
+          for i in $(seq 1 20); do
+            if ! curl -fsS --max-time 2 http://127.0.0.1:8310/health >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          if curl -fsS --max-time 2 http://127.0.0.1:8310/health >/dev/null 2>&1; then
+            echo "OpenCV worker still running; offline verification would be invalid" >&2
+            exit 1
+          fi
+          DZIRENT_PAPER_SNAP_OFFLINE_TEST=1 pnpm exec playwright test tests/workflows/paper-calibrate.spec.ts --project=desktop --config tests/workflows/playwright.config.ts
+      - name: Deployed-mode Next.js prototype route and rewrite denial
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A separate preview-mode build is essential: rewrites are build-time config.
+          VERCEL_ENV=preview pnpm build >/tmp/ai-measure-preview-build.log 2>&1 || { tail -100 /tmp/ai-measure-preview-build.log; exit 1; }
+          VERCEL_ENV=preview pnpm --filter @dzirent/web start --port 3400 >/tmp/ai-measure-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -s http://127.0.0.1:3400/ >/dev/null; then break; fi
+            sleep 1
+          done
+          page_code=$(curl -s -o /tmp/ai-measure-preview-route.txt -w '%{http_code}' http://127.0.0.1:3400/dev/garment-measure)
+          proxy_code=$(curl -s -o /tmp/ai-measure-preview-api.txt -w '%{http_code}' -X POST http://127.0.0.1:3400/api/v1/dev/paper-calibrate)
+          test "$page_code" = 404 || { echo "preview prototype visible: $page_code"; exit 1; }
+          test "$proxy_code" = 404 || { echo "preview calibration rewrite exposed: $proxy_code"; exit 1; }
+          echo "Preview mode denies prototype page and paper-calibrate rewrite (both 404)"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
         with:
