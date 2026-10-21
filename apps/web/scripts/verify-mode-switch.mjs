@@ -28,7 +28,7 @@ try {
   await expect(page.getByRole("link", { name: "Bag 0 items", exact: true })).toBeVisible();
   expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).filter(r => r.active?.scriptURL.endsWith("/mockServiceWorker.js")).length)).toBe(0);
   expect(await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL.endsWith("/mockServiceWorker.js") ?? false)).toBe(false);
-  await page.goto(`${base}/auth/renter/login`); await expect(page.getByText("Connected sign-in requires the configured identity provider. Sample sign-in is available in demo mode.")).toBeVisible();
+  await page.goto(`${base}/auth/renter/login`); await expect(page.getByText("First-party sign-in is being implemented. Sample sign-in is available only in demo mode.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Continue as sample renter" })).toHaveCount(0);
   expect(connectedRequests.length).toBeGreaterThanOrEqual(3);
   await mkdir("test-results/web-integration", { recursive: true });

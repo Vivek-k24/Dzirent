@@ -112,8 +112,9 @@ Demo web uses MSW only after Phase 1A implementation; reset clones the same dete
 discards sample session/edits. Mock delays are 0–50 ms; initial UI skeleton is 300 ms independently.
 Visible simulation labels are required. Only harmless cart/wishlist/location/view data may persist locally.
 
-Connected web uses an API base ending `/api/v1` plus Clerk publishable key. Connected API requires
-database URL, Clerk issuer/authorized parties, real token verification and ownership enforcement. Mock
+Connected web requires an API base ending `/api/v1`. Connected API requires a database URL,
+verified first-party sessions and server-side ownership enforcement. The session implementation is
+pending Issue #26; protected connected routes currently return 503. Mock
 identity is rejected outside `mode=demo` with `environment=local|test`, including staging/production.
 Connected requests never fall back to mock success; periodic refresh is 5 seconds, not pushed realtime.
 
@@ -139,9 +140,8 @@ generated TypeScript are unchanged. These clarify behavior that MSW and acceptan
 - **Readiness** returns 200 `{status: "ready"}` only when PostgreSQL is reachable and at the expected
   migration head. The readiness fixture example now shows that success case.
 - **Demo identity** (API side): `Authorization: Bearer mock:<subject>`, accepted only with `mode=demo` and
-  `environment=local|test`. The seed lender is `mock:sample-lender`. Clerk mode accepts only Clerk
-  session JWTs from the Authorization header (no cookie fallback, no machine tokens) and checks issuer,
-  expiry, signature and authorized party.
+  `environment=local|test`. The seed lender is `mock:sample-lender`. Native connected mode has no credential acceptance
+  until verified server-side session handling is implemented under Issue #26.
 - **Profiles.** Bootstrap is idempotent, grants `renter`, and never reactivates an inactive profile.
   `DELETE /me` sets the user and lender profile inactive; owned listings keep their status but leave the
   public catalog. Preferences PATCH changes only supplied fields (explicit null clears) and rejects a ZIP

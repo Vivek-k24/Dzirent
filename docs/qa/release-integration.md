@@ -97,7 +97,7 @@ subset listed above, not a second full deployed matrix or physical iPhone/Androi
 
 ### Remaining boundaries
 
-This release is demo mode. Live Clerk, hosted API/PostgreSQL and connected browser-to-database
+This release is demo mode. live native authentication, hosted API/PostgreSQL and connected browser-to-database
 persistence remain outstanding. Prices, ratings and availability are sample data; no booking,
 payment, tax engine or payout is live. The new release is pinned by immutable commit/deployment IDs;
 no new `demo-v0.1.0` tag was published because the authenticated GitHub integration does not expose

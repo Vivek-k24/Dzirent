@@ -16,7 +16,7 @@
     "accept_real_credentials": false
   },
   "connected": {
-    "identity": "clerk",
+    "identity": "native",
     "catalog": "fastapi-postgresql",
     "allow_mock_fallback": false,
     "protected_writes": "fail-closed",

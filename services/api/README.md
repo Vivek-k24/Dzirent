@@ -12,8 +12,8 @@ Contract: `contracts/openapi.json` (`0.1.0-candidate.2`), generated from the run
 | `profiles.py` | `/me` bootstrap/read/update/deactivate, preferences, lender enrollment |
 | `listings.py` | Owner-scoped listing create/read/update/archive/availability with `expected_version` |
 | `studios.py` | Studio owner settings (`/me/studio`) and public directory/profile/products (`/studios`) |
-| `identity.py` | Clerk session verification (official `clerk-backend-api`), restricted mock identity |
-| `orm.py`, `alembic/` | Phase 1 schema; one Alembic head (`0002_studios`) |
+| `identity.py` | First-party session boundary (implementation pending); restricted local/test mock identity |
+| `orm.py`, `alembic/` | Phase 1 schema; one Alembic head (`0003_native_identity_boundary`) |
 | `seed.py` | Idempotent deterministic demo seed from `fixtures/catalog` (local/test only) |
 | `errors.py`, `observability.py` | Error envelope, request IDs, redacted JSON logs, safe 500s |
 | `contract.py` | OpenAPI source: runtime routers plus contract-only upload declarations |
@@ -37,8 +37,8 @@ uv run --frozen uvicorn dzirent_api.main:app --port 8000
 
 Demo identity (only with `DZIRENT_MODE=demo` and `DZIRENT_ENVIRONMENT=local|test`):
 `Authorization: Bearer mock:<subject>` where subject matches `^[a-z0-9][a-z0-9-]{0,62}$`.
-The seed lender that owns all 40 garments is `mock:sample-lender`. Connected mode needs Clerk
-configuration (see `.env.example`) and refuses mock identity at startup.
+The seed lender that owns all 40 garments is `mock:sample-lender`. Connected mode selects native identity and requires a database URL. Until Issue #26 is implemented,
+protected connected requests return 503, never mock success.
 
 ## Tests
 

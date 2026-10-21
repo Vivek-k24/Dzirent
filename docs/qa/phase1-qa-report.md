@@ -26,7 +26,7 @@
 | **Foundation Baseline Multi-Browser E2E** | **PASS** | **12/12 passed in 3.4m** across Chromium, Firefox, WebKit at 390, 768, 1100, 1440 px. **0 axe violations, 0 console errors, 0 failed network requests**. |
 | **Initial Loading & Feedback Suite** | **PASS** | **3/3 passed in 16.4s** across Chromium, Firefox, WebKit. Exactly 8 visible skeletons, $\ge$ 300ms loading feedback, and exactly 1 catalog request. |
 | **CI Workflow Pinned Actions (`qa-acceptance.yml`)** | **PASS** | `actions/upload-artifact` pin corrected to verified official commit `ea165f8d65b6e75b540449e92b4886f43607fa02` (`v4.6.2`). All other action pins verified. |
-| **Phase 1B Connected Persistence Gates** | **GATED** | Test harness and contract gates established. PostgreSQL migrations, Clerk token verification, and owner CRUD remain pending Claude Code `API-1` (`claude/api-phase1`). |
+| **Phase 1B Connected Persistence Gates** | **GATED** | Test harness and contract gates established. PostgreSQL migrations, prior external-provider token verification, and owner CRUD remain pending Claude Code `API-1` (`claude/api-phase1`). |
 
 ### Release Verdict
 > [!IMPORTANT]

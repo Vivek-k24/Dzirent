@@ -51,8 +51,8 @@ Next action: review of #19 after #17 merges; integrate with Codex's candidate; t
 
 Issue [#3](https://github.com/Vivek-k24/Dzirent/issues/3); PR [#11](https://github.com/Vivek-k24/Dzirent/pull/11), merged 2026-10-19 (`4c16517`).
 FastAPI/SQLAlchemy/Alembic Phase 1 schema (`0001_phase1_schema`), restricted idempotent seed, public catalog,
-own-profile/preferences/lender enrollment and owner listing CRUD with row-locked versioning, Clerk SDK verification,
+own-profile/preferences/lender enrollment and owner listing CRUD with row-locked versioning, legacy external-identity SDK verification (later removed),
 error envelope, redacted logs, readiness, Docker runtime. Validation then: 254 PostgreSQL tests passed; static,
-contract, fixture and dependency checks passed. Remaining from that milestone: no live Clerk instance or hosted
+contract, fixture and dependency checks passed. Remaining from that milestone: no deployed identity instance or hosted
 database/services; no 429 rate limiting, create idempotency keys, uploads or Sentry; issue #4 occasion/fabric
 filters pending confirmation.

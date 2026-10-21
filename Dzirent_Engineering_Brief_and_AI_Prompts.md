@@ -1,3 +1,5 @@
+> **Identity architecture amendment (2026-10-21):** The product owner replaced the original managed-identity direction with first-party Dzirent authentication. Issue #26 governs implementation and tests. Historical phases and estimates in this brief do not establish completed native authentication. No live deployment or data migration is authorized by this amendment.
+
 # dzirent: Engineering Brief and Parallel AI Build Prompts
 
 Version 1.0 | Prepared October 18, 2026 | Status: proposed implementation baseline
@@ -71,7 +73,7 @@ These are implementation choices, not a catalog of alternatives. During bootstra
 | Database access | SQLAlchemy 2, psycopg 3, Alembic | Typed persistence, PostgreSQL driver, ordered migrations |
 | Database | PostgreSQL on Neon | Managed relational storage; local PostgreSQL through Docker Compose |
 | API contracts | OpenAPI JSON generated from FastAPI; openapi-typescript-generated TypeScript types | One contract shared by mock API, web, native, and QA |
-| Identity | Mock identity in 1A; Clerk in 1B and native clients | Centered custom forms; Python validates provider session tokens using the official backend SDK |
+| Identity | Mock identity in 1A; first-party password/session authentication in connected mode | Centered custom forms; Python verifies its own database-backed sessions and derives ownership |
 | Media | AWS S3, boto3; CloudFront for public optimized catalog images | Separate public catalog derivatives from private future evidence; no secrets in clients |
 | Web hosting | Vercel connected to GitHub | Web previews and production domain |
 | API/worker compute | Render Docker services | Long-running Python API now; worker and realtime support later |
@@ -87,7 +89,7 @@ These are implementation choices, not a catalog of alternatives. During bootstra
 
 No Kubernetes, microservices split, GraphQL, Elasticsearch, vector database, or AI runtime is needed for Phase 1. PostgreSQL search/indexes are sufficient for 40 garments. Reconsider infrastructure only against measured needs.
 
-Clerk manages credentials; PostgreSQL stores application profiles and lender membership. Do not create a second password system. User display-name/profile CRUD is in scope; arbitrary user administration is not. In 1A, use sample identities and do not retain entered passwords or accept real credentials.
+FastAPI owns first-party credentials and revocable sessions; PostgreSQL stores salted Argon2id password hashes, application profiles and lender memberships. Do not create a parallel unmanaged credential store. User display-name/profile CRUD is in scope; arbitrary user administration is not. In 1A, use sample identities and do not retain entered passwords or accept real credentials.
 
 ## 4. Architecture and boundaries
 
@@ -98,7 +100,7 @@ FastAPI has internal modules for identity/profile, catalog, taxonomy, location, 
 Mode selection is explicit:
 
 - DEMO mode: MSW + deterministic fixtures; cart and harmless demo preferences may persist locally. A visible demo indicator prevents misunderstanding. Seed reset returns to the same 40 products. No shared private data.
-- CONNECTED mode: Clerk + FastAPI + PostgreSQL. Protected writes fail closed. A failed API request must not silently fall back to mocks or claim success.
+- CONNECTED mode: first-party FastAPI authentication + PostgreSQL. Protected writes fail closed. A failed API request must not silently fall back to mocks or claim success.
 - Server startup refuses mock-identity mode in connected/production environments. The web demo can be hosted publicly only as an explicitly simulated presentation.
 
 For real media, issue short-lived, narrowly scoped upload authorization after verifying ownership. Validate extension, MIME type, decoded content, file size, and image dimensions; generate safe derivatives and remove unnecessary metadata. Use unique server-controlled object keys. Never overwrite private evidence via a predictable public upload path.
@@ -216,7 +218,7 @@ Empty state: SearchX, friendly message and Clear all filters. Error state: expla
 
 Auth modes: renter sign-in/sign-up and lender sign-in/sign-up. All web forms are centered, focus-trapped modals with Esc/close, focus restoration, validation, and show/hide password. Preserve a safe same-origin returnTo. Expose password requirements matching the actual provider configuration in connected mode; do not invent a length rule separately.
 
-1A simulates sign-in/sign-up with sample profiles and a clear demo label. It does not verify identity, store passwords, send emails, reset passwords, or implement 2FA. 1B uses Clerk; if its configuration requires an additional provider step, follow it rather than bypassing it. Full recovery/MFA product flows remain outside Phase 1.
+1A simulates sign-in/sign-up with sample profiles and a clear demo label. It does not verify identity, store passwords, send emails, reset passwords, or implement 2FA. Connected identity uses Dzirent-owned registration, session verification, email verification, password recovery and protected account controls as a separately gated assignment (#26). Do not bypass any verification requirements.
 
 A user can have renter and lender roles. A lender profile is an application record, not a role string accepted from arbitrary requests. Self-enrollment creates a lender profile through an authenticated endpoint; ownership always derives from the verified subject. Admin role is never self-assignable.
 
@@ -438,7 +440,7 @@ Implement Phase 1B in parallel with Codex's presentation UI. Use FastAPI, Uvicor
 
 Implement public catalog search/filter/sort/pagination and deduplicated counts, current-user profile/preferences CRUD, lender enrollment and owner-scoped listing create/read/update/archive/availability. Validate parent/child relations, prices as integer minor units, garment size and measurements, date blocks and version-based concurrent updates. Seed reference taxonomy is read-only in Phase 1. No admin panel or arbitrary user administration.
 
-Use Clerk's official supported Python token verification for connected identity. Derive subject and ownership server-side; never trust incoming user_id, lender_id or admin role. Isolate test/mock identity and reject it outside explicit disposable demo/test settings. Do not build a password database. Add health endpoints, structured redacted logs, stable errors, exact CORS configuration, safe query handling and environment templates without secrets.
+Use reviewed first-party session authentication with Argon2id password hashing, hashed opaque session tokens and database-backed revocation for connected identity. Derive subject and ownership server-side; never trust incoming user_id, lender_id or admin role. Isolate test/mock identity and reject it outside explicit disposable demo/test settings. Store only strong salted password hashes and short-lived hashed recovery tokens; never store plaintext or reversible credentials. Add health endpoints, structured redacted logs, stable errors, exact CORS configuration, safe query handling and environment templates without secrets.
 
 Write pytest/HTTPX integration tests against PostgreSQL for meaningful behavior: persistence, invalid inputs, anonymous access, cross-owner denial, stale edits, migration/seed repeatability and dependency failures. If uploads enter the milestone, use authorized short-lived S3 intents and validate uploaded content before attachment. Provide Docker runtime and proposed Compose changes to Codex for shared-root integration. Do not edit web/mobile components or shared JS lockfiles.
 
@@ -491,7 +493,7 @@ These hostnames are proposed configuration targets, not verified live links. Ver
 ### 14.3 Connected deployment sequence
 
 1. Provision a dedicated development/staging Neon database and least-privilege API credentials; choose region near API compute. Use provider-supported TLS. Configure runtime pooling deliberately; migrations use a direct connection where required. Do not embed database URLs in web/mobile bundles.
-2. Configure Clerk development identity and exact allowed web origins/redirects. Create production identity separately when activating production. API verifies tokens and maps identity subjects to application users.
+2. Implement native development identity and exact allowed web origins/redirects. Keep production isolated until separately approved. The API validates first-party sessions and maps them to application users.
 3. Deploy services/api to Render using its Dockerfile. Keep secrets in platform configuration; run Alembic migrations as a single serialized release step, not concurrently in every API replica. Seed only disposable demo databases.
 4. Add api.dzirent.com to Render and install the exact DNS records it returns. Confirm HTTPS and health/readiness.
 5. Set connected web configuration to the API URL and appropriate publishable identity key. Add exact known web origins to API CORS. Preview deployments use a dedicated staging API/identity environment; no broad credentialed wildcard CORS.
@@ -516,8 +518,8 @@ Documentation was checked October 18, 2026. Recheck exact release versions and p
 - [FastAPI features and OpenAPI support](https://fastapi.tiangolo.com/features/)
 - [Expo EAS Build](https://docs.expo.dev/build/introduction/)
 - [Expo authentication guidance](https://docs.expo.dev/develop/authentication/)
-- [Expo Clerk integration](https://docs.expo.dev/guides/using-clerk/)
-- [Clerk Python backend authentication](https://clerk.com/articles/how-to-add-authentication-to-a-python-backend)
+- Dzirent first-party identity implementation scope: GitHub Issue #26
+- Session management, token rotation and recovery: reviewed Dzirent security acceptance plan in Issue #26
 - [Render FastAPI deployment](https://render.com/docs/deploy-fastapi)
 - [Render Docker deployment](https://render.com/docs/docker)
 - [Neon connection pooling](https://neon.com/docs/connect/connection-pooling)
