@@ -25,6 +25,8 @@ MAX_ANNOTATION_BYTES = 64 * 1024
 MAX_REQUEST_BYTES = MAX_IMAGE_BYTES + MAX_ANNOTATION_BYTES + 256 * 1024
 RELAYED_ERRORS = {413, 415, 422}
 SCHEMA_VERSION = "ai-measure.v0"
+PAPER_SCHEMA_VERSION = "paper-calibrate.v0"
+PAPER_DETECTION_STATUSES = {"snapped", "not_found", "ambiguous", "invalid"}
 CALIBRATION_STATUSES = {"valid", "uncertain", "invalid"}
 
 
@@ -99,3 +101,80 @@ async def measure_garment(request: Request) -> JSONResponse:
         log.warning("garment-measure service returned unexpected status %s", upstream.status_code)
         return unavailable(request)
     return JSONResponse(status_code=upstream.status_code, content=payload)
+
+
+@router.post("/paper-calibrate")
+async def calibrate_reference_paper(request: Request) -> JSONResponse:
+    """Local-only, bounded pass-through to the internal paper corner proposal service.
+
+    No image bytes are persisted; no proposal is accepted as a user-confirmed calibration here.
+    """
+    content_type = request.headers.get("content-type", "")
+    if not content_type.lower().startswith("multipart/form-data"):
+        return error_response(
+            request, 415, "unsupported_media_type",
+            "Send multipart/form-data with an image and the paper-calibrate annotation JSON.",
+        )
+    declared = request.headers.get("content-length", "")
+    if declared.isdigit() and int(declared) > MAX_REQUEST_BYTES:
+        return too_large(request)
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body) > MAX_REQUEST_BYTES:
+            return too_large(request)
+
+    settings: Settings = request.app.state.settings
+    request_id = request_id_of(request)
+    try:
+        async with httpx.AsyncClient(
+            transport=request.app.state.garment_measure_transport,
+            timeout=settings.garment_measure_timeout_s,
+            follow_redirects=False,
+        ) as client:
+            upstream = await client.post(
+                f"{settings.garment_measure_url.rstrip('/')}/v1/calibrate-paper",
+                content=bytes(body),
+                headers={"content-type": content_type, "x-request-id": request_id},
+            )
+    except httpx.HTTPError as exc:
+        log.warning("paper-calibrate service unreachable: %s", type(exc).__name__)
+        return unavailable(request)
+    finally:
+        del body
+    try:
+        payload = upstream.json()
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        payload = None
+
+    if upstream.status_code == 200 and isinstance(payload, dict):
+        status = payload.get("detection_status")
+        corners = payload.get("proposed_corners_px")
+        diagnostic = payload.get("calibration_status")
+        if (
+            payload.get("schema_version") == PAPER_SCHEMA_VERSION
+            and status in PAPER_DETECTION_STATUSES
+            and payload.get("reference_type") == "us_letter"
+            and payload.get("requires_user_confirmation") is True
+            and isinstance(payload.get("reason_codes"), list)
+            and all(isinstance(code, str) for code in payload["reason_codes"])
+            and (
+                (status == "snapped"
+                 and diagnostic in CALIBRATION_STATUSES
+                 and isinstance(corners, list)
+                 and len(corners) == 4
+                 and all(isinstance(point, list)
+                         and len(point) == 2
+                         and all(isinstance(n, (int, float)) and not isinstance(n, bool)
+                                 for n in point)
+                         for point in corners))
+                or (status != "snapped" and corners is None and diagnostic is None)
+            )
+        ):
+            return JSONResponse(status_code=200, content=payload)
+    elif upstream.status_code in RELAYED_ERRORS and isinstance(payload, dict):
+        if isinstance(payload.get("error"), dict):
+            return JSONResponse(status_code=upstream.status_code, content=payload)
+
+    log.warning("paper-calibrate service returned unexpected status %s", upstream.status_code)
+    return unavailable(request)
