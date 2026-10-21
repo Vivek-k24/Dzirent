@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { LANDMARK_DEFINITIONS } from "@/lib/ai-measure/constants";
-import { intrinsicToDisplay } from "@/lib/ai-measure/coordinates";
+import { displayToIntrinsic, intrinsicToDisplay } from "@/lib/ai-measure/coordinates";
 import type {
   LandmarkAnnotation,
   MeasurementKey,
@@ -17,6 +17,8 @@ interface ImageMeasurementOverlayProps {
   intrinsicHeight: number;
   corners: [Point2D, Point2D, Point2D, Point2D];
   onChangeCorners: (corners: [Point2D, Point2D, Point2D, Point2D]) => void;
+  onChangeLandmarks: (landmarks: Record<MeasurementKey, LandmarkAnnotation>) => void;
+  onInvalidateLandmark: (key: MeasurementKey) => void;
   landmarks: Record<MeasurementKey, LandmarkAnnotation>;
   activeStep: "paper" | "landmarks";
   activeLandmarkKey?: MeasurementKey;
@@ -29,10 +31,55 @@ export function ImageMeasurementOverlay({
   intrinsicWidth,
   intrinsicHeight,
   corners,
+  onChangeCorners,
   landmarks,
+  onChangeLandmarks,
+  onInvalidateLandmark,
   activeStep,
 }: ImageMeasurementOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const draggingRef = useRef<{ kind: "paper"; index: number } | { kind: "landmark"; key: MeasurementKey; index: number } | null>(null);
+
+  const startDrag = (event: React.PointerEvent<SVGCircleElement>,
+    target: { kind: "paper"; index: number } | { kind: "landmark"; key: MeasurementKey; index: number }) => {
+    event.preventDefault();
+    event.stopPropagation();
+    draggingRef.current = target;
+    svgRef.current?.setPointerCapture(event.pointerId);
+  };
+
+  const moveDrag = (event: React.PointerEvent<SVGSVGElement>) => {
+    const drag = draggingRef.current;
+    const svg = svgRef.current;
+    if (!drag || !svg) return;
+    const rect = svg.getBoundingClientRect();
+    const point = displayToIntrinsic(
+      [event.clientX - rect.left, event.clientY - rect.top],
+      rect.width, rect.height, intrinsicWidth, intrinsicHeight
+    );
+    if (drag.kind === "paper") {
+      if (activeStep !== "paper") return;
+      const next = corners.map(p => [...p] as Point2D) as [Point2D, Point2D, Point2D, Point2D];
+      next[drag.index] = point;
+      onChangeCorners(next);
+    } else {
+      if (activeStep !== "landmarks" || landmarks[drag.key].not_measurable) return;
+      const current = landmarks[drag.key];
+      const nextPoints = current.points_px.map(p => [...p] as Point2D);
+      nextPoints[drag.index] = point;
+      onChangeLandmarks({...landmarks, [drag.key]: {...current, points_px: nextPoints}});
+      onInvalidateLandmark(drag.key);
+    }
+  };
+
+  const stopDrag = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (!draggingRef.current) return;
+    draggingRef.current = null;
+    if (svgRef.current?.hasPointerCapture(event.pointerId)) {
+      svgRef.current.releasePointerCapture(event.pointerId);
+    }
+  };
   const [containerSize, setContainerSize] = useState<{
     width: number;
     height: number;
@@ -96,6 +143,10 @@ export function ImageMeasurementOverlay({
       />
 
       <svg
+        ref={svgRef}
+        onPointerMove={moveDrag}
+        onPointerUp={stopDrag}
+        onPointerCancel={stopDrag}
         className={styles.svgOverlay}
         width={containerW}
         height={containerH}
@@ -125,6 +176,10 @@ export function ImageMeasurementOverlay({
                 cy={pt[1]}
                 r={activeStep === "paper" ? 9 : 6}
                 className={styles.cornerCircle}
+                style={activeStep === "paper" ? {cursor:"grab", pointerEvents:"auto", touchAction:"none"} : undefined}
+                onPointerDown={event => {
+                  if (activeStep === "paper") startDrag(event, {kind:"paper", index:idx});
+                }}
               />
               <text
                 x={pt[0] + 12}
@@ -181,6 +236,11 @@ export function ImageMeasurementOverlay({
                   stroke="#ffffff"
                   strokeWidth={2}
                   data-testid={`landmark-point-${key}-${pIdx}`}
+                  style={activeStep === "landmarks" ? {cursor:"grab", pointerEvents:"auto", touchAction:"none"} : undefined}
+                  onPointerDown={event => {
+                    if (activeStep === "landmarks")
+                      startDrag(event, {kind:"landmark",key:key as MeasurementKey,index:pIdx});
+                  }}
                 />
               ))}
             </g>
