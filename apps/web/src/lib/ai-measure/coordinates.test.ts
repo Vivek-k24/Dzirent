@@ -5,6 +5,7 @@ import {
   intrinsicToDisplay,
   intrinsicToPercent,
   isValidQuadrilateral,
+  translateQuadSafely,
 } from "./coordinates";
 import type { Point2D } from "./types";
 
@@ -188,6 +189,71 @@ describe("AI-MEASURE-1 Coordinate Transformations", () => {
         [100, 300],
       ];
       expect(isValidQuadrilateral(duplicate)).toBe(false);
+    });
+  });
+
+  describe("translateQuadSafely", () => {
+    const quad: [Point2D, Point2D, Point2D, Point2D] = [
+      [100, 150], // TL
+      [300, 150], // TR
+      [300, 450], // BR
+      [100, 450], // BL
+    ];
+    const imageW = 1000;
+    const imageH = 800;
+
+    it("translates all four corners by delta while preserving exact shape", () => {
+      const shifted = translateQuadSafely(quad, 50, -30, imageW, imageH);
+      expect(shifted).toEqual([
+        [150, 120],
+        [350, 120],
+        [350, 420],
+        [150, 420],
+      ]);
+    });
+
+    it("clamps at left boundary without distorting quad shape", () => {
+      // Trying to shift left by -200 when minX is 100
+      const shifted = translateQuadSafely(quad, -200, 0, imageW, imageH);
+      expect(shifted).toEqual([
+        [0, 150],
+        [200, 150],
+        [200, 450],
+        [0, 450],
+      ]);
+    });
+
+    it("clamps at right boundary without distorting quad shape", () => {
+      // Trying to shift right by 800 when maxX is 300 and imageW is 1000 (max allowed delta is 700)
+      const shifted = translateQuadSafely(quad, 800, 0, imageW, imageH);
+      expect(shifted).toEqual([
+        [800, 150],
+        [1000, 150],
+        [1000, 450],
+        [800, 450],
+      ]);
+    });
+
+    it("clamps at top boundary without distorting quad shape", () => {
+      // Trying to shift up by -300 when minY is 150
+      const shifted = translateQuadSafely(quad, 0, -300, imageW, imageH);
+      expect(shifted).toEqual([
+        [100, 0],
+        [300, 0],
+        [300, 300],
+        [100, 300],
+      ]);
+    });
+
+    it("clamps at bottom boundary without distorting quad shape", () => {
+      // Trying to shift down by 500 when maxY is 450 and imageH is 800 (max allowed delta is 350)
+      const shifted = translateQuadSafely(quad, 0, 500, imageW, imageH);
+      expect(shifted).toEqual([
+        [100, 500],
+        [300, 500],
+        [300, 800],
+        [100, 800],
+      ]);
     });
   });
 });
