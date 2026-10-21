@@ -1,8 +1,8 @@
-# Read-only Azure discovery
+# Azure discovery and authorized staging tooling
 
-This local Python tool uses the existing Azure Resources VS Code sign-in. It creates no Azure
+The discovery/preflight tools use the existing Azure Resources VS Code sign-in. They create no Azure
 resources and never registers providers, changes roles/networking, retrieves keys/passwords, runs
-migrations or deploys applications. Application hosting stays on Vercel. Dependencies are isolated
+migrations or deploys applications. The public web client stays on Vercel. Dependencies are isolated
 here; neither the API environment nor application locks are changed.
 
 ## Run on the assigned Windows workstation
@@ -104,6 +104,80 @@ to their source local run; keep both ignored run directories together.
 Do not repeat the successful broad scan or add unit/browser/application build suites for this task.
 An SDK/API failure should be a precise section error, not a reason to create resources or change access.
 The task ends at the pushed discovery PR and sanitized setup report; provisioning needs a later assignment.
+
+## Issue #25 staging preflight (no provisioning)
+
+The historical discovery assignment above ended at its PR. Issue #25 separately authorizes staging
+setup only after its security, eligibility, quota and cost gates pass. The companion tool collects
+bounded read-only billing/benefit, hosting, policy/deny and public-price evidence:
+
+```powershell
+& infra/azure/.venv/Scripts/python.exe infra/azure/staging_preflight.py --help
+& infra/azure/.venv/Scripts/python.exe infra/azure/staging_preflight.py `
+  --output-dir .local/staging-preflight-new --timeout 180
+# Affected-section reruns always recheck the subscription/tenant and use new output directories:
+& infra/azure/.venv/Scripts/python.exe infra/azure/staging_preflight.py `
+  --hosting-skus-only --output-dir .local/staging-hosting-new --timeout 60
+& infra/azure/.venv/Scripts/python.exe infra/azure/staging_preflight.py `
+  --benefits-only --output-dir .local/staging-benefits-new --timeout 90
+```
+
+Reuses the isolated pinned environment and existing discovery helpers without changing discovery.
+Authentication is VS Code only, with no interactive login or CLI fallback. A fresh exact subscription/
+tenant gate precedes all other ARM calls. Fixed additional GET paths cover billing property, free
+service resources, Web/App inventory/providers, Web SKUs, policy/deny assignments, permissions and
+a usage sample. Credit/lots reads follow **only the billing profile linked by that verified
+subscription**, with an exact profile-path allowlist; no arbitrary scope or unrelated-account
+enumeration is accepted. Tokens stay in memory.
+
+Public prices use a separate unauthenticated HTTPS client to `prices.azure.com`, no redirects,
+15-second request timeout, at most three requests and 2 MB per response. A price next page makes
+the result partial. Inherited ARM request/retry/list bounds apply and a supervisor enforces the
+wall limit. Only new ignored `.local` directories receive output; raw billing responses may contain
+private IDs/addresses and must stay local. Findings contain allowlisted summaries. No keys requested.
+
+Exit **2 / blocked is expected**, even when useful reads succeed: the tool always leaves
+`provisioning_ready=false` and cannot approve or prove allocation. Empty quota/SKU/usage lists do not
+prove eligibility, capacity or free meters. No creation/registration, roles, migration, networking
+change or deployment operation is implemented. The dated [staging handoff](../../docs/infra/azure-staging-handoff.md)
+records actual credit/expiry, rates, unresolved gates, proposed security/cleanup and unrun hosted
+acceptance. Clear that gate before issue #26; the existing demo stays unchanged.
+
+## Authorized PostgreSQL provisioning — issue #25
+
+The owner's October 20 authorization permits scoped first-party staging use of remaining Students
+credit. The historical free-only restriction is superseded; personal charges, Marketplace purchases,
+subscription upgrades and spending-limit removal remain prohibited. `provision_postgres.py` reuses
+existing SDK/auth helpers; discovery/preflight remain read-only.
+
+**Current:** the single approved-size create was rejected; both regions report OfferRestricted.
+The tagged RG is empty. Do not retry allocation or remove the private attempt marker. Follow the
+[current handoff](../../docs/infra/azure-staging-handoff.md) for the Azure support action needed.
+
+Default is a local private plan, without cloud writes:
+
+```powershell
+& infra/azure/.venv/Scripts/python.exe infra/azure/provision_postgres.py --help
+& infra/azure/.venv/Scripts/python.exe infra/azure/provision_postgres.py `
+  --output-dir .local/staging-postgres-2026-10-20 `
+  --preflight .local/staging-authorized-2026-10-20 `
+  --discovery .local/staging-authorized-discovery-2026-10-20
+```
+
+Only under owner authority and financial/policy review, `--apply` allows registration, one exact
+isolated RG and **one** PG17/B1ms/32 GB PUT. Evidence must be under 30 minutes old: exact enabled
+Students subscription/tenant, both spending limits On, current unestimated net credit/planning reserve,
+unexpired allowance, inventory and grant/deny checks. Live identity/limit and post-registration
+regional PG17/B1ms access are rechecked. Listings never guarantee allocation.
+
+The fixed ignored `issue-25-postgres-attempt.private.json` marker is created before the PUT. Denied
+or ambiguous responses do not permit automatic retries/new-plan bypasses. SDK mutation retries are off.
+Fixed method/path guards exclude delete, arbitrary URL, IAM, billing-conversion and firewall APIs.
+Private credentials/errors/inventory/ledger stay in `.local`; tokens remain in memory.
+
+For follow-up reads on the preserved state, append `--status-only` or `--region-check-only` to the
+command above. Exit 2 is expected for actual not-found/restricted results. A later server Ready/exit 0
+would not prove hosted API/persistence/auth acceptance. No allocation retry is currently authorized.
 
 ## Official references
 

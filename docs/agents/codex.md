@@ -1,5 +1,96 @@
 # Codex Phase 1A status
 
+## AZ-SETUP / #25 — authorized attempt, regional restriction, 2026-10-20
+
+Existing worktree `H:\DziRent\worktrees\codex-web`, branch `codex/azure-staging-setup`, PR #31.
+Exact fetched main/base `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`; previous PR head
+`ae2bc3e6bead4a189256a3ddc7c9ce61d74f22c6` already contains it. Normal merge: already up to date.
+All prior user work/branches preserved. [Claim](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6305346084).
+Only `infra/azure/**`, `docs/infra/azure-staging-handoff.md` and this log edited; no agents started.
+
+New owner authority permits first-party staging use of remaining Students credit; old free-only
+stop is superseded. Existing VS Code authentication worked; current credit/pending charges/expiry
+and both spending limits verified before/after writes. Exact financial values private. No upgrade,
+personal payment, limit removal, Marketplace/support purchase, IAM/network edit, AWS call, unrelated
+resource edit, public-site/DNS change or merge. Fresh policy/definition/grant/deny review completed.
+
+Actual: PG provider registration HTTP 200, now Registered; new tagged `rg-dzirent-staging-scus` HTTP 201.
+Exactly one PG17/B1ms/32 GB PUT returned HTTP 400 `ParameterOutOfRange` (Version list `[]`). Server GET
+404; final owned-RG inventory complete/empty. Post-registration South Central US/East US 2 metadata
+shows **OfferRestricted Enabled**, no versions/SKUs. Numeric quota now 16 regional / 8 Burstable cores,
+usage 0. One focused East US 2 read retry after timeout; no second create/SKU change. No DB/SQL roles,
+migration, seed/data copy, host, registry or paid monitoring created. Reported credit unchanged;
+invoice cost not established. No metered compute/storage provisioned; extra alerts not configured
+while blocked. Preserve the attempt marker and issue's stop-on-denial boundary.
+
+Added scoped provisioner reusing SDK/auth, private plan/credentials/request ledger, current financial
+guards, disabled mutation retries and persisted issue-wide attempt marker. Added live post-registration
+regional gate after diagnosis; final read-only run correctly blocked. Original allocation and final
+guard hashes/evidence are distinct in the [handoff](../infra/azure-staging-handoff.md).
+
+Actual local checks: Python 3.12.15, existing Azure pins, Ruff **0.6.9** lint/format/compile/help/local
+plan and no-network delete/billing/unrelated-provider rejection passed. Allocation, denied status and
+restricted final guard exited 2 as documented. Docker 28.0.1 Linux built the existing API image with
+frozen dependencies. Local image ID `sha256:c7b8761d81d23dd50efb32a504c83a8b704df7b62f9faf134063cdf357c9a58f`,
+unchanged API code at main `8fcdc8d`, not published/deployed. Network-isolated image smoke passed UID
+10001, private-file absence, staging mock-auth rejection and missing-Clerk rejection. `alembic heads`
+returned `0002_studios (head)`; no upgrade executed. Final privacy/ignore/whitespace/CI recorded on PR
+#31 at the new pushed SHA. No local unit/browser suite or unrelated app build; no hosted acceptance.
+
+CI follow-up at `d0b2858c6ce7d43cee1d805acf3ada9cd41d5ed5`: Foundation/PG, dependency/secret checks and
+CodeQL passed; source-scan reported the isolated Azure lock's certifi 2026.10.18 certificate advisory.
+Separate security commit changes only that resolved package to 2026.10.19, the scanner-required patch
+already used by the unchanged API. Frozen sync/installed version and package-diff checks passed. Patched
+trust read-only region/financial checks succeeded at the transport level, preserving restricted/blocked
+status and verifying current credit/both limits (01:47:05 UTC); no mutation/reallocation. Source hash
+and image unchanged; new-head CI recorded on PR #31. No security suppression or broader upgrade.
+
+Clerk: owner selected **Dzirent Staging** dev app. No usable local keys/issuer/CLI connection or enabled
+browser found. Owner needs Dashboard login, reuse/create the app and actual public Frontend API URL;
+prefer public JWT verifier and real exact staging origin. No invented issuer/bypass. Only this provider
+step waits for browser access; it did not prevent the PostgreSQL attempt or runtime preparation.
+
+Status: #25 partial, Azure regional offer access blocked; #26 app work gated on usable staging. Next:
+Service and subscription limits request enabling PG in an approved region on the Students offer,
+without paid support/upgrade. Then owner review of the exhausted one-attempt boundary, access/credit
+recheck, isolated DB/least-privilege roles, serialized migration, HTTPS API/persistence/security and #26.
+Existing live demo preserved. Full evidence, costs and cleanup are in the handoff.
+
+## Azure staging / issue #25 — approval gate, 2026-10-20
+
+Exact starting main commit: `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c` after fetch.
+Worktree `H:\DziRent\worktrees\codex-web`; branch `codex/azure-staging-setup`.
+Claim and explicit owned paths recorded on #25. Preserved the clean prior branch/history. Read
+the focused setup context once; expanded reads only for SDK billing, hosting, current prices,
+runtime/config dependencies and the own-log insertion point. No other agent started.
+
+Added read-only staging preflight using existing pinned isolated Azure tooling and the VS Code
+broker. Fresh subscription/tenant checks passed. Positive current credit and unexpired allowance
+were verified; exact financial values stay local. Free-service meters remain unverified (404 InvalidResourceType). Numeric
+PG regional quota is absent from HTTP-200 empty lists; F1/B1 eligibility/capacity also unknown.
+South Central US advertises PG17/B1ms and appears in the returned allowed-region policy. Grants
+alone do not prove effective write authority. No existing Dzirent-hosted API/DB was found.
+
+Costed PG17/B1ms/32 GB at USD 19.308 per 730-hour month before benefits; a conditional Linux B1
+API worker adds USD 13.14. F1 eligibility must be verified first. Cost/credit-use and permitted Students
+use decisions precede creation; usage overages/extra services need explicit scope. Created resources:
+zero. No cloud write, migration, image push, application/contract change, dependency upgrade,
+Vercel/DNS change, merge or issue #26 implementation occurred.
+
+Actual Windows/Python 3.12.15 checks: Ruff, syntax and help passed after the changes. Fresh discovery
+used 15 ARM attempts / 41 seconds and was partial (East US 2 capability timeout; numeric quotas
+unknown). Extra gates used 13 ARM attempts + 3 unauthenticated retail reads / 16 seconds, blocked.
+Fixed the empty Web SKU parser; focused identity/SKU rerun used 2 GETs / 1 second, partial. Added
+linked-profile benefit reads; focused run used 5 GETs / 11 seconds, confirmed credit/expiry, but not
+service entitlement. Both focused preflight runs exited 2 as documented. Original successful evidence
+retains its timestamps/hash. Raw billing details remain ignored. No unit/app/browser suite or hosted
+acceptance pass is claimed. Final commit, diff/guard checks and CI are recorded on the PR/#25.
+
+Reviewable plan, commands, per-resource costs, blockers and operational acceptance/rollback:
+[Azure staging handoff](../infra/azure-staging-handoff.md). Stop at the owner's cost/offer decision;
+then clear remaining quota/capacity/policy and staging Clerk prerequisites. Issue #26 starts only
+after real hosted API/PostgreSQL acceptance passes. The public presentation remains in place.
+
 ## AZ-DISC / issue #23 — read-only Azure discovery, 2026-10-19
 
 Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/azure-discovery`; exact fixed base
