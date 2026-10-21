@@ -32,7 +32,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async rewrites() {
     return localQualityAccess
-      ? [{ source: "/api/v1/dev/photo-quality", destination: qualityApiOrigin + "/api/v1/dev/photo-quality" }]
+      ? [
+          { source: "/api/v1/dev/photo-quality", destination: qualityApiOrigin + "/api/v1/dev/photo-quality" },
+          { source: "/api/v1/dev/garment-measure", destination: qualityApiOrigin + "/api/v1/dev/garment-measure" },
+        ]
       : [];
   },
 };
