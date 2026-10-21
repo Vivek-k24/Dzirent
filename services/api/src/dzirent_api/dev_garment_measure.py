@@ -28,6 +28,22 @@ SCHEMA_VERSION = "ai-measure.v0"
 PAPER_SCHEMA_VERSION = "paper-calibrate.v0"
 PAPER_DETECTION_STATUSES = {"snapped", "not_found", "ambiguous", "invalid"}
 CALIBRATION_STATUSES = {"valid", "uncertain", "invalid"}
+# Frozen paper-calibrate.v0 response (#46); anything else from upstream is dropped, never relayed.
+PAPER_CONTRACT_KEYS = (
+    "schema_version",
+    "algorithm_version",
+    "request_id",
+    "detection_status",
+    "reference_type",
+    "proposed_corners_px",
+    "calibration_status",
+    "reason_codes",
+    "requires_user_confirmation",
+)
+
+
+def _reject_constant(token: str) -> Any:
+    raise ValueError(f"non-finite JSON number {token}")
 
 
 def unavailable(request: Request) -> JSONResponse:
@@ -145,8 +161,9 @@ async def calibrate_reference_paper(request: Request) -> JSONResponse:
     finally:
         del body
     try:
-        payload = upstream.json()
-    except (json.JSONDecodeError, UnicodeDecodeError):
+        # Strict JSON: NaN/Infinity cannot be re-encoded and are not pixel positions; fail closed.
+        payload = json.loads(upstream.content, parse_constant=_reject_constant)
+    except ValueError:
         payload = None
 
     if upstream.status_code == 200 and isinstance(payload, dict):
@@ -155,6 +172,7 @@ async def calibrate_reference_paper(request: Request) -> JSONResponse:
         diagnostic = payload.get("calibration_status")
         if (
             payload.get("schema_version") == PAPER_SCHEMA_VERSION
+            and isinstance(payload.get("algorithm_version"), str)
             and status in PAPER_DETECTION_STATUSES
             and payload.get("reference_type") == "us_letter"
             and payload.get("requires_user_confirmation") is True
@@ -178,10 +196,15 @@ async def calibrate_reference_paper(request: Request) -> JSONResponse:
                 or (status != "snapped" and corners is None and diagnostic is None)
             )
         ):
-            return JSONResponse(status_code=200, content=payload)
+            # Only contract fields, correlated by the monolith's server-assigned request id.
+            relayed = {key: payload.get(key) for key in PAPER_CONTRACT_KEYS}
+            return JSONResponse(status_code=200, content={**relayed, "request_id": request_id})
     elif upstream.status_code in RELAYED_ERRORS and isinstance(payload, dict):
         if isinstance(payload.get("error"), dict):
-            return JSONResponse(status_code=upstream.status_code, content=payload)
+            return JSONResponse(
+                status_code=upstream.status_code,
+                content={"error": payload["error"], "request_id": request_id},
+            )
 
     log.warning("paper-calibrate service returned unexpected status %s", upstream.status_code)
     return unavailable(request)
