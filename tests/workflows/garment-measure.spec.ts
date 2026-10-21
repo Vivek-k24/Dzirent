@@ -123,10 +123,18 @@ test.describe("AI-MEASURE-1 Garment Measure Dev Route", () => {
     // Image preview and overlay render
     await expect(page.getByTestId("preview-image")).toBeVisible();
     await expect(page.getByTestId("image-measurement-overlay")).toBeVisible();
+    await expect(page.getByTestId("overlay-manual-hint")).toBeVisible();
+    await expect(page.getByTestId("paper-quadrilateral")).toBeVisible();
+    await expect(page.getByTestId("paper-quad-center")).toBeVisible();
+
+    // CRITICAL: Shirt-specific garment landmark lines must be hidden during the paper calibration step
+    await expect(page.getByTestId("landmark-group-shoulder_width_cm")).toHaveCount(0);
+    await expect(page.getByTestId("landmark-group-chest_flat_cm")).toHaveCount(0);
 
     // Desktop mouse drag is verified here; mobile uses numeric controls and needs
     // independent real-touch device acceptance (Playwright mobile mouse simulation is not a touch gesture).
     if ((page.viewportSize()?.width ?? 0) > 600) {
+      // 1) Test per-corner dragging with mathematical-vertex crosshair hit target
       const beforeX = Number(await page.getByTestId("corner-TL-x").inputValue());
       const handle = page.getByTestId("corner-handle-TL").locator("circle");
       const rect = await handle.boundingBox();
@@ -137,8 +145,26 @@ test.describe("AI-MEASURE-1 Garment Measure Dev Route", () => {
       await page.mouse.move(x + 20, y + 10, {steps: 5});
       await page.mouse.up();
       expect(Number(await page.getByTestId("corner-TL-x").inputValue())).not.toBe(beforeX);
+
+      // 2) Test whole-quad translation dragging the quad center affordance (all 4 corners translate together)
+      const preQuadTLX = Number(await page.getByTestId("corner-TL-x").inputValue());
+      const preQuadTRX = Number(await page.getByTestId("corner-TR-x").inputValue());
+      const centerHandle = page.getByTestId("paper-quad-center");
+      const centerRect = await centerHandle.boundingBox();
+      expect(centerRect).not.toBeNull();
+      const cx = centerRect!.x + centerRect!.width / 2;
+      const cy = centerRect!.y + centerRect!.height / 2;
+      await page.mouse.move(cx, cy);
+      await page.mouse.down();
+      await page.mouse.move(cx + 25, cy + 15, {steps: 5});
+      await page.mouse.up();
+      const postQuadTLX = Number(await page.getByTestId("corner-TL-x").inputValue());
+      const postQuadTRX = Number(await page.getByTestId("corner-TR-x").inputValue());
+      expect(postQuadTLX - preQuadTLX).toBe(postQuadTRX - preQuadTRX);
+      expect(postQuadTLX).not.toBe(preQuadTLX);
     } else {
       // Mobile still has precise, keyboard-addressable intrinsic-coordinate controls.
+      // NOTE: Genuine touch-drag gestures require physical device acceptance testing (#45).
       const corner = page.getByTestId("corner-TL-x");
       const before = Number(await corner.inputValue());
       await corner.fill(String(before + 1));

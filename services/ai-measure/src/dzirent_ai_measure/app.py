@@ -24,6 +24,10 @@ from .annotation import MAX_ANNOTATION_BYTES, AnnotationRejected, Point, check_c
 from .geometry import PAPER_LENGTH_CM, PAPER_WIDTH_CM
 from .imaging import MAX_BYTES, ImageRejected, decode
 from .measure import CalibrationStatus, Measurement, MeasurementStatus, Outcome, measure
+from .paper_snap import ALGORITHM_VERSION as PAPER_ALGORITHM_VERSION
+from .paper_snap import SCHEMA_VERSION as PAPER_SCHEMA_VERSION
+from .paper_snap import DetectionStatus, check_approx_corners, snap_paper
+from .paper_snap import parse_request as parse_paper_request
 
 SCHEMA_VERSION: Final = "ai-measure.v0"
 ALGORITHM_VERSION: Final = "paper-homography-0.1.0"
@@ -87,6 +91,19 @@ class MeasureResult(BaseModel):
     measurements: dict[str, MeasurementOut]
     cautions: list[str]
     message: str
+
+
+class PaperCalibrationResult(BaseModel):
+    # Frozen contract (issue #46). A proposal is never applied until the user reviews and confirms it.
+    schema_version: Literal["paper-calibrate.v0"] = PAPER_SCHEMA_VERSION
+    algorithm_version: str = PAPER_ALGORITHM_VERSION
+    request_id: str
+    detection_status: DetectionStatus
+    reference_type: Literal["us_letter"] = "us_letter"
+    proposed_corners_px: list[Point] | None
+    calibration_status: CalibrationStatus | None
+    reason_codes: list[str]
+    requires_user_confirmation: Literal[True] = True
 
 
 def safe_request_id(candidate: str | None) -> str:
@@ -295,6 +312,52 @@ def create_app() -> FastAPI:
             )
         )
         return result
+
+    @app.post(
+        "/v1/calibrate-paper",
+        response_model=PaperCalibrationResult,
+        responses={413: {}, 415: {}, 422: {}},
+    )
+    async def calibrate_paper(
+        request: Request,
+        image: UploadFile = File(...),
+        annotation: str = Form(...),
+        request_id: str | None = Form(default=None),
+    ) -> Any:
+        rid = safe_request_id(request_id or request.headers.get("x-request-id"))
+        started = time.perf_counter()
+        data = await image.read()
+        try:
+            decoded = decode(data, keep_full=True)
+            parsed = parse_paper_request(annotation)
+            approx = check_approx_corners(parsed, decoded.width, decoded.height)
+        except (ImageRejected, AnnotationRejected) as rejected:
+            log.info(json.dumps({"event": "rejected", "request_id": rid, "code": rejected.code}))
+            details = rejected.details if isinstance(rejected, AnnotationRejected) else None
+            return error(rejected.status, rejected.code, rejected.message, rid, details)
+        finally:
+            await image.close()
+        snap = await run_in_threadpool(snap_paper, decoded, approx)
+        del data, decoded  # nothing about the photo outlives the request
+        log.info(
+            json.dumps(
+                {
+                    "event": "paper_calibrated",
+                    "request_id": rid,
+                    "detection": snap.status,
+                    "calibration": snap.calibration_status,
+                    "reasons": snap.reasons,
+                    "ms": round((time.perf_counter() - started) * 1000),
+                }
+            )
+        )
+        return PaperCalibrationResult(
+            request_id=rid,
+            detection_status=snap.status,
+            proposed_corners_px=snap.corners_px,
+            calibration_status=snap.calibration_status,
+            reason_codes=snap.reasons,
+        )
 
     app.add_middleware(BodyLimitMiddleware, limit=MAX_REQUEST_BYTES)
     return app

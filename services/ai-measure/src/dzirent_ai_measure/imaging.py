@@ -44,6 +44,7 @@ class DecodedImage:
     height: int
     working: Image  # BGR copy downscaled for bounded photometric checks
     working_scale: float  # working pixels per intrinsic pixel
+    full: Image | None = None  # full-resolution BGR, kept only when a caller asks (paper snapping)
 
 
 def sniff(data: bytes) -> Format:
@@ -107,7 +108,7 @@ def check_limits(width: int, height: int) -> None:
         )
 
 
-def decode(data: bytes) -> DecodedImage:
+def decode(data: bytes, keep_full: bool = False) -> DecodedImage:
     if len(data) > MAX_BYTES:
         raise ImageRejected(413, "payload_too_large", "The photo must be 10 MiB or smaller.")
     image_format = sniff(data)
@@ -133,4 +134,5 @@ def decode(data: bytes) -> DecodedImage:
         height=height,
         working=np.ascontiguousarray(working),
         working_scale=working.shape[1] / width,
+        full=np.asarray(image, dtype=np.uint8) if keep_full else None,
     )

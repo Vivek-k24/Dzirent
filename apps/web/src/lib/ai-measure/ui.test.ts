@@ -8,6 +8,7 @@ import { PaperCornerEditor } from "@/components/ai-measure/PaperCornerEditor";
 import { LandmarkEditor } from "@/components/ai-measure/LandmarkEditor";
 import { MeasurementResultsView } from "@/components/ai-measure/MeasurementResultsView";
 import { PhotoDropzone } from "@/components/ai-measure/PhotoDropzone";
+import { ImageMeasurementOverlay } from "@/components/ai-measure/ImageMeasurementOverlay";
 import type {
   GarmentMeasureResponse,
   LandmarkAnnotation,
@@ -408,5 +409,153 @@ describe("PhotoDropzone Component", () => {
       "Unsupported file format",
     );
     expect(onPhotoSelected).not.toHaveBeenCalled();
+  });
+});
+
+describe("ImageMeasurementOverlay Component", () => {
+  const corners: [Point2D, Point2D, Point2D, Point2D] = [
+    [100, 100],
+    [300, 100],
+    [300, 400],
+    [100, 400],
+  ];
+
+  const landmarks: Record<MeasurementKey, LandmarkAnnotation> = {
+    shoulder_width_cm: {
+      key: "shoulder_width_cm",
+      geometry: "line",
+      points_px: [
+        [200, 150],
+        [400, 150],
+      ],
+      not_measurable: false,
+    },
+    chest_flat_cm: {
+      key: "chest_flat_cm",
+      geometry: "line",
+      points_px: [
+        [180, 250],
+        [420, 250],
+      ],
+      not_measurable: false,
+    },
+    body_length_cm: {
+      key: "body_length_cm",
+      geometry: "line",
+      points_px: [
+        [250, 150],
+        [250, 500],
+      ],
+      not_measurable: false,
+    },
+    sleeve_length_cm: {
+      key: "sleeve_length_cm",
+      geometry: "polyline",
+      points_px: [
+        [400, 150],
+        [480, 300],
+        [520, 450],
+      ],
+      not_measurable: false,
+    },
+  };
+
+  it("in paper step: renders ~10% opaque quad, center move affordance, and HIDES garment landmarks", () => {
+    const onChangeCorners = vi.fn();
+    render(
+      createElement(ImageMeasurementOverlay, {
+        previewUrl: "blob:http://localhost/test-blob",
+        intrinsicWidth: 1000,
+        intrinsicHeight: 800,
+        corners,
+        onChangeCorners,
+        landmarks,
+        onChangeLandmarks: vi.fn(),
+        onInvalidateLandmark: vi.fn(),
+        activeStep: "paper",
+      }),
+    );
+
+    // Quad and manual hint are visible
+    expect(screen.getByTestId("paper-quadrilateral")).toBeDefined();
+    expect(screen.getByTestId("paper-quad-center")).toBeDefined();
+    expect(screen.getByTestId("overlay-manual-hint")).toBeDefined();
+    expect(screen.getByTestId("overlay-manual-hint").textContent).toContain("Manual reference placement");
+
+    // All 4 corner crosshairs & >=24px hit targets are rendered
+    expect(screen.getByTestId("corner-handle-TL")).toBeDefined();
+    expect(screen.getByTestId("corner-hit-TL")).toBeDefined();
+    expect(screen.getByTestId("corner-hit-TR")).toBeDefined();
+    expect(screen.getByTestId("corner-hit-BR")).toBeDefined();
+    expect(screen.getByTestId("corner-hit-BL")).toBeDefined();
+
+    // CRITICAL: Garment landmark lines and markers must be completely HIDDEN in paper step
+    expect(screen.queryByTestId("landmark-group-shoulder_width_cm")).toBeNull();
+    expect(screen.queryByTestId("landmark-group-chest_flat_cm")).toBeNull();
+    expect(screen.queryByTestId("landmark-group-body_length_cm")).toBeNull();
+    expect(screen.queryByTestId("landmark-group-sleeve_length_cm")).toBeNull();
+  });
+
+  it("in landmarks step: renders garment landmark lines with hollow crosshairs and hides paper center hint", () => {
+    render(
+      createElement(ImageMeasurementOverlay, {
+        previewUrl: "blob:http://localhost/test-blob",
+        intrinsicWidth: 1000,
+        intrinsicHeight: 800,
+        corners,
+        onChangeCorners: vi.fn(),
+        landmarks,
+        onChangeLandmarks: vi.fn(),
+        onInvalidateLandmark: vi.fn(),
+        activeStep: "landmarks",
+      }),
+    );
+
+    // Paper manual hint and center move affordance are hidden
+    expect(screen.queryByTestId("paper-quad-center")).toBeNull();
+    expect(screen.queryByTestId("overlay-manual-hint")).toBeNull();
+
+    // Garment landmarks are rendered with hollow markers and >=24px hit targets
+    expect(screen.getByTestId("landmark-group-shoulder_width_cm")).toBeDefined();
+    expect(screen.getByTestId("landmark-group-chest_flat_cm")).toBeDefined();
+    expect(screen.getByTestId("landmark-point-shoulder_width_cm-0")).toBeDefined();
+    expect(screen.getByTestId("landmark-point-shoulder_width_cm-1")).toBeDefined();
+  });
+
+  it("supports keyboard arrow keys on corner hit target to adjust coordinates", () => {
+    const onChangeCorners = vi.fn();
+    render(
+      createElement(ImageMeasurementOverlay, {
+        previewUrl: "blob:http://localhost/test-blob",
+        intrinsicWidth: 1000,
+        intrinsicHeight: 800,
+        corners,
+        onChangeCorners,
+        landmarks,
+        onChangeLandmarks: vi.fn(),
+        onInvalidateLandmark: vi.fn(),
+        activeStep: "paper",
+      }),
+    );
+
+    const hitTL = screen.getByTestId("corner-hit-TL");
+
+    // ArrowRight nudges x by +1
+    fireEvent.keyDown(hitTL, { key: "ArrowRight" });
+    expect(onChangeCorners).toHaveBeenCalledWith([
+      [101, 100],
+      [300, 100],
+      [300, 400],
+      [100, 400],
+    ]);
+
+    // Shift + ArrowDown nudges y by +5
+    fireEvent.keyDown(hitTL, { key: "ArrowDown", shiftKey: true });
+    expect(onChangeCorners).toHaveBeenCalledWith([
+      [100, 105],
+      [300, 100],
+      [300, 400],
+      [100, 400],
+    ]);
   });
 });

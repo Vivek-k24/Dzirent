@@ -35,6 +35,7 @@ const nextConfig: NextConfig = {
       ? [
           { source: "/api/v1/dev/photo-quality", destination: qualityApiOrigin + "/api/v1/dev/photo-quality" },
           { source: "/api/v1/dev/garment-measure", destination: qualityApiOrigin + "/api/v1/dev/garment-measure" },
+          { source: "/api/v1/dev/paper-calibrate", destination: qualityApiOrigin + "/api/v1/dev/paper-calibrate" },
         ]
       : [];
   },

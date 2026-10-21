@@ -198,3 +198,33 @@ export function isValidQuadrilateral(corners: [Point2D, Point2D, Point2D, Point2
   return area >= 50; // Minimum meaningful pixel area
 }
 
+/**
+ * Translates all four quad corners by (deltaX, deltaY), safely clamping
+ * so that all corners remain within [0, imageWidth] and [0, imageHeight]
+ * while strictly preserving the quad's shape and relative offsets.
+ */
+export function translateQuadSafely(
+  corners: [Point2D, Point2D, Point2D, Point2D],
+  deltaX: number,
+  deltaY: number,
+  imageWidth: number,
+  imageHeight: number,
+): [Point2D, Point2D, Point2D, Point2D] {
+  if (imageWidth <= 0 || imageHeight <= 0) return corners;
+
+  const minX = Math.min(corners[0][0], corners[1][0], corners[2][0], corners[3][0]);
+  const maxX = Math.max(corners[0][0], corners[1][0], corners[2][0], corners[3][0]);
+  const minY = Math.min(corners[0][1], corners[1][1], corners[2][1], corners[3][1]);
+  const maxY = Math.max(corners[0][1], corners[1][1], corners[2][1], corners[3][1]);
+
+  // Clamp translation deltas so no vertex exceeds image frame boundaries
+  const clampedDeltaX = Math.max(-minX, Math.min(imageWidth - maxX, deltaX));
+  const clampedDeltaY = Math.max(-minY, Math.min(imageHeight - maxY, deltaY));
+
+  return corners.map(([x, y]) => [
+    Math.round(x + clampedDeltaX),
+    Math.round(y + clampedDeltaY),
+  ]) as [Point2D, Point2D, Point2D, Point2D];
+}
+
+

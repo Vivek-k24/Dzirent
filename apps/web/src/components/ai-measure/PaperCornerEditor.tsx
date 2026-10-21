@@ -81,8 +81,8 @@ export function PaperCornerEditor({
       </p>
 
       <div className={styles.provisionalNote} role="note" data-testid="unverified-corner-note">
-        <strong>Provisional Suggestions:</strong> Initial paper coordinates are unverified templates.
-        Lender review and adjustment are mandatory before computing dimensions.
+        <strong>Manual Reference Placement:</strong> Initial paper coordinates are unverified templates, not an automatic detection.
+        Drag the sheet interior to move all four corners together, or drag corner crosshairs and use nudges to align precisely with the physical paper vertices.
       </div>
 
       {!isValid && (
