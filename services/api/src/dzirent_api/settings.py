@@ -10,7 +10,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 MODES = json.loads((Path(__file__).resolve().parents[4] / "contracts/modes.json").read_text())
 # Exact browser origin: scheme, host and optional port. No wildcard, path or trailing slash.
 EXACT_ORIGIN = re.compile(r"^https?://[A-Za-z0-9.-]+(:\d{1,5})?$")
-# The photo-quality service is internal: loopback or a single-label private (Compose) hostname.
+# Local AI services are internal: loopback or a single-label private (Compose) hostname.
 INTERNAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
 SINGLE_LABEL_HOST = re.compile(r"^[a-z][a-z0-9-]{0,62}$")
 
@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # AI-QUALITY-1 local/test proxy target; empty disables POST /api/v1/dev/photo-quality.
     photo_quality_url: str = ""
     photo_quality_timeout_s: float = Field(default=15.0, gt=0, le=60)
+    # AI-MEASURE-1 local/test proxy target; empty disables POST /api/v1/dev/garment-measure.
+    garment_measure_url: str = ""
+    garment_measure_timeout_s: float = Field(default=15.0, gt=0, le=60)
 
     @property
     def mock_identity_allowed(self) -> bool:
@@ -81,6 +84,15 @@ class Settings(BaseSettings):
             if not internal_service_url(self.photo_quality_url):
                 raise ValueError(
                     "Photo-quality URL must be an internal http(s) origin without path"
+                )
+        if self.garment_measure_url:
+            if self.deployed:
+                raise ValueError(
+                    "The garment-measure proxy is local/test only; unset it when deployed"
+                )
+            if not internal_service_url(self.garment_measure_url):
+                raise ValueError(
+                    "Garment-measure URL must be an internal http(s) origin without path"
                 )
         if self.deployed and any(not origin.startswith("https://") for origin in self.cors_origins):
             raise ValueError("Deployed environments require https CORS origins")

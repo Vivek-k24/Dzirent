@@ -18,6 +18,7 @@ Contract: `contracts/openapi.json` (`0.1.0-candidate.2`), generated from the run
 | `errors.py`, `observability.py` | Error envelope, request IDs, redacted JSON logs, safe 500s |
 | `contract.py` | OpenAPI source: runtime routers plus contract-only upload declarations |
 | `dev_photo_quality.py` | Local/test-only proxy to `services/ai-quality` (`POST /api/v1/dev/photo-quality`); not in the contract |
+| `dev_garment_measure.py` | Local/test-only proxy to `services/ai-measure` (`POST /api/v1/dev/garment-measure`); not in the contract, no listing writes |
 
 Upload intents (`.../images/upload-intent`, `.../images/complete`) stay declared in the contract for the
 connected media milestone but are **not mounted** at runtime (404). No S3 access exists yet.
