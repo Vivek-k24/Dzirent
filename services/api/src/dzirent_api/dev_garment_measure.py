@@ -112,7 +112,9 @@ async def calibrate_reference_paper(request: Request) -> JSONResponse:
     content_type = request.headers.get("content-type", "")
     if not content_type.lower().startswith("multipart/form-data"):
         return error_response(
-            request, 415, "unsupported_media_type",
+            request,
+            415,
+            "unsupported_media_type",
             "Send multipart/form-data with an image and the paper-calibrate annotation JSON.",
         )
     declared = request.headers.get("content-length", "")
@@ -159,15 +161,20 @@ async def calibrate_reference_paper(request: Request) -> JSONResponse:
             and isinstance(payload.get("reason_codes"), list)
             and all(isinstance(code, str) for code in payload["reason_codes"])
             and (
-                (status == "snapped"
-                 and diagnostic in CALIBRATION_STATUSES
-                 and isinstance(corners, list)
-                 and len(corners) == 4
-                 and all(isinstance(point, list)
-                         and len(point) == 2
-                         and all(isinstance(n, (int, float)) and not isinstance(n, bool)
-                                 for n in point)
-                         for point in corners))
+                (
+                    status == "snapped"
+                    and diagnostic in CALIBRATION_STATUSES
+                    and isinstance(corners, list)
+                    and len(corners) == 4
+                    and all(
+                        isinstance(point, list)
+                        and len(point) == 2
+                        and all(
+                            isinstance(n, (int, float)) and not isinstance(n, bool) for n in point
+                        )
+                        for point in corners
+                    )
+                )
                 or (status != "snapped" and corners is None and diagnostic is None)
             )
         ):
