@@ -41,7 +41,7 @@ switch (task) {
     if (!["demo", "connected"].includes(mode)) throw new Error("Unknown mode");
     api(["uvicorn", "dzirent_api.main:app", "--host", "127.0.0.1", "--port", port ?? "8000"], {
       DZIRENT_MODE: mode,
-      DZIRENT_IDENTITY_MODE: mode === "demo" ? "mock" : "clerk",
+      DZIRENT_IDENTITY_MODE: mode === "demo" ? "mock" : "native",
     });
     break;
   case "api-sync":
