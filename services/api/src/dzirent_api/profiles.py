@@ -43,15 +43,21 @@ def current_user(
     return user
 
 
-def active_user(user: orm.User = Depends(current_user)) -> orm.User:
+def active_user(
+    user: orm.User = Depends(current_user), session: Session = Depends(get_session)
+) -> orm.User:
     if user.status != "active":
         raise ApiError(403, "account_inactive", "This application profile is deactivated.")
+    if user.auth_provider == "native":
+        credential = session.get(orm.AuthCredential, user.id)
+        if credential is None or credential.email_verified_at is None:
+            raise ApiError(403, "email_verification_required", "Verify your email before changing profile or lender data.")
     return user
 
 
 def current_lender(user: orm.User = Depends(active_user)) -> orm.LenderProfile:
     profile = user.lender_profile
-    if profile is None or profile.status != "active":
+    if profile is None or profile.status != "active" or not any(role.role == "lender" for role in user.roles):
         raise ApiError(403, "lender_required", "Lender enrollment required.")
     return profile
 
@@ -70,6 +76,13 @@ def require_metro(session: Session, metro_id: object, field: str, errors: list[D
 def bootstrap_me(
     principal: Principal = Depends(current_principal), session: Session = Depends(get_session)
 ) -> Any:
+    if principal.provider == "native":
+        # A resolved native session already has its canonical user and renter membership.
+        # Bootstrap must never manufacture a password identity or promote a dormant subject.
+        user = find_user(session, principal)
+        if user is None:
+            raise ApiError(401, "unauthenticated", "Sign in to continue.")
+        return serializers.current_user(user)
     # Idempotent for the verified subject; concurrent first calls converge on one row.
     name = (principal.name or "").strip()[:100] or DEFAULT_DISPLAY_NAME
     session.execute(
@@ -119,6 +132,8 @@ def update_me(
 def deactivate_me(
     user: orm.User = Depends(current_user), session: Session = Depends(get_session)
 ) -> Any:
+    if user.auth_provider == "native":
+        raise ApiError(403, "reauthentication_required", "Use POST /auth/deactivate with your current password.")
     # Deactivates the application profile; the inactive lender profile hides owned listings from
     # the public catalog while preserving their history. Provider identity is untouched.
     if user.status != "inactive":

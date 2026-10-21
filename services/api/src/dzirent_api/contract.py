@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 
 from . import catalog, listings, profiles, studios
+from .auth.router import router as auth_router
 from .health import router as health_router
 from .identity import bearer
 from .models import (
@@ -66,6 +67,7 @@ def include_routes(app: FastAPI, *, contract_only: bool = False) -> None:
         listings.router,
         studios.router,
         studios.owner_router,
+        auth_router,
     ):
         app.include_router(router, responses=COMMON_ERRORS)
     if contract_only:

@@ -53,7 +53,7 @@ class User(Base):
         CheckConstraint("status IN ('active', 'inactive')", name="status"),
         CheckConstraint("length(btrim(display_name)) > 0", name="display_name"),
     )
-    # Credential and session tables are introduced separately under Issue #26.
+    # Native credentials are separate; a mock or dormant subject is never a password account.
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     auth_provider: Mapped[str] = mapped_column(String(16))
     auth_subject: Mapped[str] = mapped_column(String(255))
@@ -345,3 +345,84 @@ class Studio(Base):
     created_at: Mapped[datetime] = created_column()
     updated_at: Mapped[datetime] = updated_column()
     lender_profile: Mapped[LenderProfile] = relationship()
+
+
+class AuthCredential(Base):
+    __tablename__ = "auth_credentials"
+    __table_args__ = (
+        CheckConstraint("email_normalized = lower(btrim(email_normalized))", name="email_normalized"),
+        CheckConstraint("password_hash LIKE '$argon2id$%'", name="password_hash"),
+    )
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    email_normalized: Mapped[str] = mapped_column(String(254), unique=True)
+    password_hash: Mapped[str] = mapped_column(String(512))
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    synthetic: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    password_changed_at: Mapped[datetime] = created_column()
+    created_at: Mapped[datetime] = created_column()
+    updated_at: Mapped[datetime] = updated_column()
+
+
+class AuthSession(Base):
+    __tablename__ = "auth_sessions"
+    __table_args__ = (
+        CheckConstraint("token_hash ~ '^[0-9a-f]{64}$'", name="token_hash"),
+        CheckConstraint("expires_at > created_at", name="expiry"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = created_column()
+
+
+class AuthRateLimit(Base):
+    __tablename__ = "auth_rate_limits"
+    __table_args__ = (CheckConstraint("attempts > 0 AND attempts <= 1000000", name="attempts"),)
+    action: Mapped[str] = mapped_column(String(32), primary_key=True)
+    key_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    window_started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    attempts: Mapped[int] = mapped_column(Integer)
+
+
+class AuthToken(Base):
+    __tablename__ = "auth_tokens"
+    __table_args__ = (
+        CheckConstraint("purpose IN ('verify_email', 'reset_password')", name="purpose"),
+        CheckConstraint("token_hash ~ '^[0-9a-f]{64}$'", name="token_hash"),
+        CheckConstraint("expires_at > created_at", name="expiry"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    purpose: Mapped[str] = mapped_column(String(32))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = created_column()
+
+
+class PlatformAdminGrant(Base):
+    __tablename__ = "platform_admin_grants"
+    __table_args__ = (
+        CheckConstraint("capability = 'operations:access'", name="capability"),
+        Index("ix_platform_admin_grants_user_capability", "user_id", "capability"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    capability: Mapped[str] = mapped_column(String(64))
+    granted_at: Mapped[datetime] = created_column()
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class PlatformAdminEvent(Base):
+    __tablename__ = "platform_admin_events"
+    __table_args__ = (CheckConstraint("action IN ('grant', 'revoke')", name="action"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    grant_id: Mapped[UUID] = mapped_column(ForeignKey("platform_admin_grants.id"), index=True)
+    action: Mapped[str] = mapped_column(String(16))
+    operator: Mapped[str] = mapped_column(String(100))
+    reason: Mapped[str] = mapped_column(String(500))
+    evidence_sha256: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = created_column()

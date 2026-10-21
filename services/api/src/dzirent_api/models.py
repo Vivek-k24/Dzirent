@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-CONTRACT_VERSION = "0.1.0-candidate.2"
+CONTRACT_VERSION = "0.1.0-candidate.3"
 MinorUnits = Annotated[int, Field(strict=True, ge=0)]
 Band = Literal["A", "B", "C", "D"]
 ProductStatus = Literal["draft", "published", "archived"]

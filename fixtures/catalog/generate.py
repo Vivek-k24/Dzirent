@@ -362,7 +362,7 @@ def example(
                 "path": "/api/v1" + path,
                 "query": query,
                 "body": body,
-                "identity": "sample-lender (MSW only); verified provider bearer in connected"
+                "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
                 if protected
                 else "anonymous",
             },
@@ -550,6 +550,33 @@ example(
     {"items": studio_cards[:12], "total": len(studio_cards), "page": 1, "page_size": 12},
     query="page=1&page_size=12",
 )
+# Native-auth examples document denial behavior only. No sample password identity is seeded,
+# and placeholders must never be used as actual credentials. These reserved mailboxes cannot
+# register through native auth. Successful private-account workflows belong to gated Phase 2.
+private_password_input = "<PRIVATE RUNTIME INPUT ONLY>"
+private_token_input = "<PRIVATE TOKEN INPUT>".ljust(43, "!")
+for operation, method, path, body, status, code in [
+    ("getAuthCsrf", "GET", "/auth/csrf", None, 503, "dependency_unavailable"),
+    ("registerAccount", "POST", "/auth/register", {"email": "native@example.invalid", "display_name": "Contract example", "password": private_password_input}, 403, "auth_csrf_failed"),
+    ("loginAccount", "POST", "/auth/login", {"email": "native@example.invalid", "password": private_password_input}, 403, "auth_csrf_failed"),
+    ("getAuthSession", "GET", "/auth/session", None, 401, "unauthenticated"),
+    ("logoutAccount", "POST", "/auth/logout", None, 403, "auth_csrf_failed"),
+    ("logoutAllSessions", "POST", "/auth/logout-all", {"current_password": private_password_input}, 403, "auth_csrf_failed"),
+    ("changePassword", "POST", "/auth/password/change", {"current_password": private_password_input, "new_password": private_password_input}, 403, "auth_csrf_failed"),
+    ("requestEmailVerification", "POST", "/auth/email/request", None, 403, "auth_csrf_failed"),
+    ("verifyEmailOwnership", "POST", "/auth/email/verify", {"token": private_token_input}, 403, "auth_csrf_failed"),
+    ("requestPasswordReset", "POST", "/auth/password/request", {"email": "native@example.invalid"}, 403, "auth_csrf_failed"),
+    ("resetPassword", "POST", "/auth/password/reset", {"token": private_token_input, "new_password": private_password_input}, 403, "auth_csrf_failed"),
+    ("deactivateAccount", "POST", "/auth/deactivate", {"current_password": private_password_input}, 403, "auth_csrf_failed"),
+    ("getAdminAccess", "GET", "/admin/access", None, 401, "unauthenticated"),
+]:
+    example(operation, method, path, {
+        "error": {"code": code, "message": "Illustrative denial; private inputs required.", "details": []},
+        "request_id": f"contract-{operation}",
+    }, body=body, status=status)
+    if method == "POST":
+        cases[-1]["request"]["identity"] = "connected; exact allowed Origin; missing CSRF challenge"
+
 errors = [
     {
         "status": status,
