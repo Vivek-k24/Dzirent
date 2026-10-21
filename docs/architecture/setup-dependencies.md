@@ -10,17 +10,17 @@ they do not block local fixtures/MSW or the foundation shell.
 | Node/pnpm/Python/uv | Fresh clone startup | Install matrix versions; `pnpm install --frozen-lockfile`, `pnpm api:sync`. Checkout-local `.tools/` is not shared through Git. |
 | Curated fashion media | Phase 1A presentation | Codex obtains approved/licensed garment photos, records source/license and 3:4 derivatives. Bootstrap supplies a locally authored fallback only. No scraping/search API needed. |
 | Local PostgreSQL | Phase 1B local integration | Docker Compose, dev DB `dzirent_dev` at 5432; separate disposable QA project at 55432 / `dzirent_qa`. Claude supplies migration head and restricted idempotent seed command. |
-| Clerk development instance | Real connected identity | Configure exact app origins/redirects and provider password/step policy; publishable key for clients, API issuer/authorized parties and official Python verification SDK. No second password store. Do not accept sample identity as real auth. |
-| Neon staging project | Hosted connected persistence | Dedicated dev/staging PostgreSQL, least-privilege TLS runtime URL and direct migration URL as needed; backup/restore settings and rehearsal. Claude designs config; creation requires later authorization. |
+| First-party FastAPI authentication | Real connected identity | Implement Argon2id password hashes, verified email ownership, revocable sessions and reset flows under Issue #26. No managed identity provider, and no sample identity in connected mode. |
+| Azure PostgreSQL 17 staging | Hosted connected persistence | Owner has provisioned PostgreSQL 17.11 in North Central US with separate migrator/runtime roles, verified TLS and schema head 0002_studios. No additional database creation. |
 | Vercel project + GitHub link | Phase 1A hosted preview | An attached GitHub integration was observed through a failed automatic deployment check. Root/web-app guards disable automatic Git deployments. Provider settings/credentials remain unverified; a later authorized release needs `apps/web` root, workspace build, explicit demo mode and deliberate preview access. No project was created/configured by bootstrap. |
-| Render service | Hosted FastAPI | Docker runtime, secret storage, exact CORS, serialized migrations, readiness and rollback. Not created in Phase 0. |
+| Azure HTTPS API hosting | Hosted FastAPI | Pending Issue #25: choose a bounded-cost runtime, protect credentials, configure exact CORS, serialize migrations and test readiness. |
 | AWS S3 / CloudFront | Connected media milestone | Scoped upload permissions, CORS, public catalog derivatives separated from private future evidence. No credentials or buckets needed for placeholders/MSW. |
 | Sentry | Later connected observability | Project/DSN and redaction rules when enabled. Phase 0 does not fabricate a DSN or send telemetry. |
 | Expo/EAS + store accounts/devices | Phase 2 native | EAS project; Apple/Google accounts/certificates and Android/iOS devices or simulators. None are prerequisites for web presentation. |
 | DNS access | Later approved custom domain release | Confirm authoritative DNS provider and exact provider-supplied records. No DNS query/change or domain attachment performed in bootstrap. |
 
 For connected local configuration, fill the two ignored env files from their examples. Web requires
-`NEXT_PUBLIC_DZIRENT_MODE=connected`, API base ending `/api/v1`, and a real Clerk publishable key.
-API requires `DZIRENT_MODE=connected`, `DZIRENT_IDENTITY_MODE=clerk`, database URL, issuer,
-authorized parties, and exact CORS origins. Guards reject missing configuration, but satisfying guards
-does **not** implement token verification or database readiness. Those are Claude's Phase 1B tasks.
+`NEXT_PUBLIC_DZIRENT_MODE=connected` and an API base ending `/api/v1`. API requires
+`DZIRENT_MODE=connected`, `DZIRENT_IDENTITY_MODE=native`, PostgreSQL URL and exact CORS origins.
+Until Issue #26 completes first-party authentication, protected connected requests fail closed.
+Do not use the staging database as a disposable test database. Refer to Issue #25 for Azure infrastructure.

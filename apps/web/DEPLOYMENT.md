@@ -84,7 +84,7 @@ team-wide protection or assume an authenticated test proves public access.
 7. Tag the verified deployed SHA `demo-v0.1.0` (or the next unused release version). The existing
    `demo-v0.1.0-rc.1` tag is immutable. Record merged PRs, exact report/test SHAs, final URL and limitations.
 
-Demo needs no API, Clerk, database, S3 or image API credentials. It serves photos/fonts locally. Visible
+Demo needs no external identity provider, API, database, S3 or image API credentials. It serves photos/fonts locally. Visible
 simulation labels, fixed sample identities, illustrative-photo credits and the non-transactional preview
 remain present. The service worker requires HTTPS (localhost is permitted). It stores no live identity or
 password. Real-device iPhone/Android checks are separate from browser emulation and must be reported honestly.
@@ -105,7 +105,7 @@ do not describe the old failed shell or an unverified candidate as a working rol
 ## Phase 1B dependencies
 
 Preserve the demo release tag while connecting the same API adapter. Connected mode needs an explicit HTTPS
-`/api/v1` URL, Clerk publishable configuration and provider-supported token bridge, Claude's reviewed
+`/api/v1` URL, first-party secure session handling (Issue #26), the reviewed
 FastAPI/PostgreSQL implementation, exact CORS and real persistence/ownership validation. Media upload needs
 separately approved S3/CloudFront configuration. Missing config fails startup; failed connected calls remain
 errors without sample identity or MSW substitution. Those dependencies do not block the demo presentation.

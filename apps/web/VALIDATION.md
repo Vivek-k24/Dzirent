@@ -26,7 +26,7 @@ uv bootstrap live under ignored `.tools`; frozen API dependencies are in ignored
 | `git diff --name-only <base> -- contracts fixtures services tests .github/workflows docs/agents/claude.md docs/agents/antigravity.md` | Empty: other-owner files preserved |
 
 The connected boundary check deliberately supplied a synthetic public-key marker and fulfilled the
-local API requests with a contract-shaped 503. It does not verify Clerk, FastAPI CRUD, database
+local API requests with a contract-shaped 503. It does not verify connected first-party authentication, FastAPI CRUD, database
 persistence, media uploads or a real provider account. No server credentials were used.
 
 During interactive tests three 503 resource errors are intentional (catalog, availability and listing
@@ -40,7 +40,7 @@ asynchronous URL/API updates. A cold dev route compilation exceeded a five-secon
 replay uses built routes. No failed intermediate command is represented as a pass.
 
 Not run: Antigravity's independent acceptance/contract/browser suite, Android/iOS native tests, live
-Clerk/API/PostgreSQL/media integration, deployed Vercel smoke, DNS, payments or business integrations.
+first-party auth/API/PostgreSQL/media integration, deployed Vercel smoke, DNS, payments or business integrations.
 Public-preview exit gate remains incomplete until deployment is authorized and its URL/SHA tested.
 No external approved PR has been integrated; foundation PR #1 remains unmerged.
 
