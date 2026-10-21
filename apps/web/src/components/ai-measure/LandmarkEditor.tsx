@@ -21,7 +21,7 @@ interface LandmarkEditorProps {
   paperConfirmed: boolean;
   reviewedLandmarks: Partial<Record<MeasurementKey, boolean>>;
   onReviewLandmark: (key: MeasurementKey, reviewed: boolean) => void;
-
+}
 
 const MEASUREMENT_KEYS: MeasurementKey[] = [
   "shoulder_width_cm",
