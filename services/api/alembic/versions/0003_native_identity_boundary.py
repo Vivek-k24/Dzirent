@@ -29,7 +29,7 @@ def upgrade() -> None:
         )
     op.drop_constraint("ck_users_auth_provider", "users", type_="check")
     op.create_check_constraint(
-        "ck_users_auth_provider",
+        op.f("ck_users_auth_provider"),
         "users",
         "auth_provider IN ('native', 'mock')",
     )
@@ -47,7 +47,7 @@ def downgrade() -> None:
     op.drop_constraint("ck_users_auth_provider", "users", type_="check")
     # Restores the original constraint for the already-applied, immutable historical revision.
     op.create_check_constraint(
-        "ck_users_auth_provider",
+        op.f("ck_users_auth_provider"),
         "users",
         "auth_provider IN ('clerk', 'mock')",
     )

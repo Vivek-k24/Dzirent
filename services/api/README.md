@@ -13,7 +13,7 @@ Contract: `contracts/openapi.json` (`0.1.0-candidate.2`), generated from the run
 | `listings.py` | Owner-scoped listing create/read/update/archive/availability with `expected_version` |
 | `studios.py` | Studio owner settings (`/me/studio`) and public directory/profile/products (`/studios`) |
 | `identity.py` | First-party session boundary (implementation pending); restricted local/test mock identity |
-| `orm.py`, `alembic/` | Phase 1 schema; one Alembic head (`0002_studios`) |
+| `orm.py`, `alembic/` | Phase 1 schema; one Alembic head (`0003_native_identity_boundary`) |
 | `seed.py` | Idempotent deterministic demo seed from `fixtures/catalog` (local/test only) |
 | `errors.py`, `observability.py` | Error envelope, request IDs, redacted JSON logs, safe 500s |
 | `contract.py` | OpenAPI source: runtime routers plus contract-only upload declarations |

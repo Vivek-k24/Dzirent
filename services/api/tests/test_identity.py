@@ -3,7 +3,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from dzirent_api.identity import MockVerifier, build_verifier, unauthenticated
+from dzirent_api.identity import MockVerifier, build_verifier
 from dzirent_api.main import create_app
 from dzirent_api.settings import Settings
 
