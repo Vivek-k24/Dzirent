@@ -170,10 +170,6 @@ export function GarmentMeasureScreen() {
     setPaperProposal(null);
     setPaperSnapError(null);
     setPaperSnapLoading(false);
-    paperSnapGeneration.current += 1;
-    setPaperProposal(null);
-    setPaperSnapError(null);
-    setPaperSnapLoading(false);
     setAttested(false);
     setPaperConfirmed(false);
     setApiError(null);
@@ -204,6 +200,10 @@ export function GarmentMeasureScreen() {
     setPreviewUrl(null);
     setIntrinsicWidth(0);
     setIntrinsicHeight(0);
+    paperSnapGeneration.current += 1;
+    setPaperProposal(null);
+    setPaperSnapError(null);
+    setPaperSnapLoading(false);
     setAttested(false);
     setPaperConfirmed(false);
     setApiError(null);
@@ -429,6 +429,14 @@ export function GarmentMeasureScreen() {
                     <p>{paperProposal.detection_status === "snapped"
                       ? "Proposed corners are ready for review. Inspect each corner before confirming."
                       : "No reliable automatic corner proposal. Adjust the overlay or use manual coordinates."}</p>
+                    {paperProposal.proposed_corners_px &&
+                      <div data-testid="paper-snap-coordinates">
+                        <p><strong>Proposed reference vertices (original-image pixels):</strong></p>
+                        <p>{(["TL","TR","BR","BL"] as const).map((label, index) => {
+                          const point = paperProposal.proposed_corners_px?.[index];
+                          return point ? `${label}: (${point[0].toFixed(1)}, ${point[1].toFixed(1)})` : "";
+                        }).join(" · ")}</p>
+                      </div>}
                     {paperProposal.reason_codes.length > 0 &&
                       <p>Diagnostic codes: {paperProposal.reason_codes.join(", ")}</p>}
                     {paperProposal.detection_status === "snapped" &&
