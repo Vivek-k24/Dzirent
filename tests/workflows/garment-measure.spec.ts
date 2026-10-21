@@ -124,6 +124,18 @@ test.describe("AI-MEASURE-1 Garment Measure Dev Route", () => {
     await expect(page.getByTestId("preview-image")).toBeVisible();
     await expect(page.getByTestId("image-measurement-overlay")).toBeVisible();
 
+    // Paper overlay points must be draggable, not just drawn as static decoration.
+    const beforeX = Number(await page.getByTestId("corner-TL-x").inputValue());
+    const handle = page.getByTestId("corner-handle-TL").locator("circle");
+    const rect = await handle.boundingBox();
+    expect(rect).not.toBeNull();
+    const x = rect!.x + rect!.width / 2, y = rect!.y + rect!.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 20, y + 10, {steps: 5});
+    await page.mouse.up();
+    expect(Number(await page.getByTestId("corner-TL-x").inputValue())).not.toBe(beforeX);
+
     // 2. Paper reference & attestation section
     await expect(page.getByTestId("instructions-section")).toBeVisible();
     await expect(page.getByTestId("paper-corner-editor")).toBeVisible();
