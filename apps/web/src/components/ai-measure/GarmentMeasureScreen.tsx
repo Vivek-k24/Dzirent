@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { isValidQuadrilateral } from "@/lib/ai-measure/coordinates";
+import { requestPaperSnap, type PaperSnapResponse } from "@/lib/ai-measure/paper-calibrate";
 import { submitGarmentMeasurement } from "@/lib/ai-measure/client";
 import {
   proposeDefaultLandmarks,
@@ -45,6 +47,52 @@ export function GarmentMeasureScreen() {
     [0, 0],
   ]);
   const [paperConfirmed, setPaperConfirmed] = useState<boolean>(false);
+  // A returned proposal is provisional until the lender explicitly applies AND confirms it.
+  const [paperProposal, setPaperProposal] = useState<PaperSnapResponse | null>(null);
+  const [paperSnapError, setPaperSnapError] = useState<string | null>(null);
+  const [paperSnapLoading, setPaperSnapLoading] = useState(false);
+  const paperSnapGeneration = useRef(0);
+
+  const handlePaperCornersChange = (next: [Point2D, Point2D, Point2D, Point2D]) => {
+    paperSnapGeneration.current += 1; // ignore any stale in-flight proposals
+    setPaperCorners(next);
+    setPaperConfirmed(false);
+    setPaperProposal(null);
+    setPaperSnapError(null);
+    setPaperSnapLoading(false);
+    setResults(null);
+    setReviewedLandmarks({});
+  };
+
+  const handleCalibratePaper = async () => {
+    if (!photoFile || !isValidQuadrilateral(paperCorners) || paperSnapLoading) return;
+    const requestGeneration = ++paperSnapGeneration.current;
+    setPaperSnapLoading(true);
+    setPaperSnapError(null);
+    setPaperProposal(null);
+    const originalCorners = paperCorners.map(point => [...point]) as [Point2D, Point2D, Point2D, Point2D];
+    try {
+      const proposal = await requestPaperSnap(photoFile, originalCorners);
+      if (requestGeneration !== paperSnapGeneration.current) return;
+      if (proposal.proposed_corners_px?.some(([x,y]) =>
+            x < 0 || y < 0 || x > intrinsicWidth || y > intrinsicHeight)) {
+        throw new Error("Proposed coordinates are outside the uploaded photo.");
+      }
+      setPaperProposal(proposal);
+    } catch (error) {
+      if (requestGeneration !== paperSnapGeneration.current) return;
+      setPaperSnapError(error instanceof Error ? error.message : "Paper calibration was unavailable.");
+    } finally {
+      if (requestGeneration === paperSnapGeneration.current) setPaperSnapLoading(false);
+    }
+  };
+
+  const handleApplyPaperProposal = () => {
+    if (!paperProposal || paperProposal.detection_status !== "snapped" ||
+        paperProposal.calibration_status === "invalid" || !paperProposal.proposed_corners_px) return;
+    // Keep the existing manual confirmation step: a snap is not a paper-size attestation.
+    handlePaperCornersChange(paperProposal.proposed_corners_px);
+  };
 
   // Landmark annotations
   const [landmarks, setLandmarks] = useState<
@@ -118,6 +166,14 @@ export function GarmentMeasureScreen() {
     setPreviewUrl(objectUrl);
     setIntrinsicWidth(width);
     setIntrinsicHeight(height);
+    paperSnapGeneration.current += 1;
+    setPaperProposal(null);
+    setPaperSnapError(null);
+    setPaperSnapLoading(false);
+    paperSnapGeneration.current += 1;
+    setPaperProposal(null);
+    setPaperSnapError(null);
+    setPaperSnapLoading(false);
     setAttested(false);
     setPaperConfirmed(false);
     setApiError(null);
@@ -157,6 +213,10 @@ export function GarmentMeasureScreen() {
   };
 
   const handleConfirmCorners = () => {
+    if (!attested || !isValidQuadrilateral(paperCorners) || paperSnapLoading) return;
+    paperSnapGeneration.current += 1;
+    setPaperProposal(null);
+    setPaperSnapError(null);
     setPaperConfirmed(true);
     setActiveStep("landmarks");
   };
@@ -318,7 +378,7 @@ export function GarmentMeasureScreen() {
               intrinsicWidth={intrinsicWidth}
               intrinsicHeight={intrinsicHeight}
               corners={paperCorners}
-              onChangeCorners={next => { setPaperCorners(next); setPaperConfirmed(false); }}
+              onChangeCorners={handlePaperCornersChange}
               landmarks={landmarks}
               onChangeLandmarks={setLandmarks}
               onInvalidateLandmark={key => setReviewedLandmarks(previous => ({ ...previous, [key]: false }))}
@@ -336,13 +396,58 @@ export function GarmentMeasureScreen() {
                 />
                 <PaperCornerEditor
                   corners={paperCorners}
-                  onChangeCorners={setPaperCorners}
+                  onChangeCorners={handlePaperCornersChange}
                   isConfirmed={paperConfirmed}
                   onConfirm={handleConfirmCorners}
                   attested={attested}
                   imageWidth={intrinsicWidth}
                   imageHeight={intrinsicHeight}
                 />
+                <section className={styles.cornerEditorCard} aria-label="Paper detection helper"
+                  data-testid="paper-snap-panel">
+                  <h3 className={styles.sectionHeading}>Guided paper alignment</h3>
+                  <p className={styles.editorHelpText}>
+                    Move the translucent quadrilateral near your actual US Letter sheet. Detection
+                    proposes corner positions; it does not prove the sheet is US Letter.
+                  </p>
+                  <div className={styles.cornerActionRow}>
+                    <button type="button" className={styles.confirmCornerButton}
+                      onClick={handleCalibratePaper}
+                      disabled={!photoFile || !isValidQuadrilateral(paperCorners) || paperSnapLoading}
+                      data-testid="calibrate-paper-button">
+                      {paperSnapLoading ? "Finding paper..." : "Calibrate paper"}
+                    </button>
+                  </div>
+                  {paperSnapError && <p role="alert" className={styles.cornerWarning}
+                    data-testid="paper-snap-error">{paperSnapError} Manual corner placement remains available.</p>}
+                  {paperProposal && <div data-testid="paper-snap-result"
+                    className={styles.provisionalNote} role="status">
+                    <p><strong>Detection: {paperProposal.detection_status}</strong>
+                      {paperProposal.calibration_status
+                        ? ` · Geometry: ${paperProposal.calibration_status}` : ""}
+                    </p>
+                    <p>{paperProposal.detection_status === "snapped"
+                      ? "Proposed corners are ready for review. Inspect each corner before confirming."
+                      : "No reliable automatic corner proposal. Adjust the overlay or use manual coordinates."}</p>
+                    {paperProposal.reason_codes.length > 0 &&
+                      <p>Diagnostic codes: {paperProposal.reason_codes.join(", ")}</p>}
+                    {paperProposal.detection_status === "snapped" &&
+                     paperProposal.calibration_status !== "invalid" &&
+                     paperProposal.proposed_corners_px &&
+                     <div className={styles.cornerActionRow}>
+                       <button type="button" className={styles.confirmCornerButton}
+                         data-testid="apply-paper-snap"
+                         onClick={handleApplyPaperProposal}>
+                         Apply proposed corners (review required)
+                       </button>
+                     </div>}
+                    <button type="button" className={styles.retakeButton}
+                      data-testid="dismiss-paper-snap"
+                      onClick={() => {setPaperProposal(null); setPaperSnapError(null);}}>
+                      Discard proposal
+                    </button>
+                  </div>}
+                </section>
               </>
             )}
 
