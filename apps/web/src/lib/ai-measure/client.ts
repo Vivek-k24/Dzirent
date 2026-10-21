@@ -43,17 +43,16 @@ export async function requestGarmentMeasurements(
   }
 
   if (!response.ok) {
-    let errorJson: { code?: string; message?: string; detail?: string } = {};
-    try {
-      errorJson = await response.json();
-    } catch {
-      // Body may not be valid JSON
-    }
-
-    const message =
-      errorJson.message ||
-      errorJson.detail ||
-      `Measurement service returned error status ${response.status}.`;
+    let json: unknown;
+    try { json = await response.json(); } catch { /* non-JSON error */ }
+    const body = json && typeof json === "object" ? json as Record<string, unknown> : {};
+    const nested = body.error && typeof body.error === "object"
+      ? body.error as Record<string, unknown> : {};
+    const codeValue = nested.code ?? body.code;
+    const code = typeof codeValue === "string" ? codeValue as MeasureApiError["code"] : "unknown_error";
+    const messageValue = nested.message ?? body.message ?? body.detail;
+    const message = typeof messageValue === "string"
+      ? messageValue : `Measurement service returned error status ${response.status}.`;
 
     if (response.status === 413) {
       throw {
@@ -73,7 +72,7 @@ export async function requestGarmentMeasurements(
 
     if (response.status === 422) {
       throw {
-        code: (errorJson.code as MeasureApiError["code"]) || "invalid_payload",
+        code: code === "unknown_error" ? "invalid_payload" : code,
         message: message || "Invalid image geometry or landmark points provided.",
         status: 422,
       } satisfies MeasureApiError;
@@ -83,7 +82,7 @@ export async function requestGarmentMeasurements(
       throw {
         code: "service_unavailable",
         message:
-          errorJson.message ||
+          message ||
           "Garment measurement engine is currently offline or unavailable.",
         status: 503,
       } satisfies MeasureApiError;
@@ -98,6 +97,16 @@ export async function requestGarmentMeasurements(
 
   try {
     const data = (await response.json()) as GarmentMeasureResponse;
+    if (!data || data.schema_version !== "ai-measure.v0" ||
+        !["valid", "uncertain", "invalid"].includes(data.calibration_status) ||
+        !data.measurements || typeof data.measurements !== "object" ||
+        Array.isArray(data.measurements)) {
+      throw {
+        code: "invalid_payload",
+        message: "Measurement service returned an unexpected response.",
+        status: 502,
+      } satisfies MeasureApiError;
+    }
     return data;
   } catch (err: unknown) {
     throw {

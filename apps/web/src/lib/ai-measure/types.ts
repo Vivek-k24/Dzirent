@@ -82,6 +82,9 @@ export type MeasureErrorCode =
   | "payload_too_large"
   | "unsupported_media_type"
   | "invalid_payload"
+  | "invalid_image"
+  | "unsupported_garment_class"
+  | "reference_not_confirmed"
   | "invalid_geometry"
   | "service_unavailable"
   | "unknown_error";

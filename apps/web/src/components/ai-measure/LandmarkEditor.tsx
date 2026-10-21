@@ -19,7 +19,9 @@ interface LandmarkEditorProps {
   imageWidth: number;
   imageHeight: number;
   paperConfirmed: boolean;
-}
+  reviewedLandmarks: Partial<Record<MeasurementKey, boolean>>;
+  onReviewLandmark: (key: MeasurementKey, reviewed: boolean) => void;
+
 
 const MEASUREMENT_KEYS: MeasurementKey[] = [
   "shoulder_width_cm",
@@ -44,6 +46,8 @@ export function LandmarkEditor({
   imageWidth,
   imageHeight,
   paperConfirmed,
+  reviewedLandmarks,
+  onReviewLandmark,
 }: LandmarkEditorProps) {
   const [selectedKey, setSelectedKey] =
     useState<MeasurementKey>("shoulder_width_cm");
@@ -102,6 +106,7 @@ export function LandmarkEditor({
       },
     };
     onChangeLandmarks(updated);
+    onReviewLandmark(selectedKey, false);
   };
 
   const handleAddPolylinePoint = () => {
@@ -124,6 +129,7 @@ export function LandmarkEditor({
       },
     };
     onChangeLandmarks(updated);
+    onReviewLandmark(selectedKey, false);
   };
 
   const handleRemovePolylinePoint = () => {
@@ -138,6 +144,7 @@ export function LandmarkEditor({
       },
     };
     onChangeLandmarks(updated);
+    onReviewLandmark(selectedKey, false);
   };
 
   return (
@@ -314,6 +321,18 @@ export function LandmarkEditor({
             )}
           </div>
         )}
+      </div>
+
+      <div className={styles.editorHelpText}>
+        <label>
+          <input type="checkbox" data-testid={`review-landmark-${selectedKey}`}
+            disabled={!!currentAnnotation.not_measurable}
+            checked={reviewedLandmarks[selectedKey] === true && !currentAnnotation.not_measurable}
+            onChange={event => onReviewLandmark(selectedKey, event.target.checked)}
+          />{" "}
+          I checked every point against the garment's actual visible seams.
+          Unticked template points will not be used to calculate measurements.
+        </label>
       </div>
 
       <div className={styles.calculateActionRow}>

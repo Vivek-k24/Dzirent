@@ -93,6 +93,7 @@ export function GarmentMeasureScreen() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [apiError, setApiError] = useState<MeasureApiError | null>(null);
   const [results, setResults] = useState<GarmentMeasureResponse | null>(null);
+  const [reviewedLandmarks, setReviewedLandmarks] = useState<Partial<Record<MeasurementKey, boolean>>>({});
 
   // Clean up object URLs on unmount
   useEffect(() => {
@@ -121,6 +122,7 @@ export function GarmentMeasureScreen() {
     setPaperConfirmed(false);
     setApiError(null);
     setResults(null);
+    setReviewedLandmarks({});
 
     // Seed provisional corners and landmarks
     const defaultCorners = proposeDefaultPaperCorners(width, height);
@@ -150,6 +152,7 @@ export function GarmentMeasureScreen() {
     setPaperConfirmed(false);
     setApiError(null);
     setResults(null);
+    setReviewedLandmarks({});
     setActiveStep("upload");
   };
 
@@ -173,7 +176,7 @@ export function GarmentMeasureScreen() {
         corners_px: paperCorners,
       },
       landmarks: Object.values(landmarks)
-        .filter((lm) => !lm.not_measurable)
+        .filter((lm) => !lm.not_measurable && reviewedLandmarks[lm.key] === true)
         .map((lm) => ({
           key: lm.key,
           geometry: lm.geometry,
@@ -345,6 +348,8 @@ export function GarmentMeasureScreen() {
               <LandmarkEditor
                 landmarks={landmarks}
                 onChangeLandmarks={setLandmarks}
+                reviewedLandmarks={reviewedLandmarks}
+                onReviewLandmark={(key, reviewed) => setReviewedLandmarks(previous => ({ ...previous, [key]: reviewed }))}
                 onCalculate={handleCalculate}
                 isSubmitting={isSubmitting}
                 imageWidth={intrinsicWidth}
