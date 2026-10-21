@@ -8,13 +8,17 @@ import type { CartLine, CurrentUser, ProductDetail } from "@dzirent/client";
 type Notice = { id: number; text: string } | null;
 interface SessionState {
   user: CurrentUser | null; role: "renter" | "lender" | null; notice: Notice;
+  status: "checking" | "signed-out" | "signed-in" | "unavailable";
+  error: string; emailVerified: boolean; synthetic: boolean; capabilities: string[];
   signIn: (user: CurrentUser, role: "renter" | "lender") => void;
   signOut: () => void; notify: (text: string) => void; dismiss: () => void;
 }
 let noticeId = 0;
 export const useSession = create<SessionState>((set) => ({
-  user: null, role: null, notice: null,
-  signIn: (user, role) => set({ user, role }), signOut: () => set({ user: null, role: null }),
+  user: null, role: null, notice: null, status: process.env.NEXT_PUBLIC_DZIRENT_MODE === "connected" ? "checking" : "signed-out",
+  error: "", emailVerified: false, synthetic: false, capabilities: [],
+  signIn: (user, role) => set({ user, role, status: "signed-in", error: "" }),
+  signOut: () => set({ user: null, role: null, status: "signed-out", error: "", emailVerified: false, synthetic: false, capabilities: [] }),
   notify: text => set({ notice: { id: ++noticeId, text } }), dismiss: () => set({ notice: null }),
 }));
 
