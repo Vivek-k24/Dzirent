@@ -212,16 +212,65 @@ test.describe("AI-MEASURE-1 Garment Measure Dev Route", () => {
     expect(exceptions).toEqual([]);
   });
 
-  test("real local image-to-FastAPI integration (Phase 2B reserved)", async ({
-    page,
-  }) => {
-    test.skip(
-      process.env.DZIRENT_AIMEASURE_REAL_E2E !== "1",
-      "Requires real local Python ai-measure service and FastAPI monolith proxy",
-    );
-    // Bounded real integration block for coordinator merge
+  test("real browser measurement through Python geometry with known synthetic dimensions", async ({ page }) => {
+    test.skip(process.env.DZIRENT_AIMEASURE_REAL_E2E !== "1",
+      "Requires local Python ai-measure service, FastAPI and synthetic fixture generation");
+    const payload = JSON.parse(readFileSync(resolve(__dirname, "../../test-results/ai-measure/annotation.json"), "utf8"));
+    const photo = readFileSync(resolve(__dirname, "../../test-results/ai-measure/tilted-shirt.jpg"));
     await page.goto("/dev/garment-measure");
-    await expect(page.getByTestId("photo-dropzone")).toBeVisible();
+    await page.getByTestId("garment-photo-input").setInputFiles({
+      name: "tilted-shirt.jpg", mimeType: "image/jpeg", buffer: photo,
+    });
+    await expect(page.getByTestId("paper-corner-editor")).toBeVisible();
+    await page.getByTestId("us-letter-attestation").check();
+    for (const [index, key] of ["TL","TR","BR","BL"].entries()) {
+      const [x,y] = payload.reference.corners_px[index];
+      await page.getByTestId(`corner-${key}-x`).fill(String(Math.round(x)));
+      await page.getByTestId(`corner-${key}-y`).fill(String(Math.round(y)));
+    }
+    await page.getByTestId("confirm-paper-button").click();
+    await expect(page.getByTestId("landmark-editor")).toBeVisible();
+    for (const mark of payload.landmarks) {
+      await page.getByTestId(`tab-${mark.key}`).click();
+      for (const [index,[x,y]] of mark.points_px.entries()) {
+        await page.getByTestId(`point-${mark.key}-${index}-x`).fill(String(Math.round(x)));
+        await page.getByTestId(`point-${mark.key}-${index}-y`).fill(String(Math.round(y)));
+      }
+      await page.getByTestId(`review-landmark-${mark.key}`).check();
+    }
+    await page.getByTestId("calculate-button").click();
+    await expect(page.getByTestId("measurement-results")).toBeVisible({timeout: 25_000});
+    const expected: Record<string,number> = {
+      shoulder_width_cm:42, chest_flat_cm:50, body_length_cm:70, sleeve_length_cm:48.6,
+    };
+    for (const [key,truth] of Object.entries(expected)) {
+      await expect(page.getByTestId(`badge-${key}`)).toContainText("Estimated");
+      const shown = await page.getByTestId(`value-${key}`).textContent();
+      const number = Number(shown?.match(/[0-9]+(?:\.[0-9]+)?/)?.[0]);
+      expect(Number.isFinite(number), `${key} should return a finite cm result`).toBe(true);
+      expect(Math.abs(number-truth), `${key} should recover the synthetic known distance`).toBeLessThan(3);
+    }
   });
+
+  test("unreviewed template landmark points are never treated as measurements", async ({ page }) => {
+    test.skip(process.env.DZIRENT_AIMEASURE_REAL_E2E !== "1", "Requires real local Python services");
+    const payload = JSON.parse(readFileSync(resolve(__dirname, "../../test-results/ai-measure/annotation.json"), "utf8"));
+    const photo = readFileSync(resolve(__dirname, "../../test-results/ai-measure/tilted-shirt.jpg"));
+    await page.goto("/dev/garment-measure");
+    await page.getByTestId("garment-photo-input").setInputFiles({
+      name:"tilted-shirt.jpg", mimeType:"image/jpeg", buffer:photo
+    });
+    await page.getByTestId("us-letter-attestation").check();
+    for (const [index,key] of ["TL","TR","BR","BL"].entries()) {
+      const [x,y] = payload.reference.corners_px[index];
+      await page.getByTestId(`corner-${key}-x`).fill(String(Math.round(x)));
+      await page.getByTestId(`corner-${key}-y`).fill(String(Math.round(y)));
+    }
+    await page.getByTestId("confirm-paper-button").click();
+    await page.getByTestId("calculate-button").click();
+    await expect(page.getByTestId("measurement-results")).toBeVisible({timeout:25000});
+    await expect(page.getByTestId("badge-shoulder_width_cm")).toContainText("Not Measurable");
+  });
+
 });
 

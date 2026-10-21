@@ -1,0 +1,85 @@
+name: AI-measure local integration
+
+on:
+  pull_request:
+    paths:
+      - 'services/ai-measure/**'
+      - 'services/api/**'
+      - 'apps/web/src/lib/ai-measure/**'
+      - 'apps/web/src/components/ai-measure/**'
+      - 'apps/web/src/app/dev/garment-measure/**'
+      - 'apps/web/next.config.ts'
+      - 'tests/workflows/garment-measure.spec.ts'
+      - 'scripts/generate_ai_measure_fixtures.py'
+      - '.github/workflows/ai-measure-integration.yml'
+
+concurrency:
+  group: ai-measure-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+
+jobs:
+  local-real-browser-api:
+    name: Garment measurement browser through real FastAPI and OpenCV
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_DZIRENT_MODE: demo
+      DZIRENT_ENVIRONMENT: test
+      DZIRENT_MODE: demo
+      DZIRENT_IDENTITY_MODE: mock
+      DZIRENT_AIMEASURE_REAL_E2E: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.29.3
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: 0.13.1
+          python-version: 3.12.15
+          enable-cache: true
+      - run: pnpm install --frozen-lockfile
+      - run: uv sync --directory services/ai-measure --frozen --python 3.12.15
+      - run: uv sync --directory services/api --frozen --python 3.12.15
+      - name: Targeted backend measurement and dev-proxy unit tests
+        run: |
+          uv run --directory services/ai-measure --frozen pytest -q
+          uv run --directory services/api --frozen pytest -q tests/test_dev_garment_measure.py
+      - name: Targeted frontend measurement unit tests
+        run: pnpm --filter @dzirent/web exec vitest run src/lib/ai-measure
+      - name: Generate synthetic garment with exact landmark/paper calibration and build frontend
+        run: |
+          uv run --directory services/ai-measure --frozen python ../../scripts/generate_ai_measure_fixtures.py
+          pnpm build
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Phase 2B real browser-to-Python measurements
+        env:
+          DZIRENT_GARMENT_MEASURE_URL: http://127.0.0.1:8310
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run --directory services/ai-measure --frozen python -m dzirent_ai_measure --port 8310 >/tmp/ai-measure.log 2>&1 &
+          uv run --directory services/api --frozen uvicorn dzirent_api.main:app --host 127.0.0.1 --port 8000 >/tmp/ai-measure-api.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8310/health >/dev/null && curl -fsS http://127.0.0.1:8000/api/v1/health/live >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8310/health
+          curl -fsS http://127.0.0.1:8000/api/v1/health/live
+          pnpm exec playwright test tests/workflows/garment-measure.spec.ts --config tests/workflows/playwright.config.ts
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure()
+        with:
+          name: ai-measure-integration-failures
+          path: test-results/workflows/
+          retention-days: 7
