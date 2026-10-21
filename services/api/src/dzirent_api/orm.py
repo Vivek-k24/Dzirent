@@ -49,11 +49,11 @@ class User(Base):
     __tablename__ = "users"
     __table_args__ = (
         UniqueConstraint("auth_provider", "auth_subject", name="uq_users_provider_subject"),
-        CheckConstraint("auth_provider IN ('clerk', 'mock')", name="auth_provider"),
+        CheckConstraint("auth_provider IN ('native', 'mock')", name="auth_provider"),
         CheckConstraint("status IN ('active', 'inactive')", name="status"),
         CheckConstraint("length(btrim(display_name)) > 0", name="display_name"),
     )
-    # No password or credential columns: Clerk manages credentials.
+    # Credential and session tables are introduced separately under Issue #26.
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     auth_provider: Mapped[str] = mapped_column(String(16))
     auth_subject: Mapped[str] = mapped_column(String(255))
