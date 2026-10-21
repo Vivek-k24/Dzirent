@@ -37,6 +37,14 @@ unchanged API code at main `8fcdc8d`, not published/deployed. Network-isolated i
 returned `0002_studios (head)`; no upgrade executed. Final privacy/ignore/whitespace/CI recorded on PR
 #31 at the new pushed SHA. No local unit/browser suite or unrelated app build; no hosted acceptance.
 
+CI follow-up at `d0b2858c6ce7d43cee1d805acf3ada9cd41d5ed5`: Foundation/PG, dependency/secret checks and
+CodeQL passed; source-scan reported the isolated Azure lock's certifi 2026.10.18 certificate advisory.
+Separate security commit changes only that resolved package to 2026.10.19, the scanner-required patch
+already used by the unchanged API. Frozen sync/installed version and package-diff checks passed. Patched
+trust read-only region/financial checks succeeded at the transport level, preserving restricted/blocked
+status and verifying current credit/both limits (01:47:05 UTC); no mutation/reallocation. Source hash
+and image unchanged; new-head CI recorded on PR #31. No security suppression or broader upgrade.
+
 Clerk: owner selected **Dzirent Staging** dev app. No usable local keys/issuer/CLI connection or enabled
 browser found. Owner needs Dashboard login, reuse/create the app and actual public Frontend API URL;
 prefer public JWT verifier and real exact staging origin. No invented issuer/bypass. Only this provider

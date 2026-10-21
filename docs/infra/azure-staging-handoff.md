@@ -12,7 +12,8 @@ Fetched main/base remains `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`; normal rec
 up to date. Previous head `ae2bc3e6bead4a189256a3ddc7c9ce61d74f22c6` is preserved.
 [Resumption claim](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6305346084).
 Only `infra/azure/**`, this handoff and the own-agent log changed. Existing SDK/auth/discovery/preflight
-helpers were reused; no API/schema/contract/fixture/dependency/CI changes, agents, merge or production cutover.
+helpers were reused; no API/schema/contract/fixture/application-dependency/CI changes, agents, merge or
+production cutover. The isolated infrastructure lock has the targeted security correction below.
 
 The owner now authorizes first-party development/staging consumption of remaining Students credit.
 The archived **free-only stop is superseded**. No subscription upgrade, spending-limit removal,
@@ -90,6 +91,16 @@ Local image ID `sha256:c7b8761d81d23dd50efb32a504c83a8b704df7b62f9faf134063cdf35
 unchanged API code at main `8fcdc8d`. It was **not published or deployed**. Final privacy/ignore/source/
 whitespace checks and CI are recorded at the exact pushed SHA on PR #31. No local unit/browser suite
 or broad app build; CI disposable-PostgreSQL checks do not prove hosted Azure acceptance.
+
+CI follow-up: candidate `d0b2858c6ce7d43cee1d805acf3ada9cd41d5ed5` passed Foundation, disposable PG,
+dependency/secret checks and CodeQL, but source-scan flagged the infrastructure lock's certifi
+2026.10.18 under [GHSA-6q48-6c7w-9gw2](https://github.com/certifi/python-certifi/security/advisories/GHSA-6q48-6c7w-9gw2).
+A separate security commit updates **only certifi to the scanner-required 2026.10.19** in
+`infra/azure/uv.lock`; all SDK/application versions remain unchanged. Frozen sync and the installed
+version check passed. With the patched trust bundle, read-only regional admission still blocks;
+five fresh financial GETs completed at 01:47:05 UTC with current credit and both limits verified.
+No cloud mutation was repeated; the helper source hash and API image remain unchanged. Final CI is
+reported on PR #31 at the new security-commit SHA. No scanner rule or severity was suppressed.
 
 Unrun: remote SQL/TLS, DB/migrator/app roles, Alembic upgrade, seed/data transfer, HTTPS API/readiness,
 restart persistence, authenticated CRUD/cross-owner tests, restore, sign-up/login. There is no remote
