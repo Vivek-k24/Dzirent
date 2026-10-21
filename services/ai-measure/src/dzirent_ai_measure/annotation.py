@@ -70,13 +70,14 @@ def invalid(
     return AnnotationRejected(422, code, message, [{"field": field, "problem": message}])
 
 
-def parse(raw: str) -> Annotation:
+def load_strict[Model: Strict](model: type[Model], raw: str, schema: str) -> Model:
+    """Size-capped strict JSON validation shared by every annotation schema of this service."""
     if len(raw.encode()) > MAX_ANNOTATION_BYTES:
         raise AnnotationRejected(
             413, "payload_too_large", "The annotation must be 64 KiB or smaller."
         )
     try:
-        annotation = Annotation.model_validate_json(raw)
+        return model.model_validate_json(raw)
     except ValidationError as exc:
         # Locations and messages only: submitted values are never echoed back.
         details = [
@@ -86,9 +87,13 @@ def parse(raw: str) -> Annotation:
         raise AnnotationRejected(
             422,
             "invalid_payload",
-            "The annotation does not match schema ai-measure.v0.",
+            f"The annotation does not match schema {schema}.",
             details,
         ) from None
+
+
+def parse(raw: str) -> Annotation:
+    annotation = load_strict(Annotation, raw, "ai-measure.v0")
     if annotation.garment_class not in SUPPORTED_GARMENT_CLASSES:
         raise invalid(
             "Only flat-laid sleeved tops (shirt, blouse, blazer, jacket) are supported.",

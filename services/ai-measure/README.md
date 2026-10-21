@@ -1,10 +1,13 @@
-# dzirent ai-measure (AI-MEASURE-1A) — local/test only
+# dzirent ai-measure (AI-MEASURE-1A, 2/Phase 1A) — local/test only
 
 CPU-only garment geometry from **lender-placed points** and a **user-confirmed US Letter sheet** in the same
 overhead photo, per `docs/ai-measure/AI-MEASURE-1-CONTRACT.md` (baseline
 `b8ec467bf72c3bd389e7db7f3e15f1e4ccf44764`). Planar homography with NumPy/OpenCV; **no ML model, landmark or
-seam recognition, paper detection, training, GPU, hosted LLM, external API, queue, storage or database
-writes.** Results are estimates pending lender confirmation and are never written to listings or fit badges.
+seam recognition, automatic paper detection, training, GPU, hosted LLM, external API, queue, storage or
+database writes.** Results are estimates pending lender confirmation and are never written to listings or fit
+badges. AI-MEASURE-2 adds `POST /v1/calibrate-paper` (contract issue #46, baseline
+`0fd9a2b057f67f33111f4a28d7a842cc22814bfc`): it *proposes* precise sheet corners near a quad the user placed
+roughly, and the proposal must be reviewed and confirmed before it is used.
 
 ## API (schema `ai-measure.v0`, algorithm `paper-homography-0.1.0`)
 
@@ -13,6 +16,7 @@ writes.** Results are estimates pending lender confirmation and are never writte
 | `GET /health` | `{"status": "ok", ...}`; states that no ML model exists |
 | `GET /version` | service, schema, algorithm and OpenCV versions |
 | `POST /v1/measure` | `multipart/form-data`: `image` (JPEG/PNG ≤ 10 MiB), `annotation` (JSON string ≤ 64 KiB), optional `request_id` |
+| `POST /v1/calibrate-paper` | same multipart shape; `annotation` is `paper-calibrate.v0` (see [Paper corner proposals](#paper-corner-proposals-post-v1calibrate-paper)) |
 
 `annotation` (unknown fields are refused, so sheet sizes or scale factors cannot be supplied by clients):
 
@@ -93,7 +97,87 @@ The monolith proxy adds `service_unavailable` (503).
    is `valid` and the measurement raised no caution; `uncertain` calibration always rounds to whole
    centimetres. The sensitivity is a gate, not an accuracy or confidence figure, and is not reported.
 
+## Paper corner proposals (`POST /v1/calibrate-paper`)
+
+Schema `paper-calibrate.v0`, algorithm `roi-paper-snap-0.1.0`, frozen in issue #46. An internal geometric
+suggestion tool: it never changes a stored calibration, never feeds `/v1/measure` by itself and never proves
+the sheet's size — US Letter rests on the user's separate attestation.
+
+Request `annotation` (unknown fields refused; no client-supplied sizes):
+
+```json
+{"schema_version": "paper-calibrate.v0", "reference_type": "us_letter",
+ "approx_corners_px": [[404, 35], [610, 152], [526, 421], [287, 322]]}
+```
+
+Corners are TL, TR, BR, BL in intrinsic pixels of the decoded, upright image, with (0, 0) at the top-left
+corner of the top-left pixel (the browser convention); proposals use the same convention, rounded to 0.1 px.
+
+Responses are HTTP 200 for every honest outcome. Sample from a synthetic 20°-tilted photo whose true corners
+are `[[395.2, 41.9], [615.9, 143.5], [518.7, 414.8], [295.1, 330.9]]`:
+
+```json
+{"schema_version": "paper-calibrate.v0", "algorithm_version": "roi-paper-snap-0.1.0",
+ "request_id": "sample-snap-1", "detection_status": "snapped", "reference_type": "us_letter",
+ "proposed_corners_px": [[394.9, 42.1], [615.7, 143.4], [519.1, 414.7], [295.3, 331.1]],
+ "calibration_status": "valid", "reason_codes": ["manual_corner_confirmation_required"],
+ "requires_user_confirmation": true}
+```
+
+The same request on white paper over a white surface:
+
+```json
+{"schema_version": "paper-calibrate.v0", "algorithm_version": "roi-paper-snap-0.1.0",
+ "request_id": "sample-white-1", "detection_status": "not_found", "reference_type": "us_letter",
+ "proposed_corners_px": null, "calibration_status": null,
+ "reason_codes": ["low_contrast_with_background", "manual_corners_unchanged"],
+ "requires_user_confirmation": true}
+```
+
+| `detection_status` | Meaning | Reason codes |
+| --- | --- | --- |
+| `snapped` | one clear sheet outline near the quad; corners proposed | always `manual_corner_confirmation_required`; plus any calibration reasons from `/v1/measure` (e.g. `reference_shape_inconsistent`, `camera_not_perpendicular`) and `paper_edges_not_straight`, `subpixel_refinement_unavailable`, `large_adjustment_from_approximate_corners` |
+| `not_found` | nothing usable: no sheet, sheet blends with the surface, or the quad is not on it | `paper_not_detected`, `low_contrast_with_background`, `paper_extends_beyond_search_area`, `paper_outline_not_confident` |
+| `ambiguous` | a rival could be the sheet: another plausible sheet overlaps the quad, or the bright region under it merges into something else (e.g. a white garment touching the sheet) | `multiple_candidates`, `paper_merges_with_adjacent_white_region` |
+| `invalid` | the sheet is cut off by the photo edge, or the quad is too small to search | `paper_corner_out_of_frame`, `approx_quad_too_small` |
+
+Every non-snapped response has `proposed_corners_px: null`, `calibration_status: null` and
+`manual_corners_unchanged`, so the existing manual workflow continues. For `snapped`, `calibration_status` is
+the same geometric diagnostic `/v1/measure` would give these corners (`valid | uncertain | invalid`) — for
+example an A4 sheet snaps cleanly but is `invalid` with `reference_shape_inconsistent`. It is a geometry check,
+not certification. Errors: 413 `payload_too_large`, 415 `unsupported_media_type`, 422 `invalid_image`,
+`invalid_payload` or `invalid_geometry` (a corner outside the photo, or crossed, collinear, non-convex or
+counter-clockwise corners).
+
+How a proposal is made:
+
+1. **Bounded search**: only the box around the rough quad, plus 0.6 × its longest side (≥ 24 px), is
+   examined, downscaled to ≤ 900 px for candidate search.
+2. **Candidates**: bright, low-saturation regions at several cut-offs (global and local Otsu, and halfway
+   between the brightness inside the quad and the ring around it), each simplified to a convex four-sided
+   outline that fills ≥ 90% of its region and is 0.35–2.8× the rough quad's area.
+3. **Gates and ranking**: overlap with the rough quad (IoU), every side brighter inside than outside by ≥ 12
+   grey levels, no structural corner problem, and physical consistency with a portrait 8.5 × 11 rectangle
+   under some pinhole camera (the `camera_fit` used by calibration, residual ≤ 0.10). Score = 0.45·IoU +
+   0.30·contrast + 0.25·shape. A proposal needs IoU ≥ 0.25. A distinct rival with IoU ≥ 0.1 that overlaps
+   ≥ 60% as much as the best, or scores within 15% of it, makes the result `ambiguous`.
+4. **Sub-pixel refinement** at full resolution: along each side, the bright→dark step is located where the
+   profile crosses halfway between the paper and surface levels; a robust (Huber) line is fitted per side and
+   adjacent lines are intersected. Corners within 2 px of the photo edge mean the sheet may continue out of
+   view (`invalid`).
+
+On supersampled synthetic renders, proposals land within ≈0.2–0.45 px of the true corners from rough quads
+jittered by ~10 px, shifted by 15% or scaled 0.8–1.2×. This verifies the implementation only.
+
 ## Limitations (read before relying on any number)
+
+- **Paper snapping is synthetic-only.** There is no measured snap success or false-snap rate on real photos.
+  Expect `not_found` / `ambiguous` with off-white or cream paper on light floors, strong shadows across an
+  edge, glare, curled or creased sheets, patterned or white garments touching the sheet, and sheets partly
+  covered by the garment. A sheet with a nearby but separate white garment, or on a light grey surface, did
+  snap correctly in synthetic tests. Lens distortion bends edges and is not modelled. A pilot claim needs
+  manually labelled real photographs (≥ 30 recommended) with resolution-normalised corner error, snap success
+  and false snaps reported (issue #46).
 
 - **Synthetic evidence only.** Tests use exact projected points from a simulated pinhole camera. They prove the
   geometry implementation, **not** landmark placement, garment measurement accuracy or the ≤ 1.5 cm field target.
