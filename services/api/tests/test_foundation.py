@@ -16,7 +16,6 @@ ROOT = Path(__file__).resolve().parents[3]
 NATIVE = {"identity_mode": "native"}
 
 
-
 @pytest.mark.parametrize(
     "mode,environment", [("connected", "local"), ("demo", "staging"), ("demo", "production")]
 )
@@ -33,7 +32,9 @@ def test_connected_missing_database_refused() -> None:
 def test_connected_mock_identity_refused() -> None:
     with pytest.raises(ValidationError):
         Settings(
-            _env_file=None, mode="connected", identity_mode="mock",
+            _env_file=None,
+            mode="connected",
+            identity_mode="mock",
             database_url="postgresql://u:p@db/x",
         )
 
@@ -49,7 +50,6 @@ def test_valid_connected_configuration_accepted() -> None:
     )
     assert not settings.mock_identity_allowed and settings.deployed
     assert "u:p" not in repr(settings)
-
 
 
 def test_unknown_mode_refused() -> None:
