@@ -1,5 +1,48 @@
 # Codex Phase 1A status
 
+## AWS-RDS / issue #34 — read-only connectivity verified, 2026-10-20
+
+Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/aws-rds-staging`; exact fetched main base
+`8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`. Previous clean branch/history preserved. Claim:
+[#34](https://github.com/Vivek-k24/Dzirent/issues/34#issuecomment-6304519172). Owned edits: `infra/aws/**`,
+`docs/infra/aws-rds-staging-handoff.md`, this log. API/runtime changes require a recorded handoff;
+no app/contracts/fixtures/dependency locks/CI/other-agent files changed or other agents started.
+
+Existing AWS CLI authentication matched the private target. RDS metadata and actual SQL agree on
+Aurora PostgreSQL 17.9, one Serverless v2 writer. Express IAM internet gateway connectivity works;
+no VPC/SG change is needed. Encryption is AWS-owned-key `sse-rds`, despite the legacy boolean.
+Both writer and reader passed IAM + TLS 1.3 hostname/chain verification; reader reaches the sole writer.
+Operator has CREATEDB/CREATEROLE but no superuser/bypass-RLS; proposed staging DB/two roles absent.
+Maintenance DB has zero user tables; whole-cluster use/ownership and inherited PUBLIC ACLs remain unknown.
+
+The user approved brief read-only probes and possible compute resume only. Actual command (Python
+3.12.15, AWS CLI 2.38.3, psql 17.2, Windows): `python infra/aws/inspect_rds.py --config
+.local/target.private.json --output-dir .local/probe-2026-10-20 --connect --allow-resume-cost --timeout 180`.
+Exit 0, 00:11:32–00:12:08 UTC October 21, 36 seconds, five CLI invocations (three control-plane reads,
+two local IAM signatures), exactly two read-only SQL sessions. Zero database/resource writes;
+all sessions closed. Actual cost/auto-pause afterward not measured. Raw identities/endpoints and
+evidence stay in ignored `.local`; in-memory tokens never written to config, DSNs, argv or logs.
+Run tool/SQL hashes and full evidence are in the [handoff](../infra/aws-rds-staging-handoff.md).
+
+Prepared bounded stdlib/CLI/psql inspection tooling, private config example/ignore rules, separate
+staging migrator/app privilege plan, costs/approval boundaries, API IAM-token/pool handoff request,
+host/Clerk prerequisites and rollback. No new cluster/DB/roles/service, IAM/network changes, Azure,
+migrations/seed/API deployment or production changes. App Runner/ECS regional inventories empty;
+Free Tier plan request failed `ResourceNotFoundException`, so no free-coverage claim.
+
+Final focused local checks: Ruff **0.6.9** `check` and `format --check` passed; Python **3.12.15**
+`-m py_compile` and `--help` passed; `git diff --check` passed. Manual CLI guard checks rejected outside
+config/output paths and an existing evidence directory with exit 2 before any worker/network call.
+Config example contains only placeholders plus the generic maintenance DB name. Ignore verification
+initially failed because its comparison used Windows path quoting; the corrected NUL-delimited,
+POSIX-path `git check-ignore -z --stdin` check passed for all **12** private files. Tool/SQL hashes still
+match the successful live run. Staged privacy/diff checks and PR CI are recorded on the pushed PR SHA.
+No local application builds, unit/browser suites or hosted acceptance tests run. #34 is partial;
+#26 remains gated on actual isolated
+DB, HTTPS FastAPI persistence/denial evidence and real Clerk staging configuration. Next: review this PR,
+confirm cluster ownership and approve the new DB/two SQL roles and their costs; separately approve a
+costed host/workload IAM plan. Preserve the existing public demo throughout.
+
 ## AZ-DISC / issue #23 — read-only Azure discovery, 2026-10-19
 
 Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/azure-discovery`; exact fixed base

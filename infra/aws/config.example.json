@@ -1,0 +1,10 @@
+{
+  "expected_account": "<private account ID>",
+  "region": "<private AWS region>",
+  "profile": "<existing local CLI profile>",
+  "cluster_identifier": "<private existing cluster identifier>",
+  "database": "postgres",
+  "writer": "<private writer hostname>",
+  "reader": "<private reader hostname>",
+  "instance": "<private instance hostname>"
+}
