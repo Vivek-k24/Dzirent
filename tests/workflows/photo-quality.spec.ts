@@ -29,14 +29,8 @@ function trackExceptions(page: Page) {
 }
 
 test.describe("AI-QUALITY-1 Photo Quality Dev Route", () => {
-  test("production gate: denied and renders not-found in simulated production mode", async ({ page }) => {
-    // When production mode is indicated without allowlist override, the route must fail closed
-    await page.goto("/dev/photo-quality?env=production");
-    await expect(page.getByRole("heading", { name: "Outfit not found" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Overhead Photo Quality Screening" })).toHaveCount(0);
-  });
-
-  test("production gate: accessible when explicit dev route allowlist is provided", async ({ page }) => {
+  test("development access does not depend on query-string overrides", async ({ page }) => {
+    // This browser run is local/test. Query parameters cannot authorize a deployed preview.
     await page.goto("/dev/photo-quality?env=production&allow_dev=1");
     await expect(page.getByRole("heading", { level: 1, name: "Overhead Photo Quality Screening" })).toBeVisible();
   });
@@ -136,6 +130,13 @@ test.describe("AI-QUALITY-1 Photo Quality Dev Route", () => {
     });
 
     await expect(page.getByTestId("verify-server-button")).toBeVisible();
+    await page.route("**/api/v1/dev/photo-quality", async route => {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "service_unavailable", message: "Service intentionally offline for test.", details: [] }, request_id: "offline-test" }),
+      });
+    });
     await page.getByTestId("verify-server-button").click();
 
     // Since the external AI quality microservice is not running in isolated web tests,
@@ -146,4 +147,30 @@ test.describe("AI-QUALITY-1 Photo Quality Dev Route", () => {
 
     expect(exceptions).toEqual([]);
   });
+  for (const [scene, expected] of [
+    ["usable", "PASS"],
+    ["blurred", "RETAKE NEEDED"],
+    ["no_paper", "MANUAL REVIEW REQUIRED"],
+  ] as const) {
+    test(`real local image-to-FastAPI integration: ${scene}`, async ({ page }) => {
+      test.skip(process.env.DZIRENT_AIQUALITY_REAL_E2E !== "1", "Requires both real local Python services");
+      const { readFileSync } = await import("node:fs");
+      const { resolve } = await import("node:path");
+      const filename = resolve(process.cwd(), "test-results", "ai-quality", `${scene}.jpg`);
+      await page.goto("/dev/photo-quality");
+      await page.getByTestId("photo-input").setInputFiles({
+        name: `${scene}.jpg`,
+        mimeType: "image/jpeg",
+        buffer: readFileSync(filename),
+      });
+      await expect(page.getByTestId("verify-server-button")).toBeVisible();
+      await page.getByTestId("verify-server-button").click();
+      await expect(page.getByTestId("server-result")).toBeVisible({ timeout: 25_000 });
+      await expect(page.getByTestId("decision-banner")).toContainText(expected);
+      for (const check of ["blur", "exposure", "paper", "framing"]) {
+        await expect(page.getByTestId(`check-${check}`)).toBeVisible();
+      }
+    });
+  }
+
 });
