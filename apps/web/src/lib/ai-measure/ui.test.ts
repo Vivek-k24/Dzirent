@@ -227,6 +227,8 @@ describe("LandmarkEditor Component", () => {
         imageWidth: 800,
         imageHeight: 600,
         paperConfirmed: true,
+        reviewedLandmarks: {},
+        onReviewLandmark: vi.fn(),
       }),
     );
 
@@ -261,6 +263,8 @@ describe("LandmarkEditor Component", () => {
         imageWidth: 800,
         imageHeight: 600,
         paperConfirmed: false,
+        reviewedLandmarks: {},
+        onReviewLandmark: vi.fn(),
       }),
     );
 
@@ -276,6 +280,8 @@ describe("LandmarkEditor Component", () => {
         imageWidth: 800,
         imageHeight: 600,
         paperConfirmed: true,
+        reviewedLandmarks: {},
+        onReviewLandmark: vi.fn(),
       }),
     );
 
