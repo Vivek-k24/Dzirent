@@ -1,5 +1,53 @@
 # Codex Phase 1A status
 
+## AZ-SETUP / #25 — authorized attempt, regional restriction, 2026-10-20
+
+Existing worktree `H:\DziRent\worktrees\codex-web`, branch `codex/azure-staging-setup`, PR #31.
+Exact fetched main/base `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`; previous PR head
+`ae2bc3e6bead4a189256a3ddc7c9ce61d74f22c6` already contains it. Normal merge: already up to date.
+All prior user work/branches preserved. [Claim](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6305346084).
+Only `infra/azure/**`, `docs/infra/azure-staging-handoff.md` and this log edited; no agents started.
+
+New owner authority permits first-party staging use of remaining Students credit; old free-only
+stop is superseded. Existing VS Code authentication worked; current credit/pending charges/expiry
+and both spending limits verified before/after writes. Exact financial values private. No upgrade,
+personal payment, limit removal, Marketplace/support purchase, IAM/network edit, AWS call, unrelated
+resource edit, public-site/DNS change or merge. Fresh policy/definition/grant/deny review completed.
+
+Actual: PG provider registration HTTP 200, now Registered; new tagged `rg-dzirent-staging-scus` HTTP 201.
+Exactly one PG17/B1ms/32 GB PUT returned HTTP 400 `ParameterOutOfRange` (Version list `[]`). Server GET
+404; final owned-RG inventory complete/empty. Post-registration South Central US/East US 2 metadata
+shows **OfferRestricted Enabled**, no versions/SKUs. Numeric quota now 16 regional / 8 Burstable cores,
+usage 0. One focused East US 2 read retry after timeout; no second create/SKU change. No DB/SQL roles,
+migration, seed/data copy, host, registry or paid monitoring created. Reported credit unchanged;
+invoice cost not established. No metered compute/storage provisioned; extra alerts not configured
+while blocked. Preserve the attempt marker and issue's stop-on-denial boundary.
+
+Added scoped provisioner reusing SDK/auth, private plan/credentials/request ledger, current financial
+guards, disabled mutation retries and persisted issue-wide attempt marker. Added live post-registration
+regional gate after diagnosis; final read-only run correctly blocked. Original allocation and final
+guard hashes/evidence are distinct in the [handoff](../infra/azure-staging-handoff.md).
+
+Actual local checks: Python 3.12.15, existing Azure pins, Ruff **0.6.9** lint/format/compile/help/local
+plan and no-network delete/billing/unrelated-provider rejection passed. Allocation, denied status and
+restricted final guard exited 2 as documented. Docker 28.0.1 Linux built the existing API image with
+frozen dependencies. Local image ID `sha256:c7b8761d81d23dd50efb32a504c83a8b704df7b62f9faf134063cdf357c9a58f`,
+unchanged API code at main `8fcdc8d`, not published/deployed. Network-isolated image smoke passed UID
+10001, private-file absence, staging mock-auth rejection and missing-Clerk rejection. `alembic heads`
+returned `0002_studios (head)`; no upgrade executed. Final privacy/ignore/whitespace/CI recorded on PR
+#31 at the new pushed SHA. No local unit/browser suite or unrelated app build; no hosted acceptance.
+
+Clerk: owner selected **Dzirent Staging** dev app. No usable local keys/issuer/CLI connection or enabled
+browser found. Owner needs Dashboard login, reuse/create the app and actual public Frontend API URL;
+prefer public JWT verifier and real exact staging origin. No invented issuer/bypass. Only this provider
+step waits for browser access; it did not prevent the PostgreSQL attempt or runtime preparation.
+
+Status: #25 partial, Azure regional offer access blocked; #26 app work gated on usable staging. Next:
+Service and subscription limits request enabling PG in an approved region on the Students offer,
+without paid support/upgrade. Then owner review of the exhausted one-attempt boundary, access/credit
+recheck, isolated DB/least-privilege roles, serialized migration, HTTPS API/persistence/security and #26.
+Existing live demo preserved. Full evidence, costs and cleanup are in the handoff.
+
 ## Azure staging / issue #25 — approval gate, 2026-10-20
 
 Exact starting main commit: `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c` after fetch.

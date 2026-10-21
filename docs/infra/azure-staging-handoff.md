@@ -1,5 +1,150 @@
 # Azure staging handoff — issue #25
 
+## Current: authorized attempt blocked by regional offer access
+
+Updated **October 20, 2026, America/Chicago**; run times below are UTC October 21.
+**No operational staging database or HTTPS API exists.** One empty staging RG was created and the
+PostgreSQL provider is registered. The live website, DNS and existing data remain unchanged. #26's
+application work has not started. No AWS operation was performed; #34 is abandoned for this path.
+
+Existing branch `codex/azure-staging-setup` / [draft PR #31](https://github.com/Vivek-k24/Dzirent/pull/31).
+Fetched main/base remains `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`; normal reconciliation was already
+up to date. Previous head `ae2bc3e6bead4a189256a3ddc7c9ce61d74f22c6` is preserved.
+[Resumption claim](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6305346084).
+Only `infra/azure/**`, this handoff and the own-agent log changed. Existing SDK/auth/discovery/preflight
+helpers were reused; no API/schema/contract/fixture/dependency/CI changes, agents, merge or production cutover.
+
+The owner now authorizes first-party development/staging consumption of remaining Students credit.
+The archived **free-only stop is superseded**. No subscription upgrade, spending-limit removal,
+personal charge, Marketplace/support-plan purchase or payment-method change was authorized or made.
+
+### Financial and permission evidence
+
+Existing VS Code Azure Resources authentication worked. Exact subscription, Enabled state and
+token/subscription tenant matched. Fresh linked-profile reads verified a positive **current**,
+non-estimated USD balance after pending charges, sufficient for the initial planning reserve and
+unexpired beyond the initial seven-day review. Both subscription and billing-profile spending limits
+were **On before and after** writes; Students offer and Free/Active billing remained unchanged.
+Exact balances/dates/IDs and the private ledger stay ignored. Reported current balance was unchanged;
+this is not an invoice or zero-charge guarantee. No metered compute/storage/host/registry was created.
+See [Students terms](https://azure.microsoft.com/en-us/pricing/offers/ms-azr-0170p/) and
+[spending-limit protections/exceptions](https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/spending-limit).
+
+The free-service meter GET still returned 404; this did not prevent the authorized credit-funded
+attempt. Five policy definitions/initiative and parameters were reviewed: South Central/East US 2
+permitted by the location list, West Europe denied, MFA audit modes, no security-initiative identity.
+No deny assignments returned at scope; relevant grant patterns present. Registration/RG creation
+proved those operations, not unrestricted permission. Additional spend alerts remain unconfigured
+while no metered stack exists; configure meaningful owner alerts when supported before leaving a
+later metered stack running. Alerts are not caps; keep the Students limit On.
+
+### Actual changes and diagnosis
+
+| Operation | Actual result |
+| --- | --- |
+| PostgreSQL provider registration | POST HTTP 200 at 01:13:31; subsequent state **Registered** |
+| `rg-dzirent-staging-scus` creation | PUT HTTP 201 at 01:14:48; South Central US; exact project/staging/run/review tags verified |
+| PostgreSQL allocation | **One PUT** at 01:14:49; HTTP 400 `ParameterOutOfRange` |
+| Requested configuration | PG17, Burstable `Standard_B1ms`, Premium_LRS/P4 32 GB, autogrow off, seven-day LRS backups, no HA/replicas/geo-backup, system-managed encryption |
+| Subsequent server GET | **404**, no PostgreSQL server/database created |
+| Final owned-group inventory | Complete, **zero resources**; original unrelated RG untouched |
+| Other resources | No host/registry, SQL roles/schema/data, broad ingress, VNet, firewall/IAM change; Storage/Network still NotRegistered; Web/App not registered |
+
+Create error: `The value of the 'Version' should be in: []. Verify that the specified parameter value is correct.`
+
+Before registration, capabilities advertised PG17/B1ms and quota lists were empty. **After registration,
+both `southcentralus` and `eastus2` report `OfferRestricted=Enabled`, with no supported versions/SKUs.**
+East US 2's first read timed out; one focused read-only retry confirmed the restriction. No East US 2
+create was attempted. Numeric quotas now show **16 regional cores / 8 Burstable cores, usage 0** in
+both regions. Quota is not the demonstrated blocker and does not prove capacity or offer access.
+The capability reason explicitly directs a **Service and subscription limits** request for regional
+access. Do not infer that PG17 is globally unsupported. No larger SKU, older version, other-region
+allocation or repeated create was substituted; the issue's one-attempt/stop-on-denial limit remains.
+
+The helper now checks regional access/version/SKU **after registration and before creation**. Its
+final read-only execution correctly blocked and made zero mutations. Evidence distinguishes the
+original allocation helper hash `8bb390520dda7aaa090247886f9f5c420b087cbeb9a40bd2a8fcf8db2b2647d0`
+from the final admission-guard hash `513eebec64de3a3b64d168f5c8be7840ca69ab5fce47be1b38b77e04bf4d6c68`.
+
+### Actual checks
+
+Windows / Python 3.12.15 / existing pinned Azure SDK environment / Ruff **0.6.9** / Docker 28.0.1 Linux.
+No dependency changes. [Commands and helper behavior](../../infra/azure/README.md).
+
+| Check | Result |
+| --- | --- |
+| Fresh preflight | 17 ARM attempts, 01:00:25–01:00:58; current financial gates verified; helper remains blocked by design |
+| Selected discovery | 10 ARM attempts, 01:03:17–01:03:24; inventory/providers/capabilities/grants |
+| Policy review | Six ARM GETs using existing helpers; no policy change |
+| Provisioning checks | Ruff check/format, Python compile/help, local plan, no-network delete/billing/unrelated-provider rejection passed; actual allocation exited 2 on HTTP 400 |
+| Post-registration diagnosis | 10 ARM attempts, 01:16:41–01:17:24; South Central restriction/numeric quotas, East US 2 timeout |
+| Focused East US 2 retry | Three ARM attempts, 01:24:15–01:24:30; offer restriction confirmed |
+| Final admission guard | 01:29:04; read-only blocked/exit 2, no mutations |
+| Final financial reads | Five ARM attempts, 01:29:05–01:29:14; current credit/expiry/both limits reverified |
+| Final group inventory | Run ownership/tags verified; complete zero-resource list |
+| API Docker build | `docker build --progress plain -f services/api/Dockerfile -t dzirent-api:azure-staging-8fcdc8d .` **passed**, frozen deps, allowlisted 435 KB context |
+| Image security smoke | Network-isolated `docker run --rm --network none -i ... python -`: UID 10001, private workspace/env paths absent, staging mock auth and missing-Clerk settings rejected |
+| Migration graph | Network-isolated `alembic heads` → **`0002_studios (head)`**; no upgrade run |
+
+Local image ID `sha256:c7b8761d81d23dd50efb32a504c83a8b704df7b62f9faf134063cdf357c9a58f` contains
+unchanged API code at main `8fcdc8d`. It was **not published or deployed**. Final privacy/ignore/source/
+whitespace checks and CI are recorded at the exact pushed SHA on PR #31. No local unit/browser suite
+or broad app build; CI disposable-PostgreSQL checks do not prove hosted Azure acceptance.
+
+Unrun: remote SQL/TLS, DB/migrator/app roles, Alembic upgrade, seed/data transfer, HTTPS API/readiness,
+restart persistence, authenticated CRUD/cross-owner tests, restore, sign-up/login. There is no remote
+database to test. No local user data copied; prefer canonical fixtures over arbitrary dumps.
+
+### Exact external actions and continuation
+
+**Azure:** request **Service and subscription limits → PostgreSQL Flexible Server region access** in
+Azure Help + support for South Central US or East US 2 on the existing Students offer. Include:
+
+```text
+Development/testing PG17, Standard_B1ms, 32 GB, no HA/replicas. Provider Registered.
+Both regions report OfferRestricted=Enabled and empty versions/SKUs. One South Central
+create returned HTTP 400 ParameterOutOfRange: Version should be in []. Numeric quota:
+16 regional / 8 Burstable cores, usage 0. Enable an eligible region without upgrading
+the Students offer or removing its spending limit.
+```
+
+Microsoft documents [this region-access action](https://learn.microsoft.com/en-us/azure/postgresql/troubleshoot/how-to-resolve-capacity-errors#enable-region).
+Use billing/subscription support included with [Basic support](https://azure.microsoft.com/en-us/support/plans/),
+not a paid support plan or pay-as-you-go conversion. No support message was sent here. This is an
+access blocker, **not a request for new cost approval**. After access changes, recheck eligibility/credit
+and obtain owner review of the exhausted one-attempt boundary before another allocation.
+
+**Clerk:** owner selected **Dzirent Staging**, a dedicated development application. No usable local
+keys/issuer/CLI connection or enabled browser found. Sign in to the [Clerk Dashboard](https://dashboard.clerk.com/),
+reuse a suitable development instance or create that app, then provide its actual public Frontend API
+URL. Prefer the public verification key/JWKS in protected `DZIRENT_CLERK_JWT_KEY`, actual HTTPS issuer,
+and the real exact staging web origin for authorized parties/CORS once available. No secret in chat,
+Git or client code. No invented issuer/auth bypass. Only this provider step needs browser access;
+it did not prevent the PostgreSQL attempt or runtime preparation. Full auth UX follows in #26.
+
+### Cost, residual resource and cleanup
+
+Conditional South Central retail remains USD 0.0204/hour B1ms, 0.138/GB-month data, 0.114/GB-month
+backup overage: PG + 32 GB about **USD 19.31/730-hour month** before benefits. Linux B1 at 0.018/hour
+would bring core costs to **USD 32.45**; F1 requires actual eligibility/suitability. Transfer, excess
+backups, registry/logging and other meters are additional/variable. These are estimates, not charges
+or caps. No metered host/registry was allocated while DB access is blocked. Seven-day review is a
+private planning horizon/tag, not automated cleanup; extra alerts were not configured.
+
+State/credentials/IDs/billing ledger stay ignored in `infra/azure/.local/`. Preserve
+`staging-postgres-2026-10-20` and `issue-25-postgres-attempt.private.json`. The helper's mutation retries
+are off, operations/targets fixed, and another allocation is refused when the issue marker exists.
+No delete/IAM/billing-conversion/firewall operation exists; tokens remain in memory and passwords
+never enter argv/logs/images. Keep the empty tagged RG for reviewed reuse, or verify exact ID/tags/
+empty membership before chosen cleanup. Preserve the original unrelated RG and registered provider.
+Any successful later stack needs a creation/usage ledger, alerts, private backup and graceful shutdown
+before credit expiry; stopped PG still has storage cost. Preserve the live demo. Once access/minimum
+Clerk config are available: isolated DB/roles → migrate once → smallest suitable costed HTTPS API →
+verify real persistence/security → immediately #26. Neither issue is complete.
+
+<details>
+<summary>Archived read-only preflight before provisioning authorization</summary>
+
 Observed **2026-10-20 UTC**. Status: **stopped before provisioning at the cost/eligibility/quota gate**.
 There is no hosted staging API or database to call operational. Issue #26 has not started.
 
@@ -170,3 +315,5 @@ Official APIs: [billing property](https://learn.microsoft.com/en-us/rest/api/bil
 [credit lots](https://learn.microsoft.com/en-us/rest/api/consumption/lots/list-by-billing-profile?view=rest-consumption-2024-08-01),
 [free services](https://learn.microsoft.com/en-us/rest/api/billingbenefits/free-services/list-by-subscription?view=rest-billingbenefits-2026-06-01),
 [hosting SKUs](https://learn.microsoft.com/en-us/rest/api/appservice/list-skus/list-skus?view=rest-appservice-2024-11-01).
+
+</details>

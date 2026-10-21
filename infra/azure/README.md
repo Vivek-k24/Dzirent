@@ -1,8 +1,8 @@
-# Read-only Azure discovery
+# Azure discovery and authorized staging tooling
 
-This local Python tool uses the existing Azure Resources VS Code sign-in. It creates no Azure
+The discovery/preflight tools use the existing Azure Resources VS Code sign-in. They create no Azure
 resources and never registers providers, changes roles/networking, retrieves keys/passwords, runs
-migrations or deploys applications. Application hosting stays on Vercel. Dependencies are isolated
+migrations or deploys applications. The public web client stays on Vercel. Dependencies are isolated
 here; neither the API environment nor application locks are changed.
 
 ## Run on the assigned Windows workstation
@@ -142,6 +142,42 @@ prove eligibility, capacity or free meters. No creation/registration, roles, mig
 change or deployment operation is implemented. The dated [staging handoff](../../docs/infra/azure-staging-handoff.md)
 records actual credit/expiry, rates, unresolved gates, proposed security/cleanup and unrun hosted
 acceptance. Clear that gate before issue #26; the existing demo stays unchanged.
+
+## Authorized PostgreSQL provisioning — issue #25
+
+The owner's October 20 authorization permits scoped first-party staging use of remaining Students
+credit. The historical free-only restriction is superseded; personal charges, Marketplace purchases,
+subscription upgrades and spending-limit removal remain prohibited. `provision_postgres.py` reuses
+existing SDK/auth helpers; discovery/preflight remain read-only.
+
+**Current:** the single approved-size create was rejected; both regions report OfferRestricted.
+The tagged RG is empty. Do not retry allocation or remove the private attempt marker. Follow the
+[current handoff](../../docs/infra/azure-staging-handoff.md) for the Azure support action needed.
+
+Default is a local private plan, without cloud writes:
+
+```powershell
+& infra/azure/.venv/Scripts/python.exe infra/azure/provision_postgres.py --help
+& infra/azure/.venv/Scripts/python.exe infra/azure/provision_postgres.py `
+  --output-dir .local/staging-postgres-2026-10-20 `
+  --preflight .local/staging-authorized-2026-10-20 `
+  --discovery .local/staging-authorized-discovery-2026-10-20
+```
+
+Only under owner authority and financial/policy review, `--apply` allows registration, one exact
+isolated RG and **one** PG17/B1ms/32 GB PUT. Evidence must be under 30 minutes old: exact enabled
+Students subscription/tenant, both spending limits On, current unestimated net credit/planning reserve,
+unexpired allowance, inventory and grant/deny checks. Live identity/limit and post-registration
+regional PG17/B1ms access are rechecked. Listings never guarantee allocation.
+
+The fixed ignored `issue-25-postgres-attempt.private.json` marker is created before the PUT. Denied
+or ambiguous responses do not permit automatic retries/new-plan bypasses. SDK mutation retries are off.
+Fixed method/path guards exclude delete, arbitrary URL, IAM, billing-conversion and firewall APIs.
+Private credentials/errors/inventory/ledger stay in `.local`; tokens remain in memory.
+
+For follow-up reads on the preserved state, append `--status-only` or `--region-check-only` to the
+command above. Exit 2 is expected for actual not-found/restricted results. A later server Ready/exit 0
+would not prove hosted API/persistence/auth acceptance. No allocation retry is currently authorized.
 
 ## Official references
 
