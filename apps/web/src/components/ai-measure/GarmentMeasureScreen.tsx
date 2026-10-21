@@ -143,6 +143,13 @@ export function GarmentMeasureScreen() {
   const [results, setResults] = useState<GarmentMeasureResponse | null>(null);
   const [reviewedLandmarks, setReviewedLandmarks] = useState<Partial<Record<MeasurementKey, boolean>>>({});
 
+  // Invalidate any in-flight paper snap requests on unmount
+  useEffect(() => {
+    return () => {
+      paperSnapGeneration.current += 1;
+    };
+  }, []);
+
   // Clean up object URLs on unmount
   useEffect(() => {
     return () => {
