@@ -66,17 +66,29 @@ export async function requestPaperSnap(
   } catch {
     throw new Error("Cannot reach the local calibration service. You can still mark corners manually.");
   }
-  let result: unknown;
-  try { result = await response.json(); } catch {
-    throw new Error("Calibration service returned an unreadable response.");
-  }
   if (!response.ok) {
-    const v = result && typeof result === "object" ? result as Record<string, unknown> : {};
-    const error = v.error && typeof v.error === "object" ? v.error as Record<string, unknown> : {};
-    const message = typeof error.message === "string" ? error.message : "";
+    let message = "";
+    try {
+      const v = await response.json();
+      if (v && typeof v === "object") {
+        const error = (v as Record<string, unknown>).error;
+        if (error && typeof error === "object") {
+          const m = (error as Record<string, unknown>).message;
+          if (typeof m === "string") message = m;
+        } else if (typeof (v as Record<string, unknown>).message === "string") {
+          message = (v as Record<string, unknown>).message as string;
+        }
+      }
+    } catch {
+      // Non-JSON error body (e.g. 503 proxy text/html)
+    }
     throw new Error(message || (response.status === 503
       ? "Paper calibration is offline; adjust corners manually."
       : `Paper calibration failed (HTTP ${response.status}).`));
+  }
+  let result: unknown;
+  try { result = await response.json(); } catch {
+    throw new Error("Calibration service returned an unreadable response.");
   }
   return decodeResponse(result);
 }
