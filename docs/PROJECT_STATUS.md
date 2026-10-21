@@ -33,8 +33,8 @@ production alias was verified without a Vercel share URL or sign-in. Preview/uni
 protection remains enabled, automatic Git deploy guards remain false, and no DNS was changed.
 
 The frontend is an explicitly labeled presentation demo with sample auth and session-only mock CRUD.
-The Python API is merged and database-tested, but hosted API/PostgreSQL, live Clerk and connected
-browser-to-database persistence are **not released**. No payment integration or native app is claimed.
+The Python API is merged. The owner has created Azure PostgreSQL 17 staging and applied the 17-table schema,
+but native authentication, the hosted HTTPS API and connected browser-to-database persistence remain **unreleased**. No payment integration or native app is claimed.
 Read [release evidence](qa/release-integration.md) for exact SHAs, commands, checks and limitations.
 
 All lanes must fetch latest `origin/main` before new work and record that SHA in their own log.
@@ -157,7 +157,7 @@ Temporary bootstrap ownership then ends: Claude owns contracts/fixtures/API, Ant
 | Agent | Status | First next task after merge |
 | --- | --- | --- |
 | Codex | Queued; `codex/web-phase1`, reserved `H:\DziRent\worktrees\codex-web` | Read all logs/contract, record exact base, claim WEB-1; MSW adapter/reset and licensed fashion images; PLP/URL/navigation |
-| Claude | Queued; `claude/api-phase1`, reserved `H:\DziRent\worktrees\claude-api` | Adopt contract/fixtures; migrations, deterministic restricted seeds and catalog; Clerk/owner CRUD implementation |
+| Claude | Queued; `claude/api-phase1`, reserved `H:\DziRent\worktrees\claude-api` | Adopt contract/fixtures; migrations, deterministic restricted seeds and catalog; prior identity-provider/owner CRUD implementation |
 | Antigravity | Queued; `antigravity/qa-phase1`, reserved `H:\DziRent\worktrees\antigravity-qa` | Requirements-to-tests matrix, independent contract/browser checks, extend CI/runbooks |
 
 No role worktree/branch has been activated or agent asked to edit shared files.

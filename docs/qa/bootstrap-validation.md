@@ -33,14 +33,14 @@ or provider accounts were required/read. Playwright 1.64.1, Chromium 156.0.8078.
 | Python urllib GETs to `/api/v1/health/live`, `/health/ready`, `/catalog/products` on 8100 | **200**, **503** with common error/request_id, **404**, respectively; no CRUD/backend readiness claim |
 | `pnpm exec playwright install chromium`; `pnpm smoke:web` | Browser installed; final smoke exit 0 at **390×900** and **1440×900**. Each: HTTP 200, visible demo/foundation text, local fallback asset 200, **0 axe violations / 0 console errors / 0 failed requests** |
 | Screenshot inspection via local image viewer | Both generated shell screenshots visually inspected; readable, no clipped content. Local artifacts: ignored `test-results/foundation-390.png` / `foundation-1440.png` |
-| `pnpm dev:web:connected` with empty publishable key | Expected exit **1**: missing API URL/Clerk publishable key guard; no mock fallback |
+| `pnpm dev:web:connected` with missing API URL (historical guard subsequently changed) | Expected exit **1**: incomplete connected configuration; no mock fallback |
 | `pnpm dev:api:connected` with empty DB/issuer/authorized parties | Expected exit **1**: missing connected dependencies; settings errors hide input values |
 | Source brief `Get-FileHash -Algorithm SHA256` | Original bytes preserved: `b72a6a1b16a9ef9fe76393cd98ec4e2e90bca056824b2d6f4bcf7a856ed2a1c8` |
 
 The eight API foundation tests cover mock identity rejection for connected/staging/production,
 missing connected configuration, unknown modes, exact CORS/no wildcard, health/readiness/no catalog
 runtime, and absence of caller-controlled ownership/roles in write schemas. They do not prove real
-Clerk token validation, row ownership, persistence or database correctness.
+first-party session validation, row ownership, persistence or database correctness.
 
 ## Failures found and corrected
 

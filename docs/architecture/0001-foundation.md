@@ -31,7 +31,7 @@ absent from runtime. `GET /api/v1/health/ready` remains 503 until a real databas
 No credential bypass or seed fallback can satisfy connected acceptance.
 
 `contracts/modes.json` is canonical. Demo means MSW plus resettable public samples and visible
-simulation labeling; it accepts no real credentials. Connected means Clerk/FastAPI/PostgreSQL with
+simulation labeling; it accepts no real credentials. Connected now means first-party FastAPI/PostgreSQL (Issue #26 pending) with
 failed writes/errors surfaced and no mock substitution. Server mock identity is limited to local/test
 demo settings, including when production settings are set. Current guards do not implement token
 verification; Claude must add the official provider SDK before protected runtime routes exist.
