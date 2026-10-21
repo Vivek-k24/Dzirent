@@ -1,5 +1,28 @@
 # Codex Phase 1A status
 
+## AUTH-CONNECT #26 — native auth implementation only, 2026-10-21
+
+Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/native-auth-phase1`; refreshed exact main
+base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. Clean start; Azure branch preserved. Issue claimed and
+scoped API/schema/contracts/fixtures handoff recorded before corresponding edits. Read the issue,
+applicable instructions/ownership, focused current architecture/schema/contracts/logs/PR state and
+pinned PartGraph source (read-only). No parallel agent was launched or another lane modified.
+
+Implemented native Argon2id auth/session/email/recovery lifecycle, strict Origin plus session-bound
+signed CSRF, same-origin transport, additive `0004` after immutable `0003`, guarded table privileges,
+independent renter/lender plus narrow owner-controlled admin capability, connected UI and secure
+unexecuted operator utilities. Passwords/tokens are private inputs; only salted hashes/digests persist.
+Existing admin origin is unknown; no fabricated account/reset/grant. Draft ADR/contract `.3` records
+security behavior changes. Catalog products/images/ownership and demo path preserved.
+
+Actual executed generation only: pinned Python dependency lock (exit 0), wheel-only declaration
+dependencies (exit 0; hardlink fallback warning), `pnpm contracts:generate` with `UV_NO_SYNC=true`
+(exit 0), deterministic fixture generation (exit 0, 39 cases). No tests, lint/format/typecheck, builds,
+drift checks, DB/network validation, migrations, seed/provisioning, accounts, cloud calls, deployment,
+merge or manual CI. Automatic PR CI is incidental only. **Implemented but untested.**
+Review exact SHA/full file list in the draft PR; [implementation and owner handoff](../auth/phase1-handoff.md).
+Next: stop for owner code/security/migration review; Phase 2 needs separate explicit authorization.
+
 ## AZ-DISC / issue #23 — read-only Azure discovery, 2026-10-19
 
 Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/azure-discovery`; exact fixed base

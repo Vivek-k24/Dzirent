@@ -1,5 +1,22 @@
 # Project status
 
+## AUTH-CONNECT #26 — Phase 1 implementation, 2026-10-21
+
+**Implemented but untested; draft owner review required before Phase 2.** Branch
+`codex/native-auth-phase1`, exact main base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc` (includes #60).
+Native FastAPI credentials/cookies/lifecycle, additive auth schema/least-privilege grants, independent
+renter/lender/admin boundaries, connected Next.js proxy/forms/account security, and guarded operator
+utilities are source artifacts only. Contract `.3` and TypeScript/fixture outputs were generated;
+no tests/lint/typecheck/builds/migrations/accounts/provisioning/hosted/browser checks or manual CI run.
+No merge/deployment, live demo/settings/DNS change, or cloud call in this phase. Automatic draft-PR
+CI is incidental, never Phase 2 acceptance. Existing measurement/quality branches and QA untouched.
+
+Staging PostgreSQL 17.11 at head `0002` with zero users/products is **owner-reported**, not reverified
+here. Proposed chain `0002` → existing guarded `0003` → new `0004_native_auth` is unexecuted. HTTPS API
+hosting (#25), actual existing admin identity origin, reviewed mail delivery, Phase 2 validation and
+explicit later staging migration/account authorization remain. [Handoff and command record](auth/phase1-handoff.md),
+[draft ADR](architecture/0005-native-authentication.md), [contract note](../contracts/changes/0003-native-auth.md).
+
 ## Rental refresh: two independent workflow assignments
 
 User-authorized batch from code baseline `a63acc0e9d55d79a918775a57d09bcec63cd3726`.

@@ -4,6 +4,28 @@ This registry is maintained only by Codex. It is a coordination record, not a sh
 
 ## Focused assignments
 
+### AUTH-CONNECT / issue #26 — native auth Phase 1 implementation only
+
+Owner assignment and [recorded claim](https://github.com/Vivek-k24/Dzirent/issues/26#issuecomment-6327900575)
+hand auth-specific API/schema/contract work to Codex in `H:\DziRent\worktrees\codex-web`, isolated
+branch `codex/native-auth-phase1`; refreshed exact base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`.
+Preserved `codex/azure-staging-setup` and all parallel PR branches. Owner review is the stopping gate.
+
+Owned here: focused API identity/settings/ORM/profiles/main/readiness/contract models and new `auth/**`,
+new additive `0004` migration; focused web auth routes/components/session/API/store/provider/shell and
+mode configuration; client transport/types and generated bindings; canonical mode/OpenAPI/change
+notes; required Python pin/lock, environment templates and focused docs/own status/project status.
+The [contract dependency handoff](https://github.com/Vivek-k24/Dzirent/issues/26#issuecomment-6328154174)
+includes the fixture generator's auth denial examples and regenerated version metadata only; no
+catalog product/reference/image changes or QA script ownership transfer. Shared files are edited
+serially by Codex under the explicit owner assignment, not by parallel agents.
+
+No tests, lint, typecheck, builds, migrations, seeds, accounts, Azure calls/writes, hosted/browser
+checks, manual CI, merge, deployment or demo changes. Contract/fixture generation is source output,
+not validation. Other agent logs and all AI-MEASURE/QUALITY work remain untouched. Overlapping
+future integration files: API main/settings/manifest/lock/environment docs; reconcile only later via
+reviewed serial integration. Detailed handoff: [Phase 1](../auth/phase1-handoff.md).
+
 The current explicit assignment defines required context, exact baseline, owned files, verification
 budget and stopping point. Read required context once. Inspect other files only for a demonstrated
 dependency, instruction boundary or failure. Historical lane/batch instructions below do not require
