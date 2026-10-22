@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import type { AuthNotice } from "@dzirent/client";
 import { api, clearCsrf, mode } from "@/lib/api";
+import { verifyEmail } from "@/lib/auth";
 import { useSession } from "@/lib/store";
 import { Button } from "@/components/ui/primitives";
 
@@ -38,7 +39,7 @@ function RecoveryForm({ action }: { action: RecoveryAction }) {
     try {
       const path = action === "request" ? "/auth/password/request" : action === "verify" ? "/auth/email/verify" : "/auth/password/reset";
       const body = action === "request" ? { email } : action === "verify" ? { token } : { token, new_password: password };
-      const result = await api<AuthNotice>(path, { method: "POST", body: JSON.stringify(body) });
+      const result = action === "verify" ? await verifyEmail(token) : await api<AuthNotice>(path, { method: "POST", body: JSON.stringify(body) });
       setNotice(result.message);
       if (action !== "request") setToken("");
       if (action === "reset") { clearCsrf(); useSession.getState().signOut(); }

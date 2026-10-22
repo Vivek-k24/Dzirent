@@ -1,6 +1,6 @@
 "use client";
 import { ApiError } from "@dzirent/client";
-import type { AuthSessionRead } from "@dzirent/client";
+import type { AuthNotice, AuthSessionRead } from "@dzirent/client";
 import { api, clearCsrf, mode } from "./api";
 import { useSession } from "./store";
 let sessionRevision = 0;
@@ -33,4 +33,12 @@ export async function logoutSession() {
   if (mode.mode === "connected") await api<void>("/auth/logout", { method: "POST", body: "{}" });
   clearCsrf();
   useSession.getState().signOut();
+}
+
+// Explicit submission only. Refresh the existing session from the API after confirmation;
+// confirmation itself never creates a login or asserts client-side verification.
+export async function verifyEmail(token: string): Promise<AuthNotice> {
+  const result = await api<AuthNotice>("/auth/email/verify", { method: "POST", body: JSON.stringify({ token }) });
+  await restoreSession();
+  return result;
 }

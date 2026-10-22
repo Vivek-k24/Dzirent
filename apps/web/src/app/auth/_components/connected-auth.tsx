@@ -22,7 +22,7 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
 
 function VerificationNotice() {
   const [notice, setNotice] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false);
-  return <div className="stack-form"><p>Verify the email address you own before updating your profile or becoming a lender. Your account has limited access until then.</p>
+  return <div className="stack-form"><p>Verify the email address you own before updating your profile or becoming a lender. Your account has limited access until then.</p><p>Email can be delayed. Check your inbox and spam folder. Requests made within one minute keep the current link; a later request replaces it. Use the newest email and confirm the link explicitly.</p>
     <Button disabled={busy} onClick={async () => {
       setBusy(true); setError(""); setNotice("");
       try { const result = await api<AuthNotice>("/auth/email/request", { method: "POST", body: "{}", protected: true }); setNotice(result.message); }
