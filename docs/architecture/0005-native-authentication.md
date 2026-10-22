@@ -143,16 +143,18 @@ Fifteen-minute limits: login 10 per identifier / 60 per client; other actions 5 
 bucket stops consuming later budgets. Success does not reset counters. No forwarded IP is trusted.
 Clients can acquire fresh anonymous cookies, and identifier limits can be targeted; internet abuse
 controls, proxy topology, operational budgets and legitimate concurrency need Phase 2B review.
-Retention/cleanup scheduling is owner-operated future work; no worker/service is introduced.
+Auth-rate/session retention scheduling remains future work. Email-job cleanup is covered by #64.
 
-Delivery uses a process-local queue (16 reservations, two threads), submitted through SQLAlchemy
+Historical Phase 2A delivery used a process-local queue (16 reservations, two threads), submitted through SQLAlchemy
 `after_commit` only. Commit failure, rollback/close or a refused nested transaction cannot dispatch
 a link; an early reservation explicitly starts a root transaction so rollback releases capacity.
 Eligibility branches reserve equally, SMTP is off the request path, and signup/recovery apply a
 200–230 ms response floor. Local concurrency, rollback, permission, cookie and Chromium regressions
 are tested; timing bounds are observations on the local machine, not a constant-time guarantee.
-Delivery failure logs only a coarse event. No raw token is persisted in an outbox. Queue/process
-loss or SMTP failure requires a new link request; there is no durable-delivery guarantee. A real
+**Historical Phase 2A delivery limitation, superseded in source by Issue #64:** the old process
+queue lost work at process exit. The [encrypted transactional outbox](../auth/email-verification.md)
+now provides bounded retry/restart recovery; its migration and transport remain local-test-only.
+Delivery failure logs only a coarse event; no plaintext token is persisted in the outbox. A real
 provider, TLS handshake/deliverability, HTTPS cookie behavior and operational monitoring remain
 unverified. There is no email-change flow, MFA, WebAuthn, reactivation, username login, native app
 or transactional email-provider integration. Local Phase 2A is not production security acceptance.

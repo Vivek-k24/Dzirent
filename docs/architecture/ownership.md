@@ -4,6 +4,22 @@ This registry is maintained only by Codex. It is a coordination record, not a sh
 
 ## Focused assignments
 
+### AUTH-EMAIL / issue #64 — local email workflow
+
+Codex owns the [scoped claim](https://github.com/Vivek-k24/Dzirent/issues/64#issuecomment-6329775385)
+on existing `codex/native-auth-phase1` / draft PR #61, exact start
+`5b130d3dfc16d5514dcde6815aea8d78aa47b9a0`; preserved main base
+`c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. This is the focused owner-authorized handoff for
+auth delivery runtime/ORM/settings/readiness/lifespan, new **0005 only**, required Python pin/lock,
+related API regression fixtures/migration/ACL tests, focused sign-up/verification UI and unit checks,
+auth design/runbook/report, own status and project status. Old migrations, canonical contract
+signatures/fixtures, other logs and parallel lanes stay preserved. No root JS dependency changes.
+
+Unit/FastAPI TestClient and disposable loopback PG17 with simulated transport only. No browser,
+live E2E, SMTP network delivery, Azure/hosted migrations/accounts, real admin, deployment, merge,
+provider settings or domain changes. Recheck exact source branch preview suppression before any
+push. Stop at tested implementation and updated **draft** PR #61; no Phase 2B.
+
 ### AUTH-CONNECT / issue #62 — local Phase 2A
 
 Codex owns the [scoped local claim](https://github.com/Vivek-k24/Dzirent/issues/62#issuecomment-6328682956)

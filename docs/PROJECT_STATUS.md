@@ -1,5 +1,29 @@
 # Project status
 
+## AUTH-EMAIL #64 — local scope completed, 2026-10-22
+
+Draft PR #61 remains unmerged; no hosted activation or Phase 2B is authorized. Code candidate
+`9e2af2cdb579aa18a5f4f0bd2e5854366c3e8f94` descends from the exact approved start
+`5b130d3dfc16d5514dcde6815aea8d78aa47b9a0`; main and live demo are preserved.
+
+Encrypted transactional verification/recovery email work now survives process interruption,
+uses expiring fenced claims, bounded retry/cleanup and single-use/superseded token checks.
+The forward 0005 migration adds only the outbox and its restricted grants. Existing account/RBAC
+behavior and contract `.3` are preserved. SMTP is disabled by default and no provider was configured.
+The UI refreshes session truth only after explicit confirmation; no automatic login/verification.
+
+Focused local API regressions **78 passed**, web unit tests **38 passed**, preview guards **3 passed**;
+static/contract checks and API dependency audit passed. Final complete API suite **400 passed / 0 skipped** at the exact code candidate above. See
+[exact report and changed files](auth/email-verification-test-report.md) and
+[dispatch/encryption/activation runbook](auth/email-verification.md). Historical #62's nondurable
+queue limitation below is superseded in source, with hosted delivery still unverified.
+
+Only a disposable loopback PostgreSQL 17.11 container and simulated mail were used. No browser/E2E,
+real SMTP, Azure migration/accounts, real admin, deployment, merge, domain change or Phase 2B.
+Next: owner reviews the local-tested draft, migration/privileges, key custody and later sender/
+hosted activation dependencies. No real inbox delivery, DNS authentication or live security
+acceptance is claimed by these tests.
+
 ## AUTH-CONNECT #62 — Phase 2A local validation, 2026-10-21
 
 **Local phase complete; draft PR #61 remains under owner review. Phase 2B is not authorized.**

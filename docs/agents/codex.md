@@ -1,5 +1,30 @@
 # Codex Phase 1A status
 
+## AUTH-EMAIL #64 — local scope completed, 2026-10-22
+
+Existing checkout/branch: `H:\DziRent\worktrees\codex-web`, `codex/native-auth-phase1`, draft PR #61.
+Exact clean start `5b130d3dfc16d5514dcde6815aea8d78aa47b9a0`; main base preserved at
+`c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. Scoped owner handoff recorded on #64 before editing;
+no other agents launched, no parallel lane/main/history changes. Code candidate
+`9e2af2cdb579aa18a5f4f0bd2e5854366c3e8f94` (API `64814c132ffd3431c57191986d46e87d946c582b`).
+
+Implemented encrypted PostgreSQL transactional mail outbox in additive 0005, lease/fencing/restart
+recovery, bounded retries/cleanup, resend coalescing/supersession/failure recovery, strict fake-tested
+SMTP/rendering and explicit-confirmation session refresh. 0001–0004, native/RBAC policy, canonical
+contract `.3`, fixtures, JS lock/dependencies and demo remain preserved. Required new Python pin:
+`cryptography==50.0.1`; audit found no known vulnerabilities (editable project excluded).
+
+Focused regressions **78 passed**, web unit **38 passed**, DB target guards **36 passed**, preview
+guards **3 passed**; Python/web static and contract drift passed. Final complete API suite **400 passed / 0 skipped** at the exact code candidate above.
+Exact commands, all initial failures/corrections, local DB safeguards and remaining operational
+limits are recorded in [Issue #64 report](../auth/email-verification-test-report.md) and
+[design/runbook](../auth/email-verification.md). New disposable loopback PG17.11 only, simulated
+email transport and private random test passwords. No real mail/hosted acceptance claimed.
+
+No local browser/E2E, Azure/hosted migration/account, real admin, deployment, domain/settings,
+merge or Phase 2B. Exact branch preview guards are preserved/rechecked before publication.
+Stop at the tested draft PR handoff for owner review; parent #26/#62 lifecycle stays with owner.
+
 ## AUTH-CONNECT #62 — local Phase 2A completed, 2026-10-21
 
 Assigned checkout/branch preserved: `H:\DziRent\worktrees\codex-web`, `codex/native-auth-phase1`.
