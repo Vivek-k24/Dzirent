@@ -14,6 +14,9 @@ auth delivery runtime/ORM/settings/readiness/lifespan, new **0005 only**, requir
 related API regression fixtures/migration/ACL tests, focused sign-up/verification UI and unit checks,
 auth design/runbook/report, own status and project status. Old migrations, canonical contract
 signatures/fixtures, other logs and parallel lanes stay preserved. No root JS dependency changes.
+The [publication scope addition](https://github.com/Vivek-k24/Dzirent/issues/64#issuecomment-6345080654)
+permits one documented `.gitleaksignore` historical fingerprint for a verified Git revision in the
+report. Scanner/workflow rules, broad paths and runtime behavior remain unchanged.
 
 Unit/FastAPI TestClient and disposable loopback PG17 with simulated transport only. No browser,
 live E2E, SMTP network delivery, Azure/hosted migrations/accounts, real admin, deployment, merge,

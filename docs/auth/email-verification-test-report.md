@@ -9,7 +9,7 @@ Local scope completed, 2026-10-22 (America/Chicago). [Draft PR #61](https://gith
 - Exact authorized start: `5b130d3dfc16d5514dcde6815aea8d78aa47b9a0`, initially clean.
 - Main merge base: `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`; main/worktrees preserved, no merge/reset.
 - Tested code SHA: **`9e2af2cdb579aa18a5f4f0bd2e5854366c3e8f94`**.
-- API commit: `64814c132ffd3431c57191986d46e87d946c582b`; web/session commit is the candidate above.
+- Backend implementation revision: `64814c132ffd3431c57191986d46e87d946c582b`; web/session revision is the candidate above.
 - Contract remains `0.1.0-candidate.3`; no DTO/OpenAPI/generated client/canonical fixture change.
 - No independent QA, security approval or real inbox delivery is claimed.
 
@@ -92,6 +92,14 @@ That fixture is corrected. Review also caught retry due time being measured befo
 waits; backoff now starts after the failure, with a regression advancing a fake clock by 45 seconds.
 Earlier results are not substituted for the final candidate's checks.
 
+Initial publication `6bb3f4c13eba1e240f2f72f2695635c4ed233be3` triggered the automated secrets
+scanner's `generic-api-key` rule on this report's line 12: the backend **Git revision** itself.
+`git show` verified the value as the existing implementation commit. The line is relabeled and
+only that exact historical commit/file/line fingerprint is documented in the existing root
+`.gitleaksignore`. [Recorded integrator scope](https://github.com/Vivek-k24/Dzirent/issues/64#issuecomment-6345080654).
+No scanner rule, workflow, broad exclusion or application behavior changed. The final automatic
+CI/deployment metadata belongs to the draft PR's exact publication head, not this earlier failure.
+
 ## Test coverage and schema/privileges
 
 - Real PostgreSQL account/token/job commits and rollback/commit-failure isolation; ciphertext at rest,
@@ -129,14 +137,15 @@ key custody and production operational limits still need owner/security review.
 After the clean full run, the verified owned container was stopped and removed; its tmpfs test
 data disappeared with it. The three private helper files were removed with literal local paths;
 all three `Test-Path` checks returned `False`. The original `dzirent-local-db-1` remained healthy.
-Publication is a documentation-only descendant of tested code; the PR records its exact head and
+Publication changes documentation and the exact historical scanner fingerprint after tested code; the PR records its exact head and
 automatic CI. Source branch suppression was rechecked before push; no provider setting was changed.
 
 ## Exact changed files relative to authorized #64 baseline
 
-33 files; all are in the recorded auth handoff or integrator documentation scope.
+34 files; all are in the recorded auth handoff or integrator documentation/tooling scope.
 
 ```text
+.gitleaksignore
 apps/web/src/app/auth/_components/connected-auth.tsx
 apps/web/src/app/auth/_components/recovery.tsx
 apps/web/src/lib/auth.ts

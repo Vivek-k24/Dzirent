@@ -25,6 +25,11 @@ No local browser/E2E, Azure/hosted migration/account, real admin, deployment, do
 merge or Phase 2B. Exact branch preview guards are preserved/rechecked before publication.
 Stop at the tested draft PR handoff for owner review; parent #26/#62 lifecycle stays with owner.
 
+Publication CI reported the backend Git revision in report prose as `generic-api-key`. Verified the
+matched value with Git; recorded the integrator tooling scope and relabeled it, adding only that
+historical commit/file/line fingerprint to the existing scanner ignore file. No application/test,
+rule/workflow or broad path exclusion changed; the exact local code evidence remains `9e2af2c`.
+
 ## AUTH-CONNECT #62 — local Phase 2A completed, 2026-10-21
 
 Assigned checkout/branch preserved: `H:\DziRent\worktrees\codex-web`, `codex/native-auth-phase1`.
