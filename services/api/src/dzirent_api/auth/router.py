@@ -15,7 +15,15 @@ from ..models import Error
 from ..settings import Settings
 from . import schemas, service
 from .delivery import email_delivery, reserved_mailbox
-from .security import clear_cookies, cookie_secure, csrf_cookie, issue_csrf, session_cookie, set_cookie
+from .dispatch import reserve_after_commit
+from .security import (
+    clear_cookies,
+    cookie_secure,
+    csrf_cookie,
+    issue_csrf,
+    session_cookie,
+    set_cookie,
+)
 
 router = APIRouter(
     prefix="/api/v1",
@@ -40,10 +48,15 @@ CurrentSession = Annotated[service.ResolvedSession, Depends(native_session)]
 
 
 def set_session(response: Response, settings: Settings, token: str) -> None:
-    set_cookie(response, settings, session_cookie(settings), token, settings.auth_session_hours * 3600)
+    set_cookie(
+        response, settings, session_cookie(settings), token, settings.auth_session_hours * 3600
+    )
     # Rotation invalidates the anonymous/previous session's CSRF challenge.
     response.delete_cookie(
-        csrf_cookie(settings), path="/", secure=cookie_secure(settings), httponly=True,
+        csrf_cookie(settings),
+        path="/",
+        secure=cookie_secure(settings),
+        httponly=True,
         samesite="lax",
     )
 
@@ -54,32 +67,37 @@ def csrf(request: Request, response: Response, settings: NativeSettings) -> sche
 
 
 @router.post(
-    "/auth/register", response_model=schemas.AuthNotice, status_code=202,
+    "/auth/register",
+    response_model=schemas.AuthNotice,
+    status_code=202,
     operation_id="registerAccount",
 )
 def register(
     body: schemas.RegistrationInput, request: Request, session: Database, settings: NativeSettings
 ) -> schemas.AuthNotice:
     service.throttle(request, "register", body.email)
-    try:
-        service.register(session, body, settings)
-        session.commit()  # Finish before responding; a failed commit cannot create a browser session.
-    except IntegrityError as exc:
-        session.rollback()
-        # Only a concurrent normalized-email conflict has the generic accepted response.
-        unique_email = (
-            getattr(exc.orig, "sqlstate", None) == "23505"
-            and getattr(getattr(exc.orig, "diag", None), "constraint_name", None)
-            == "uq_auth_credentials_email_normalized"
-        )
-        if not unique_email:
-            raise
+    with service.public_response_budget():
+        try:
+            service.register(session, body, settings)
+            session.commit()  # Delivery is submitted only after commit is acknowledged.
+        except IntegrityError as exc:
+            session.rollback()
+            unique_email = (
+                getattr(exc.orig, "sqlstate", None) == "23505"
+                and getattr(getattr(exc.orig, "diag", None), "constraint_name", None)
+                == "uq_auth_credentials_email_normalized"
+            )
+            if not unique_email:
+                raise
     return schemas.AuthNotice()
 
 
 @router.post("/auth/login", response_model=schemas.AuthSessionRead, operation_id="loginAccount")
 def login(
-    body: schemas.LoginInput, request: Request, response: Response, session: Database,
+    body: schemas.LoginInput,
+    request: Request,
+    response: Response,
+    session: Database,
     settings: NativeSettings,
 ) -> schemas.AuthSessionRead:
     service.throttle(request, "login", body.email)
@@ -98,7 +116,9 @@ def current(resolved: CurrentSession, session: Database) -> schemas.AuthSessionR
 
 
 @router.post("/auth/logout", status_code=204, operation_id="logoutAccount")
-def logout(request: Request, response: Response, session: Database, settings: NativeSettings) -> None:
+def logout(
+    request: Request, response: Response, session: Database, settings: NativeSettings
+) -> None:
     service.throttle(request, "logout")
     service.revoke_token(session, request.cookies.get(session_cookie(settings), ""))
     session.commit()
@@ -107,8 +127,12 @@ def logout(request: Request, response: Response, session: Database, settings: Na
 
 @router.post("/auth/logout-all", status_code=204, operation_id="logoutAllSessions")
 def logout_all(
-    body: schemas.PasswordInput, request: Request, response: Response, resolved: CurrentSession,
-    session: Database, settings: NativeSettings,
+    body: schemas.PasswordInput,
+    request: Request,
+    response: Response,
+    resolved: CurrentSession,
+    session: Database,
+    settings: NativeSettings,
 ) -> None:
     service.throttle(request, "reauth", str(resolved.user.id))
     service.require_password(resolved, body.current_password.get_secret_value())
@@ -121,35 +145,47 @@ def logout_all(
     "/auth/password/change", response_model=schemas.AuthSessionRead, operation_id="changePassword"
 )
 def change_password(
-    body: schemas.PasswordChange, request: Request, response: Response, resolved: CurrentSession,
-    session: Database, settings: NativeSettings,
+    body: schemas.PasswordChange,
+    request: Request,
+    response: Response,
+    resolved: CurrentSession,
+    session: Database,
+    settings: NativeSettings,
 ) -> schemas.AuthSessionRead:
     service.throttle(request, "reauth", str(resolved.user.id))
     service.require_password(resolved, body.current_password.get_secret_value())
     service.replace_password(session, resolved.credential, body.new_password.get_secret_value())
     row, raw = service.create_session(session, resolved.user.id, settings)
-    result = service.session_read(service.ResolvedSession(resolved.user, resolved.credential, row), session)
+    result = service.session_read(
+        service.ResolvedSession(resolved.user, resolved.credential, row), session
+    )
     session.commit()
     set_session(response, settings, raw)
     return result
 
 
 @router.post(
-    "/auth/email/request", response_model=schemas.AuthNotice, status_code=202,
+    "/auth/email/request",
+    response_model=schemas.AuthNotice,
+    status_code=202,
     operation_id="requestEmailVerification",
 )
 def request_verification(
     request: Request, resolved: CurrentSession, session: Database, settings: NativeSettings
 ) -> schemas.AuthNotice:
     service.throttle(request, "verification", str(resolved.user.id))
-    email_delivery(settings)  # Same delivery-unavailable behavior before account-specific decisions.
+    email_delivery(
+        settings
+    )  # Same delivery-unavailable behavior before account-specific decisions.
     if resolved.credential.email_verified_at is None and not resolved.credential.synthetic:
         service.send_token(session, resolved.credential, "verify_email", settings)
         session.commit()
     return schemas.AuthNotice()
 
 
-@router.post("/auth/email/verify", response_model=schemas.AuthNotice, operation_id="verifyEmailOwnership")
+@router.post(
+    "/auth/email/verify", response_model=schemas.AuthNotice, operation_id="verifyEmailOwnership"
+)
 def verify_email(
     body: schemas.TokenInput, request: Request, session: Database, settings: NativeSettings
 ) -> schemas.AuthNotice:
@@ -161,7 +197,9 @@ def verify_email(
 
 
 @router.post(
-    "/auth/password/request", response_model=schemas.AuthNotice, status_code=202,
+    "/auth/password/request",
+    response_model=schemas.AuthNotice,
+    status_code=202,
     operation_id="requestPasswordReset",
 )
 def request_reset(
@@ -169,24 +207,34 @@ def request_reset(
 ) -> schemas.AuthNotice:
     service.throttle(request, "reset", body.email)
     email_delivery(settings)
-    credential = session.scalar(
-        select(orm.AuthCredential).where(orm.AuthCredential.email_normalized == body.email)
-    )
-    if credential is not None:
-        user = service.lock_user(session, credential.user_id)
-        session.refresh(credential)
-        if (
-            user is not None and user.status == "active" and user.auth_provider == "native"
-            and not credential.synthetic and not reserved_mailbox(body.email)
-        ):
-            service.send_token(session, credential, "reset_password", settings)
-            session.commit()
+    with service.public_response_budget():
+        reserve_after_commit(session)
+        credential = session.scalar(
+            select(orm.AuthCredential).where(orm.AuthCredential.email_normalized == body.email)
+        )
+        if credential is not None:
+            user = service.lock_user(session, credential.user_id)
+            session.refresh(credential)
+            if (
+                user is not None
+                and user.status == "active"
+                and user.auth_provider == "native"
+                and not credential.synthetic
+                and not reserved_mailbox(body.email)
+            ):
+                service.send_token(session, credential, "reset_password", settings)
+        session.commit()
     return schemas.AuthNotice()
 
 
-@router.post("/auth/password/reset", response_model=schemas.AuthNotice, operation_id="resetPassword")
+@router.post(
+    "/auth/password/reset", response_model=schemas.AuthNotice, operation_id="resetPassword"
+)
 def reset_password(
-    body: schemas.PasswordReset, request: Request, response: Response, session: Database,
+    body: schemas.PasswordReset,
+    request: Request,
+    response: Response,
+    session: Database,
     settings: NativeSettings,
 ) -> schemas.AuthNotice:
     service.throttle(request, "consume-token")
@@ -194,13 +242,19 @@ def reset_password(
     service.replace_password(session, credential, body.new_password.get_secret_value())
     session.commit()
     clear_cookies(response, settings)
-    return schemas.AuthNotice(message="Password changed. Sign in again; previous sessions were revoked.")
+    return schemas.AuthNotice(
+        message="Password changed. Sign in again; previous sessions were revoked."
+    )
 
 
 @router.post("/auth/deactivate", status_code=204, operation_id="deactivateAccount")
 def deactivate(
-    body: schemas.PasswordInput, request: Request, response: Response, resolved: CurrentSession,
-    session: Database, settings: NativeSettings,
+    body: schemas.PasswordInput,
+    request: Request,
+    response: Response,
+    resolved: CurrentSession,
+    session: Database,
+    settings: NativeSettings,
 ) -> None:
     service.throttle(request, "reauth", str(resolved.user.id))
     service.require_password(resolved, body.current_password.get_secret_value())

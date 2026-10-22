@@ -13,6 +13,7 @@ from .crypto import TOKEN_PATTERN, digest, new_token
 
 CSRF_HEADER = "X-Dzirent-CSRF"
 CSRF_TTL = 1800
+CLIENT_TTL = 86400
 UNSAFE = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 
@@ -28,10 +29,46 @@ def csrf_cookie(settings: Settings) -> str:
     return "__Host-dzirent_csrf" if cookie_secure(settings) else "dzirent_csrf"
 
 
+def client_cookie(settings: Settings) -> str:
+    return "__Host-dzirent_client" if cookie_secure(settings) else "dzirent_client"
+
+
+def _client_mac(settings: Settings, payload: str) -> str:
+    return hmac.new(
+        settings.auth_csrf_key.get_secret_value().encode(),
+        f"auth-client-v1:{payload}".encode(),
+        sha256,
+    ).hexdigest()
+
+
+def client_identity(request: Request, settings: Settings) -> str | None:
+    token = request.cookies.get(client_cookie(settings), "")
+    if not token.isascii() or len(token) > 200:
+        return None
+    try:
+        nonce, expiry, signature = token.split(".")
+        expires_at = int(expiry)
+    except (ValueError, TypeError):
+        return None
+    now = int(time.time())
+    if not TOKEN_PATTERN.fullmatch(nonce) or expires_at <= now or expires_at > now + CLIENT_TTL:
+        return None
+    return (
+        digest(nonce)
+        if hmac.compare_digest(_client_mac(settings, f"{nonce}.{expiry}"), signature)
+        else None
+    )
+
+
 def set_cookie(response: Response, settings: Settings, name: str, value: str, seconds: int) -> None:
     response.set_cookie(
-        name, value, max_age=seconds, secure=cookie_secure(settings), httponly=True,
-        samesite="lax", path="/",
+        name,
+        value,
+        max_age=seconds,
+        secure=cookie_secure(settings),
+        httponly=True,
+        samesite="lax",
+        path="/",
     )
 
 
@@ -50,6 +87,15 @@ def _signature(settings: Settings, payload: str, session: str) -> str:
 
 def issue_csrf(request: Request, response: Response) -> str:
     settings: Settings = request.app.state.settings
+    if client_identity(request, settings) is None:
+        client_payload = f"{new_token()}.{int(time.time()) + CLIENT_TTL}"
+        set_cookie(
+            response,
+            settings,
+            client_cookie(settings),
+            f"{client_payload}.{_client_mac(settings, client_payload)}",
+            CLIENT_TTL,
+        )
     payload = f"{new_token()}.{int(time.time()) + CSRF_TTL}"
     token = f"{payload}.{_signature(settings, payload, request.cookies.get(session_cookie(settings), ''))}"
     set_cookie(response, settings, csrf_cookie(settings), token, CSRF_TTL)
@@ -65,9 +111,17 @@ def require_origin(request: Request, settings: Settings) -> None:
 
 def require_csrf(request: Request, settings: Settings) -> None:
     require_origin(request, settings)
+    if client_identity(request, settings) is None:
+        raise ApiError(403, "auth_csrf_failed", "Refresh the session and try again.")
     token = request.headers.get(CSRF_HEADER, "")
     cookie = request.cookies.get(csrf_cookie(settings), "")
-    if not token or len(token) > 200 or not token.isascii() or not cookie.isascii() or not hmac.compare_digest(token, cookie):
+    if (
+        not token
+        or len(token) > 200
+        or not token.isascii()
+        or not cookie.isascii()
+        or not hmac.compare_digest(token, cookie)
+    ):
         raise ApiError(403, "auth_csrf_failed", "Refresh the session and try again.")
     try:
         nonce, expiry, signature = token.split(".")
@@ -79,7 +133,9 @@ def require_csrf(request: Request, settings: Settings) -> None:
         settings, f"{nonce}.{expiry}", request.cookies.get(session_cookie(settings), "")
     )
     if (
-        not TOKEN_PATTERN.fullmatch(nonce) or expires_at <= now or expires_at > now + CSRF_TTL
+        not TOKEN_PATTERN.fullmatch(nonce)
+        or expires_at <= now
+        or expires_at > now + CSRF_TTL
         or not hmac.compare_digest(expected, signature)
     ):
         raise ApiError(403, "auth_csrf_failed", "Refresh the session and try again.")
@@ -105,13 +161,17 @@ class NativeTransportMiddleware:
         async def no_cache(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = [
-                    (key, value) for key, value in message.get("headers", [])
+                    (key, value)
+                    for key, value in message.get("headers", [])
                     if key.lower() not in {b"cache-control", b"referrer-policy"}
                 ]
-                headers.extend([
-                    (b"cache-control", b"no-store"), (b"referrer-policy", b"no-referrer"),
-                    (b"x-content-type-options", b"nosniff"),
-                ])
+                headers.extend(
+                    [
+                        (b"cache-control", b"no-store"),
+                        (b"referrer-policy", b"no-referrer"),
+                        (b"x-content-type-options", b"nosniff"),
+                    ]
+                )
                 message = {**message, "headers": headers}
             await send(message)
 
@@ -119,7 +179,10 @@ class NativeTransportMiddleware:
         try:
             if request.method in UNSAFE:
                 require_csrf(request, settings)
-                if request.method != "DELETE" and request.headers.get("content-type", "").split(";")[0] != "application/json":
+                if (
+                    request.method != "DELETE"
+                    and request.headers.get("content-type", "").split(";")[0] != "application/json"
+                ):
                     raise ApiError(415, "unsupported_media_type", "Use application/json.")
                 limit = 16384 if path.startswith("/api/v1/auth/") else 1048576
                 parts: list[bytes] = []

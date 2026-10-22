@@ -350,7 +350,9 @@ class Studio(Base):
 class AuthCredential(Base):
     __tablename__ = "auth_credentials"
     __table_args__ = (
-        CheckConstraint("email_normalized = lower(btrim(email_normalized))", name="email_normalized"),
+        CheckConstraint(
+            "email_normalized = lower(btrim(email_normalized))", name="email_normalized"
+        ),
         CheckConstraint("password_hash LIKE '$argon2id$%'", name="password_hash"),
     )
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)

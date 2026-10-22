@@ -23,7 +23,10 @@ def normalize_email(value: str) -> str:
     local, domain = email.rsplit("@", 1)
     if len(local) > 64 or local.startswith(".") or local.endswith(".") or ".." in local:
         raise ValueError("Use a valid email address.")
-    if any(not label or len(label) > 63 or label.startswith("-") or label.endswith("-") for label in domain.split(".")):
+    if any(
+        not label or len(label) > 63 or label.startswith("-") or label.endswith("-")
+        for label in domain.split(".")
+    ):
         raise ValueError("Use a valid email address.")
     return email
 

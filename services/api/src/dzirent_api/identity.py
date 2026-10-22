@@ -17,7 +17,9 @@ from .errors import ApiError, unavailable
 from .settings import Settings
 
 bearer = HTTPBearer(auto_error=False)
-native_cookie = APIKeyCookie(name="__Host-dzirent_session", auto_error=False, scheme_name="NativeSession")
+native_cookie = APIKeyCookie(
+    name="__Host-dzirent_session", auto_error=False, scheme_name="NativeSession"
+)
 MOCK_PREFIX = "mock:"
 MOCK_SUBJECT = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 
@@ -99,8 +101,10 @@ def current_principal(
 
         resolved = resolve_session(request, session)
         return Principal(
-            provider="native", subject=resolved.user.auth_subject,
-            email=resolved.credential.email_normalized, name=resolved.user.display_name,
+            provider="native",
+            subject=resolved.user.auth_subject,
+            email=resolved.credential.email_normalized,
+            name=resolved.user.display_name,
         )
     verifier: Verifier = request.app.state.verifier
     return verifier.verify(request.headers.get("authorization"))

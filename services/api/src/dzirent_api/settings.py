@@ -65,7 +65,9 @@ class Settings(BaseSettings):
             raise ValueError("Auth web origin must be one exact origin")
         if self.mode == "connected":
             if len(self.auth_csrf_key.get_secret_value().encode()) < 32:
-                raise ValueError("Native auth requires a private random CSRF key of at least 32 bytes")
+                raise ValueError(
+                    "Native auth requires a private random CSRF key of at least 32 bytes"
+                )
             if self.deployed and not self.auth_web_origin.startswith("https://"):
                 raise ValueError("Deployed auth requires an HTTPS web origin")
             if not self.deployed and not self.auth_web_origin.startswith("https://"):

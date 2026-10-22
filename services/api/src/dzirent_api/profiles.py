@@ -51,13 +51,21 @@ def active_user(
     if user.auth_provider == "native":
         credential = session.get(orm.AuthCredential, user.id)
         if credential is None or credential.email_verified_at is None:
-            raise ApiError(403, "email_verification_required", "Verify your email before changing profile or lender data.")
+            raise ApiError(
+                403,
+                "email_verification_required",
+                "Verify your email before changing profile or lender data.",
+            )
     return user
 
 
 def current_lender(user: orm.User = Depends(active_user)) -> orm.LenderProfile:
     profile = user.lender_profile
-    if profile is None or profile.status != "active" or not any(role.role == "lender" for role in user.roles):
+    if (
+        profile is None
+        or profile.status != "active"
+        or not any(role.role == "lender" for role in user.roles)
+    ):
         raise ApiError(403, "lender_required", "Lender enrollment required.")
     return profile
 
@@ -133,7 +141,11 @@ def deactivate_me(
     user: orm.User = Depends(current_user), session: Session = Depends(get_session)
 ) -> Any:
     if user.auth_provider == "native":
-        raise ApiError(403, "reauthentication_required", "Use POST /auth/deactivate with your current password.")
+        raise ApiError(
+            403,
+            "reauthentication_required",
+            "Use POST /auth/deactivate with your current password.",
+        )
     # Deactivates the application profile; the inactive lender profile hides owned listings from
     # the public catalog while preserving their history. Provider identity is untouched.
     if user.status != "inactive":

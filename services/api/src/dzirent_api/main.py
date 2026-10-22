@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .auth.dispatch import DeliveryDispatcher
 from .auth.security import NativeTransportMiddleware
 from .contract import include_routes
 from .db import create_db_engine, session_factory
@@ -18,12 +19,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings()
     configure_logging(settings.log_level)
     engine = create_db_engine(settings)
+    delivery = DeliveryDispatcher() if settings.mode == "connected" else None
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        yield
-        if engine is not None:
-            engine.dispose()
+        try:
+            yield
+        finally:
+            if delivery is not None:
+                delivery.close()
+            if engine is not None:
+                engine.dispose()
 
     interactive_docs = not settings.deployed
     app = FastAPI(
@@ -36,6 +42,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.engine = engine
+    app.state.auth_delivery = delivery
     app.state.sessionmaker = session_factory(engine) if engine is not None else None
     app.state.verifier = build_verifier(settings)
     install_error_handlers(app)

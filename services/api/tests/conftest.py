@@ -1,7 +1,8 @@
 """Integration fixtures against a disposable PostgreSQL database.
 
-Set DZIRENT_TEST_DATABASE_URL to a database whose name ends in `_test`; it is dropped and
-recreated. Without it, database tests are skipped, or fail when DZIRENT_REQUIRE_DB_TESTS=1.
+Only validated single-loopback PG17 targets and safe, non-staging *_test identifiers
+may be dropped/recreated. Overrides fail before connection. DB tests fail rather than
+skip when DZIRENT_REQUIRE_DB_TESTS=1.
 """
 
 import json
@@ -13,9 +14,10 @@ from typing import Any
 import pytest
 from alembic import command
 from alembic.config import Config
+from db_safety import safe_test_url
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Engine, make_url
+from sqlalchemy.engine import Engine
 
 from dzirent_api.db import normalize_url, session_factory
 from dzirent_api.main import create_app
@@ -54,12 +56,24 @@ def database_url() -> str:
         if os.environ.get("DZIRENT_REQUIRE_DB_TESTS") == "1":
             pytest.fail(message)
         pytest.skip(message)
-    url = normalize_url(url)
-    parsed = make_url(url)
-    if not (parsed.database or "").endswith("_test"):
-        pytest.fail("Refusing to drop a database whose name does not end in _test")
-    admin = create_engine(parsed.set(database="postgres"), isolation_level="AUTOCOMMIT")
+    try:
+        parsed = safe_test_url(normalize_url(url))
+    except ValueError as exc:
+        pytest.fail(str(exc))
+    print(
+        f"Local destructive test target: host={parsed.host} port={parsed.port} database={parsed.database} role={parsed.username}"
+    )
+    url = parsed.render_as_string(hide_password=False)
+    admin = create_engine(
+        parsed.set(database="postgres"), isolation_level="AUTOCOMMIT", hide_parameters=True
+    )
     with admin.connect() as connection:
+        version = int(connection.execute(text("SHOW server_version_num")).scalar_one())
+        if version // 10000 != 17:
+            pytest.fail("Destructive integration tests require local PostgreSQL 17")
+        database, role = connection.execute(text("SELECT current_database(), current_user")).one()
+        if database != "postgres" or role != parsed.username:
+            pytest.fail("Connected admin target differs from the validated local target")
         connection.execute(text(f'DROP DATABASE IF EXISTS "{parsed.database}" WITH (FORCE)'))
         connection.execute(text(f'CREATE DATABASE "{parsed.database}"'))
     admin.dispose()
@@ -69,12 +83,13 @@ def database_url() -> str:
 
 @pytest.fixture(scope="session")
 def engine(database_url: str) -> Iterator[Engine]:
-    engine = create_engine(database_url)
+    engine = create_engine(database_url, hide_parameters=True)
     yield engine
     engine.dispose()
 
 
 def reset(engine: Engine) -> None:
+    safe_test_url(engine.url)
     with engine.begin() as connection:
         tables = connection.execute(
             text(
@@ -111,13 +126,15 @@ def make_client(database_url: str, db: Engine) -> Iterator[Callable[..., TestCli
     clients: list[TestClient] = []
 
     def factory(**overrides: Any) -> TestClient:
-        client = TestClient(create_app(settings_for(database_url, **overrides)))
+        base_url = overrides.pop("client_base_url", "http://testserver")
+        client = TestClient(create_app(settings_for(database_url, **overrides)), base_url=base_url)
+        client.__enter__()
         clients.append(client)
         return client
 
     yield factory
     for client in clients:
-        client.close()
+        client.__exit__(None, None, None)
 
 
 @pytest.fixture

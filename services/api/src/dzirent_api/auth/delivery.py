@@ -14,7 +14,9 @@ Purpose = Literal["verify_email", "reset_password"]
 def reserved_mailbox(email: str) -> bool:
     domain = email.rsplit("@", 1)[-1].casefold()
     reserved = {"example.com", "example.net", "example.org", "example.invalid"}
-    return any(domain == base or domain.endswith(f".{base}") for base in reserved) or domain.endswith((".invalid", ".test", ".example", ".localhost"))
+    return any(
+        domain == base or domain.endswith(f".{base}") for base in reserved
+    ) or domain.endswith((".invalid", ".test", ".example", ".localhost"))
 
 
 class EmailDelivery(Protocol):
@@ -32,7 +34,11 @@ class SmtpDelivery:
         message = EmailMessage()
         message["From"] = settings.auth_email_sender
         message["To"] = recipient
-        message["Subject"] = "Verify your Dzirent email" if purpose == "verify_email" else "Reset your Dzirent password"
+        message["Subject"] = (
+            "Verify your Dzirent email"
+            if purpose == "verify_email"
+            else "Reset your Dzirent password"
+        )
         message.set_content(
             f"Complete your Dzirent request using this single-use link:\n\n{link}\n\n"
             "If you did not request this, ignore this message."
@@ -50,7 +56,9 @@ class SmtpDelivery:
                 client.ehlo()
             with client:
                 if settings.auth_smtp_user:
-                    client.login(settings.auth_smtp_user, settings.auth_smtp_password.get_secret_value())
+                    client.login(
+                        settings.auth_smtp_user, settings.auth_smtp_password.get_secret_value()
+                    )
                 client.send_message(message)
         except (OSError, smtplib.SMTPException) as exc:
             # Never include SMTP errors, recipient, message or link in API errors/logs.
