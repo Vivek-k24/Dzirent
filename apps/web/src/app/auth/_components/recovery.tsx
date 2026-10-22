@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import type { AuthNotice } from "@dzirent/client";
@@ -8,13 +8,27 @@ import { api, clearCsrf, mode } from "@/lib/api";
 import { useSession } from "@/lib/store";
 import { Button } from "@/components/ui/primitives";
 
-export function Recovery({ action }: { action: "request" | "verify" | "reset" }) {
-  const [token, setToken] = useState(""), [email, setEmail] = useState(""), [password, setPassword] = useState("");
+type RecoveryAction = "request" | "verify" | "reset";
+const subscribe = () => () => {};
+const browserSnapshot = () => true;
+const serverSnapshot = () => false;
+
+export function Recovery({ action }: { action: RecoveryAction }) {
+  // Hydrate consistently, then mount the private form in the browser. No state update in an effect.
+  const browser = useSyncExternalStore(subscribe, browserSnapshot, serverSnapshot);
+  return browser ? <RecoveryForm key={action} action={action} /> : <p role="status">Loading account request…</p>;
+}
+
+function RecoveryForm({ action }: { action: RecoveryAction }) {
+  const [token, setToken] = useState(() => {
+    if (action === "request") return "";
+    const value = new URLSearchParams(window.location.hash.slice(1)).get("token") ?? "";
+    return /^[A-Za-z0-9_-]{43}$/.test(value) ? value : "";
+  });
+  const [email, setEmail] = useState(""), [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState(""), [notice, setNotice] = useState("");
   useEffect(() => {
     if (action === "request") return;
-    const value = new URLSearchParams(window.location.hash.slice(1)).get("token") ?? "";
-    if (/^[A-Za-z0-9_-]{43}$/.test(value)) setToken(value);
     // No token in query strings, referrers, storage or automatic GET/confirmation requests.
     window.history.replaceState(null, "", window.location.pathname);
   }, [action]);

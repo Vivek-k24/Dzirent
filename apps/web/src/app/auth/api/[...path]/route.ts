@@ -68,13 +68,18 @@ async function proxy(request: Request, context: Context) {
   let config: ReturnType<typeof configuration>;
   try { config = configuration(); }
   catch { return failure(503, "dependency_unavailable", "Connected API transport is not configured."); }
+  // Next may normalize the internal Request URL to localhost. Validate the actual
+  // HTTP authority; never accept a client-asserted X-Forwarded-Host instead.
+  if (request.headers.get("host") !== config.origin.host) {
+    return failure(403, "auth_origin_rejected", "Request host is not allowed.");
+  }
   const origin = request.headers.get("origin"), site = request.headers.get("sec-fetch-site");
   if ((unsafe.has(request.method) && origin !== config.origin.origin) || (origin !== null && origin !== config.origin.origin) || (site !== null && !["same-origin", "none"].includes(site))) {
     return failure(403, "auth_origin_rejected", "Request origin is not allowed.");
   }
   if (unsafe.has(request.method) && request.headers.get("content-type")?.split(";")[0] !== "application/json") return failure(415, "unsupported_media_type", "Use application/json.");
   const secure = config.origin.protocol === "https:";
-  const names = secure ? ["__Host-dzirent_session", "__Host-dzirent_csrf"] : ["dzirent_session", "dzirent_csrf"];
+  const names = secure ? ["__Host-dzirent_session", "__Host-dzirent_csrf", "__Host-dzirent_client"] : ["dzirent_session", "dzirent_csrf", "dzirent_client"];
   const cookies = (request.headers.get("cookie") ?? "").split(";").map(value => value.trim()).filter(value => {
     const [name, ...rest] = value.split("=");
     return names.includes(name) && /^[A-Za-z0-9_.-]{0,200}$/.test(rest.join("="));
