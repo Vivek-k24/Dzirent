@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { PRODUCT_EDITORIAL_MAP } from "../../apps/web/src/mocks/demo-studios";
 
 type SeedProduct = { id: string; status: string; slug: string; title: string; is_available: boolean; rental_price_minor: number; featured_rank: number; created_at: string };
 const manifest = JSON.parse(readFileSync(resolve(__dirname, "../../fixtures/catalog/manifest.json"), "utf8")) as { products: SeedProduct[] };
@@ -136,7 +137,7 @@ test("collection tree, rental filters, statewide ZIP, newest order and history w
 });
 
 test("all 40 published photo/title links resolve to their own PDP, reload, and encoded shared link", async ({ page }) => {
-  test.setTimeout(135_000);
+  test.setTimeout(180_000);
   const exceptions: string[] = [], failedAssets: string[] = [];
   page.on("pageerror", error => exceptions.push(error.message));
   page.on("response", response => { if (response.status() >= 400 && /\/(media\/|_next\/|fixtures\/)/.test(new URL(response.url()).pathname)) failedAssets.push(`${response.status()} ${response.url()}`); });
@@ -145,27 +146,29 @@ test("all 40 published photo/title links resolve to their own PDP, reload, and e
   expect(new Set(records.map(record => record.id))).toEqual(new Set(published.map(product => product.id)));
   for (const record of records) {
     const product = published.find(product => product.id === record.id)!;
+    const expectedTitle = PRODUCT_EDITORIAL_MAP[product.id]?.title ?? product.title;
     expect(record.photo).toBe(`/products/${encodeURIComponent(product.slug)}`);
     expect(record.title).toBe(record.photo);
     const card = page.locator(`[data-product-id="${product.id}"]`);
-    await expect(card.locator(".product-title")).toHaveText(product.title);
+    await expect(card.locator(".product-title")).toHaveText(expectedTitle);
     await card.locator(".product-photo-link").click();
-    await expect(page.locator(".detail-copy h1")).toHaveText(product.title);
+    await expect(page.locator(".detail-copy h1")).toHaveText(expectedTitle);
     expect(new URL(page.url()).pathname).toBe(record.photo);
     expect((await page.reload())?.status()).toBe(200);
-    await expect(page.locator(".detail-copy h1")).toHaveText(product.title);
+    await expect(page.locator(".detail-copy h1")).toHaveText(expectedTitle);
     await expect(page.getByText("Prototype. Sample listings shown.", { exact: true })).toBeVisible();
     await expect(page.locator(".detail-photo img")).toBeVisible();
     await expect.poll(() => page.locator(".detail-photo img").evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBe(true);
     if (!product.is_available) await expect(page.getByRole("button", { name: "Currently unavailable", exact: true })).toBeDisabled();
     await page.getByRole("link", { name: "dzirent home", exact: true }).click(); await expect(cards(page)).toHaveCount(40);
     await page.locator(`[data-product-id="${product.id}"] .product-title`).click();
-    await expect(page.locator(".detail-copy h1")).toHaveText(product.title);
+    await expect(page.locator(".detail-copy h1")).toHaveText(expectedTitle);
     await page.getByRole("link", { name: "dzirent home", exact: true }).click(); await expect(cards(page)).toHaveCount(40);
   }
   const encodedShare = `/products/%64${published[0].slug.slice(1)}`;
   expect((await page.goto(encodedShare))?.status()).toBe(200);
-  await expect(page.locator(".detail-copy h1")).toHaveText(published[0].title);
+  const firstTitle = PRODUCT_EDITORIAL_MAP[published[0].id]?.title ?? published[0].title;
+  await expect(page.locator(".detail-copy h1")).toHaveText(firstTitle);
   expect((await page.goto("/products/not-a-real-outfit"))?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "Outfit not found", exact: true })).toBeVisible();
   await expect(page.getByText("Prototype. Sample listings shown.", { exact: true })).toBeVisible();

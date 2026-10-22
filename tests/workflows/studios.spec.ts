@@ -19,7 +19,7 @@ test("lender edits their Studio and the public directory and profile reflect it"
   await expect(page.getByRole("heading", { level: 1, name: "Studio settings" })).toBeVisible();
 
   const name = page.getByLabel("Studio name"), bio = page.getByLabel("Bio");
-  await expect(name).toHaveValue("Sample Lender");
+  await expect(name).toHaveValue("Atelier Austin");
   await expect(page.locator("code", { hasText: "/studios/sample-lender" })).toBeVisible();
   await name.fill("Texas Occasion Closet");
   await bio.fill("Evening and celebration outfits, lent across Texas.");
@@ -110,9 +110,9 @@ test("Studio preview rotates through every published outfit across API pages and
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
   await page.goBack();
-  await card.getByRole("link", { name: "Visit Sample Lender" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Sample Lender" })).toBeVisible();
-  const wardrobe = page.getByRole("list", { name: "Sample Lender wardrobe" }).locator("li[data-product-id]");
+  await card.getByRole("link", { name: "Visit Atelier Austin" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Atelier Austin" })).toBeVisible();
+  const wardrobe = page.getByRole("list", { name: "Atelier Austin wardrobe" }).locator("li[data-product-id]");
   await expect(wardrobe).toHaveCount(8);
   await page.getByRole("button", { name: "Load more outfits" }).click();
   await expect(wardrobe).toHaveCount(14);
@@ -166,7 +166,7 @@ test("all 6 curated Texas Studios are discoverable with exact outfit counts part
   await expect(cards).toHaveCount(6);
 
   const expectedStudios = [
-    { handle: "sample-lender", name: "Sample Lender", count: "14 published outfits" },
+    { handle: "sample-lender", name: "Atelier Austin", count: "14 published outfits" },
     { handle: "atelier-valverde", name: "Atelier Valverde", count: "8 published outfits" },
     { handle: "nocturne-houston", name: "Nocturne Houston", count: "6 published outfits" },
     { handle: "zari-heritage", name: "Zari Heritage", count: "5 published outfits" },
@@ -211,5 +211,52 @@ test("all 6 curated Texas Studios are discoverable with exact outfit counts part
 
   // Exactly all 40 unique garments partitioned across the 6 studios
   expect(allGarmentIds.size).toBe(40);
+  expect(exceptions).toEqual([]);
+});
+
+test("product titles and brands are consistent across Studio previews, main catalog, and product detail", async ({ page }) => {
+  const exceptions = trackExceptions(page);
+
+  // 1. Check Atelier Austin studio preview -> PDP -> Catalog consistency
+  expect((await page.goto("/studios/sample-lender"))?.status()).toBe(200);
+  const wardrobe = page.getByRole("list", { name: "Atelier Austin wardrobe" }).locator("li[data-product-id]");
+  const firstSlide = wardrobe.first();
+  const outfitId = (await firstSlide.getAttribute("data-product-id"))!;
+  const expectedTitle = (await firstSlide.locator("span").first().innerText()).trim();
+  expect(expectedTitle.length).toBeGreaterThan(0);
+  // Title should be a credible editorial title, not a generic placeholder
+  expect(expectedTitle).not.toMatch(/^(Black|White|Red|Blue) Dresses \d+$/);
+
+  // Click through to PDP
+  await firstSlide.getByRole("link").click();
+  await expect(page).toHaveURL(/\/products\/demo-/);
+  await expect(page.locator(".detail-copy h1")).toHaveText(expectedTitle);
+  await expect(page.locator(".detail-copy .eyebrow")).toHaveText("Atelier Austin");
+  await expect(page.locator(".detail-photo img")).toHaveAttribute("alt", new RegExp(expectedTitle));
+
+  // Navigate to main catalog and verify the same product displays identical title and brand
+  expect((await page.goto("/"))?.status()).toBe(200);
+  const catalogCard = page.locator(`[data-product-id="${outfitId}"]`);
+  await expect(catalogCard.locator(".product-title")).toHaveText(expectedTitle);
+  await expect(catalogCard.locator(".product-brand")).toHaveText("Atelier Austin");
+  await expect(catalogCard.locator(".product-photo img")).toHaveAttribute("alt", new RegExp(expectedTitle));
+
+  // 2. Check a second curated Studio (Atelier Valverde) for identical cross-page consistency
+  expect((await page.goto("/studios/atelier-valverde"))?.status()).toBe(200);
+  const valverdeWardrobe = page.getByRole("list", { name: "Atelier Valverde wardrobe" }).locator("li[data-product-id]");
+  const valverdeSlide = valverdeWardrobe.first();
+  const valverdeId = (await valverdeSlide.getAttribute("data-product-id"))!;
+  const valverdeTitle = (await valverdeSlide.locator("span").first().innerText()).trim();
+
+  await valverdeSlide.getByRole("link").click();
+  await expect(page).toHaveURL(/\/products\/demo-/);
+  await expect(page.locator(".detail-copy h1")).toHaveText(valverdeTitle);
+  await expect(page.locator(".detail-copy .eyebrow")).toHaveText("Atelier Valverde");
+
+  expect((await page.goto("/"))?.status()).toBe(200);
+  const valverdeCard = page.locator(`[data-product-id="${valverdeId}"]`);
+  await expect(valverdeCard.locator(".product-title")).toHaveText(valverdeTitle);
+  await expect(valverdeCard.locator(".product-brand")).toHaveText("Atelier Valverde");
+
   expect(exceptions).toEqual([]);
 });

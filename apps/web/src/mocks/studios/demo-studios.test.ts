@@ -50,10 +50,11 @@ describe("DEMO-REALISM Phase 1A — Curated Studios and Outfit Partition", () =>
       expect(studio.display_name.length).toBeGreaterThan(3);
     }
 
-    // Studio 1 matches canonical seed manifest
+    // Studio 1 matches canonical seed manifest with credible boutique name
     const sampleLender = DEMO_STUDIOS.find(s => s.handle === "sample-lender")!;
     expect(sampleLender.id).toBe(manifest.seed_studio.id);
     expect(sampleLender.lender_profile_id).toBe(manifest.seed_lender.id);
+    expect(sampleLender.display_name).toBe("Atelier Austin");
 
     // Studios 2-6 are in CURATED_LENDER_IDS
     expect(CURATED_LENDER_IDS.size).toBe(5);
@@ -108,6 +109,13 @@ describe("DEMO-REALISM Phase 1A — Curated Studios and Outfit Partition", () =>
       expect(editorial.title).not.toMatch(/^(Black|White|Red|Blue) Dresses \d+$/);
       expect(editorial.title).not.toMatch(/^Garment \d+$/);
       expect(editorial.description.length).toBeGreaterThan(20);
+
+      // No unsupported fabric/provenance/craftsmanship claims
+      expect(editorial.description).not.toMatch(/Italian virgin wool/i);
+      expect(editorial.description).not.toMatch(/silk charmeuse/i);
+      expect(editorial.description).not.toMatch(/French Chantilly lace/i);
+      expect(editorial.description).not.toMatch(/handcrafted/i);
+      expect(editorial.description).not.toMatch(/Savile Row/i);
     }
   });
 
@@ -121,6 +129,11 @@ describe("DEMO-REALISM Phase 1A — Curated Studios and Outfit Partition", () =>
       const editorial = PRODUCT_EDITORIAL_MAP[product.id];
       expect(editorial).toBeDefined();
       expect(product.lender_profile_id).toBe(editorial.lender_profile_id);
+
+      // Unified title, brand, and description across demo mode
+      expect(product.title).toBe(editorial.title);
+      expect(product.brand.label).toBe(editorial.brand_label);
+      expect(product.description).toBe(editorial.description);
 
       const withEditorial = product as unknown as EditorialMeta;
       expect(withEditorial.editorial_title).toBe(editorial.title);

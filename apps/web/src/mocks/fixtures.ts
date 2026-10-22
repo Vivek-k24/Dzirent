@@ -22,6 +22,9 @@ export function seedProducts(): ProductDetail[] {
     } : product.image;
     return {
       ...product,
+      title: displayTitle,
+      brand: { ...product.brand, label: brandLabel },
+      description: editorial?.description ?? product.description,
       image,
       images: [image],
       ...(editorial ? {
