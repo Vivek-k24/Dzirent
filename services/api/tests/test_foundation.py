@@ -46,6 +46,7 @@ def test_valid_connected_configuration_accepted() -> None:
         environment="production",
         database_url="postgresql://u:p@db/x",
         cors_origins=["https://app.dzirent.test"],
+        auth_web_origin="https://app.dzirent.test",
         **NATIVE,  # type: ignore[arg-type]
     )
     assert not settings.mock_identity_allowed and settings.deployed

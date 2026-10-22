@@ -4,6 +4,71 @@ This registry is maintained only by Codex. It is a coordination record, not a sh
 
 ## Focused assignments
 
+### AUTH-EMAIL / issue #64 — local email workflow
+
+Codex owns the [scoped claim](https://github.com/Vivek-k24/Dzirent/issues/64#issuecomment-6329775385)
+on existing `codex/native-auth-phase1` / draft PR #61, exact start
+`5b130d3dfc16d5514dcde6815aea8d78aa47b9a0`; preserved main base
+`c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. This is the focused owner-authorized handoff for
+auth delivery runtime/ORM/settings/readiness/lifespan, new **0005 only**, required Python pin/lock,
+related API regression fixtures/migration/ACL tests, focused sign-up/verification UI and unit checks,
+auth design/runbook/report, own status and project status. Old migrations, canonical contract
+signatures/fixtures, other logs and parallel lanes stay preserved. No root JS dependency changes.
+The [publication scope addition](https://github.com/Vivek-k24/Dzirent/issues/64#issuecomment-6345080654)
+permits one documented `.gitleaksignore` historical fingerprint for a verified Git revision in the
+report. Scanner/workflow rules, broad paths and runtime behavior remain unchanged.
+
+Unit/FastAPI TestClient and disposable loopback PG17 with simulated transport only. No browser,
+live E2E, SMTP network delivery, Azure/hosted migrations/accounts, real admin, deployment, merge,
+provider settings or domain changes. Recheck exact source branch preview suppression before any
+push. Stop at tested implementation and updated **draft** PR #61; no Phase 2B.
+
+### AUTH-CONNECT / issue #62 — local Phase 2A
+
+Codex owns the [scoped local claim](https://github.com/Vivek-k24/Dzirent/issues/62#issuecomment-6328682956)
+on `codex/native-auth-phase1` in `H:\DziRent\worktrees\codex-web`, pinned PR #61 baseline
+`db7d1888183c6362ad5087ab1fc13a4bed983114`, main base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`.
+This explicitly authorized regression assignment supersedes the historical no-unit-test restriction
+only for auth and demonstrated regressions. No other lane or agent log is handed over.
+
+Scope: native-auth runtime/migration ACL corrections, disposable DB guards and auth/migration/operator
+regression cases in `services/api/tests`; focused web recovery/transport and proxy tests; local
+Chromium harness in `tests/auth`; exact-branch preview guards and their root regression test;
+auth ADR/report, own log and integration status. The recorded
+[static-check expansion](https://github.com/Vivek-k24/Dzirent/issues/62#issuecomment-6329101208)
+permits formatting the Phase 1 auth additions in identity/ORM/profiles/settings and the fixture
+generator only. The [health-test expansion](https://github.com/Vivek-k24/Dzirent/issues/62#issuecomment-6329293611)
+permits correcting demonstrated test isolation in `test_platform.py`. Canonical fixture content,
+contracts/generated client signatures, locks, historical migrations 0001–0003 and CI workflows
+remain unchanged. Existing work and other worktrees remain preserved.
+
+Only owned loopback PG17 `*_test` databases, fabricated local identities and in-memory mail may
+be used. No Azure/AWS/Neon, real mail/admin, hosted migration/account, deployment, merge or Phase 2B.
+No push until the exact auth branch's Vercel preview suppression is established without changing
+provider settings. Stop at the tested draft handoff; parent #26 stays open.
+
+### AUTH-CONNECT / issue #26 — native auth Phase 1 implementation only
+
+Owner assignment and [recorded claim](https://github.com/Vivek-k24/Dzirent/issues/26#issuecomment-6327900575)
+hand auth-specific API/schema/contract work to Codex in `H:\DziRent\worktrees\codex-web`, isolated
+branch `codex/native-auth-phase1`; refreshed exact base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`.
+Preserved `codex/azure-staging-setup` and all parallel PR branches. Owner review is the stopping gate.
+
+Owned here: focused API identity/settings/ORM/profiles/main/readiness/contract models and new `auth/**`,
+new additive `0004` migration; focused web auth routes/components/session/API/store/provider/shell and
+mode configuration; client transport/types and generated bindings; canonical mode/OpenAPI/change
+notes; required Python pin/lock, environment templates and focused docs/own status/project status.
+The [contract dependency handoff](https://github.com/Vivek-k24/Dzirent/issues/26#issuecomment-6328154174)
+includes the fixture generator's auth denial examples and regenerated version metadata only; no
+catalog product/reference/image changes or QA script ownership transfer. Shared files are edited
+serially by Codex under the explicit owner assignment, not by parallel agents.
+
+No tests, lint, typecheck, builds, migrations, seeds, accounts, Azure calls/writes, hosted/browser
+checks, manual CI, merge, deployment or demo changes. Contract/fixture generation is source output,
+not validation. Other agent logs and all AI-MEASURE/QUALITY work remain untouched. Overlapping
+future integration files: API main/settings/manifest/lock/environment docs; reconcile only later via
+reviewed serial integration. Detailed handoff: [Phase 1](../auth/phase1-handoff.md).
+
 The current explicit assignment defines required context, exact baseline, owned files, verification
 budget and stopping point. Read required context once. Inspect other files only for a demonstrated
 dependency, instruction boundary or failure. Historical lane/batch instructions below do not require

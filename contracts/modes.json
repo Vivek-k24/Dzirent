@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0-candidate.2",
+  "version": "0.1.0-candidate.3",
   "values": ["demo", "connected"],
   "default": "demo",
   "web_mode_env": "NEXT_PUBLIC_DZIRENT_MODE",
@@ -17,6 +17,9 @@
   },
   "connected": {
     "identity": "native",
+    "browser_transport": "same-origin-next-proxy",
+    "session": "secure-httponly-host-cookie",
+    "csrf": "session-bound-signed-double-submit-and-exact-origin",
     "catalog": "fastapi-postgresql",
     "allow_mock_fallback": false,
     "protected_writes": "fail-closed",

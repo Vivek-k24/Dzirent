@@ -12,21 +12,24 @@ import { api } from "@/lib/api";
 import { useSession } from "@/lib/store";
 import { useReferences, useRuntime } from "./providers";
 import { Button, Modal } from "./ui/primitives";
+import { ConnectedAuth } from "@/app/auth/_components/connected-auth";
 
 const credentials = z.object({ display_name: z.string().trim().min(1, "Enter a display name.").max(100), email: z.enum(["renter@example.invalid", "lender@example.invalid"]), demo_password: z.literal("demo-only") });
 const enrollment = z.object({ display_name: z.string().trim().min(1, "Enter a display name.").max(100), metro_id: z.uuid("Choose a metro.") });
 
 function EnrollmentForm({ done }: { done: () => void }) {
   const user = useSession(s => s.user), role = useSession(s => s.role), { refs } = useReferences(), [error, setError] = useState("");
+  const runtime = useRuntime();
   const form = useForm<z.infer<typeof enrollment>>({ resolver: zodResolver(enrollment), defaultValues: { display_name: user?.display_name ?? "Sample Lender", metro_id: refs?.locations.items[0]?.id ?? "" } });
   return <form className="stack-form" onSubmit={form.handleSubmit(async values => {
     setError("");
     try { await api("/me/lender-profile", { method: "POST", body: JSON.stringify(values), protected: true }); const updated = await api<CurrentUser>("/me", { protected: true }); useSession.getState().signIn(updated, role!); done(); }
     catch (error) { setError(error instanceof Error ? error.message : "Enrollment failed."); }
-  })}><p className="info-note">You’re signed in as a sample renter. Add a lender profile to start your own demo wardrobe.</p>
+  })}><p className="info-note">{runtime.demo ? "You’re signed in as a sample renter. Add a lender profile to start your own demo wardrobe." : "Add a lender profile using a configured metro. Your renter membership remains available."}</p>
     <label htmlFor="enroll-name">Lender display name<input id="enroll-name" {...form.register("display_name")} aria-invalid={!!form.formState.errors.display_name} /></label><p className="field-error">{form.formState.errors.display_name?.message}</p>
-    <label htmlFor="enroll-metro">Metro<select id="enroll-metro" {...form.register("metro_id")}>{refs?.locations.items.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}</select></label>
-    {error ? <p role="alert" className="field-error">{error}</p> : null}<Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Creating…" : "Create sample lender profile"}<ArrowRight size={17} /></Button>
+    <label htmlFor="enroll-metro">Metro<select id="enroll-metro" {...form.register("metro_id")} aria-invalid={!!form.formState.errors.metro_id}><option value="">Choose a metro</option>{refs?.locations.items.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}</select></label><p className="field-error">{form.formState.errors.metro_id?.message}</p>
+    {!refs?.locations.items.length ? <p role="status">Lender enrollment needs configured reference metro data. Try again when it is available.</p> : null}
+    {error ? <p role="alert" className="field-error">{error}</p> : null}<Button type="submit" disabled={form.formState.isSubmitting || !refs?.locations.items.length}>{form.formState.isSubmitting ? "Creating…" : runtime.demo ? "Create sample lender profile" : "Create lender profile"}<ArrowRight size={17} /></Button>
   </form>;
 }
 
@@ -37,10 +40,10 @@ export function AuthDialog({ role, action, onClose }: { role: "renter" | "lender
   const enroll = role === "lender" && !!user && !user.lender_profile;
   const form = useForm<z.infer<typeof credentials>>({ resolver: zodResolver(credentials), defaultValues: { display_name: role === "lender" ? "Sample Lender" : "Sample Renter", email: `${role}@example.invalid`, demo_password: "demo-only" } });
   const close = () => { if (onClose) onClose(); else router.push(returnTo.startsWith("/lender/") ? "/" : returnTo); };
-  const destination = () => { router.push(role === "lender" ? "/lender/dashboard" : returnTo.startsWith("/lender/") ? "/" : returnTo); useSession.getState().notify(role === "lender" ? "Welcome to your demo lender workspace." : "You’re signed in as a sample renter."); };
+  const destination = () => { router.push(role === "lender" ? "/lender/dashboard" : returnTo.startsWith("/lender/") ? "/" : returnTo); useSession.getState().notify(runtime.demo ? role === "lender" ? "Welcome to your demo lender workspace." : "You’re signed in as a sample renter." : "Signed in to Dzirent."); };
   const title = enroll ? "Share your wardrobe" : action === "signup" ? `Create your ${role} account` : `Welcome back, ${role}`;
   return <Modal open onOpenChange={open => { if (!open) close(); }} title={title} description={runtime.demo ? "Presentation demo · sample identity only" : "Connected identity"} restoreId="header-account">
-    {!runtime.demo ? <div className="stack-form"><p>First-party sign-in is being implemented. Sample sign-in is available only in demo mode.</p><Button onClick={close}>Return to browsing</Button></div>
+    {!runtime.demo ? <ConnectedAuth role={role} action={action} destination={destination} enrollment={<EnrollmentForm done={destination} />} />
       : enroll ? <EnrollmentForm done={destination} />
       : user?.lender_profile && role === "lender" ? <div className="stack-form"><Shirt size={30} /><p>You’re already using the sample lender profile, {user.display_name}.</p><Button onClick={destination}>Open lender dashboard<ArrowRight size={17} /></Button></div>
       : <form className="stack-form" onSubmit={form.handleSubmit(async values => {

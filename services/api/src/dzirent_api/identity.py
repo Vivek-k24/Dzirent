@@ -1,20 +1,25 @@
 """Request identity boundary.
 
-The local/test demo verifier is isolated from the connected first-party implementation.
-Until native session verification lands, all connected protected requests fail closed.
+Local/test demo bearer identity is isolated from native connected cookie sessions.
+Connected mode never accepts a client-supplied subject or role.
 """
 
 import re
 from dataclasses import dataclass
 from typing import Literal, Protocol
 
-from fastapi import Request
-from fastapi.security import HTTPBearer
+from fastapi import Depends, Request, Security
+from fastapi.security import APIKeyCookie, HTTPBearer
+from sqlalchemy.orm import Session
 
+from .db import get_session
 from .errors import ApiError, unavailable
 from .settings import Settings
 
 bearer = HTTPBearer(auto_error=False)
+native_cookie = APIKeyCookie(
+    name="__Host-dzirent_session", auto_error=False, scheme_name="NativeSession"
+)
 MOCK_PREFIX = "mock:"
 MOCK_SUBJECT = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 
@@ -52,13 +57,13 @@ def bearer_token(authorization: str | None) -> str:
 
 
 class NativeVerifier:
-    """Temporary denial boundary; Issue #26 adds real server-side sessions.
+    """Deny bearer credentials in native mode; cookie resolution lives in current_principal.
 
     Never accept client-supplied subjects, demo tokens, or unverified bearer credentials.
     """
 
     def verify(self, authorization: str | None) -> Principal:
-        raise unavailable("First-party authentication is not available yet.")
+        raise unavailable("Native authentication requires a verified cookie session.")
 
 
 class MockVerifier:
@@ -86,6 +91,20 @@ def build_verifier(settings: Settings) -> Verifier:
     raise RuntimeError("Unsupported identity configuration")
 
 
-def current_principal(request: Request) -> Principal:
+def current_principal(
+    request: Request,
+    session: Session = Depends(get_session),
+    _: str | None = Security(native_cookie),
+) -> Principal:
+    if request.app.state.settings.identity_mode == "native":
+        from .auth.service import resolve_session
+
+        resolved = resolve_session(request, session)
+        return Principal(
+            provider="native",
+            subject=resolved.user.auth_subject,
+            email=resolved.credential.email_normalized,
+            name=resolved.user.display_name,
+        )
     verifier: Verifier = request.app.state.verifier
     return verifier.verify(request.headers.get("authorization"))

@@ -1,5 +1,87 @@
 # Codex Phase 1A status
 
+## AUTH-EMAIL #64 — local scope completed, 2026-10-22
+
+Existing checkout/branch: `H:\DziRent\worktrees\codex-web`, `codex/native-auth-phase1`, draft PR #61.
+Exact clean start `5b130d3dfc16d5514dcde6815aea8d78aa47b9a0`; main base preserved at
+`c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. Scoped owner handoff recorded on #64 before editing;
+no other agents launched, no parallel lane/main/history changes. Code candidate
+`9e2af2cdb579aa18a5f4f0bd2e5854366c3e8f94` (API `64814c132ffd3431c57191986d46e87d946c582b`).
+
+Implemented encrypted PostgreSQL transactional mail outbox in additive 0005, lease/fencing/restart
+recovery, bounded retries/cleanup, resend coalescing/supersession/failure recovery, strict fake-tested
+SMTP/rendering and explicit-confirmation session refresh. 0001–0004, native/RBAC policy, canonical
+contract `.3`, fixtures, JS lock/dependencies and demo remain preserved. Required new Python pin:
+`cryptography==50.0.1`; audit found no known vulnerabilities (editable project excluded).
+
+Focused regressions **78 passed**, web unit **38 passed**, DB target guards **36 passed**, preview
+guards **3 passed**; Python/web static and contract drift passed. Final complete API suite **400 passed / 0 skipped** at the exact code candidate above.
+Exact commands, all initial failures/corrections, local DB safeguards and remaining operational
+limits are recorded in [Issue #64 report](../auth/email-verification-test-report.md) and
+[design/runbook](../auth/email-verification.md). New disposable loopback PG17.11 only, simulated
+email transport and private random test passwords. No real mail/hosted acceptance claimed.
+
+No local browser/E2E, Azure/hosted migration/account, real admin, deployment, domain/settings,
+merge or Phase 2B. Exact branch preview guards are preserved/rechecked before publication.
+Stop at the tested draft PR handoff for owner review; parent #26/#62 lifecycle stays with owner.
+
+Publication CI reported the backend Git revision in report prose as `generic-api-key`. Verified the
+matched value with Git; recorded the integrator tooling scope and relabeled it, adding only that
+historical commit/file/line fingerprint to the existing scanner ignore file. No application/test,
+rule/workflow or broad path exclusion changed; the exact local code evidence remains `9e2af2c`.
+
+## AUTH-CONNECT #62 — local Phase 2A completed, 2026-10-21
+
+Assigned checkout/branch preserved: `H:\DziRent\worktrees\codex-web`, `codex/native-auth-phase1`.
+Exact pinned PR #61 base `db7d1888183c6362ad5087ab1fc13a4bed983114`; main base
+`c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. Clean start; refs, issue/PR discussions, focused
+instructions, architecture/contracts and logs inspected. Scoped claim and demonstrated check/test
+scope expansions are recorded on #62. No other agent was launched, lane edited or history changed.
+
+Tested code `82450720030d7fde31aeb04b432104bbbce0a28a` (guard `aa18e9f`, API `7b16e8d`, web/harness
+`8245072`). Final full API run **337 passed / 0 skipped**; web **33 passed**, guard **3 passed**,
+connected real local Chromium **4 passed**, existing demo desktop/mobile **10 passed**. Pinned
+check, final affected lint/TypeScript/build/Ruff/Mypy, contract and fixture drift passed. Exact
+commands, earlier failed/partial runs, warnings and verification limits are in the
+[Phase 2A report](../auth/phase2a-test-report.md); no unrun/skipped test is represented as a pass.
+
+Corrected transaction-safe bounded mail dispatch, shared-peer lockout, inherited sensitive ACLs
+and immutable rate keys, recovery hydration lint, BFF Host validation, safe local test/operator
+targets and health-test isolation. Local PG17.11 only, separate container/tmpfs/port, guarded
+`*_test` DBs, actual migrator/runtime SQL split, private random passwords and in-memory mail.
+Only fabricated local admin evidence/identities were used. Graceful harness shutdown/DB-role cleanup
+was executed and verified. Read-only Vercel project metadata confirmed `dzirent`, root `apps/web`,
+demo build; exact branch suppression is source-controlled and tested before any publication.
+
+No Azure/AWS/Neon, hosted migration/account or test, real email/admin grant, deployment, merge,
+live-demo change or Phase 2B. No dependency/contract/data upgrade or independent QA claim.
+PR #61 remains draft; #26 stays open. Next action is owner review, with any new Phase 2B scope
+explicitly authorized separately. Delivery durability, internet abuse controls, hosted TLS/mail,
+and actual real-admin identity evidence remain open.
+
+## AUTH-CONNECT #26 — native auth implementation only, 2026-10-21
+
+Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/native-auth-phase1`; refreshed exact main
+base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. Clean start; Azure branch preserved. Issue claimed and
+scoped API/schema/contracts/fixtures handoff recorded before corresponding edits. Read the issue,
+applicable instructions/ownership, focused current architecture/schema/contracts/logs/PR state and
+pinned PartGraph source (read-only). No parallel agent was launched or another lane modified.
+
+Implemented native Argon2id auth/session/email/recovery lifecycle, strict Origin plus session-bound
+signed CSRF, same-origin transport, additive `0004` after immutable `0003`, guarded table privileges,
+independent renter/lender plus narrow owner-controlled admin capability, connected UI and secure
+unexecuted operator utilities. Passwords/tokens are private inputs; only salted hashes/digests persist.
+Existing admin origin is unknown; no fabricated account/reset/grant. Draft ADR/contract `.3` records
+security behavior changes. Catalog products/images/ownership and demo path preserved.
+
+Actual executed generation only: pinned Python dependency lock (exit 0), wheel-only declaration
+dependencies (exit 0; hardlink fallback warning), `pnpm contracts:generate` with `UV_NO_SYNC=true`
+(exit 0), deterministic fixture generation (exit 0, 39 cases). No tests, lint/format/typecheck, builds,
+drift checks, DB/network validation, migrations, seed/provisioning, accounts, cloud calls, deployment,
+merge or manual CI. Automatic PR CI is incidental only. **Implemented but untested.**
+Review exact SHA/full file list in the draft PR; [implementation and owner handoff](../auth/phase1-handoff.md).
+Next: stop for owner code/security/migration review; Phase 2 needs separate explicit authorization.
+
 ## AZ-DISC / issue #23 — read-only Azure discovery, 2026-10-19
 
 Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/azure-discovery`; exact fixed base
