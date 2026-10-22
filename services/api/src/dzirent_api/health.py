@@ -11,7 +11,7 @@ from .models import Error, Health
 router = APIRouter(prefix="/api/v1/health", tags=["health"])
 log = logging.getLogger("dzirent.health")
 # Must equal the single Alembic head; tests assert this.
-EXPECTED_SCHEMA_REVISION = "0004_native_auth"
+EXPECTED_SCHEMA_REVISION = "0005_auth_email_outbox"
 
 
 @router.get("/live", response_model=Health, operation_id="getLiveness")

@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     MetaData,
     Numeric,
     String,
@@ -402,6 +403,49 @@ class AuthToken(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = created_column()
+
+
+class AuthEmailOutbox(Base):
+    __tablename__ = "auth_email_outbox"
+    __table_args__ = (
+        CheckConstraint("purpose IN ('verify_email', 'reset_password')", name="purpose"),
+        CheckConstraint(
+            "status IN ('pending', 'leased', 'sent', 'cancelled', 'failed')", name="status"
+        ),
+        CheckConstraint("attempts BETWEEN 0 AND 6", name="attempts"),
+        CheckConstraint(
+            "expires_at > created_at AND expires_at <= created_at + interval '24 hours'",
+            name="expiry",
+        ),
+        CheckConstraint(
+            "(status IN ('pending', 'leased') AND payload IS NOT NULL AND completed_at IS NULL) OR (status IN ('sent', 'cancelled', 'failed') AND payload IS NULL AND completed_at IS NOT NULL)",
+            name="payload_lifecycle",
+        ),
+        CheckConstraint(
+            "(status = 'leased' AND lease_id IS NOT NULL AND leased_until IS NOT NULL) OR (status <> 'leased' AND lease_id IS NULL AND leased_until IS NULL)",
+            name="lease",
+        ),
+        CheckConstraint(
+            "payload IS NULL OR octet_length(payload) BETWEEN 30 AND 2048", name="payload_size"
+        ),
+        Index("ix_auth_email_outbox_due", "status", "available_at"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    token_id: Mapped[UUID] = mapped_column(ForeignKey("auth_tokens.id"), unique=True)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    purpose: Mapped[str] = mapped_column(String(32))
+    key_id: Mapped[str] = mapped_column(String(32))
+    payload: Mapped[bytes | None] = mapped_column(LargeBinary)
+    status: Mapped[str] = mapped_column(String(16))
+    attempts: Mapped[int] = mapped_column(Integer)
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    lease_id: Mapped[UUID | None] = mapped_column()
+    leased_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = created_column()
+    updated_at: Mapped[datetime] = updated_column()
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_code: Mapped[str | None] = mapped_column(String(32))
 
 
 class PlatformAdminGrant(Base):

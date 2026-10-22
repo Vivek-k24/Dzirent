@@ -13,9 +13,8 @@ from ..db import get_session
 from ..errors import ApiError
 from ..models import Error
 from ..settings import Settings
-from . import schemas, service
-from .delivery import email_delivery, reserved_mailbox
-from .dispatch import reserve_after_commit
+from . import outbox, schemas, service
+from .delivery import reserved_mailbox
 from .security import (
     clear_cookies,
     cookie_secure,
@@ -79,7 +78,7 @@ def register(
     with service.public_response_budget():
         try:
             service.register(session, body, settings)
-            session.commit()  # Delivery is submitted only after commit is acknowledged.
+            session.commit()  # Account, token digest and encrypted job commit atomically.
         except IntegrityError as exc:
             session.rollback()
             unique_email = (
@@ -89,7 +88,7 @@ def register(
             )
             if not unique_email:
                 raise
-    return schemas.AuthNotice()
+    return schemas.AuthNotice(message=outbox.ACCEPTED)
 
 
 @router.post("/auth/login", response_model=schemas.AuthSessionRead, operation_id="loginAccount")
@@ -174,13 +173,11 @@ def request_verification(
     request: Request, resolved: CurrentSession, session: Database, settings: NativeSettings
 ) -> schemas.AuthNotice:
     service.throttle(request, "verification", str(resolved.user.id))
-    email_delivery(
-        settings
-    )  # Same delivery-unavailable behavior before account-specific decisions.
+    outbox.require_ready(settings)
     if resolved.credential.email_verified_at is None and not resolved.credential.synthetic:
         service.send_token(session, resolved.credential, "verify_email", settings)
         session.commit()
-    return schemas.AuthNotice()
+    return schemas.AuthNotice(message=outbox.ACCEPTED)
 
 
 @router.post(
@@ -206,9 +203,9 @@ def request_reset(
     body: schemas.EmailInput, request: Request, session: Database, settings: NativeSettings
 ) -> schemas.AuthNotice:
     service.throttle(request, "reset", body.email)
-    email_delivery(settings)
+    outbox.require_ready(settings)
     with service.public_response_budget():
-        reserve_after_commit(session)
+        queued = False
         credential = session.scalar(
             select(orm.AuthCredential).where(orm.AuthCredential.email_normalized == body.email)
         )
@@ -223,8 +220,11 @@ def request_reset(
                 and not reserved_mailbox(body.email)
             ):
                 service.send_token(session, credential, "reset_password", settings)
+                queued = True
+        if not queued:
+            outbox.require_capacity(session, settings)
         session.commit()
-    return schemas.AuthNotice()
+    return schemas.AuthNotice(message=outbox.ACCEPTED)
 
 
 @router.post(

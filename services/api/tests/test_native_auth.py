@@ -14,7 +14,7 @@ from pydantic import SecretStr
 from sqlalchemy import Engine, func, select, update
 
 from dzirent_api import orm
-from dzirent_api.auth import crypto, router, schemas, service
+from dzirent_api.auth import crypto, dispatch, outbox, schemas, service
 from dzirent_api.db import session_factory
 from dzirent_api.errors import unavailable
 
@@ -28,6 +28,7 @@ class Mail:
     purpose: str
     token: SecretStr
     committed: bool
+    message_id: str
 
 
 @dataclass(repr=False)
@@ -35,7 +36,7 @@ class Mailbox:
     engine: Engine
     messages: list[Mail] = field(default_factory=list)
 
-    def send(self, *, recipient: str, purpose: str, link: str) -> None:
+    def send(self, *, recipient: str, purpose: str, link: str, message_id: str) -> None:
         raw = parse_qs(urlsplit(link).fragment)["token"][0]
         with self.engine.connect() as connection:
             committed = (
@@ -44,7 +45,7 @@ class Mailbox:
                 )
                 is not None
             )
-        self.messages.append(Mail(recipient, purpose, SecretStr(raw), committed))
+        self.messages.append(Mail(recipient, purpose, SecretStr(raw), committed, message_id))
 
     def token(self, purpose: str = "verify_email", email: str = EMAIL) -> str:
         return next(
@@ -68,8 +69,8 @@ def mailbox(db: Engine, monkeypatch: pytest.MonkeyPatch) -> Mailbox:
             raise unavailable("Email delivery is not configured. No email was sent.")
         return mailbox
 
-    monkeypatch.setattr(service, "email_delivery", factory)
-    monkeypatch.setattr(router, "email_delivery", factory)
+    monkeypatch.setattr(dispatch, "email_delivery", factory)
+    monkeypatch.setattr(outbox, "email_delivery", factory)
     return mailbox
 
 
@@ -111,7 +112,8 @@ def mutate(
             **(headers or {}),
         },
     )
-    assert client.app.state.auth_delivery.drain(timeout=3)
+    if client.app.state.settings.auth_email_backend == "smtp":
+        assert client.app.state.auth_delivery.drain(timeout=3)
     return response
 
 

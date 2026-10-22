@@ -7,6 +7,8 @@ skip when DZIRENT_REQUIRE_DB_TESTS=1.
 
 import json
 import os
+import secrets
+import smtplib
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
@@ -33,6 +35,18 @@ EXAMPLES = {
     case["operation_id"]: case
     for case in json.loads((FIXTURES / "examples.json").read_text(encoding="utf-8"))["cases"]
 }
+MAIL_KEY = secrets.token_urlsafe(32)
+
+
+@pytest.fixture(autouse=True)
+def no_real_email(monkeypatch: pytest.MonkeyPatch) -> None:
+    def blocked(*args: Any, **kwargs: Any) -> None:
+        raise AssertionError("Real SMTP is forbidden in local tests")
+
+    monkeypatch.setattr(smtplib, "SMTP", blocked)
+    monkeypatch.setattr(smtplib, "SMTP_SSL", blocked)
+
+
 SEED_LENDER = {"Authorization": "Bearer mock:sample-lender"}
 PRODUCTS_PATH_EXAMPLE = f"/api/v1/lender/products/{MANIFEST['products'][1]['id']}"
 
@@ -116,6 +130,9 @@ def settings_for(database_url: str, **overrides: Any) -> Settings:
         "database_url": database_url,
         "cors_origins": ["http://127.0.0.1:3000"],
         "log_level": "WARNING",
+        "auth_email_worker_enabled": False,
+        "auth_outbox_active_key_id": "local64",
+        "auth_outbox_keys": json.dumps({"local64": MAIL_KEY}),
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)  # type: ignore[call-arg]

@@ -1,117 +1,251 @@
-"""Bounded post-commit delivery. No plaintext tokens at rest and no hosted worker/service.
+"""PostgreSQL outbox worker: at-least-once handoff, bounded retries and expiring claims."""
 
-Jobs survive request completion, not process loss. A crash/failure requires a new link request;
-credentials remain unverified. This intentionally provides no durable-delivery guarantee.
-"""
-
+import hmac
 import logging
+import secrets
+import time
 from collections.abc import Callable
-from concurrent.futures import Future, ThreadPoolExecutor, wait
-from threading import BoundedSemaphore, Lock
-from typing import Any
+from datetime import UTC, datetime, timedelta
+from threading import Event, Thread
+from typing import cast
+from uuid import UUID, uuid4
 
-from sqlalchemy import event
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, delete, or_, select
+from sqlalchemy.orm import Session, sessionmaker
 
-from ..errors import unavailable
+from .. import orm
+from ..settings import Settings
+from . import mail_crypto
+from .crypto import TOKEN_PATTERN, digest
+from .delivery import DeliveryFailure, Purpose, email_delivery, reserved_mailbox
+from .outbox import ACTIVE, require_ready
 
 log = logging.getLogger("dzirent.auth.delivery")
+LEASE_SECONDS = 120
+MAX_ATTEMPTS = 6
+CLEANUP_BATCH = 100
 
 
-class Ticket:
-    def __init__(self, dispatcher: "DeliveryDispatcher") -> None:
-        self.dispatcher = dispatcher
-        self.work: Callable[[], None] | None = None
-        self.released = False
-        self.lock = Lock()
-
-    def release(self, _: Any = None) -> None:
-        with self.lock:
-            if not self.released:
-                self.released = True
-                self.dispatcher.capacity.release()
-
-    def submit(self) -> None:
-        if self.work is None:
-            self.release()
-            return
-        self.dispatcher.submit(self)
+def finish(row: orm.AuthEmailOutbox, status: str, code: str | None, now: datetime) -> None:
+    row.status, row.error_code = status, code
+    row.payload = None
+    row.lease_id = row.leased_until = None
+    row.completed_at = row.updated_at = now
 
 
 class DeliveryDispatcher:
-    def __init__(self, capacity: int = 16) -> None:
-        self.capacity = BoundedSemaphore(capacity)
-        self.executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="dzirent-mail")
-        self.futures: set[Future[None]] = set()
-        self.lock = Lock()
-        self.closed = False
+    def __init__(
+        self,
+        factory: sessionmaker[Session],
+        settings: Settings,
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
+        self.factory, self.settings = factory, settings
+        self.clock = clock or (lambda: datetime.now(UTC))
+        self.stop = Event()
+        self.thread: Thread | None = None
 
-    def reserve(self) -> Ticket:
-        with self.lock:
-            if self.closed or not self.capacity.acquire(blocking=False):
-                raise unavailable("Email delivery capacity is temporarily unavailable.")
-        return Ticket(self)
+    def start(self) -> None:
+        if (
+            not self.settings.auth_email_worker_enabled
+            or self.settings.auth_email_backend != "smtp"
+        ):
+            return
+        try:
+            require_ready(self.settings)
+        except Exception:
+            log.warning("email_worker_configuration_unavailable")
+            return
+        self.thread = Thread(target=self._run, name="dzirent-mail", daemon=True)
+        self.thread.start()
 
-    def submit(self, ticket: Ticket) -> None:
-        def deliver() -> None:
+    def _run(self) -> None:
+        while not self.stop.is_set():
             try:
-                if ticket.work is not None:
-                    ticket.work()
+                self.drain(timeout=2, limit=10)
             except Exception:
-                # Never log recipient/link/token, SMTP exception text or private request data.
-                log.warning("post_commit_delivery_failed")
-
-        with self.lock:
-            if self.closed:
-                ticket.release()
-                return
-            future = self.executor.submit(deliver)
-            self.futures.add(future)
-
-        def done(completed: Future[None]) -> None:
-            ticket.release()
-            with self.lock:
-                self.futures.discard(completed)
-
-        future.add_done_callback(done)
-
-    def drain(self, timeout: float = 5) -> bool:
-        """Bounded local test/shutdown observation; never a public endpoint."""
-        with self.lock:
-            futures = set(self.futures)
-        return not wait(futures, timeout=timeout).not_done
+                log.warning("email_worker_cycle_failed")
+            self.stop.wait(self.settings.auth_outbox_poll_seconds)
 
     def close(self) -> None:
-        with self.lock:
-            self.closed = True
-        self.executor.shutdown(wait=False, cancel_futures=True)
+        self.stop.set()
+        if self.thread is not None:
+            self.thread.join(timeout=10)
 
+    def cleanup(self) -> None:
+        now = self.clock()
+        with self.factory.begin() as session:
+            rows = session.scalars(
+                select(orm.AuthEmailOutbox)
+                .where(
+                    orm.AuthEmailOutbox.status.in_(ACTIVE),
+                    or_(
+                        orm.AuthEmailOutbox.expires_at <= now,
+                        and_(
+                            orm.AuthEmailOutbox.attempts >= MAX_ATTEMPTS,
+                            or_(
+                                orm.AuthEmailOutbox.status == "pending",
+                                orm.AuthEmailOutbox.leased_until <= now,
+                            ),
+                        ),
+                    ),
+                )
+                .order_by(orm.AuthEmailOutbox.expires_at, orm.AuthEmailOutbox.id)
+                .with_for_update(skip_locked=True)
+                .limit(CLEANUP_BATCH)
+            ).all()
+            for row in rows:
+                finish(row, "failed", "expired" if row.expires_at <= now else "max_attempts", now)
+            old = session.scalars(
+                select(orm.AuthEmailOutbox.id)
+                .where(
+                    orm.AuthEmailOutbox.completed_at < now - timedelta(days=7),
+                    ~orm.AuthEmailOutbox.status.in_(ACTIVE),
+                )
+                .order_by(orm.AuthEmailOutbox.completed_at, orm.AuthEmailOutbox.id)
+                .with_for_update(skip_locked=True)
+                .limit(CLEANUP_BATCH)
+            ).all()
+            if old:
+                session.execute(delete(orm.AuthEmailOutbox).where(orm.AuthEmailOutbox.id.in_(old)))
 
-def reserve_after_commit(session: Session) -> Ticket:
-    # No mail scheduling inside savepoints: an outer commit must never publish a
-    # token whose nested transaction rolled back. Current auth routes use one root.
-    if session.in_nested_transaction():
-        raise unavailable("Email delivery requires a root transaction.")
-    dispatcher = session.info.get("auth_delivery")
-    if not isinstance(dispatcher, DeliveryDispatcher):
-        raise unavailable("Email delivery dispatcher is not configured.")
-    if not session.in_transaction():
-        session.begin()  # Ensure even a no-op request/early rollback releases its slot.
-    ticket = dispatcher.reserve()
-    session.info.setdefault("auth_mail_tickets", []).append(ticket)
-    if not session.info.get("auth_mail_events"):
-        session.info["auth_mail_events"] = True
+    def claim(self) -> tuple[UUID, UUID, UUID] | None:
+        now = self.clock()
+        with self.factory.begin() as session:
+            row = session.scalar(
+                select(orm.AuthEmailOutbox)
+                .where(
+                    orm.AuthEmailOutbox.expires_at > now,
+                    orm.AuthEmailOutbox.attempts < MAX_ATTEMPTS,
+                    or_(
+                        and_(
+                            orm.AuthEmailOutbox.status == "pending",
+                            orm.AuthEmailOutbox.available_at <= now,
+                        ),
+                        and_(
+                            orm.AuthEmailOutbox.status == "leased",
+                            orm.AuthEmailOutbox.leased_until <= now,
+                        ),
+                    ),
+                )
+                .order_by(orm.AuthEmailOutbox.available_at, orm.AuthEmailOutbox.id)
+                .with_for_update(skip_locked=True)
+                .limit(1)
+            )
+            if row is None:
+                return None
+            row.status, row.lease_id = "leased", uuid4()
+            row.leased_until = now + timedelta(seconds=LEASE_SECONDS)
+            row.attempts += 1
+            row.updated_at = now
+            return row.id, row.lease_id, row.user_id
 
-        def committed(current: Session) -> None:
-            if not current.in_nested_transaction():
-                for pending in current.info.pop("auth_mail_tickets", []):
-                    pending.submit()
+    def deliver(self, claim: tuple[UUID, UUID, UUID]) -> None:
+        # Recheck config before touching a job. Lock order matches auth mutations:
+        # user -> token -> job. Claim transaction has already committed.
+        transport = email_delivery(self.settings)
+        mail_crypto.keyring(self.settings)
+        job_id, lease_id, user_id = claim
+        with self.factory.begin() as session:
+            user = session.scalar(select(orm.User).where(orm.User.id == user_id).with_for_update())
+            token_id = session.scalar(
+                select(orm.AuthEmailOutbox.token_id).where(orm.AuthEmailOutbox.id == job_id)
+            )
+            token = session.scalar(
+                select(orm.AuthToken).where(orm.AuthToken.id == token_id).with_for_update()
+            )
+            row = session.scalar(
+                select(orm.AuthEmailOutbox)
+                .where(orm.AuthEmailOutbox.id == job_id)
+                .with_for_update()
+            )
+            now = self.clock()
+            if (
+                row is None
+                or row.status != "leased"
+                or row.lease_id != lease_id
+                or row.leased_until is None
+                or row.leased_until <= now
+            ):
+                return
+            credential = session.get(orm.AuthCredential, user_id)
+            if row.expires_at <= now or token is None or token.expires_at <= now:
+                finish(row, "failed", "expired", now)
+                return
+            if (
+                token.consumed_at is not None
+                or token.purpose != row.purpose
+                or token.user_id != user_id
+            ):
+                finish(row, "cancelled", "consumed", now)
+                return
+            if (
+                user is None
+                or user.status != "active"
+                or user.auth_provider != "native"
+                or credential is None
+                or credential.synthetic
+                or reserved_mailbox(credential.email_normalized)
+                or (row.purpose == "verify_email" and credential.email_verified_at is not None)
+            ):
+                finish(row, "cancelled", "ineligible", now)
+                return
+            try:
+                associated = mail_crypto.aad(
+                    job_id=row.id,
+                    token_id=row.token_id,
+                    user_id=row.user_id,
+                    purpose=row.purpose,
+                    expires_at=row.expires_at,
+                    key_id=row.key_id,
+                )
+                data = mail_crypto.unseal(self.settings, row.key_id, row.payload or b"", associated)
+                raw = data["token"].get_secret_value()
+                if (
+                    not TOKEN_PATTERN.fullmatch(raw)
+                    or not hmac.compare_digest(digest(raw), token.token_hash)
+                    or data["recipient"].get_secret_value() != credential.email_normalized
+                    or data["origin"].get_secret_value() != self.settings.auth_web_origin
+                ):
+                    raise ValueError
+            except Exception:
+                finish(row, "failed", "invalid_payload", now)
+                return
+            page = "verify-email" if row.purpose == "verify_email" else "reset-password"
+            try:
+                transport.send(
+                    recipient=credential.email_normalized,
+                    purpose=cast(Purpose, row.purpose),
+                    link=f"{self.settings.auth_web_origin}/auth/{page}#token={raw}",
+                    message_id=f"<dzirent-{row.id.hex}@{self.settings.auth_email_sender.rsplit('@', 1)[-1]}>",
+                )
+            except Exception as exc:
+                now = (
+                    self.clock()
+                )  # Backoff starts after the failed handoff, not before socket waits.
+                transient = not isinstance(exc, DeliveryFailure) or exc.transient
+                retry_at = now + timedelta(
+                    seconds=min(900, 30 * 2 ** (row.attempts - 1)) + secrets.randbelow(11)
+                )
+                if not transient or row.attempts >= MAX_ATTEMPTS or retry_at >= row.expires_at:
+                    finish(row, "failed", "permanent" if not transient else "max_attempts", now)
+                else:
+                    row.status, row.error_code, row.available_at = "pending", "transient", retry_at
+                    row.lease_id = row.leased_until = None
+                    row.updated_at = now
+                log.warning("email_handoff_failed")
+            else:
+                finish(row, "sent", None, self.clock())
 
-        def ended(current: Session, transaction: Any) -> None:
-            if transaction.parent is None:
-                for pending in current.info.pop("auth_mail_tickets", []):
-                    pending.release()
-
-        event.listen(session, "after_commit", committed)
-        event.listen(session, "after_transaction_end", ended)
-    return ticket
+    def drain(self, timeout: float = 5, limit: int = 100) -> bool:
+        require_ready(self.settings)
+        self.cleanup()
+        deadline = time.monotonic() + timeout
+        for _ in range(limit):
+            claim = self.claim()
+            if claim is None:
+                return True
+            self.deliver(claim)
+            if time.monotonic() >= deadline:
+                return False
+        return False

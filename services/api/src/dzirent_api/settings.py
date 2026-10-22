@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     auth_smtp_tls: Literal["ssl", "starttls"] = "ssl"
     auth_smtp_user: str = ""
     auth_smtp_password: SecretStr = SecretStr("")
+    auth_outbox_active_key_id: str = ""
+    auth_outbox_keys: SecretStr = SecretStr("")
+    auth_email_worker_enabled: bool = True
+    auth_outbox_capacity: int = Field(default=1000, ge=1, le=10000)
+    auth_outbox_poll_seconds: float = Field(default=2, ge=0.1, le=60)
 
     @property
     def mock_identity_allowed(self) -> bool:
@@ -63,6 +68,24 @@ class Settings(BaseSettings):
             raise ValueError("Deployed environments require https CORS origins")
         if not EXACT_ORIGIN.fullmatch(self.auth_web_origin):
             raise ValueError("Auth web origin must be one exact origin")
+        origin = urlsplit(self.auth_web_origin)
+        try:
+            port = origin.port
+        except ValueError:
+            raise ValueError("Invalid auth web origin port") from None
+        if (
+            not origin.hostname
+            or origin.hostname != origin.hostname.lower()
+            or origin.netloc != origin.hostname + (f":{port}" if port else "")
+            or port in {0, 80 if origin.scheme == "http" else 443}
+            or any(
+                not label or label.startswith("-") or label.endswith("-") or len(label) > 63
+                for label in origin.hostname.split(".")
+            )
+        ):
+            raise ValueError("Auth web origin must use a canonical host and port")
+        if origin.scheme == "http" and origin.hostname not in {"localhost", "127.0.0.1"}:
+            raise ValueError("HTTP auth is restricted to loopback local/test development")
         if self.mode == "connected":
             if len(self.auth_csrf_key.get_secret_value().encode()) < 32:
                 raise ValueError(
@@ -74,8 +97,19 @@ class Settings(BaseSettings):
                 if urlsplit(self.auth_web_origin).hostname not in {"localhost", "127.0.0.1"}:
                     raise ValueError("HTTP auth is restricted to loopback local/test development")
         if self.auth_email_backend == "smtp":
+            from .auth.crypto import normalize_email
+
             if not self.auth_smtp_host or not self.auth_email_sender:
                 raise ValueError("SMTP requires an explicit host and sender")
-            if any(c in self.auth_smtp_host + self.auth_email_sender for c in "\r\n"):
+            if (
+                not re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?", self.auth_smtp_host)
+                or any(
+                    not label or label.startswith("-") or label.endswith("-") or len(label) > 63
+                    for label in self.auth_smtp_host.split(".")
+                )
+                or normalize_email(self.auth_email_sender) != self.auth_email_sender
+                or bool(self.auth_smtp_user) != bool(self.auth_smtp_password.get_secret_value())
+                or any(c in self.auth_smtp_user for c in "\r\n")
+            ):
                 raise ValueError("Invalid SMTP configuration")
         return self

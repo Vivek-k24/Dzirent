@@ -44,5 +44,4 @@ def get_session(request: Request) -> Iterator[Session]:
     if factory is None:
         raise unavailable("Database is not configured.")
     with factory() as session:
-        session.info["auth_delivery"] = getattr(request.app.state, "auth_delivery", None)
         yield session

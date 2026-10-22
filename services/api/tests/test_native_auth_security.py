@@ -17,8 +17,7 @@ from test_native_auth import native as native
 from test_native_auth import password as password
 
 from dzirent_api import orm
-from dzirent_api.auth import crypto, delivery, schemas, security, service
-from dzirent_api.auth.dispatch import DeliveryDispatcher, reserve_after_commit
+from dzirent_api.auth import crypto, delivery, outbox, schemas, security, service
 from dzirent_api.db import session_factory
 from dzirent_api.errors import ApiError
 
@@ -47,48 +46,10 @@ def test_commit_failure_discards_delivery(
         assert connection.scalar(select(func.count()).select_from(orm.AuthCredential)) == 0
 
 
-def test_savepoint_cannot_schedule_rolled_back_mail(db: Engine) -> None:
-    dispatcher = DeliveryDispatcher(capacity=1)
-    calls: list[bool] = []
-    try:
-        with session_factory(db)() as session:
-            session.info["auth_delivery"] = dispatcher
-            with session.begin():
-                with pytest.raises(ApiError), session.begin_nested():
-                    ticket = reserve_after_commit(session)
-                    ticket.work = lambda: calls.append(True)
-                    raise RuntimeError("uncommitted savepoint")
-        assert dispatcher.drain() and not calls
-    finally:
-        dispatcher.close()
-
-
-def test_delivery_capacity_rollback_and_safe_failure(
-    db: Engine, caplog: pytest.LogCaptureFixture
-) -> None:
-    dispatcher = DeliveryDispatcher(capacity=1)
-    try:
-        with session_factory(db)() as session:
-            session.info["auth_delivery"] = dispatcher
-            reserve_after_commit(session)
-            with pytest.raises(ApiError) as error:
-                dispatcher.reserve()
-            assert error.value.status == 503
-            session.rollback()
-        ticket = dispatcher.reserve()
-        private = SecretStr(secrets.token_urlsafe(32))
-
-        def failing_transport() -> None:
-            raise OSError(private.get_secret_value())
-
-        ticket.work = failing_transport
-        ticket.submit()
-        assert dispatcher.drain()
-        assert private.get_secret_value() not in caplog.text
-        assert "post_commit_delivery_failed" in caplog.text
-        dispatcher.reserve().release()
-    finally:
-        dispatcher.close()
+def test_savepoint_cannot_schedule_rolled_back_mail(native: TestClient, db: Engine) -> None:
+    with session_factory(db)() as session:
+        with session.begin(), session.begin_nested(), pytest.raises(ApiError):
+            outbox.require_capacity(session, native.app.state.settings)
 
 
 def test_response_enumeration_floor_and_slow_mail_off_request(
@@ -120,7 +81,7 @@ def test_response_enumeration_floor_and_slow_mail_off_request(
                 )
             )
             elapsed.append(time.perf_counter() - before)
-        assert started.wait(timeout=1)
+        assert not started.is_set()  # No transport on the HTTP request path.
         assert all(response.status_code == 202 for response in responses)
         assert responses[0].json() == responses[1].json()
         for email in (EMAIL, "absent@mail.dzirent.com"):
@@ -297,12 +258,20 @@ def test_smtp_uses_verified_tls_without_network(
     monkeypatch.setattr(delivery.smtplib, "SMTP", LocalSmtp)
     monkeypatch.setattr(delivery.smtplib, "SMTP_SSL", LocalSmtp)
     transport = delivery.SmtpDelivery(settings)
-    transport.send(recipient=EMAIL, purpose="verify_email", link="http://127.0.0.1/private-fixture")
+    transport.send(
+        recipient=EMAIL,
+        purpose="verify_email",
+        link=f"{ORIGIN}/auth/verify-email#token={secrets.token_urlsafe(32)}",
+        message_id="<dzirent-" + "1" * 32 + "@dzirent.com>",
+    )
     assert sent == [True] and len(contexts) == 1
     assert contexts[0].check_hostname and contexts[0].verify_mode == ssl.CERT_REQUIRED
-    with pytest.raises(ApiError):
+    with pytest.raises(delivery.DeliveryFailure):
         transport.send(
-            recipient="test01_renter@example.com", purpose="verify_email", link="private"
+            recipient="test01_renter@example.com",
+            purpose="verify_email",
+            link="private",
+            message_id="private",
         )
     assert sent == [True]
 

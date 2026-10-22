@@ -19,11 +19,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings()
     configure_logging(settings.log_level)
     engine = create_db_engine(settings)
-    delivery = DeliveryDispatcher() if settings.mode == "connected" else None
+    factory = session_factory(engine) if engine is not None else None
+    delivery = (
+        DeliveryDispatcher(factory, settings)
+        if settings.mode == "connected" and factory is not None
+        else None
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         try:
+            if delivery is not None:
+                delivery.start()
             yield
         finally:
             if delivery is not None:
@@ -43,7 +50,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.engine = engine
     app.state.auth_delivery = delivery
-    app.state.sessionmaker = session_factory(engine) if engine is not None else None
+    app.state.sessionmaker = factory
     app.state.verifier = build_verifier(settings)
     install_error_handlers(app)
     include_routes(app)

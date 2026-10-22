@@ -48,7 +48,8 @@ def test_upgrade_from_0002_preserves_mock_without_credentials(migration_db: Any)
     command.upgrade(config, "head")
     with engine.connect() as connection:
         assert (
-            connection.scalar(text("SELECT version_num FROM alembic_version")) == "0004_native_auth"
+            connection.scalar(text("SELECT version_num FROM alembic_version"))
+            == "0005_auth_email_outbox"
         )
         assert (
             connection.scalar(text("SELECT auth_provider FROM users WHERE id=:id"), {"id": user_id})
@@ -81,6 +82,78 @@ def test_legacy_provider_blocks_upgrade_without_rewriting_identity(migration_db:
             == "clerk"
         )
     assert "auth_credentials" not in inspect(engine).get_table_names()
+
+
+def test_0005_is_additive_to_native_credentials_and_refuses_data_loss(migration_db: Any) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from dzirent_api import orm
+    from dzirent_api.auth.crypto import digest, hash_password, new_token
+    from dzirent_api.db import session_factory
+
+    engine, config = migration_db
+    command.upgrade(config, "0004_native_auth")
+    user_id, token_id = uuid4(), uuid4()
+    encoded = hash_password(new_token())
+    now = datetime.now(UTC)
+    with session_factory(engine).begin() as session:
+        session.add(
+            orm.User(
+                id=user_id,
+                auth_provider="native",
+                auth_subject=str(user_id),
+                email="migration@mail.dzirent.com",
+                display_name="Fixture",
+                status="active",
+            )
+        )
+        session.flush()
+        session.add(
+            orm.AuthCredential(
+                user_id=user_id,
+                email_normalized="migration@mail.dzirent.com",
+                password_hash=encoded,
+            )
+        )
+        session.add(
+            orm.AuthToken(
+                id=token_id,
+                user_id=user_id,
+                purpose="verify_email",
+                token_hash=digest(new_token()),
+                created_at=now,
+                expires_at=now + timedelta(hours=1),
+            )
+        )
+    command.upgrade(config, "head")
+    with engine.connect() as connection:
+        assert connection.scalar(text("SELECT password_hash FROM auth_credentials")) == encoded
+        assert connection.scalar(text("SELECT count(*) FROM auth_email_outbox")) == 0
+    with session_factory(engine).begin() as session:
+        session.add(
+            orm.AuthEmailOutbox(
+                id=uuid4(),
+                token_id=token_id,
+                user_id=user_id,
+                purpose="verify_email",
+                key_id="local64",
+                payload=b"x" * 40,
+                status="pending",
+                attempts=0,
+                created_at=now,
+                updated_at=now,
+                available_at=now,
+                expires_at=now + timedelta(hours=1),
+            )
+        )
+    with pytest.raises(RuntimeError, match="Outbox data exists"):
+        command.downgrade(config, "0004_native_auth")
+    with engine.connect() as connection:
+        assert (
+            connection.scalar(text("SELECT version_num FROM alembic_version"))
+            == "0005_auth_email_outbox"
+        )
+        assert connection.scalar(text("SELECT count(*) FROM auth_email_outbox")) == 1
 
 
 @pytest.mark.parametrize(
@@ -140,6 +213,7 @@ def test_native_data_refuses_destructive_downgrade(migration_db: Any, table: str
         command.downgrade(config, "0003_native_identity_boundary")
     with engine.connect() as connection:
         assert (
-            connection.scalar(text("SELECT version_num FROM alembic_version")) == "0004_native_auth"
+            connection.scalar(text("SELECT version_num FROM alembic_version"))
+            == "0005_auth_email_outbox"
         )
         assert connection.scalar(text(f"SELECT count(*) FROM {table}")) == 1

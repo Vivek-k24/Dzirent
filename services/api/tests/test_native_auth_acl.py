@@ -1,6 +1,7 @@
 """Hosted-style privileges simulated only inside the dedicated loopback PG17 container."""
 
 import secrets
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -14,7 +15,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import ProgrammingError
 from test_native_auth import EMAIL, ORIGIN, Mailbox, mutate, verified
 
-from dzirent_api.auth import router, service
+from dzirent_api.auth import dispatch, outbox
 from dzirent_api.main import create_app
 from dzirent_api.orm import Base
 
@@ -101,7 +102,8 @@ def test_runtime_denials_and_ownership(acl: Any) -> None:
     with acl["app"].connect() as connection:
         assert connection.scalar(text("SELECT current_user")) == "dzirent_app"
         assert (
-            connection.scalar(text("SELECT version_num FROM alembic_version")) == "0004_native_auth"
+            connection.scalar(text("SELECT version_num FROM alembic_version"))
+            == "0005_auth_email_outbox"
         )
     with acl["admin"].connect() as connection:
         assert set(
@@ -124,6 +126,12 @@ def test_runtime_denials_and_ownership(acl: Any) -> None:
         "UPDATE platform_admin_grants SET revoked_at = revoked_at",
         "SELECT * FROM platform_admin_events",
         "DELETE FROM auth_tokens",
+        "UPDATE auth_email_outbox SET key_id = key_id",
+        "UPDATE auth_email_outbox SET expires_at = expires_at",
+        "UPDATE auth_email_outbox SET token_id = token_id",
+        "UPDATE auth_email_outbox SET user_id = user_id",
+        "UPDATE auth_email_outbox SET purpose = purpose",
+        "UPDATE auth_email_outbox SET created_at = created_at",
     ):
         with acl["app"].begin() as connection, pytest.raises(ProgrammingError):
             connection.exec_driver_sql(statement)
@@ -137,6 +145,7 @@ def test_default_grants_cannot_expose_new_auth_tables(acl: Any) -> None:
         "auth_rate_limits",
         "platform_admin_grants",
         "platform_admin_events",
+        "auth_email_outbox",
     ):
         with acl["reader"].begin() as connection, pytest.raises(ProgrammingError):
             connection.exec_driver_sql(f'SELECT * FROM "{table}"')
@@ -146,10 +155,16 @@ def test_real_runtime_native_flow_has_required_column_grants(
     acl: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     mailbox = Mailbox(acl["admin"])
-    monkeypatch.setattr(service, "email_delivery", lambda settings: mailbox)
-    monkeypatch.setattr(router, "email_delivery", lambda settings: mailbox)
+    monkeypatch.setattr(dispatch, "email_delivery", lambda settings: mailbox)
+    monkeypatch.setattr(outbox, "email_delivery", lambda settings: mailbox)
     settings = settings_for(
-        acl["url"], mode="connected", identity_mode="native", auth_web_origin=ORIGIN
+        acl["url"],
+        mode="connected",
+        identity_mode="native",
+        auth_web_origin=ORIGIN,
+        auth_email_backend="smtp",
+        auth_smtp_host="unused.localhost",
+        auth_email_sender="auth64@dzirent.com",
     )
     password = SecretStr(secrets.token_urlsafe(24))
     with TestClient(create_app(settings)) as client:
@@ -169,3 +184,14 @@ def test_real_runtime_native_flow_has_required_column_grants(
             == 200
         )
         assert mutate(client, "/auth/logout").status_code == 204
+        # The runtime's narrowly scoped DELETE grant enables bounded ephemeral cleanup,
+        # without permitting deletion of credentials or tokens.
+        worker = dispatch.DeliveryDispatcher(
+            client.app.state.sessionmaker,
+            settings,
+            clock=lambda: datetime.now(UTC) + timedelta(days=8),
+        )
+        worker.cleanup()
+        with acl["app"].connect() as connection:
+            assert connection.scalar(text("SELECT count(*) FROM auth_email_outbox")) == 0
+            assert connection.scalar(text("SELECT count(*) FROM auth_credentials")) == 1

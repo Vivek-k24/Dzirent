@@ -19,10 +19,9 @@ from sqlalchemy.orm import Session, selectinload
 from .. import orm, serializers
 from ..errors import ApiError, unavailable
 from ..settings import Settings
-from . import schemas
+from . import outbox, schemas
 from .crypto import TOKEN_PATTERN, digest, hash_password, needs_rehash, new_token, verify_password
-from .delivery import Purpose, email_delivery, reserved_mailbox
-from .dispatch import reserve_after_commit
+from .delivery import Purpose, reserved_mailbox
 from .security import client_identity, session_cookie
 
 Capability = Literal["operations:access"]
@@ -218,17 +217,17 @@ def consume_all_tokens(session: Session, user_id: UUID) -> None:
         .where(orm.AuthToken.user_id == user_id, orm.AuthToken.consumed_at.is_(None))
         .values(consumed_at=datetime.now(UTC))
     )
+    outbox.cancel(session, user_id)
 
 
 def send_token(
     session: Session, credential: orm.AuthCredential, purpose: Purpose, settings: Settings
 ) -> None:
-    delivery = email_delivery(settings)
-    tickets = session.info.get("auth_mail_tickets", [])
-    ticket = next((item for item in tickets if item.work is None), None)
-    if ticket is None:
-        ticket = reserve_after_commit(session)
+    outbox.require_ready(settings)
     now = datetime.now(UTC)
+    if purpose == "verify_email" and outbox.recent(session, credential.user_id, purpose, now):
+        return
+    outbox.require_capacity(session, settings)
     session.execute(
         update(orm.AuthToken)
         .where(
@@ -244,21 +243,17 @@ def send_token(
         if purpose == "verify_email"
         else settings.auth_reset_minutes
     )
-    session.add(
-        orm.AuthToken(
-            user_id=credential.user_id,
-            purpose=purpose,
-            token_hash=digest(raw),
-            created_at=now,
-            expires_at=now + timedelta(minutes=minutes),
-        )
+    outbox.cancel(session, credential.user_id, purpose)
+    row = orm.AuthToken(
+        user_id=credential.user_id,
+        purpose=purpose,
+        token_hash=digest(raw),
+        created_at=now,
+        expires_at=now + timedelta(minutes=minutes),
     )
+    session.add(row)
     session.flush()
-    page = "verify-email" if purpose == "verify_email" else "reset-password"
-    # Fragment avoids URL/query/access-log leakage. UI removes it before making API requests.
-    recipient = credential.email_normalized
-    link = f"{settings.auth_web_origin}/auth/{page}#token={raw}"
-    ticket.work = lambda: delivery.send(recipient=recipient, purpose=purpose, link=link)
+    outbox.enqueue(session, row, raw, credential.email_normalized, settings)
 
 
 @contextmanager
@@ -277,8 +272,7 @@ def register(session: Session, body: schemas.RegistrationInput, settings: Settin
         raise ApiError(
             422, "auth_reserved_email", "Use an address you own; sample domains cannot register."
         )
-    email_delivery(settings)  # Fail before writing any account when delivery is unavailable.
-    reserve_after_commit(session)  # Reserve equally before checking existing/dormant identity.
+    outbox.require_ready(settings)  # Fail before writing any account when unavailable.
     encoded = hash_password(body.password.get_secret_value())
     existing = session.scalar(
         select(orm.AuthCredential.user_id).where(orm.AuthCredential.email_normalized == body.email)
@@ -292,6 +286,7 @@ def register(session: Session, body: schemas.RegistrationInput, settings: Settin
         .limit(1)
     )
     if existing is not None or dormant is not None:
+        outbox.require_capacity(session, settings)
         # Same response as accepted registration. Never attach passwords to an existing subject.
         return
     name = body.display_name.strip()
@@ -389,6 +384,7 @@ def consume_token(
     ):
         raise invalid
     row.consumed_at = datetime.now(UTC)
+    outbox.cancel(session, user.id, purpose)
     session.flush()
     return user, credential
 
