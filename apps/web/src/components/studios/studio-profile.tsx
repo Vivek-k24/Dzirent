@@ -17,16 +17,19 @@ function Wardrobe({ studio }: { studio: Studio }) {
   if (!total) return <div className={styles.state}><h2>No published outfits yet</h2><p>This Studio hasn’t published an outfit. Check back later or explore other Studios.</p></div>;
   return <>
     <ul className={styles.wardrobe} aria-label={`${studio.display_name} wardrobe`}>
-      {items.map(product => <li key={product.id} data-product-id={product.id}>
-        <Link className={styles.cardLink} href={`/products/${product.slug}`}>
-          <div style={{ position: "relative" }}>
-            <StudioImage product={product} sizes="(min-width: 1024px) 23vw, (min-width: 640px) 31vw, 46vw" />
-            {!product.is_available ? <span className={styles.tag}>Currently unavailable</span> : null}
-          </div>
-          <span className={styles.slideTitle}>{product.title}</span>
-          <span className={styles.size}>{sizeLabel(product.size)}</span>
-        </Link>
-      </li>)}
+      {items.map(product => {
+        const displayTitle = (product as unknown as { editorial_title?: string }).editorial_title || product.title;
+        return <li key={product.id} data-product-id={product.id}>
+          <Link className={styles.cardLink} href={`/products/${product.slug}`}>
+            <div style={{ position: "relative" }}>
+              <StudioImage product={product} sizes="(min-width: 1024px) 23vw, (min-width: 640px) 31vw, 46vw" />
+              {!product.is_available ? <span className={styles.tag}>Currently unavailable</span> : null}
+            </div>
+            <span className={styles.slideTitle}>{displayTitle}</span>
+            <span className={styles.size}>{sizeLabel(product.size)}</span>
+          </Link>
+        </li>;
+      })}
     </ul>
     <p className={styles.muted} aria-live="polite" style={{ marginTop: 18 }}>Showing {items.length} of {total}</p>
     {query.hasNextPage ? <div className={styles.more}><button type="button" className={`${styles.button} ${styles.buttonOutline}`} disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? "Loading outfits…" : "Load more outfits"}</button></div> : null}

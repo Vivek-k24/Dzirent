@@ -33,7 +33,7 @@ test("lender edits their Studio and the public directory and profile reflect it"
   await expect(page).toHaveURL(/\/studios\/sample-lender$/);
   await expect(page.getByRole("heading", { level: 1, name: "Texas Occasion Closet" })).toBeVisible();
   await expect(page.getByText("Evening and celebration outfits, lent across Texas.")).toBeVisible();
-  await expect(page.getByTestId("studio-count")).toHaveText("40 published outfits");
+  await expect(page.getByTestId("studio-count")).toHaveText("14 published outfits");
 
   await page.getByRole("link", { name: "← Explore Studios" }).click();
   const card = page.locator('[data-studio-handle="sample-lender"]');
@@ -48,7 +48,10 @@ test("lender edits their Studio and the public directory and profile reflect it"
   await expect(page.getByRole("status").filter({ hasText: "Studio saved · version 3." })).toBeVisible();
   await expect(page.getByRole("link", { name: "View public Studio" })).toHaveCount(0);
   await page.locator("#main-content").getByRole("link", { name: "Explore Studios" }).click();
-  await expect(page.getByRole("heading", { name: "No public Studios yet" })).toBeVisible();
+  // With 6 Studios, making sample-lender private keeps the other 5 Studios discoverable.
+  await expect(page.locator('[data-studio-handle="sample-lender"]')).toHaveCount(0);
+  const remainingStudios = page.getByRole("list", { name: "Studios", exact: true }).locator("li[data-studio-handle]");
+  await expect(remainingStudios).toHaveCount(5);
   expect(exceptions).toEqual([]);
 });
 
@@ -56,13 +59,13 @@ test("Studio preview rotates through every published outfit across API pages and
   const exceptions = trackExceptions(page);
   expect((await page.goto("/studios"))?.status()).toBe(200);
   const card = page.locator('[data-studio-handle="sample-lender"]');
-  await expect(card.getByTestId("studio-count")).toHaveText("40 published outfits");
+  await expect(card.getByTestId("studio-count")).toHaveText("14 published outfits");
   await expect(card.getByText("Texas", { exact: true })).toBeVisible();
 
   const carousel = card.locator('[data-studio-carousel="sample-lender"]');
   const window = testInfo.project.name === "mobile" ? 2 : 3;
-  // All four 12-item API pages load before the position reports the full set.
-  await expect(carousel.locator("[data-studio-position]")).toHaveText(`Outfits 1–${window} of 40`);
+  // All API pages load before the position reports the full set.
+  await expect(carousel.locator("[data-studio-position]")).toHaveText(`Outfits 1–${window} of 14`);
   const slides = carousel.locator("li[data-product-id]");
   await expect(slides).toHaveCount(window);
   // Preview content is image, title and size only: no price, retail or rating overlays.
@@ -90,14 +93,14 @@ test("Studio preview rotates through every published outfit across API pages and
 
   const seen = new Set<string>();
   const next = carousel.getByRole("button", { name: "Next outfit" });
-  for (let step = 0; step < 40; step++) {
+  for (let step = 0; step < 14; step++) {
     for (const id of await slides.evaluateAll(items => items.map(item => item.getAttribute("data-product-id")!))) seen.add(id);
     await next.click();
   }
-  expect(seen.size).toBe(40);
-  await expect(carousel.locator("[data-studio-position]")).toHaveText(`Outfits 1–${window} of 40`);
+  expect(seen.size).toBe(14);
+  await expect(carousel.locator("[data-studio-position]")).toHaveText(`Outfits 1–${window} of 14`);
   await carousel.getByRole("button", { name: "Previous outfit" }).click();
-  await expect(carousel.locator("[data-studio-position]")).toHaveText(/^Outfits? 40.* of 40$/);
+  await expect(carousel.locator("[data-studio-position]")).toHaveText(/^Outfits? 14.* of 14$/);
 
   const preview = slides.first().getByRole("link");
   const href = await preview.getAttribute("href");
@@ -110,10 +113,10 @@ test("Studio preview rotates through every published outfit across API pages and
   await card.getByRole("link", { name: "Visit Sample Lender" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Sample Lender" })).toBeVisible();
   const wardrobe = page.getByRole("list", { name: "Sample Lender wardrobe" }).locator("li[data-product-id]");
-  await expect(wardrobe).toHaveCount(24);
+  await expect(wardrobe).toHaveCount(8);
   await page.getByRole("button", { name: "Load more outfits" }).click();
-  await expect(wardrobe).toHaveCount(40);
-  await expect(page.getByText("Showing 40 of 40")).toBeVisible();
+  await expect(wardrobe).toHaveCount(14);
+  await expect(page.getByText("Showing 14 of 14")).toBeVisible();
   await wardrobe.last().getByRole("link").click();
   await expect(page).toHaveURL(/\/products\/demo-/);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -124,32 +127,89 @@ test("Studio preview rotates through every published outfit across API pages and
   // Exercise actual rotation timing and pause behavior without waiting through real intervals.
   await page.goto("/studios");
   const position = carousel.locator("[data-studio-position]");
-  await expect(position).toHaveText(`Outfits 1–${window} of 40`);
+  await expect(position).toHaveText(`Outfits 1–${window} of 14`);
   await page.clock.install();
   await page.clock.fastForward(6000);
-  await expect(position).toHaveText(`Outfits 1–${window} of 40`);
+  await expect(position).toHaveText(`Outfits 1–${window} of 14`);
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.locator(".launch-note").hover();
   await expect(position).toHaveAttribute("aria-live", "off");
   await page.clock.fastForward(5100);
-  await expect(position).toHaveText(`Outfits 2–${window + 1} of 40`);
+  await expect(position).toHaveText(`Outfits 2–${window + 1} of 14`);
   await carousel.hover();
   await expect(position).toHaveAttribute("aria-live", "polite");
   await page.clock.fastForward(10000);
-  await expect(position).toHaveText(`Outfits 2–${window + 1} of 40`);
+  await expect(position).toHaveText(`Outfits 2–${window + 1} of 14`);
   await carousel.focus();
   await page.locator(".launch-note").hover();
   await page.clock.fastForward(6000);
-  await expect(position).toHaveText(`Outfits 2–${window + 1} of 40`);
+  await expect(position).toHaveText(`Outfits 2–${window + 1} of 14`);
   await page.keyboard.press("Space");
   await page.getByRole("link", { name: "dzirent home", exact: true }).focus();
   await page.clock.fastForward(6000);
-  await expect(position).toHaveText(`Outfits 2–${window + 1} of 40`);
+  await expect(position).toHaveText(`Outfits 2–${window + 1} of 14`);
   await carousel.focus();
   await page.keyboard.press("Space");
   await page.getByRole("link", { name: "dzirent home", exact: true }).focus();
   await expect(position).toHaveAttribute("aria-live", "off");
   await page.clock.fastForward(5100);
-  await expect(position).toHaveText(`Outfits 3–${window + 2} of 40`);
+  await expect(position).toHaveText(`Outfits 3–${window + 2} of 14`);
+  expect(exceptions).toEqual([]);
+});
+
+test("all 6 curated Texas Studios are discoverable with exact outfit counts partitioning all 40 garments", async ({ page }) => {
+  const exceptions = trackExceptions(page);
+  expect((await page.goto("/studios"))?.status()).toBe(200);
+
+  const directory = page.getByRole("list", { name: "Studios", exact: true });
+  const cards = directory.locator("li[data-studio-handle]");
+  await expect(cards).toHaveCount(6);
+
+  const expectedStudios = [
+    { handle: "sample-lender", name: "Sample Lender", count: "14 published outfits" },
+    { handle: "atelier-valverde", name: "Atelier Valverde", count: "8 published outfits" },
+    { handle: "nocturne-houston", name: "Nocturne Houston", count: "6 published outfits" },
+    { handle: "zari-heritage", name: "Zari Heritage", count: "5 published outfits" },
+    { handle: "maison-marfa", name: "Maison Marfa", count: "4 published outfits" },
+    { handle: "sol-san-antonio", name: "Sol Bridal Archive", count: "3 published outfits" },
+  ];
+
+  for (const exp of expectedStudios) {
+    const card = page.locator(`[data-studio-handle="${exp.handle}"]`);
+    await expect(card.getByRole("heading", { name: exp.name })).toBeVisible();
+    await expect(card.getByTestId("studio-count")).toHaveText(exp.count);
+    await expect(card.getByText("Texas", { exact: true })).toBeVisible();
+
+    // Verify touch target >= 44px for navigation buttons
+    const prevBtn = card.getByRole("button", { name: "Previous outfit" });
+    const prevBox = (await prevBtn.boundingBox())!;
+    expect(prevBox.width).toBeGreaterThanOrEqual(44);
+    expect(prevBox.height).toBeGreaterThanOrEqual(44);
+  }
+
+  // Verify all 6 Studios have working profile routes and correct wardrobe counts
+  const allGarmentIds = new Set<string>();
+  for (const exp of expectedStudios) {
+    expect((await page.goto(`/studios/${exp.handle}`))?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1, name: exp.name })).toBeVisible();
+    await expect(page.getByTestId("studio-count")).toHaveText(exp.count);
+    await expect(page.getByText("Texas", { exact: true })).toBeVisible();
+
+    const wardrobe = page.getByRole("list", { name: `${exp.name} wardrobe` }).locator("li[data-product-id]");
+    const targetCount = parseInt(exp.count, 10);
+    if (targetCount > 8) {
+      await expect(wardrobe).toHaveCount(8);
+      await page.getByRole("button", { name: "Load more outfits" }).click();
+      await expect(wardrobe).toHaveCount(targetCount);
+    } else {
+      await expect(wardrobe).toHaveCount(targetCount);
+    }
+
+    const ids = await wardrobe.evaluateAll(nodes => nodes.map(n => n.getAttribute("data-product-id")!));
+    for (const id of ids) allGarmentIds.add(id);
+  }
+
+  // Exactly all 40 unique garments partitioned across the 6 studios
+  expect(allGarmentIds.size).toBe(40);
   expect(exceptions).toEqual([]);
 });

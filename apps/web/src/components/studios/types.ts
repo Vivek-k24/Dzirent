@@ -10,9 +10,9 @@ export type StudioProductPage = Schemas["StudioProductPage"];
 export type StudioProduct = StudioProductPage["items"][number];
 
 export const STUDIO_DIRECTORY_PAGE = 24;
-export const STUDIO_WARDROBE_PAGE = 24;
+export const STUDIO_WARDROBE_PAGE = 8;
 // Small pages make the carousel genuinely fetch later API pages to reach every published outfit.
-export const STUDIO_CAROUSEL_PAGE = 12;
+export const STUDIO_CAROUSEL_PAGE = 6;
 
 const SIZE_SYSTEMS: Record<string, string> = { alpha: "", "US-women": "US women ", "US-men": "US men " };
 export function sizeLabel(size: StudioProduct["size"]): string {
