@@ -1,5 +1,34 @@
 # Codex Phase 1A status
 
+## AUTH-CONNECT #62 — local Phase 2A completed, 2026-10-21
+
+Assigned checkout/branch preserved: `H:\DziRent\worktrees\codex-web`, `codex/native-auth-phase1`.
+Exact pinned PR #61 base `db7d1888183c6362ad5087ab1fc13a4bed983114`; main base
+`c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. Clean start; refs, issue/PR discussions, focused
+instructions, architecture/contracts and logs inspected. Scoped claim and demonstrated check/test
+scope expansions are recorded on #62. No other agent was launched, lane edited or history changed.
+
+Tested code `82450720030d7fde31aeb04b432104bbbce0a28a` (guard `aa18e9f`, API `7b16e8d`, web/harness
+`8245072`). Final full API run **337 passed / 0 skipped**; web **33 passed**, guard **3 passed**,
+connected real local Chromium **4 passed**, existing demo desktop/mobile **10 passed**. Pinned
+check, final affected lint/TypeScript/build/Ruff/Mypy, contract and fixture drift passed. Exact
+commands, earlier failed/partial runs, warnings and verification limits are in the
+[Phase 2A report](../auth/phase2a-test-report.md); no unrun/skipped test is represented as a pass.
+
+Corrected transaction-safe bounded mail dispatch, shared-peer lockout, inherited sensitive ACLs
+and immutable rate keys, recovery hydration lint, BFF Host validation, safe local test/operator
+targets and health-test isolation. Local PG17.11 only, separate container/tmpfs/port, guarded
+`*_test` DBs, actual migrator/runtime SQL split, private random passwords and in-memory mail.
+Only fabricated local admin evidence/identities were used. Graceful harness shutdown/DB-role cleanup
+was executed and verified. Read-only Vercel project metadata confirmed `dzirent`, root `apps/web`,
+demo build; exact branch suppression is source-controlled and tested before any publication.
+
+No Azure/AWS/Neon, hosted migration/account or test, real email/admin grant, deployment, merge,
+live-demo change or Phase 2B. No dependency/contract/data upgrade or independent QA claim.
+PR #61 remains draft; #26 stays open. Next action is owner review, with any new Phase 2B scope
+explicitly authorized separately. Delivery durability, internet abuse controls, hosted TLS/mail,
+and actual real-admin identity evidence remain open.
+
 ## AUTH-CONNECT #26 — native auth implementation only, 2026-10-21
 
 Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/native-auth-phase1`; refreshed exact main

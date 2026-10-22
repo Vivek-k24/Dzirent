@@ -1,9 +1,12 @@
-# ADR 0005 — native authentication (Phase 1 proposal, owner review pending)
+# ADR 0005 — native authentication (draft, locally verified in Phase 2A)
 
 Issue [#26](https://github.com/Vivek-k24/Dzirent/issues/26), 2026-10-21. Implementation base
 `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`; branch `codex/native-auth-phase1`.
-This owner-directed assignment supersedes historical external-identity assumptions. It does not
-authorize testing, migration execution, account creation, deployment, merge or demo cutover.
+The Phase 1 assignment superseded historical external-identity assumptions and authorized source
+implementation only. Issue [#62](https://github.com/Vivek-k24/Dzirent/issues/62) separately authorizes
+disposable local Phase 2A tests and corrective fixes. It does not authorize hosted migrations,
+real/staging accounts or admin grants, deployment, merge, demo cutover or Phase 2B.
+See [actual local evidence and remaining gates](../auth/phase2a-test-report.md).
 
 ## Decision
 
@@ -43,13 +46,14 @@ reference data, ownership relationship or SQL role membership. There is no ident
 
 When the hosted runtime SQL role exists, `0004` requires the migrator login and refuses runtime
 schema-CREATE/superuser/CREATEDB/CREATEROLE/BYPASSRLS/role-membership privileges. New tables are
-owned by the executing migrator. It revokes PUBLIC and inherited default **table grants to
-`dzirent_app`** on those tables, then grants only needed SELECT/INSERT and selected UPDATE columns.
+owned by the executing migrator. It revokes PUBLIC and inherited default **table grants to all
+non-owner roles** on those new tables, then grants runtime only needed SELECT/INSERT and selected
+UPDATE columns. Rate-counter keys/actions are immutable to runtime; only attempts/window can update.
 It never changes existing role attributes, memberships, default privileges or existing table ACLs.
 Runtime gets SELECT of grant identifiers/user/capability/expiry/revocation only, no grant writes,
 and no access to owner audit events. No blanket ALL TABLES/ALL SEQUENCES grants are added.
 Existing runtime domain grants are owner-reported; they were not queried or altered in Phase 1.
-Unknown explicit default grants to other SQL roles must be reviewed in Phase 2 before migration.
+Hosted role attributes, ownership and effective ACLs still require independent Phase 2B inspection.
 
 Local disposable installations without the hosted role names can apply the same schema without
 creating SQL roles. Phase 2 must additionally exercise the hosted-style migrator/runtime role split.
@@ -60,7 +64,7 @@ fail closed on native cookie requests; the public demo does not depend on this d
 
 ## Browser and session boundary
 
-HTTPS uses `__Host-dzirent_session` and `__Host-dzirent_csrf`: Secure, HttpOnly, SameSite=Lax,
+HTTPS uses `__Host-dzirent_session`, `__Host-dzirent_csrf` and `__Host-dzirent_client`: Secure, HttpOnly, SameSite=Lax,
 Path=/, no Domain. Loopback local/test HTTP uses unprefixed names and cannot be selected for
 deployed environments. Browser credentials never enter localStorage, sessionStorage, URLs or
 response bodies. A session has 256 bits of randomness and a fixed configured absolute lifetime
@@ -87,7 +91,8 @@ new token on each login, revoking the presented old token and rotating after pas
 ## Account lifecycle and authorization
 
 Public registration creates ordinary renter membership and unverified credentials only when email
-delivery is configured and succeeds; it never creates a verified email or administrator. No signup
+delivery is configured and bounded queue capacity is available; it never creates a verified email
+or administrator. A committed account stays unverified until its link is confirmed. No signup
 role field is accepted. Unverified users may sign in, read their own basic profile/preferences,
 request verification, change password, sign out or deactivate. Profile/preference/lender writes
 require verified email; lender membership remains additive and requires a real active metro.
@@ -130,21 +135,30 @@ domains never receive mail. Verification defaults to 24 hours, recovery to 30 mi
 Links use fragments removed by the UI before requests; confirmation requires a user POST rather
 than automatically consuming on page load. Never configure provider click tracking/link logging.
 
-Throttle counters use HMAC identifier/peer keys and atomic upserts in independent committed
-transactions, so failed auth rollbacks cannot erase attempts. Fifteen-minute limits: login 10 per
-identifier / 60 per ASGI peer; other actions 5 per identifier (when supplied) / 30 per peer.
-Success does not reset counters. Forwarded IP headers are not trusted; BFF peers may share a
-conservative limit. Phase 2 must assess this availability tradeoff before internet exposure.
+Throttle counters use HMAC identifier/client/aggregate keys and atomic upserts in independent
+committed transactions, so failed auth rollbacks cannot erase attempts. A signed, expiring anonymous
+client cookie separates callers behind one BFF peer. It conveys no identity, role or IP authority.
+Fifteen-minute limits: login 10 per identifier / 60 per client; other actions 5 per identifier
+(when supplied) / 30 per client; every action has an aggregate limit of 2048. An exceeded earlier
+bucket stops consuming later budgets. Success does not reset counters. No forwarded IP is trusted.
+Clients can acquire fresh anonymous cookies, and identifier limits can be targeted; internet abuse
+controls, proxy topology, operational budgets and legitimate concurrency need Phase 2B review.
 Retention/cleanup scheduling is owner-operated future work; no worker/service is introduced.
 
-Registration/recovery response bodies do not disclose eligibility; email delivery time still
-varies with successful dispatch. Uniform timing/abuse assessment, concurrent session/token races,
-lock ordering, PostgreSQL permissions, proxy cookie behavior, browser regressions and accessibility
-are **unverified**. SMTP sends before DB commit, so commit failure can leave a delivered unusable
-link; retries must request a new link. There is no email-change flow, MFA, WebAuthn, reactivation,
-username login, native app or transactional email-provider integration. Phase 1 is not production
-security acceptance. Do not enable connected staging publicly before the gated Phase 2 review.
+Delivery uses a process-local queue (16 reservations, two threads), submitted through SQLAlchemy
+`after_commit` only. Commit failure, rollback/close or a refused nested transaction cannot dispatch
+a link; an early reservation explicitly starts a root transaction so rollback releases capacity.
+Eligibility branches reserve equally, SMTP is off the request path, and signup/recovery apply a
+200–230 ms response floor. Local concurrency, rollback, permission, cookie and Chromium regressions
+are tested; timing bounds are observations on the local machine, not a constant-time guarantee.
+Delivery failure logs only a coarse event. No raw token is persisted in an outbox. Queue/process
+loss or SMTP failure requires a new link request; there is no durable-delivery guarantee. A real
+provider, TLS handshake/deliverability, HTTPS cookie behavior and operational monitoring remain
+unverified. There is no email-change flow, MFA, WebAuthn, reactivation, username login, native app
+or transactional email-provider integration. Local Phase 2A is not production security acceptance.
+Do not enable connected staging publicly before separately authorized Phase 2B review.
 
 Primary review references: [Argon2 API](https://argon2-cffi.readthedocs.io/en/stable/api.html),
 [OWASP CSRF guidance](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html),
 [OWASP recovery guidance](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).
+Post-commit semantics: [SQLAlchemy session events](https://docs.sqlalchemy.org/en/21/orm/events.html#sqlalchemy.orm.SessionEvents.after_commit).

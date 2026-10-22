@@ -1,5 +1,28 @@
 # Project status
 
+## AUTH-CONNECT #62 — Phase 2A local validation, 2026-10-21
+
+**Local phase complete; draft PR #61 remains under owner review. Phase 2B is not authorized.**
+Pinned start `db7d1888183c6362ad5087ab1fc13a4bed983114`; tested code
+`82450720030d7fde31aeb04b432104bbbce0a28a` on `codex/native-auth-phase1` in the assigned Codex
+checkout. Main `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc` was preserved without merging.
+Final local evidence: **337 API tests**, **33 web tests**, **3 preview-guard tests**, **4 actual
+connected Chromium scenarios**, **10 demo desktop/mobile workflows**, all passed with **zero skips**;
+static checks, production demo build, contract and deterministic fixture checks also passed.
+Earlier failures, corrections and exact commands are retained in the [Phase 2A report](auth/phase2a-test-report.md).
+
+Fixed post-commit mail correctness, shared-BFF throttling, sensitive-table ACLs/protected columns,
+recovery CI, exact Host validation, local destruction/operator guards and demonstrated test isolation.
+Only disposable loopback PG17, fabricated local identities and in-memory mail were used. No Azure,
+staging migration/accounts, real admin privilege, real email, hosted test, deployment or merge.
+The Vercel exact-branch guard was corrected in source; project inspection is read-only and any
+safe publication's exact-head automatic CI/deployment-suppression evidence belongs to PR #61.
+Contract stays `.3`; locks, canonical sample data, old migrations and other lanes are preserved.
+
+Next: owner reviews the local-tested draft and explicitly decides whether to authorize Phase 2B.
+Hosted TLS/mail/operational abuse controls and the real admin identity remain unverified. The
+bounded mail queue is not durable. Parent #26 remains open; the live presentation demo is preserved.
+
 ## AUTH-CONNECT #26 — Phase 1 implementation, 2026-10-21
 
 **Implemented but untested; draft owner review required before Phase 2.** Branch

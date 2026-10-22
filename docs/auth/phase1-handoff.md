@@ -1,5 +1,9 @@
 # Issue #26 — Phase 1 implementation handoff
 
+Historical Phase 1 snapshot below. Issue #62 subsequently authorized **local Phase 2A only**;
+its [test report and corrective handoff](phase2a-test-report.md) supersede the untested findings.
+No Phase 2B, hosted migration/account, deployment or merge authorization is inferred.
+
 **Implemented but untested. Draft owner review only.** No Phase 2 permission is inferred.
 Base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`, branch `codex/native-auth-phase1`, assigned
 checkout `H:\DziRent\worktrees\codex-web`. Exact committed head and full changed-file list are

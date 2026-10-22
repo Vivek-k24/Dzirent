@@ -4,6 +4,30 @@ This registry is maintained only by Codex. It is a coordination record, not a sh
 
 ## Focused assignments
 
+### AUTH-CONNECT / issue #62 — local Phase 2A
+
+Codex owns the [scoped local claim](https://github.com/Vivek-k24/Dzirent/issues/62#issuecomment-6328682956)
+on `codex/native-auth-phase1` in `H:\DziRent\worktrees\codex-web`, pinned PR #61 baseline
+`db7d1888183c6362ad5087ab1fc13a4bed983114`, main base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`.
+This explicitly authorized regression assignment supersedes the historical no-unit-test restriction
+only for auth and demonstrated regressions. No other lane or agent log is handed over.
+
+Scope: native-auth runtime/migration ACL corrections, disposable DB guards and auth/migration/operator
+regression cases in `services/api/tests`; focused web recovery/transport and proxy tests; local
+Chromium harness in `tests/auth`; exact-branch preview guards and their root regression test;
+auth ADR/report, own log and integration status. The recorded
+[static-check expansion](https://github.com/Vivek-k24/Dzirent/issues/62#issuecomment-6329101208)
+permits formatting the Phase 1 auth additions in identity/ORM/profiles/settings and the fixture
+generator only. The [health-test expansion](https://github.com/Vivek-k24/Dzirent/issues/62#issuecomment-6329293611)
+permits correcting demonstrated test isolation in `test_platform.py`. Canonical fixture content,
+contracts/generated client signatures, locks, historical migrations 0001–0003 and CI workflows
+remain unchanged. Existing work and other worktrees remain preserved.
+
+Only owned loopback PG17 `*_test` databases, fabricated local identities and in-memory mail may
+be used. No Azure/AWS/Neon, real mail/admin, hosted migration/account, deployment, merge or Phase 2B.
+No push until the exact auth branch's Vercel preview suppression is established without changing
+provider settings. Stop at the tested draft handoff; parent #26 stays open.
+
 ### AUTH-CONNECT / issue #26 — native auth Phase 1 implementation only
 
 Owner assignment and [recorded claim](https://github.com/Vivek-k24/Dzirent/issues/26#issuecomment-6327900575)
