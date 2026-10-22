@@ -1,8 +1,8 @@
 import { delay, http, HttpResponse } from "msw";
 import { z } from "zod";
 import type { CurrentUser, ProductDetail } from "@dzirent/client";
-import manifest from "../../../../../fixtures/catalog/manifest.json";
 import type { Studio, StudioProduct, StudioSettings } from "../../components/studios/types";
+import { DEMO_STUDIOS, CURATED_LENDER_IDS } from "../demo-studios";
 
 // Demo-only Studio simulation with the same wire shapes and rules as the FastAPI implementation.
 interface StudioRecord { id: string; lender_profile_id: string; handle: string; display_name: string; bio: string; is_public: boolean; version: number; created_at: string; updated_at: string }
@@ -21,9 +21,17 @@ function hasControl(text: string, multiline: boolean) {
 const DETAIL_ONLY = ["lender_profile_id", "description", "garment_type", "audience", "fabric", "occasion", "stretch", "alterations", "known_wear", "measurements", "images", "date_blocks"] as const;
 
 function seedStudios(): StudioRecord[] {
-  const seed = manifest.seed_studio;
-  return [{ id: seed.id, lender_profile_id: manifest.seed_lender.id, handle: seed.handle, display_name: seed.display_name, bio: seed.bio,
-    is_public: seed.is_public, version: seed.version, created_at: seed.created_at, updated_at: seed.updated_at }];
+  return DEMO_STUDIOS.map(s => ({
+    id: s.id,
+    lender_profile_id: s.lender_profile_id,
+    handle: s.handle,
+    display_name: s.display_name,
+    bio: s.bio,
+    is_public: s.is_public,
+    version: s.version,
+    created_at: s.created_at,
+    updated_at: s.updated_at,
+  }));
 }
 let studios = seedStudios();
 let sequence = 3000;
@@ -49,7 +57,9 @@ const update = z.object({ display_name: z.string(), bio: z.string().optional().d
   expected_version: z.number().int().positive().nullable().optional() }).strict();
 
 export function studioHandlers({ products, identity, owners, failure }: Deps) {
-  const ownerActive = (s: StudioRecord) => owners().some(u => u.status === "active" && u.lender_profile?.id === s.lender_profile_id && u.lender_profile.status === "active");
+  const ownerActive = (s: StudioRecord) =>
+    CURATED_LENDER_IDS.has(s.lender_profile_id) ||
+    owners().some(u => u.status === "active" && u.lender_profile?.id === s.lender_profile_id && u.lender_profile.status === "active");
   const published = (s: StudioRecord) => products().filter(p => p.lender_profile_id === s.lender_profile_id && p.status === "published").sort(newestFirst);
   const visible = (s: StudioRecord) => s.is_public && ownerActive(s);
   const toPublic = (s: StudioRecord): Studio => ({ id: s.id, handle: s.handle, display_name: s.display_name, bio: s.bio, state_code: "TX", published_product_count: published(s).length });

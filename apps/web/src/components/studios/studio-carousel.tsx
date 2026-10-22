@@ -39,10 +39,11 @@ function positions(indices: number[], total: number) {
 
 function Slide({ product }: { product: StudioProduct }) {
   // Preview content is deliberately limited to portrait photo, title and listed size.
+  const displayTitle = (product as unknown as { editorial_title?: string }).editorial_title || product.title;
   return <li className={styles.slide} data-product-id={product.id}>
     <Link className={styles.slideLink} href={`/products/${product.slug}`}>
       <StudioImage product={product} sizes="(min-width: 1440px) 210px, (min-width: 1024px) 15vw, (min-width: 640px) 30vw, 45vw" />
-      <span className={styles.slideTitle}>{product.title}</span>
+      <span className={styles.slideTitle}>{displayTitle}</span>
       <span className={styles.size}>{sizeLabel(product.size)}</span>
     </Link>
   </li>;
