@@ -66,8 +66,19 @@ test("all sample prices and legacy bag totals agree across catalog, PDP, Studio 
   await expect(page.locator(".detail-copy h1")).toHaveText(product.title);
   await noPublicControls(page);
   await page.goto(`/studios/${manifest.seed_studio.handle}`);
+  await expect(page.locator("[data-product-id]").first()).toBeVisible();
+  while (await page.locator("[data-product-id]").count() < manifest.seed_studio.published_product_count) {
+    const previous = await page.locator("[data-product-id]").count();
+    await page.getByRole("button", { name: "Load more outfits", exact: true }).click();
+    await expect.poll(() => page.locator("[data-product-id]").count()).toBeGreaterThan(previous);
+  }
   await expect(page.locator("[data-product-id]")).toHaveCount(manifest.seed_studio.published_product_count);
-  for (const price of await page.locator(".card-price strong").allTextContents()) expect(cents(price)).toBeLessThanOrEqual(4000);
+  await expect(page.locator("[data-rental-price-minor]")).toHaveCount(manifest.seed_studio.published_product_count);
+  for (const card of await page.locator("[data-product-id]").all()) {
+    const id = await card.getAttribute("data-product-id");
+    const expected = manifest.products.find(item => item.id === id)!;
+    expect(cents(await card.locator("[data-rental-price-minor]").innerText())).toBe(expected.rental_price_minor);
+  }
   await noPublicControls(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   expect(errors).toEqual([]);

@@ -32,11 +32,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const user = useSession(s => s.user), notice = useSession(s => s.notice), lines = useBag(s => s.lines);
   const [search, setSearch] = useState(false), [location, setLocation] = useState(false);
   const router = useRouter(), pathname = usePathname();
+  const header = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const node = header.current;
+    if (!node) return;
+    const root = document.documentElement;
+    const measure = () => root.style.setProperty("--site-header-height", `${node.getBoundingClientRect().height}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => { observer.disconnect(); root.style.removeProperty("--site-header-height"); };
+  }, []);
   const returnTo = `${pathname}${serializeSelection(state) ? `?${serializeSelection(state)}` : ""}`;
   const deliveryZip = useBag(s => s.location.zip);
   return <>
     <a className="skip-link" href="#main-content">Skip to content</a>
-    <header className="site-header">
+    <header ref={header} className="site-header">
       <div className="main-header content-width"><Link href="/" className="wordmark" aria-label="dzirent home">dzirent<span className="wordmark-period">.</span></Link>
         <div className="header-search-area"><div className="desktop-search"><SearchInput /></div><p className="launch-note" style={{ whiteSpace: "nowrap" }}>Launching in Texas soon.</p></div>
         <div className="header-actions"><button className="header-action mobile-search-trigger" id="header-search" aria-label="Open search" onClick={() => setSearch(true)}><Search size={20} /><span>Search</span></button>

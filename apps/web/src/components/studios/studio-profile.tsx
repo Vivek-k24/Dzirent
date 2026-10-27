@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ApiError } from "@dzirent/client";
+import { ApiError, money } from "@dzirent/client";
 import { api } from "@/lib/api";
 import { useRuntime } from "../providers";
 import { useStudioProducts } from "./studio-carousel";
@@ -25,6 +25,7 @@ function Wardrobe({ studio }: { studio: Studio }) {
           </div>
           <span className={styles.slideTitle}>{product.title}</span>
           <span className={styles.size}>{sizeLabel(product.size)}</span>
+          <span className={styles.size} data-rental-price-minor={product.rental_price_minor}>{money(product.rental_price_minor)} · 4-day rental</span>
         </Link>
       </li>)}
     </ul>
