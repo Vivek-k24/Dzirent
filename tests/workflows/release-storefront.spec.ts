@@ -5,7 +5,11 @@ import type { ProductDetail } from "../../packages/client/src";
 import AxeBuilder from "@axe-core/playwright";
 
 const manifest = JSON.parse(readFileSync(resolve(__dirname, "../../fixtures/catalog/manifest.json"), "utf8")) as { products: ProductDetail[]; seed_studio: { handle: string; published_product_count: number } };
-const cents = (value: string) => Math.round(Number(value.replace(/[^0-9.]/g, "")) * 100);
+const cents = (value: string) => {
+  const amount = value.match(/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/);
+  if (!amount) throw new Error("Expected a displayed USD amount");
+  return Math.round(Number(amount[1].replaceAll(",", "")) * 100);
+};
 const noPublicControls = async (page: Page) => {
   await expect(page.locator(".demo-bar, #demo-controls-trigger")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Demo controls", exact: true })).toHaveCount(0);
