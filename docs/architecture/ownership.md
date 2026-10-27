@@ -4,6 +4,32 @@ This registry is maintained only by Codex. It is a coordination record, not a sh
 
 ## Focused assignments
 
+### REL-2 / issue #72 - storefront preparation while provider gates remain blocked
+
+Codex scoped claim and explicit fixture/test/Studio-display handoff:
+[#72](https://github.com/Vivek-k24/Dzirent/issues/72), under owner assignment #70.
+Isolated worktree `H:\DziRent\worktrees\codex-storefront-release`, branch
+`codex/storefront-release-20261027`, exact parent `1d48763ed8c4a43b8fb690233d74c92264af617b`
+(draft #71); fetched main `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`.
+Review this stack against `codex/production-integration-20261027`, retaining disabled deploy guards.
+
+Owned paths: shell/providers/globals/credits and necessary mock bootstrap; bag price refresh and its
+focused test; only the Studio card rental display; fixture generator/manifest/examples/README;
+foundation validator; affected collection/release-storefront/taxonomy-fixture checks; the four-test
+Foundation CI selection; this entry, project status, own Codex log and the scoped release report.
+The issue records each demonstrated dependency before its edit. No other agent log, API/schema,
+OpenAPI/generated type, dependency pin/lockfile, source lane or owner review checkout is modified.
+
+Application source `c98732116678f138f69d49aca2fd851412c2bc35`, final assertion fix
+`da3500e19c2cad9690c1fd5b5556f91a565f1851`. Fixture content 0.1.1, API candidate.2 unchanged.
+All 40 sample base rates are 1800-4000 cents; future lender Band D prices remain valid. Public debug
+controls removed, truthful disclosures retained. Final local browser run: 12 pass / 0 skip; earlier
+intermittent PDP loading failures remain an explicit independent-review risk. No release approval.
+SMTP remains disabled/unverified; protected SQL values remain blank and no hosted SQL was attempted.
+Full exact checks, limitations and serial #61 -> #65/#66 integration handoff are in the
+[storefront report](../releases/2026-10-27-storefront-preparation.md). Stop at a reviewable draft;
+no cloud/SQL/mail/account/deployment/merge/tag changes or new agent activation in this slice.
+
 ### REL-2 / issue #70 — owner-authorized integration, 2026-10-27
 
 Codex claim and explicit cross-owner handoff:

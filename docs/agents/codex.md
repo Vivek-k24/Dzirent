@@ -1,5 +1,38 @@
 # Codex Phase 1A status
 
+## REL-2 / issue #72 - bounded storefront preparation, 2026-10-27
+
+Scoped claim/handoff [#72](https://github.com/Vivek-k24/Dzirent/issues/72), parent #70. Isolated
+`H:\DziRent\worktrees\codex-storefront-release`, `codex/storefront-release-20261027`, base
+`1d48763ed8c4a43b8fb690233d74c92264af617b` (#71). Required context read previously; scope expands
+only for demonstrated stale bag prices, credits copy, sticky rail and paginated Studio amount display.
+Other worktrees/logs, auth #61, Studios #65 and source histories preserved. No agent started.
+
+Application `c98732116678f138f69d49aca2fd851412c2bc35`; test parser fix
+`da3500e19c2cad9690c1fd5b5556f91a565f1851`. Removed public debug controls/banner; retained honest
+footer/checkout; 40 canonical samples 1800-4000 cents/12 prices, IDs/nonpricing fields preserved.
+Bag hydration refreshes only canonical demo prices; connected stays isolated and higher lender prices
+remain valid. Frozen candidate.2/schema/dependencies/locks unchanged; fixture content 0.1.1.
+
+Actual local checks: frozen offline JS/API installs; pnpm check; configured Ruff/formatter/validator;
+demo production builds; five fixture contract checks; four focused bag/isolation/higher-price tests.
+Initial full web-unit command exited 1 on a new fork worker startup, with 14 old tests passed; the four
+new tests passed separately with one thread. Initial workflow runs 8 pass/4 fail, then 9 pass/3 fail.
+Fixed measured header offset, paginated test coverage and test-only duration/amount parser. Desktop
+PDP loading failed intermittently on reload; isolated diagnostics passed and no root cause/fix is claimed.
+Final full desktop/mobile run **12 passed / 0 failed / 0 skipped**, 160.438s, zero retries. Temporary
+failure-only diagnostics removed after successful run; production app unchanged. CI on publication
+and independent combined-source review remain separate requirements. Full commands/limitations:
+[report](../releases/2026-10-27-storefront-preparation.md).
+
+Owner confirms no authorized SMTP identity. Checked path before exclusive creation; protected external
+credential-free template has backend disabled/worker off, blank sender/auth/key fields. Proposed
+no-reply address is unverified. Corrected only unchanged own blank template validation errors; native
+Settings validation passed disabled. No transport/network/mail/verification bypass/public activation.
+SQL protected values remain absent at 20:46:33 UTC; bounded helper exit 2, no SQL attempt or fallback.
+No Azure/Vercel writes, migration/account/admin provisioning, merge/tag/DNS/deployment or live change.
+Stop at the stacked draft handoff; preserve serial review/integration gates and all earlier evidence.
+
 ## REL-2 / issue #70 — production integration checkpoint, 2026-10-27
 
 Master assignment and complete brief read; scoped claim/handoff on

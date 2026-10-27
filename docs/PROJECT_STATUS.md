@@ -1,5 +1,32 @@
 # Project status
 
+## REL-2 storefront and inactive email checkpoint - 2026-10-27
+
+Claim [#72](https://github.com/Vivek-k24/Dzirent/issues/72), stacked on draft #71 at
+`1d48763ed8c4a43b8fb690233d74c92264af617b`. Branch `codex/storefront-release-20261027`;
+application `c98732116678f138f69d49aca2fd851412c2bc35`, final test parser
+`da3500e19c2cad9690c1fd5b5556f91a565f1851`. The draft PR records the publication head and CI.
+
+**Completed:** removed public prototype/debug controls, preserved truthful footer/checkout labels;
+all 40 canonical samples now 1800-4000 cents with 12 prices; saved demo bag prices refresh without
+clearing preferences or touching connected mode. Measured sticky rail and visible Studio rates fixed.
+API/schema/dependency pins/locks unchanged; fixture content 0.1.1, frozen API candidate.2 on this stack.
+**Verified:** relevant static/build/fixture checks, four focused bag/isolation/lender-price tests,
+five fixture contract checks; final desktop/mobile workflow run **12 passed / 0 skipped**, no retries.
+Earlier full runs failed 8/4 and 9/3; an intermittent desktop PDP loading timeout remains a known
+review risk despite subsequent isolated/full passes. Exact evidence is retained in the report.
+**Blocked:** protected SQL file still lacks both URLs at 20:46:33 UTC; guarded check made no SQL
+connection. SMTP is **disabled**, worker off. `no-reply@dzirent.com` is proposed only; the checked-new
+external template contains no sender authorization, credentials or encryption keys. No live mail.
+No hosted API/storage, verified onboarding/upload, authentic-image curation or combined review yet.
+**Next:** review this preparatory draft; finish owner-protected SQL/security/recovery and authenticated
+sender dependencies, auth review, then the master's serial #61 -> refreshed main -> #65/#66 -> real
+uploads/curated storefront -> independent exact-candidate regression and controlled release.
+
+No merge/deployment/DNS/tag/cloud mutation, hosted migration or account/admin grant. Existing live
+website remains unchanged. Only own agent log updated; no agent started. See the
+[full storefront, SMTP and rollback handoff](releases/2026-10-27-storefront-preparation.md).
+
 ## REL-2 production integration checkpoint — 2026-10-27
 
 Claim [#70](https://github.com/Vivek-k24/Dzirent/issues/70); isolated branch
