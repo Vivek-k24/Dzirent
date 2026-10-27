@@ -69,6 +69,7 @@ switch (task) {
     api(["python", "../../scripts/validate_foundation.py"]);
     break;
   case "check":
+    pnpm(["deploy:check"]);
     pnpm(["lint"]);
     pnpm(["typecheck"]);
     pnpm(["media:check"]);

@@ -5,10 +5,6 @@
   "buildCommand": "pnpm --filter @dzirent/web build",
   "outputDirectory": ".next",
   "git": {
-    "deploymentEnabled": {
-      "*": false,
-      "codex/native-auth-phase1": false,
-      "main": true
-    }
+    "deploymentEnabled": false
   }
 }

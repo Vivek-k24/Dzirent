@@ -1,10 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
-    "deploymentEnabled": {
-      "*": false,
-      "codex/native-auth-phase1": false,
-      "main": true
-    }
+    "deploymentEnabled": false
   }
 }
