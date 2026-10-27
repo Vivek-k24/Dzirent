@@ -16,6 +16,13 @@ layers; no SQL credentials located, so current schema/data/privileges remain unk
 storage resource exists. Existing usage records report zero accrued cost through October 27, not a future
 guarantee. Requested protected SQL and sender settings paths; no credential in chat/source or live mail.
 
+Owner follow-up supplied an external SQL settings path, with passwords still held privately. The file
+and parent were absent; created only a credential-free template, restricted to the current Windows user
+and SYSTEM, without overwriting an existing file. Private values remain pending. The established owner
+CA bundle exists and verified PostgreSQL TLS 1.3/hostname at 19:29 UTC. No SQL or trust fallback used.
+SMTP configuration remains unanswered. Draft [#71](https://github.com/Vivek-k24/Dzirent/pull/71) initial
+head `3a945bdd78e99d7f4500a389c07632665b18b345` passed all seven checks and has no listed Vercel deployment.
+
 Guard source `513fb9c40c735b269834dc0f6ba50824baee43cb`: both Vercel files now use
 `git.deploymentEnabled=false`, with a root policy check to prevent automatic partial deployment during
 serial integration. Check rejected old configs then passed; frozen offline install, focused ESLint,

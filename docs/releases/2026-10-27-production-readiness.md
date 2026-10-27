@@ -99,11 +99,20 @@ SQL connection, provider registration or ARM mutation was performed.
 - The separate free-services entitlement endpoint returned 404 `InvalidResourceType`; remaining free
   meter quantities were not established. No billing upgrade, spending-limit removal or purchase was attempted.
 
-**SQL blocker:** no protected connection configuration for the existing `dzirent_app` and
-`dzirent_migrator` roles was located. The known local `.env` points to loopback, and relevant process
-settings are absent. An asynchronous request asks the owner for a protected local settings-file path,
-not credentials in chat. Azure Resources management authentication does not authenticate SQL;
-Entra authentication is disabled. Do not reset passwords or change roles to bypass this prerequisite.
+**SQL blocker:** the owner-selected external connection settings still await private population for
+the existing `dzirent_app` and `dzirent_migrator` roles. Initial inspection found no protected SQL file;
+the known local `.env` points to loopback and relevant process settings are absent. The owner then
+specified a path outside all repositories/worktrees. It and its parent did not exist; a credential-free
+template was created atomically without overwriting files, restricted to the current Windows user
+and SYSTEM. Its two keys are `DZIRENT_DATABASE_URL` and `DZIRENT_MIGRATOR_DATABASE_URL`.
+No connection setting or credential is published here.
+
+The owner also specified the established CA bundle under `%APPDATA%/postgresql/azure-postgres-roots.pem`.
+It exists. A further SSLRequest at **19:29 UTC** using that exact bundle, with no alternate trust fallback,
+verified the chain/hostname and negotiated TLS 1.3. Future SQL connections must use that bundle and
+`sslmode=verify-full`. Azure Resources management authentication does not authenticate SQL; Entra
+authentication is disabled. Do not reset passwords, substitute local settings or change roles to bypass
+the missing private values. The owner's reply did not identify an SMTP sender/configuration.
 
 Consequently current row counts, table/schema ownership, role memberships, default/table/column ACLs,
 actual Alembic revision, runtime CRUD, host-to-database TLS and SQL recovery preconditions remain **unverified**.
@@ -191,7 +200,11 @@ at the unchanged native-auth revision: static/contract/fixture checks, build, co
 **10 bounded desktop/mobile workflow tests passed**. The successful PostgreSQL job from attempt 1
 was reused, not reported as rerun. All seven PR checks now report success; no formal review is present.
 The prior full 400-test auth result belongs to #61's existing local report, not a new full run here.
-This PR's latest CI and head must be read together; they are recorded at publication, not assumed here.
+First checkpoint head `3a945bdd78e99d7f4500a389c07632665b18b345`: all seven PR checks passed,
+including [Foundation](https://github.com/Vivek-k24/Dzirent/actions/runs/40568863287) and
+[Security](https://github.com/Vivek-k24/Dzirent/actions/runs/40568863025). Vercel listed zero deployments
+for that head. This documentation follow-up leaves guard implementation unchanged; its latest CI/head
+must still be evaluated together at review. [Draft PR #71](https://github.com/Vivek-k24/Dzirent/pull/71).
 
 Not run: destructive hosted pytest, hosted SQL/migrations/CRUD, real email, connected browser/account/
 upload E2E, restore rehearsal, full combined-candidate regression, production release or post-release
@@ -205,7 +218,7 @@ Local mock work remains available through `pnpm dev:web` (3000); connected start
 `pnpm dev:web:connected` / `pnpm dev:api:connected` only with protected valid settings. Never silently
 fall back to mocks. Do not point any destructive `*_test` fixture at hosted staging.
 
-**Next required input:** protected SQL settings location and, independently, an existing legitimate sender
-configuration location. Then establish SQL ACL/schema/recovery and restricted hosting/budget gates;
+**Next required input:** private population of the owner-selected external SQL settings and, independently,
+an existing legitimate sender configuration location. Then establish SQL ACL/schema/recovery and restricted hosting/budget gates;
 finish auth review, merge #61 only when approved, refresh main, reconcile #65/#66, implement uploads and
 storefront requirements, test the combined exact source, and release serially only after every gate passes.

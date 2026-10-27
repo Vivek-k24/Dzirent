@@ -13,10 +13,10 @@ Git deployments, with `pnpm deploy:check` enforced by `pnpm check`. No dependenc
 certificate-verified TLS 1.3, intended database and seven listed backups. Reported existing usage through
 October 27 is USD 0; future hosting/storage costs remain unverified. PR #61 Foundation retry passed
 at `8c98d88d5a12164d562f595dc1f3f78d031f1db6`, including 10 workflow tests; all seven checks green.
-**Blocked:** protected SQL settings missing, so current ACLs/data/schema/migration safety unverified.
+**Blocked:** the protected external SQL template awaits private values, so current ACLs/data/schema/migration safety are unverified.
 No Azure HTTPS API host or storage exists. Legitimate SMTP sender configuration and independent auth
 review remain outstanding. Public onboarding/upload and production release are not ready.
-**Next:** owner supplies private configuration paths; finish SQL/recovery/host prerequisites, auth review,
+**Next:** owner populates SQL settings and identifies the legitimate sender configuration; finish SQL/recovery/host prerequisites, auth review,
 then serialized #61 → refreshed main → #65/#66 → uploads/storefront → exact-source regression/release.
 
 Current production is preserved at `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`, https://dzirent.com/.
@@ -24,6 +24,9 @@ An unauthenticated browser confirmed the existing demo UI/footer and no page exc
 No cloud writes, migration, account/admin grant, email, merge, tag change, DNS change or deployment occurred.
 The guard fix remains a reviewable source change. Historical status below does not supersede this checkpoint.
 See the [reconciliation, actual tests, gap matrix and release/rollback handoff](releases/2026-10-27-production-readiness.md).
+The owner-specified CA bundle also passed certificate/hostname-verified TLS 1.3 at 19:29 UTC.
+Draft [#71](https://github.com/Vivek-k24/Dzirent/pull/71) records the guard and checkpoint; initial
+head `3a945bdd78e99d7f4500a389c07632665b18b345` passed all seven checks and triggered no listed Vercel deployment.
 
 ## Rental refresh: two independent workflow assignments
 
