@@ -1,6 +1,7 @@
 # Deterministic candidate catalog
 
-Contract `0.1.0-candidate.1`; fixture version `0.1.0`. Claude owns this directory after foundation merge.
+Contract `0.1.0-candidate.2`; fixture version `0.1.1`. Claude owns this directory after foundation merge;
+the owner-authorized sample-price handoff is recorded in issue #72.
 
 - `taxonomy.json`: eight roots with exactly five children each, five Texas demo metros, a small explicit
   ZIP map, stable brand/color/size references and replaceable four-day display-price bands.
@@ -29,6 +30,9 @@ they are not provider accounts. No passwords or bearer tokens exist in fixtures.
 Band sample ranges are only those explicitly given in brief §6.5: A [0,5000), B [5000,10000),
 C [10000,15000), D [15000,∞), in USD minor units. They are display fixtures, unrelated to retail value.
 Sample summary cleaning/tax lines are zero and labeled unconfigured; there is no tax/pricing engine.
+The 40 canonical sample garments use varied four-day base rentals from $18 to $40, all valid in Band A.
+This sample-only cap does not change A/B/C/D ranges or restrict future lender pricing. Band B/C/D may
+correctly have no canonical sample results. Preserve this distinction when reconciling the six-Studio draft.
 Fixture dates default to 2026-11-02 through 2026-11-05 inclusive, with some blocks 2026-11-05 through
 2026-11-08 to exercise inclusive overlap. Cart dates confer no hold/reservation.
 

@@ -150,6 +150,17 @@ sample_lender = {
     "status": "active",
 }
 timestamp = datetime(2026, 10, 1, 12, tzinfo=UTC)
+# Canonical sample display amounts only. Real lender bands/prices are unchanged.
+sample_rentals_minor = [
+    (2800, 4000, 3000, 3200, 2400),  # Women
+    (3200, 1800, 2000, 2200, 3600),  # Men
+    (2600, 3000, 3400, 3200, 2400),  # Party & Cocktail
+    (3600, 4000, 4000, 3400, 2800),  # Suits & Tuxedos
+    (3000, 3800, 4000, 2600, 3400),  # Wedding Guest
+    (3200, 4000, 3800, 2800, 3600),  # Indian & Cultural
+    (3600, 4000, 3800, 3400, 4000),  # Designer
+    (4000, 3800, 3600, 2200, 4000),  # Bridal
+]
 products = []
 for i in range(40):
     collection = roots[i // 5]
@@ -178,8 +189,8 @@ for i in range(40):
         "size": size_pool[i % len(size_pool)],
         "colors": [colors[i % 8]],
         "metro": metros[i % 5],
-        "band": bands[i % 4]["id"],
-        "rental_price_minor": [3500, 7500, 12500, 17500][i % 4] + (i // 4) * 50,
+        "band": "A",
+        "rental_price_minor": sample_rentals_minor[i // 5][i % 5],
         "retail_price_minor": 20000 + i * 1000,
         "currency": "USD",
         "sample_rating": None if i % 9 == 0 else round(3.8 + (i % 7) * 0.2, 1),
@@ -242,7 +253,7 @@ taxonomy = {
 }
 manifest = {
     "contract_version": CONTRACT_VERSION,
-    "fixture_version": "0.1.0",
+    "fixture_version": "0.1.1",
     "uuid_namespace": str(NAMESPACE),
     "demo_start_date": "2026-11-02",
     "demo_end_date": "2026-11-05",

@@ -2,13 +2,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useIsMutating } from "@tanstack/react-query";
 import { serializeSelection } from "@dzirent/client";
-import { Search, UserRound, Shirt, Plus, ShoppingBag, MapPin, ArrowRight, SlidersHorizontal, RotateCcw, X, LogOut, LayoutDashboard } from "lucide-react";
+import { Search, UserRound, Shirt, Plus, ShoppingBag, MapPin, ArrowRight, X, LogOut, LayoutDashboard } from "lucide-react";
 import { useCatalogState } from "@/lib/use-catalog";
 import { useBag, useSession } from "@/lib/store";
 import { useRuntime } from "./providers";
-import { Button, Modal, Popover, PopoverClose } from "./ui/primitives";
+import { Modal, Popover, PopoverClose } from "./ui/primitives";
 import { Navigation } from "./navigation";
 import { LocationDialog } from "./location-dialog";
 
@@ -29,16 +28,15 @@ function SearchInput({ mobile = false, done }: { mobile?: boolean; done?: () => 
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { demo, ready, reset, simulate } = useRuntime(), { state } = useCatalogState();
+  const { demo, ready } = useRuntime(), { state } = useCatalogState();
   const user = useSession(s => s.user), notice = useSession(s => s.notice), lines = useBag(s => s.lines);
-  const [search, setSearch] = useState(false), [location, setLocation] = useState(false), [controls, setControls] = useState(false);
-  const router = useRouter(), pathname = usePathname(), mutating = useIsMutating();
+  const [search, setSearch] = useState(false), [location, setLocation] = useState(false);
+  const router = useRouter(), pathname = usePathname();
   const returnTo = `${pathname}${serializeSelection(state) ? `?${serializeSelection(state)}` : ""}`;
   const deliveryZip = useBag(s => s.location.zip);
   return <>
     <a className="skip-link" href="#main-content">Skip to content</a>
     <header className="site-header">
-      <div className="demo-bar"><div className="content-width"><strong>Prototype. Sample listings shown.</strong>{demo ? <button id="demo-controls-trigger" onClick={() => setControls(true)}><SlidersHorizontal size={13} />Demo controls</button> : null}</div></div>
       <div className="main-header content-width"><Link href="/" className="wordmark" aria-label="dzirent home">dzirent<span className="wordmark-period">.</span></Link>
         <div className="header-search-area"><div className="desktop-search"><SearchInput /></div><p className="launch-note" style={{ whiteSpace: "nowrap" }}>Launching in Texas soon.</p></div>
         <div className="header-actions"><button className="header-action mobile-search-trigger" id="header-search" aria-label="Open search" onClick={() => setSearch(true)}><Search size={20} /><span>Search</span></button>
@@ -58,12 +56,5 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     {notice ? <div className="toast"><p key={notice.id} role="status" aria-live="polite">{notice.text}</p><button className="icon-button" aria-label="Dismiss notification" onClick={() => useSession.getState().dismiss()}><X size={17} /></button></div> : null}
     {search ? <Modal open onOpenChange={setSearch} title="Find your next look" description="Search sample titles, brands and descriptions." restoreId="header-search"><SearchInput mobile done={() => setSearch(false)} /></Modal> : null}
     {location ? <LocationDialog close={() => setLocation(false)} /> : null}
-    <Modal open={controls} onOpenChange={setControls} title="Presentation demo" description="Everything here is simulated. Explore freely; no booking or payment is created." restoreId="demo-controls-trigger">
-      <div className="stack-form"><p className="muted">Listing edits and sample sign-in last for this page session. Your bag and harmless preferences can remain on this browser. Reset restores the original forty outfits.</p>
-        <Button variant="outline" disabled={!!mutating} onClick={async () => { await reset(); setControls(false); if (pathname !== "/") router.push("/"); }}><RotateCcw size={17} />Reset demo</Button>
-        <h3>Try the recovery states</h3><Button variant="outline" onClick={async () => { setControls(false); await simulate("catalog"); if (pathname !== "/") router.push("/"); }}>Simulate catalog error</Button><Button variant="outline" onClick={async () => { await simulate("save"); setControls(false); }}>Fail the next listing save</Button>
-        <Link className="text-button" href="/credits" onClick={() => setControls(false)}>View photography credits and demo details <ArrowRight size={15} /></Link>
-      </div>
-    </Modal>
   </>;
 }

@@ -147,10 +147,12 @@ test.describe("Independent Contract Verification: Taxonomy & Seed Fixtures", () 
     }
   });
 
-  test("REQ-1A-06: Minor unit prices and Price Band boundaries (0/5000/10000/15000)", () => {
+  test("REQ-1A-06: Canonical samples stay at or below $40 within unchanged price bands", () => {
+    expect(new Set(manifest.products.map(product => product.rental_price_minor)).size).toBeGreaterThanOrEqual(8);
     for (const p of manifest.products) {
       expect(Number.isInteger(p.rental_price_minor)).toBe(true);
       expect(p.rental_price_minor).toBeGreaterThan(0);
+      expect(p.rental_price_minor).toBeLessThanOrEqual(4000);
 
       expect(Number.isInteger(p.retail_price_minor)).toBe(true);
       expect(p.retail_price_minor).toBeGreaterThan(p.rental_price_minor);

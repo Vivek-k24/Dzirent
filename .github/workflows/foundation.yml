@@ -38,6 +38,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm api:sync
       - run: pnpm check
+      - name: Verify sample bag refresh and connected isolation
+        run: pnpm --filter @dzirent/web exec vitest run src/lib/store.test.ts --maxWorkers=1 --pool=threads
       - run: pnpm build
       - run: docker compose config --quiet
       - name: Install Chromium for bounded workflow smoke

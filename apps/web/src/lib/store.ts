@@ -23,6 +23,7 @@ interface BagState {
   add: (p: ProductDetail, size: string, start: string, end: string) => string | null;
   remove: (key: string) => void; toggleSaved: (id: string) => void;
   setLocation: (value: { metro: string; zip: string }) => void; reset: () => void;
+  refreshSamplePrices: (products: readonly ProductDetail[]) => void;
 }
 export const useBag = create<BagState>()(persist((set, get) => ({
   lines: [], wishlist: [], location: { metro: "", zip: "" },
@@ -34,6 +35,18 @@ export const useBag = create<BagState>()(persist((set, get) => ({
     return null;
   },
   remove: key => set(s => ({ lines: s.lines.filter(x => x.key !== key) })),
+  refreshSamplePrices: products => {
+    if ((process.env.NEXT_PUBLIC_DZIRENT_MODE ?? "demo") !== "demo") return;
+    const prices = new Map(products.map(product => [product.id, product]));
+    let changed = false;
+    const lines = get().lines.map(line => {
+      const sample = prices.get(line.product.id);
+      if (!sample || (line.product.rental_price_minor === sample.rental_price_minor && line.product.band === sample.band && line.product.currency === sample.currency)) return line;
+      changed = true;
+      return { ...line, product: { ...line.product, rental_price_minor: sample.rental_price_minor, band: sample.band, currency: sample.currency } };
+    });
+    if (changed) set({ lines });
+  },
   toggleSaved: id => set(s => ({ wishlist: s.wishlist.includes(id) ? s.wishlist.filter(x => x !== id) : [...s.wishlist, id] })),
   // Preserve the legacy shape, but never use its metro as a delivery/stock rule.
   setLocation: location => set({ location: { metro: "", zip: /^\d{5}$/.test(location.zip) ? location.zip : "" } }), reset: () => set({ lines: [], wishlist: [], location: { metro: "", zip: "" } }),

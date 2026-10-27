@@ -78,7 +78,11 @@ for root in roots:
         or any(c["id"] in p["secondary_category_ids"] for c in root["children"])
     }
     assert root["product_count"] == len(ids)
-assert {p["band"] for p in products} == {"A", "B", "C", "D"}
+# The owner's sample cap applies to these 40 seed products, not real lender entries.
+assert {b["id"] for b in references["bands"]} == {"A", "B", "C", "D"}
+assert {p["band"] for p in products} == {"A"}
+assert all(p["currency"] == "USD" and 0 < p["rental_price_minor"] <= 4000 for p in products)
+assert len({p["rental_price_minor"] for p in products}) >= 8
 assert {p["is_available"] for p in products} == {True, False}
 assert any(p["sample_rating"] is None for p in products) and any(p["date_blocks"] for p in products)
 assert (
