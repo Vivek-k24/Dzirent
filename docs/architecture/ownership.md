@@ -4,6 +4,25 @@ This registry is maintained only by Codex. It is a coordination record, not a sh
 
 ## Focused assignments
 
+### REL-2 / issue #70 — owner-authorized integration, 2026-10-27
+
+Codex claim and explicit cross-owner handoff:
+[#70](https://github.com/Vivek-k24/Dzirent/issues/70). Worktree
+`H:\DziRent\worktrees\codex-production-integration`, branch `codex/production-integration-20261027`,
+exact base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`.
+The master assignment authorizes scoped production integration but conditions cloud writes/migrations,
+merges and release on actual cost, security, recovery and review gates. It does not authorize real mail tests.
+
+This checkpoint edits only both `vercel.json` files, `scripts/check-deployment-guards.mjs`, check wiring
+in `scripts/task.mjs` / root `package.json`, this registry, `docs/PROJECT_STATUS.md`, own Codex log,
+and `docs/releases/2026-10-27-production-readiness.md`. The deployment change prevents an automatic
+preview/promotion while preparing and eventually merging partial candidates; it does not itself deploy.
+Pinned dependencies/locks, contract/fixtures, product/API code and other agent logs are unchanged.
+Read-only Azure helpers/raw evidence remain ignored; the existing PR #31 tooling branch is not edited.
+Missing protected SQL settings block schema/data/ACL verification; hosted phase stops there. Do not
+reuse destructive test fixtures, reset SQL passwords, grant admin or skip the gate. Broader feature work
+and the serial merge/release sequence remain pending under the owner's master assignment.
+
 The current explicit assignment defines required context, exact baseline, owned files, verification
 budget and stopping point. Read required context once. Inspect other files only for a demonstrated
 dependency, instruction boundary or failure. Historical lane/batch instructions below do not require

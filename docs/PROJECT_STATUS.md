@@ -1,5 +1,30 @@
 # Project status
 
+## REL-2 production integration checkpoint — 2026-10-27
+
+Claim [#70](https://github.com/Vivek-k24/Dzirent/issues/70); isolated branch
+`codex/production-integration-20261027`, exact main base
+`c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. All 11 prior checkouts/three object stores reconciled;
+owner review and the old detached release's `.gitignore` edits preserved. No agent launched.
+
+**Completed:** smallest-gap inventory and a concrete guard fix: both Vercel configs disable automatic
+Git deployments, with `pnpm deploy:check` enforced by `pnpm check`. No dependency upgrade.
+**Verified:** Azure Students authentication/credit/spending limits; existing PostgreSQL 17.11 Ready,
+certificate-verified TLS 1.3, intended database and seven listed backups. Reported existing usage through
+October 27 is USD 0; future hosting/storage costs remain unverified. PR #61 Foundation retry passed
+at `8c98d88d5a12164d562f595dc1f3f78d031f1db6`, including 10 workflow tests; all seven checks green.
+**Blocked:** protected SQL settings missing, so current ACLs/data/schema/migration safety unverified.
+No Azure HTTPS API host or storage exists. Legitimate SMTP sender configuration and independent auth
+review remain outstanding. Public onboarding/upload and production release are not ready.
+**Next:** owner supplies private configuration paths; finish SQL/recovery/host prerequisites, auth review,
+then serialized #61 → refreshed main → #65/#66 → uploads/storefront → exact-source regression/release.
+
+Current production is preserved at `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`, https://dzirent.com/.
+An unauthenticated browser confirmed the existing demo UI/footer and no page exceptions during its visit.
+No cloud writes, migration, account/admin grant, email, merge, tag change, DNS change or deployment occurred.
+The guard fix remains a reviewable source change. Historical status below does not supersede this checkpoint.
+See the [reconciliation, actual tests, gap matrix and release/rollback handoff](releases/2026-10-27-production-readiness.md).
+
 ## Rental refresh: two independent workflow assignments
 
 User-authorized batch from code baseline `a63acc0e9d55d79a918775a57d09bcec63cd3726`.

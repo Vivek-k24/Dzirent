@@ -1,5 +1,36 @@
 # Codex Phase 1A status
 
+## REL-2 / issue #70 — production integration checkpoint, 2026-10-27
+
+Master assignment and complete brief read; scoped claim/handoff on
+[#70](https://github.com/Vivek-k24/Dzirent/issues/70). Isolated checkout
+`H:\DziRent\worktrees\codex-production-integration`, branch `codex/production-integration-20261027`,
+main base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. All three object stores fetched; 11 existing
+checkouts inspected with no unpublished named-branch work. Inactive main refs fast-forwarded/created;
+owner review and old release `.gitignore` work preserved. No other agent started/log edited.
+
+Read-only Azure/production findings and smallest-gap matrix are in the
+[checkpoint](../releases/2026-10-27-production-readiness.md). Existing VS Code authentication worked.
+Current Students credit/limits, PG17.11 Ready, TLS 1.3 and seven automatic backups verified at the stated
+layers; no SQL credentials located, so current schema/data/privileges remain unknown. No hosted API or
+storage resource exists. Existing usage records report zero accrued cost through October 27, not a future
+guarantee. Requested protected SQL and sender settings paths; no credential in chat/source or live mail.
+
+Guard source `513fb9c40c735b269834dc0f6ba50824baee43cb`: both Vercel files now use
+`git.deploymentEnabled=false`, with a root policy check to prevent automatic partial deployment during
+serial integration. Check rejected old configs then passed; frozen offline install, focused ESLint,
+both script syntax checks and whitespace passed. Lock/dependency pins unchanged. No product feature change.
+
+Retried the cancelled Foundation job on unchanged #61 source
+`8c98d88d5a12164d562f595dc1f3f78d031f1db6`: attempt 2 passed, including 10 bounded workflow tests.
+All seven checks green; formal review still absent. No new full 400-test run claimed.
+Cloud mutation, hosted migration/CRUD, account/admin provisioning, real email, merge, release/tag/DNS
+change and combined connected testing were not performed. Production remains at its verified prior source.
+
+Stop hosted phase at missing SQL security/recovery and hosting prerequisites; publish the narrow guard/evidence
+PR for review. Resume only with protected settings and fresh readiness, then follow the owner's dependency
+order. Existing auth/Studio/quality/measurement branches remain unchanged. Only this agent log updated.
+
 ## AZ-DISC / issue #23 — read-only Azure discovery, 2026-10-19
 
 Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/azure-discovery`; exact fixed base
