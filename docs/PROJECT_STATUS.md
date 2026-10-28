@@ -12,9 +12,13 @@ crypto probe passed, automatic frontend deployment guards verified. No runtime/s
 **Verified:** current VS Code Azure sign-in, Students credit available and both spending limits On,
 existing PG17.11 Ready, CA/hostname-verified TLS1.3, intended DB and seven backup records. No HTTPS
 host exists. Latest provider usage reports USD0 through Oct27; no new hosting resource/charge.
-**Blocked:** protected SQL file exists but runtime/migrator URLs remain blank. Guarded reader made
-no connection. Current schema/privileges/CRUD/migration safety remain unverified; no host/deployment ID.
-**Next:** owner privately fills the existing file, then SELECT-only SQL/recovery/security gates,
+**Resumed 22:21–22:31 CDT:** owner populated both SQL URLs and corrected reserved-character parsing.
+Both now pass exact-target/role/verify-full/CA guards, but PostgreSQL rejects authentication for both
+roles. No SQL login/results/writes; current schema/privileges/CRUD/migration safety remain unverified.
+Additional read-only hosting checks found advertised native Python 3.12/Linux F1 in North Central US
+and published USD 0/hour hosting; provider remains unregistered and quota lookups failed404, so no
+allocation/capacity claim or new resource. No host/deployment ID.
+**Next:** owner privately verifies the existing role passwords and URL encoding, then SELECT-only SQL/recovery/security gates,
 controlled migrations/HTTPS hosting/staging CRUD and restart/external checks. Stop after this phase.
 The staging DB is not production isolation; no real public accounts or verification bypass.
 

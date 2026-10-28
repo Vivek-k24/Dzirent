@@ -20,8 +20,11 @@ No PostgreSQL recreation/role reset, destructive Azure fixtures, billing-limit r
 accounts. Migrations/network/hosting require actual protected SQL/recovery/cost gates. Stop Phase1
 at precise blocker if these cannot be established. Private settings/evidence remain outside Git.
 
-Fresh read-only checks and real local image build completed; both protected SQL URLs remain blank,
-so no SQL authentication/CRUD/migration, cloud mutation or HTTPS endpoint/deployment exists yet.
+Fresh read-only checks and real local image build completed. Owner populated/corrected the protected
+URLs; at 22:30 CDT both exact-target/TLS guards pass, but both SQL roles are rejected at authentication.
+No successful SQL login/results/CRUD/migration, cloud mutation or HTTPS endpoint/deployment exists yet.
+Additional hosting suitability/retail reads advertise native Python3.12/Linux F1 at USD0/hour in North
+Central US; provider unregistered and quota GET404, so allocation/capacity remain unverified.
 The full report preserves exact sources, actual checks, unrun items and the owner's concrete next action.
 
 ### REL-2 / issue #70 — owner-authorized integration, 2026-10-27

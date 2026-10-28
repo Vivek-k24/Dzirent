@@ -17,16 +17,22 @@ TLS1.3 at 21:56 CDT, no SQL login. Optional admin-list failed400; hosting SKU li
 not zero capacity). Benefits/SKU preflights exit2 intentionally, not passing deployment gates.
 Provider usage14 records totals reported USD0 through Oct27, not a future cost guarantee.
 
-Protected SQL file exists, both URL values blank, no overwrite/unexpected ACL principal. Guarded
-reader exit2 before connection; SQL/schema/data/roles/CRUD and migration recovery gates unknown.
-Asked owner to populate privately. No cloud/network/billing/SQL write or new resource/host, migration,
+Resumed 22:21–22:31 CDT: owner populated both protected SQL URLs and corrected password URI parsing.
+Both exact target/role/verify-full/CA guards now pass. Guarded reader exit2, SQL attempted; independent
+bounded role checks both report server authentication rejection, no successful login/SELECT or write.
+No secret/config output, agent file edit or unexpected ACL principal. Owner asked to privately verify
+role passwords and encoding exactly once; no reset or alternate credential attempt. SQL/schema/data/
+roles/CRUD and migration recovery gates remain unknown. Additional GET-only hosting evidence:
+Microsoft.Web unregistered; native Python3.12/Linux F1 region advertised; retail F1 USD0/hour,
+B1 USD0.018/hour (not selected); quota GET404, capacity unknown. No hosting package change/allocation.
+No cloud/network/billing/SQL write or new resource/host, migration,
 account/admin grant, live mail, verification bypass, merge/release/DNS/tag or frontend change.
 
 Existing image built successfully, source83ba855, uid10001/Python3.12.15/psycopg3.3.6. Offline read-only,
 network-disabled container probe passed crypto, schemahead0005, missing connected DB rejection and
 SMTP-disabled checks; no hosted health/CRUD proof. Guard script passed; no full suite rerun claimed.
 [Full exact report/next action](../infra/azure-backend-phase1-2026-10-27.md). Stop at this blocked Phase1;
-resume only dependent SQL/HTTPS work when protected values are ready, not later storefront/AI phases.
+resume only dependent SQL/HTTPS work after accepted protected SQL credentials, not later storefront/AI phases.
 
 ## REL-2 / issue #70 — production integration checkpoint, 2026-10-27
 

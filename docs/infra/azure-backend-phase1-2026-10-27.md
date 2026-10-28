@@ -3,7 +3,8 @@
 **Blocked; not deployed.** This is the owner's highest-priority Azure backend-only assignment,
 not storefront/AI development, public onboarding activation or completion of the production master.
 Claim: [issue #25](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6459311814).
-Observations below were collected approximately 21:47–22:09 CDT (UTC October 28).
+Initial observations were collected approximately 21:47–22:09 CDT (UTC October 28).
+The owner-supplied SQL configuration and hosting suitability were rechecked at 22:21–22:31 CDT.
 
 ## Exact recovered source and preservation
 
@@ -78,18 +79,25 @@ Read-only wrappers retained the existing fixed GET-only ARM transport and wrote 
 - Hosting-SKU GET returned HTTP 200 with an empty list. This is **unknown eligibility/capacity**,
   not zero quota or proof that a free/custom-container runtime can be allocated.
 
-## Protected SQL blocker
+## Protected SQL authentication blocker — resumed at 22:21–22:31 CDT
 
 `H:\DziRent\secrets\azure-staging.env` exists and was inspected without printing its contents.
-Both `DZIRENT_DATABASE_URL` and `DZIRENT_MIGRATOR_DATABASE_URL` remain blank. File modification time
-was unchanged from its initial empty template; ACL inspection found zero unexpected allowed principals.
-The existing file was **not overwritten**. The user was asked to populate it privately from their
-password manager and reply when ready; no secret is requested in chat/GitHub.
+The owner populated both `DZIRENT_DATABASE_URL` and `DZIRENT_MIGRATOR_DATABASE_URL` privately.
+ACL inspection again found zero unexpected allowed principals. The existing file was **not edited
+or overwritten by the agent**; no secret or connection string was printed, logged or uploaded.
 
-The guarded reader at **21:47 CDT**, rechecked at **22:09 CDT** with the same result, exited **2**, status `blocked_private_values_pending`, with
-`sql_attempted=false`. It accepts only the existing database, exact runtime/migrator roles,
-`sslmode=verify-full` and the established `%APPDATA%/postgresql/azure-postgres-roots.pem` bundle.
-No project/local database defaults or permissive TLS fallback were substituted.
+The earlier 21:47 and 22:09 CDT runs exited **2** before connection because both values were blank.
+At **22:21 CDT**, populated values failed the exact-host guard before connection: reserved password
+characters were parsed into the hostname. The owner corrected the URLs privately. At **22:30 CDT**,
+both then passed the exact server/database/role/port/`sslmode=verify-full`/established CA guards.
+The guarded reader exited **2**, `sql_attempted=true`, with an `OperationalError`. A bounded,
+independent check of each role classified both failures as **server authentication rejected**;
+neither was a DNS, timeout, firewall or certificate-validation failure. No alternate password,
+role, target, permissive TLS setting or local database fallback was tried.
+
+No SQL login succeeded and no SELECT result was obtained. The owner was asked to privately verify
+the two existing role passwords and ensure password URL-encoding occurs exactly once, then save
+the same protected file. Password reset, role recreation and broader access are not a proposed fix.
 
 Therefore current Alembic revision, table ownership/data, effective table/column/default privileges,
 role memberships, migrator separation and **all SQL CRUD are unverified**. Historical owner evidence
@@ -117,9 +125,34 @@ Fresh linked billing reads at approximately 21:50 CDT established:
 - **New hosting resources: 0. New hosting commitments/charges: none introduced.** No budget/alert,
   provider registration, networking, service setting or resource mutation occurred in this run.
 
-Once SQL gates pass, verify the minimal supported host/region/SKU and current incremental compute,
-registry/build/logging/network meters before allocation. Reuse the existing runtime; do not assume an
-empty SKU response establishes F1/custom-container eligibility. For App Service, use its actual outbound
+At **22:26–22:28 CDT**, additional GET-only suitability checks established:
+
+- `Microsoft.Web` is **NotRegistered**; it was not registered by this run.
+- Subscription-scoped Linux F1/B1 region listings advertise **North Central US**, matching the existing
+  database's region. This is advertised availability, not successful allocation or effective quota.
+- The current regional `webAppStacks` endpoint advertises **`PYTHON|3.12`**, non-preview, with end of
+  support listed as October 31, 2028. The older `availableStacks` endpoint returned stale versions and
+  is not used to infer lack of 3.12 support.
+- The public Retail Prices API returned **F1 Linux: USD 0/hour** and **B1 Linux: USD 0.018/hour**
+  (about USD 13.14 per 730-hour month), in North Central US. The first narrow price query returned no
+  rows because this service's `armSkuName` fields are empty; the complete 130-row regional query
+  resolved the published rates by product/sku/meter. This is retail evidence, not an allocation or bill.
+- Regional quota lookups returned **404** for both checked regions. Capacity remains **unknown**;
+  successful region listings or permission patterns do not establish it. Hosting/create/register
+  permission patterns are present, but effective policy/deny/capacity acceptance is still untested.
+
+The smallest proposed host is a **Linux F1 native Python 3.12 app**, reusing existing API code and frozen
+dependencies, with explicit Uvicorn startup. It would avoid a registry, Log Analytics workspace,
+Application Insights and a paid plan. This packaging path is **not yet implemented or deployed**;
+the prepared Docker image remains the validated local artifact. F1 has a 60 CPU-minute daily limit,
+idle/cold starts and no production SLA, so it is a staging option only. See the
+[published Linux plan limits](https://azure.microsoft.com/en-us/pricing/details/app-service/linux/)
+and [explicit Python/FastAPI startup guidance](https://learn.microsoft.com/en-us/azure/app-service/quickstart-python).
+No paid fallback was selected or allocated.
+
+Once SQL gates pass, confirm the minimum supported host/region/SKU and remaining incremental
+build/logging/network meters before allocation. Do not assume an empty SKU response or region listing
+establishes F1/custom-container eligibility. For App Service, use its actual outbound
 IP set and narrow database firewall entries, preserving the owner rule; do not enable blanket Azure access.
 See [Azure's outbound-address guidance](https://learn.microsoft.com/en-us/azure/app-service/overview-inbound-outbound-ips)
 and [plan behavior](https://learn.microsoft.com/en-us/azure/app-service/overview-hosting-plans).
@@ -149,7 +182,10 @@ been uploaded to a registry or deployed.
 | Existing `staging_preflight.py --benefits-only ... --timeout 90` | Exit 2 by non-provisioning design; successful financial observations evaluated above; free-meter lookup failed. |
 | GET-only readiness wrapper reusing #31 | Completed; server/DB/TLS/backups/inventories verified; optional administrator lookup failed as disclosed. |
 | Existing `staging_preflight.py --hosting-skus-only ... --timeout 60` | Exit 2; empty SKU list, capacity/eligibility unknown. |
-| Guarded protected-config SQL reader | Exit 2 before connection; both required private values absent. |
+| Guarded protected-config SQL reader, initial runs | Exit 2 before connection; both required private values absent. |
+| Resumed protected-config reader and boolean-only URI diagnostics | First stopped before connection on host parsing; owner corrected privately; final exact-target/TLS guards passed, reader exit 2 on rejected SQL authentication. |
+| Bounded SELECT-only per-role diagnosis | Both runtime and migrator logins rejected authentication; no SQL results or writes. Diagnostic wrapper exit 0 means its report completed, not that SQL checks passed. |
+| GET-only hosting suitability/runtime and public retail queries | F1 rate USD 0/hour; native Python 3.12 and region advertised; provider unregistered, quota GETs 404; no allocation. |
 | Certificate/hostname-verified PostgreSQL TLS probe | Passed TLS 1.3; no SQL login. |
 | GET-only complete resource/usage wrapper | Completed; one resource, 14 records totaling reported USD 0. |
 | `docker build --label org.opencontainers.image.revision=83ba85525e6db23fb5af150c0c705d1fe13f4def --file services/api/Dockerfile --tag dzirent-api:azure-phase1-83ba855 .` | Passed, unchanged frozen runtime; artifact above. |
@@ -178,7 +214,8 @@ or administrator grant. The existing web demo remains at https://dzirent.com/, s
 `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`, deployment `dpl_A7AvvLu1XmuzcWuvTRiRpHcTqAUd`,
 confirmed READY by a fresh read-only provider lookup. No frontend environment/DNS/tag/alias changed.
 
-**Next required input:** privately fill the two existing SQL settings and reply ready. Then perform
+**Next required input:** privately correct the existing role passwords/URL encoding and reply ready;
+the URLs are populated but both SQL logins are rejected. Then perform
 strict SELECT-only schema/data/ACL inspection, confirm recovery/no concurrent writer, serialize only
 needed additive migrations, allocate the verified minimal HTTPS host and narrowly scoped network
 access, supply runtime-only secrets and the owner CA bundle at its verified Linux path, and perform explicit controlled staging CRUD plus persistence/
@@ -189,4 +226,4 @@ specific approved test rows. A successful health check alone never proves CRUD.
 No rollback is required because no cloud deployment/configuration/schema changed. Preserve the
 existing web deployment; keep the local image if useful for the resumed staging rollout. Never drop
 or downgrade data-bearing auth schema as an application rollback. **Stop this assignment at the
-missing protected SQL input; do not continue storefront, AI, public onboarding or a later phase.**
+rejected protected SQL credentials; do not continue storefront, AI, public onboarding or a later phase.**
