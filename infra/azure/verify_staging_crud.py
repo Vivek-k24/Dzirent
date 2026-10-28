@@ -67,8 +67,12 @@ def connection_parameters(path: Path) -> dict:
 
 
 def counts(connection) -> dict[str, int]:
+    # Runtime intentionally cannot read the admin event trail. Keep that boundary.
     tables = connection.execute(
-        "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename"
+        "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+        "WHERE n.nspname='public' AND c.relkind IN ('r','p') "
+        "AND (has_table_privilege(c.oid,'SELECT') OR has_any_column_privilege(c.oid,'SELECT')) "
+        "ORDER BY c.relname"
     ).fetchall()
     return {
         name: connection.execute(
@@ -220,12 +224,12 @@ def main() -> int:
                 require(api_brand(identifier) is None, "hosted_delete_visible")
                 require(
                     counts(connection) == state["before_counts"],
-                    "all_table_counts_restored",
+                    "runtime_readable_table_counts_restored",
                 )
                 report.update(
                     status="passed",
                     hosted_delete_visible=True,
-                    all_table_counts_restored=True,
+                    runtime_readable_table_counts_restored=True,
                 )
     except Exception as exc:  # noqa: BLE001 -- never expose credential-bearing driver/provider text
         report.update(
