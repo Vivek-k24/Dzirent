@@ -12,8 +12,8 @@ Contract: `contracts/openapi.json` (`0.1.0-candidate.2`), generated from the run
 | `profiles.py` | `/me` bootstrap/read/update/deactivate, preferences, lender enrollment |
 | `listings.py` | Owner-scoped listing create/read/update/archive/availability with `expected_version` |
 | `studios.py` | Studio owner settings (`/me/studio`) and public directory/profile/products (`/studios`) |
-| `identity.py` | First-party session boundary (implementation pending); restricted local/test mock identity |
-| `orm.py`, `alembic/` | Phase 1 schema; one Alembic head (`0003_native_identity_boundary`) |
+| `identity.py`, `auth/` | Draft native cookie auth and encrypted transactional mail outbox; local/test mock identity stays isolated |
+| `orm.py`, `alembic/` | Additive draft head `0005_auth_email_outbox`; historical revisions 0001–0004 unchanged |
 | `seed.py` | Idempotent deterministic demo seed from `fixtures/catalog` (local/test only) |
 | `errors.py`, `observability.py` | Error envelope, request IDs, redacted JSON logs, safe 500s |
 | `contract.py` | OpenAPI source: runtime routers plus contract-only upload declarations |
@@ -37,8 +37,14 @@ uv run --frozen uvicorn dzirent_api.main:app --port 8000
 
 Demo identity (only with `DZIRENT_MODE=demo` and `DZIRENT_ENVIRONMENT=local|test`):
 `Authorization: Bearer mock:<subject>` where subject matches `^[a-z0-9][a-z0-9-]{0,62}$`.
-The seed lender that owns all 40 garments is `mock:sample-lender`. Connected mode selects native identity and requires a database URL. Until Issue #26 is implemented,
-protected connected requests return 503, never mock success.
+The seed lender that owns all 40 garments is `mock:sample-lender`. Connected mode selects native
+cookie identity, a database URL, private CSRF key and one exact web origin. Missing configuration
+and upstream failures fail closed, never mock success. The native implementation has local-only
+validation and is **not released**. Do not run hosted migrations, provision staging accounts or
+start staging from this draft. See [email workflow/runbook](../../docs/auth/email-verification.md),
+[local test report](../../docs/auth/email-verification-test-report.md), the historical
+[owner handoff](../../docs/auth/phase1-handoff.md) and
+[ADR 0005](../../docs/architecture/0005-native-authentication.md) for the security/migration design.
 
 ## Tests
 

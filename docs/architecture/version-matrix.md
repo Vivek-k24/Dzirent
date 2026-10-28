@@ -22,6 +22,7 @@ Updates are scoped integration changes, never three independent upgrades.
 | FastAPI / Uvicorn | 0.146.0 / 0.54.0 | Health runtime plus schema-only contract |
 | Pydantic / settings | 2.14.1 / 2.16.0 | Candidate schemas and startup guards |
 | SQLAlchemy / psycopg / Alembic | 2.1.5 / 3.3.6 / 1.20.0 | Dependency baseline only; no schema/migrations shipped |
+| Argon2 (Issue #26 draft only) | argon2-cffi 25.1.0 | Required native-auth pin; bindings/cffi/parser exact artifacts in API uv.lock; Phase 2 security/concurrency validation not run |
 | PostgreSQL | 17.11 | Current supported 17 minor; optional Docker Compose development service |
 | pytest / HTTPX / Ruff / mypy | 9.1.1 / 0.28.1 / 0.17.1 / 2.4.0 | Foundation checks only |
 | JSON Schema / pip-audit / pre-commit | 4.26.0 / 2.10.1 / 4.7.0 | Examples validated; audit tool available; no hook bypass claims |

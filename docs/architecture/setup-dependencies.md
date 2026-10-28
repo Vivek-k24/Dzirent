@@ -20,7 +20,9 @@ they do not block local fixtures/MSW or the foundation shell.
 | DNS access | Later approved custom domain release | Confirm authoritative DNS provider and exact provider-supplied records. No DNS query/change or domain attachment performed in bootstrap. |
 
 For connected local configuration, fill the two ignored env files from their examples. Web requires
-`NEXT_PUBLIC_DZIRENT_MODE=connected` and an API base ending `/api/v1`. API requires
-`DZIRENT_MODE=connected`, `DZIRENT_IDENTITY_MODE=native`, PostgreSQL URL and exact CORS origins.
-Until Issue #26 completes first-party authentication, protected connected requests fail closed.
+`NEXT_PUBLIC_DZIRENT_MODE=connected`, server-only `DZIRENT_API_UPSTREAM_URL` ending `/api/v1`, and
+exact `DZIRENT_WEB_ORIGIN`. API requires `DZIRENT_MODE=connected`, `DZIRENT_IDENTITY_MODE=native`,
+PostgreSQL URL, private `DZIRENT_AUTH_CSRF_KEY` and matching exact `DZIRENT_AUTH_WEB_ORIGIN`.
+Issue #26 Phase 1 source is untested and not released; missing configuration fails closed.
+Do not start staging, migrate or provision accounts before the separate owner-approved Phase 2.
 Do not use the staging database as a disposable test database. Refer to Issue #25 for Azure infrastructure.

@@ -28,6 +28,70 @@ The owner-specified CA bundle also passed certificate/hostname-verified TLS 1.3 
 Draft [#71](https://github.com/Vivek-k24/Dzirent/pull/71) records the guard and checkpoint; initial
 head `3a945bdd78e99d7f4500a389c07632665b18b345` passed all seven checks and triggered no listed Vercel deployment.
 
+## AUTH-EMAIL #64 — local scope completed, 2026-10-22
+
+Draft PR #61 remains unmerged; no hosted activation or Phase 2B is authorized. Code candidate
+`9e2af2cdb579aa18a5f4f0bd2e5854366c3e8f94` descends from the exact approved start
+`5b130d3dfc16d5514dcde6815aea8d78aa47b9a0`; main and live demo are preserved.
+
+Encrypted transactional verification/recovery email work now survives process interruption,
+uses expiring fenced claims, bounded retry/cleanup and single-use/superseded token checks.
+The forward 0005 migration adds only the outbox and its restricted grants. Existing account/RBAC
+behavior and contract `.3` are preserved. SMTP is disabled by default and no provider was configured.
+The UI refreshes session truth only after explicit confirmation; no automatic login/verification.
+
+Focused local API regressions **78 passed**, web unit tests **38 passed**, preview guards **3 passed**;
+static/contract checks and API dependency audit passed. Final complete API suite **400 passed / 0 skipped** at the exact code candidate above. See
+[exact report and changed files](auth/email-verification-test-report.md) and
+[dispatch/encryption/activation runbook](auth/email-verification.md). Historical #62's nondurable
+queue limitation below is superseded in source, with hosted delivery still unverified.
+
+Only a disposable loopback PostgreSQL 17.11 container and simulated mail were used. No browser/E2E,
+real SMTP, Azure migration/accounts, real admin, deployment, merge, domain change or Phase 2B.
+Next: owner reviews the local-tested draft, migration/privileges, key custody and later sender/
+hosted activation dependencies. No real inbox delivery, DNS authentication or live security
+acceptance is claimed by these tests.
+
+## AUTH-CONNECT #62 — Phase 2A local validation, 2026-10-21
+
+**Local phase complete; draft PR #61 remains under owner review. Phase 2B is not authorized.**
+Pinned start `db7d1888183c6362ad5087ab1fc13a4bed983114`; tested code
+`82450720030d7fde31aeb04b432104bbbce0a28a` on `codex/native-auth-phase1` in the assigned Codex
+checkout. Main `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc` was preserved without merging.
+Final local evidence: **337 API tests**, **33 web tests**, **3 preview-guard tests**, **4 actual
+connected Chromium scenarios**, **10 demo desktop/mobile workflows**, all passed with **zero skips**;
+static checks, production demo build, contract and deterministic fixture checks also passed.
+Earlier failures, corrections and exact commands are retained in the [Phase 2A report](auth/phase2a-test-report.md).
+
+Fixed post-commit mail correctness, shared-BFF throttling, sensitive-table ACLs/protected columns,
+recovery CI, exact Host validation, local destruction/operator guards and demonstrated test isolation.
+Only disposable loopback PG17, fabricated local identities and in-memory mail were used. No Azure,
+staging migration/accounts, real admin privilege, real email, hosted test, deployment or merge.
+The Vercel exact-branch guard was corrected in source; project inspection is read-only and any
+safe publication's exact-head automatic CI/deployment-suppression evidence belongs to PR #61.
+Contract stays `.3`; locks, canonical sample data, old migrations and other lanes are preserved.
+
+Next: owner reviews the local-tested draft and explicitly decides whether to authorize Phase 2B.
+Hosted TLS/mail/operational abuse controls and the real admin identity remain unverified. The
+bounded mail queue is not durable. Parent #26 remains open; the live presentation demo is preserved.
+
+## AUTH-CONNECT #26 — Phase 1 implementation, 2026-10-21
+
+**Implemented but untested; draft owner review required before Phase 2.** Branch
+`codex/native-auth-phase1`, exact main base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc` (includes #60).
+Native FastAPI credentials/cookies/lifecycle, additive auth schema/least-privilege grants, independent
+renter/lender/admin boundaries, connected Next.js proxy/forms/account security, and guarded operator
+utilities are source artifacts only. Contract `.3` and TypeScript/fixture outputs were generated;
+no tests/lint/typecheck/builds/migrations/accounts/provisioning/hosted/browser checks or manual CI run.
+No merge/deployment, live demo/settings/DNS change, or cloud call in this phase. Automatic draft-PR
+CI is incidental, never Phase 2 acceptance. Existing measurement/quality branches and QA untouched.
+
+Staging PostgreSQL 17.11 at head `0002` with zero users/products is **owner-reported**, not reverified
+here. Proposed chain `0002` → existing guarded `0003` → new `0004_native_auth` is unexecuted. HTTPS API
+hosting (#25), actual existing admin identity origin, reviewed mail delivery, Phase 2 validation and
+explicit later staging migration/account authorization remain. [Handoff and command record](auth/phase1-handoff.md),
+[draft ADR](architecture/0005-native-authentication.md), [contract note](../contracts/changes/0003-native-auth.md).
+
 ## Rental refresh: two independent workflow assignments
 
 User-authorized batch from code baseline `a63acc0e9d55d79a918775a57d09bcec63cd3726`.
