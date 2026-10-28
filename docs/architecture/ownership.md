@@ -16,7 +16,8 @@ Explicit issue handoff covers necessary native Settings/register/transport/rente
 signup/login/session/proxy, focused auth/PG/browser regressions, staging configuration/packaging,
 environment destinations/examples, auth design/report, project status and own log. Only83's
 auth-dialog/providers/shell plus necessary header CSS are reconciled; preserve its clean header
-while keeping61's real session restoration/logout/forms. Do not import the rest of83 or its QA lane.
+while keeping61's real session restoration/logout/forms. Only83’s three existing no-banner test assertions are carried forward as a required header
+dependency, recorded on84; do not import the rest of83 or activate its QA lane.
 No AI/media/other issue, dependency upgrade or general branch audit/pruning.
 
 One default-off temporary registration setting; only connected/native staging at the existing

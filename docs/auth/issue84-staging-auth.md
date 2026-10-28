@@ -17,8 +17,8 @@ assets preserved. No repeated migration/cherry-pick, branch reset, force push or
 From83 `d62da9c8215bf10043c851a638364e9ca21710bf`, only auth-dialog/providers/shell and necessary
 header CSS were reconciled. Conflicts retained real ConnectedAuth, restoreSession/query isolation,
 server-cookie logout/failure handling and account security links. Header/demo controls/footer/account
-wording use the cleaned presentation. The registration-restricted placeholder is absent. The other
-11 files and QA work from83 are not implicitly merged; no other agent/worktree/log is changed.
+wording use the cleaned presentation. The registration-restricted placeholder is absent. Only the three existing no-banner assertions in83’s collections test were carried forward to
+match this required header. The other10 files are not implicitly merged; no other agent/worktree/log is changed.
 
 ## Configuration and security gates
 
