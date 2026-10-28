@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "status": "owner-approved-applied-and-verified",
+  "approvalSource": "separate explicit owner response in this session",
+  "reviewedProposalCommit": "fd0877143a2d8fa6e1a9f1de6eb171afac88cdc4",
+  "appliedAndVerifiedAt": "2026-10-28T19:25:57Z",
+  "ownedRuleName": "dzirent-stage3-api-observed-01",
+  "observedAt": "2026-10-28T19:18:51Z",
+  "hostingResource": "dzirent-api-staging-4265",
+  "sourceSha": "bc55f71113c06814532df5b82b3af0cdedd97994",
+  "source": "one-shot actual API process HTTPS egress observation",
+  "additionalSourceCidrs": ["172.214.222.211/32"],
+  "existingRulesToChangeOrRemove": [],
+  "allowAllAzureServices": false,
+  "guards": [
+    "Separate owner approval required for this additional address",
+    "Retain all existing owner and approved staging rules unchanged",
+    "Recheck actual API process diagnostic and exact global IPv4 address",
+    "Add only one start=end rule, no ranges or all-Azure exception",
+    "Do not interpret egress observation as successful database connectivity"
+  ]
+}

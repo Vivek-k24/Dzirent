@@ -7,6 +7,8 @@ export type ModeConfig =
 export function readMode(input: { mode: string; apiBaseUrl?: string }): ModeConfig {
   if (!modes.values.includes(input.mode)) throw new Error("Invalid dzirent mode");
   if (input.mode === "demo") return { mode: "demo" };
+  // The web app uses a fixed same-origin transport. Native clients may use an explicit API URL.
+  if (input.apiBaseUrl === "/auth/api") return { mode: "connected", apiBaseUrl: "/auth/api" };
   if (!input.apiBaseUrl) {
     throw new Error("Connected mode requires an API URL");
   }

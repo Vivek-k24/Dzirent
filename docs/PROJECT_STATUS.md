@@ -1,5 +1,179 @@
 # Project status
 
+## Connected staging Stage 3 — 2026-10-28, America/Chicago
+
+**Azure backend and protected connected web transport operational; full release gated.** Issue77,
+isolated `codex/connected-staging-stage3`, base `a02e180f0147f4f06fd61d47c1f3997b922e9e6b`.
+Environment audit complete before cloud writes: actual API Settings/Vercel/CI consumers and explicit
+destination allowlists, no bulk GitHub secrets, administrator local only, migrator separate.
+
+Actual protected backup restored locally into disposable PG17.11; unchanged native migrations
+rehearsed successfully, then applied once to Azure at13:44 CDT with the existing migrator.
+Azure now `0005_auth_email_outbox`, 25 tables, original18 counts/old privileges/ownership preserved,
+new auth tables empty; independent app-role login and TLS1.3/verify-full passed. No accounts created.
+Free Linux F1 host deployed with verified Students credit and both spending limits On. API
+`https://dzirent-api-staging-4265.azurewebsites.net/api/v1`, source
+`bc55f71113c06814532df5b82b3af0cdedd97994`, publication `eede9fed-93c0-4baa-959c-d4a80f37ca1e`.
+App-role SQL CRUD/HTTPS reads, persisted update across app restart and owned-row cleanup passed;
+all25 counts restored, no users/accounts/products. Actual native process PG17.11/verify-full/TLS1.3,
+Python3.12.15. External7/7 and local Next proxy5/5 checks passed.
+
+Protected connected Vercel preview READY from8d9ac658c19673cbed1436ad3a723dce179f3db3. Actual branch
+URL/exact API origin configured with only three branch-preview values; no credentials in Vercel.
+Owner separately approved13 declared plus one observed /32 source; all prior rules preserved.
+Native anonymous CSRF/origin/cookie/restart checks passed; full signed-in/lender sessions untested.
+Email remains **blocked by owner instruction**, SMTP/worker disabled; private hosted media still
+unimplemented/unprovisioned (unmerged local-only PR75 dependency). Production DB isolation/public
+cutover approval remain gates. No merge, production Vercel setting/alias, DNS or live demo change.
+[Exact checks/blockers](infra/connected-staging-verification-2026-10-28.md),
+[variable destinations](infra/connected-staging-environment-audit.md),
+[startup/recovery handoff](infra/connected-staging-runbook.md), draft PR78.
+
+## Connection recovery Stage 2 — 2026-10-28, America/Chicago
+
+**Stage 2 complete; SQL credentials recovered, not deployed.** Exact start
+`19b850bb42102525590c792bed2a63487301813c`, own `codex/azure-backend-phase1` / draft #76.
+Owner authorized password resets only for the two existing database roles after administrator login.
+Administrator inspection passed at11:24 CDT; rotation/verification completed11:32 CDT.
+
+Two independent secure passwords committed in one transaction, using client-generated SCRAM
+verifiers. Both protected external files updated and checked, exact file ACLs retained, temporary
+recovery copy removed. Independent CSRF/AES outbox material generated only in protected owner input.
+Both **`dzirent_app` and `dzirent_migrator` logins passed** with verify-full/TLS1.3/PG17.11 and read-only
+identity/schema/count checks. Existing native FastAPI database adapter also selected through
+`dzirent_app`, without administrator/migrator runtime privileges.
+
+Before/after role identities/attributes, memberships, database/schema/object/column/default/function
+ACLs and ownership, RLS/role settings, effective permissions and all18 public table counts match.
+Runtime still cannot CREATE database/schema or UPDATE migration history. **Schema remains
+`0002_studios`, users0/products0; no application-data/schema write or migration.**
+
+**Ready for Stage 3 planning, not hosted acceptance.** Native runtime expects0005; migrations need
+review/authorization before execution. HTTPS hosting/cost/network/runtime-secret/origin configuration,
+verified outbound email and a hosted private media provider remain unfinished. SMTP/worker/media
+remain disabled; no public accounts or live website change. No new resource, deployment or merge.
+[Actual commands, preservation evidence, limits and handoff](infra/azure-connection-recovery-2026-10-28.md).
+Older SQL-authentication blockers below describe the October27 checkpoint and are superseded here.
+
+## Azure backend Phase 1 — 2026-10-27, America/Chicago
+
+**Highest-priority backend-only assignment; blocked on private SQL input, not deployed.**
+Recovered guards+native-auth integration `83ba85525e6db23fb5af150c0c705d1fe13f4def` in isolated
+`codex/azure-backend-phase1`. Reused #71/#61/#31; all 17 worktrees and one prior edit preserved.
+No storefront/AI work or other agent activation. Main remains `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`.
+
+**Completed:** built existing frozen backend image, non-root/read-only/network-disabled configuration/
+crypto probe passed, automatic frontend deployment guards verified. No runtime/schema/dependency edit.
+**Verified:** current VS Code Azure sign-in, Students credit available and both spending limits On,
+existing PG17.11 Ready, CA/hostname-verified TLS1.3, intended DB and seven backup records. No HTTPS
+host exists. Latest provider usage reports USD0 through Oct27; no new hosting resource/charge.
+**Resumed 22:21–22:36 CDT:** owner populated both SQL URLs, then explicitly authorized local encoding
+repair. Both password components saved using the known host boundary, preserving valid percent
+sequences, credential semantics, other settings and file ACL. Saved-byte and exact-target/role/
+verify-full/CA guards pass, but PostgreSQL still rejects authentication for both roles; final check
+exit2, ready=false. No SQL login/results/writes; schema/privileges/CRUD/migration safety unverified.
+Additional read-only hosting checks found advertised native Python 3.12/Linux F1 in North Central US
+and published USD 0/hour hosting; provider remains unregistered and quota lookups failed404, so no
+allocation/capacity claim or new resource. No host/deployment ID.
+**Next:** accepted passwords for the existing roles, then SELECT-only SQL/recovery/security gates,
+controlled migrations/HTTPS hosting/staging CRUD and restart/external checks. Stop after this phase.
+The staging DB is not production isolation; no real public accounts or verification bypass.
+
+Live demo remains unchanged. No cloud/SQL/network/billing mutation, migration/account/admin grant,
+merge/deploy/DNS/tag change or live email. See [exact recovered sources, commands, image and blocker](infra/azure-backend-phase1-2026-10-27.md).
+
+## REL-2 production integration checkpoint — 2026-10-27
+
+Claim [#70](https://github.com/Vivek-k24/Dzirent/issues/70); isolated branch
+`codex/production-integration-20261027`, exact main base
+`c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. All 11 prior checkouts/three object stores reconciled;
+owner review and the old detached release's `.gitignore` edits preserved. No agent launched.
+
+**Completed:** smallest-gap inventory and a concrete guard fix: both Vercel configs disable automatic
+Git deployments, with `pnpm deploy:check` enforced by `pnpm check`. No dependency upgrade.
+**Verified:** Azure Students authentication/credit/spending limits; existing PostgreSQL 17.11 Ready,
+certificate-verified TLS 1.3, intended database and seven listed backups. Reported existing usage through
+October 27 is USD 0; future hosting/storage costs remain unverified. PR #61 Foundation retry passed
+at `8c98d88d5a12164d562f595dc1f3f78d031f1db6`, including 10 workflow tests; all seven checks green.
+**Blocked:** the protected external SQL template awaits private values, so current ACLs/data/schema/migration safety are unverified.
+No Azure HTTPS API host or storage exists. Legitimate SMTP sender configuration and independent auth
+review remain outstanding. Public onboarding/upload and production release are not ready.
+**Next:** owner populates SQL settings and identifies the legitimate sender configuration; finish SQL/recovery/host prerequisites, auth review,
+then serialized #61 → refreshed main → #65/#66 → uploads/storefront → exact-source regression/release.
+
+Current production is preserved at `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`, https://dzirent.com/.
+An unauthenticated browser confirmed the existing demo UI/footer and no page exceptions during its visit.
+No cloud writes, migration, account/admin grant, email, merge, tag change, DNS change or deployment occurred.
+The guard fix remains a reviewable source change. Historical status below does not supersede this checkpoint.
+See the [reconciliation, actual tests, gap matrix and release/rollback handoff](releases/2026-10-27-production-readiness.md).
+The owner-specified CA bundle also passed certificate/hostname-verified TLS 1.3 at 19:29 UTC.
+Draft [#71](https://github.com/Vivek-k24/Dzirent/pull/71) records the guard and checkpoint; initial
+head `3a945bdd78e99d7f4500a389c07632665b18b345` passed all seven checks and triggered no listed Vercel deployment.
+
+## AUTH-EMAIL #64 — local scope completed, 2026-10-22
+
+Draft PR #61 remains unmerged; no hosted activation or Phase 2B is authorized. Code candidate
+`9e2af2cdb579aa18a5f4f0bd2e5854366c3e8f94` descends from the exact approved start
+`5b130d3dfc16d5514dcde6815aea8d78aa47b9a0`; main and live demo are preserved.
+
+Encrypted transactional verification/recovery email work now survives process interruption,
+uses expiring fenced claims, bounded retry/cleanup and single-use/superseded token checks.
+The forward 0005 migration adds only the outbox and its restricted grants. Existing account/RBAC
+behavior and contract `.3` are preserved. SMTP is disabled by default and no provider was configured.
+The UI refreshes session truth only after explicit confirmation; no automatic login/verification.
+
+Focused local API regressions **78 passed**, web unit tests **38 passed**, preview guards **3 passed**;
+static/contract checks and API dependency audit passed. Final complete API suite **400 passed / 0 skipped** at the exact code candidate above. See
+[exact report and changed files](auth/email-verification-test-report.md) and
+[dispatch/encryption/activation runbook](auth/email-verification.md). Historical #62's nondurable
+queue limitation below is superseded in source, with hosted delivery still unverified.
+
+Only a disposable loopback PostgreSQL 17.11 container and simulated mail were used. No browser/E2E,
+real SMTP, Azure migration/accounts, real admin, deployment, merge, domain change or Phase 2B.
+Next: owner reviews the local-tested draft, migration/privileges, key custody and later sender/
+hosted activation dependencies. No real inbox delivery, DNS authentication or live security
+acceptance is claimed by these tests.
+
+## AUTH-CONNECT #62 — Phase 2A local validation, 2026-10-21
+
+**Local phase complete; draft PR #61 remains under owner review. Phase 2B is not authorized.**
+Pinned start `db7d1888183c6362ad5087ab1fc13a4bed983114`; tested code
+`82450720030d7fde31aeb04b432104bbbce0a28a` on `codex/native-auth-phase1` in the assigned Codex
+checkout. Main `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc` was preserved without merging.
+Final local evidence: **337 API tests**, **33 web tests**, **3 preview-guard tests**, **4 actual
+connected Chromium scenarios**, **10 demo desktop/mobile workflows**, all passed with **zero skips**;
+static checks, production demo build, contract and deterministic fixture checks also passed.
+Earlier failures, corrections and exact commands are retained in the [Phase 2A report](auth/phase2a-test-report.md).
+
+Fixed post-commit mail correctness, shared-BFF throttling, sensitive-table ACLs/protected columns,
+recovery CI, exact Host validation, local destruction/operator guards and demonstrated test isolation.
+Only disposable loopback PG17, fabricated local identities and in-memory mail were used. No Azure,
+staging migration/accounts, real admin privilege, real email, hosted test, deployment or merge.
+The Vercel exact-branch guard was corrected in source; project inspection is read-only and any
+safe publication's exact-head automatic CI/deployment-suppression evidence belongs to PR #61.
+Contract stays `.3`; locks, canonical sample data, old migrations and other lanes are preserved.
+
+Next: owner reviews the local-tested draft and explicitly decides whether to authorize Phase 2B.
+Hosted TLS/mail/operational abuse controls and the real admin identity remain unverified. The
+bounded mail queue is not durable. Parent #26 remains open; the live presentation demo is preserved.
+
+## AUTH-CONNECT #26 — Phase 1 implementation, 2026-10-21
+
+**Implemented but untested; draft owner review required before Phase 2.** Branch
+`codex/native-auth-phase1`, exact main base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc` (includes #60).
+Native FastAPI credentials/cookies/lifecycle, additive auth schema/least-privilege grants, independent
+renter/lender/admin boundaries, connected Next.js proxy/forms/account security, and guarded operator
+utilities are source artifacts only. Contract `.3` and TypeScript/fixture outputs were generated;
+no tests/lint/typecheck/builds/migrations/accounts/provisioning/hosted/browser checks or manual CI run.
+No merge/deployment, live demo/settings/DNS change, or cloud call in this phase. Automatic draft-PR
+CI is incidental, never Phase 2 acceptance. Existing measurement/quality branches and QA untouched.
+
+Staging PostgreSQL 17.11 at head `0002` with zero users/products is **owner-reported**, not reverified
+here. Proposed chain `0002` → existing guarded `0003` → new `0004_native_auth` is unexecuted. HTTPS API
+hosting (#25), actual existing admin identity origin, reviewed mail delivery, Phase 2 validation and
+explicit later staging migration/account authorization remain. [Handoff and command record](auth/phase1-handoff.md),
+[draft ADR](architecture/0005-native-authentication.md), [contract note](../contracts/changes/0003-native-auth.md).
+
 ## Rental refresh: two independent workflow assignments
 
 User-authorized batch from code baseline `a63acc0e9d55d79a918775a57d09bcec63cd3726`.

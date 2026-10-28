@@ -21,6 +21,7 @@ def test_readiness_checks_database_and_schema(client: TestClient, engine: Engine
     ready = client.get("/api/v1/health/ready")
     assert ready.status_code == 200 and ready.json()["status"] == "ready"
     with engine.begin() as connection:
+        previous_revision = connection.scalar(text("SELECT version_num FROM alembic_version"))
         connection.execute(text("UPDATE alembic_version SET version_num = 'older'"))
     try:
         stale = client.get("/api/v1/health/ready")
@@ -28,7 +29,8 @@ def test_readiness_checks_database_and_schema(client: TestClient, engine: Engine
     finally:
         with engine.begin() as connection:
             connection.execute(
-                text("UPDATE alembic_version SET version_num = '0001_phase1_schema'")
+                text("UPDATE alembic_version SET version_num = :revision"),
+                {"revision": previous_revision},
             )
 
 
@@ -52,7 +54,10 @@ def test_database_outage_fails_closed_without_leaking(database_url: str) -> None
 def test_unconfigured_database_is_unavailable_not_mocked() -> None:
     from dzirent_api.settings import Settings
 
-    app = create_app(Settings(_env_file=None, environment="test", log_level="WARNING"))  # type: ignore[call-arg]
+    # This negative case must not inherit a developer's configured database.
+    app = create_app(
+        Settings(_env_file=None, database_url="", environment="test", log_level="WARNING")
+    )  # type: ignore[call-arg]
     with TestClient(app) as client:
         for path in ("/api/v1/health/ready", "/api/v1/catalog/products"):
             response = client.get(path)

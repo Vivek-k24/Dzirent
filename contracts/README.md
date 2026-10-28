@@ -1,12 +1,16 @@
-# Candidate API contract 0.1.0-candidate.2
+# Candidate API contract 0.1.0-candidate.3
 
-Current version: `0.1.0-candidate.2` = `0.1.0-candidate.1` plus the additive Studio routes in
-[changes/0002-studios.md](changes/0002-studios.md). Everything below about catalog, profile and listing
-behavior is unchanged.
+Current draft version: `0.1.0-candidate.3`, proposed native auth in
+[changes/0003-native-auth.md](changes/0003-native-auth.md), built on the `.2` Studio additions.
+Catalog/product/Studio DTOs and demo business behavior are preserved. Native transport, verification,
+deactivation and private-read security changes are explicit in that note and ADR 0005. Owner review
+and separate Phase 2 validation are pending; this is not an accepted or deployed auth release.
 
 Status: proposed common Phase 0 baseline, frozen for role work only after foundation review/merge.
 Temporary author: Codex integrator. Owner after merge: Claude Code.
-Source declarations: `services/api/src/dzirent_api/models.py` and `contract.py`.
+Issue #26 explicitly hands scoped auth contract generation to Codex for this draft; Claude retains
+canonical ownership outside that handoff. Source declarations: `services/api/src/dzirent_api/models.py`,
+`auth/schemas.py`, runtime routers and `contract.py`.
 Derived files: `openapi.json`, then `packages/client/src/generated/api.ts`.
 Run `pnpm contracts:generate`; CI runs `pnpm contracts:check`. Do not hand-edit derived files.
 
@@ -23,14 +27,17 @@ All paths start `/api/v1`, including `/health/live` and `/health/ready`.
 Public GETs: `/catalog/products`, `/catalog/products/{slug}`, `/catalog/categories`, `/catalog/facets`,
 `/locations/metros`. Authenticated own-profile operations: POST `/me/bootstrap`; GET/PATCH/DELETE `/me`;
 GET/PATCH `/me/preferences`; POST `/me/lender-profile`. Bootstrap/enrollment are idempotent by verified
-subject. DELETE /me deactivates the application profile and listings, never provider credentials.
+subject. In demo, DELETE /me deactivates the application profile/listings. Native clients use
+password-confirmed POST /auth/deactivate, which also revokes all native sessions and links.
 
 Lender operations: GET/POST `/lender/products`; GET/PATCH/DELETE `/lender/products/{id}`.
 Connected media milestone only: POST `.../{id}/images/upload-intent` and `.../{id}/images/complete`.
-No payment, checkout, reservation, taxonomy-write, admin, arbitrary-user, or token-ticket endpoints.
+No payment, checkout, reservation, taxonomy-write, arbitrary-user administration or dashboard endpoints.
+The new `/admin/access` is only a narrow authenticated capability guard; see the native auth note.
 Checkout preview/cart are client-only sample state; selected dates do not reserve a garment.
 
-Bearer session identity is required on protected operations in the contract. API derives ownership from
+Native cookie identity is required in connected mode; demo bearer identity is local/test demo only.
+All native mutations also require exact Origin and random session-bound CSRF. API derives ownership from
 the verified subject and stored lender membership. No request accepts owner IDs, role strings, or an admin
 flag. Owner mismatch/missing entity consistently returns 404; missing lender enrollment returns 403.
 PATCH listing requires `expected_version`, plus `data` (full allowlisted ProductWrite) and/or
@@ -112,9 +119,10 @@ Demo web uses MSW only after Phase 1A implementation; reset clones the same dete
 discards sample session/edits. Mock delays are 0–50 ms; initial UI skeleton is 300 ms independently.
 Visible simulation labels are required. Only harmless cart/wishlist/location/view data may persist locally.
 
-Connected web requires an API base ending `/api/v1`. Connected API requires a database URL,
-verified first-party sessions and server-side ownership enforcement. The session implementation is
-pending Issue #26; protected connected routes currently return 503. Mock
+Connected web uses fixed same-origin `/auth/api`; its server-only upstream must end `/api/v1`.
+Connected API requires a database URL, private CSRF key, exact web origin, verified first-party
+sessions and server-side ownership enforcement. The Issue #26 implementation is untested and not
+released. Missing configuration and API failures fail closed. Mock
 identity is rejected outside `mode=demo` with `environment=local|test`, including staging/production.
 Connected requests never fall back to mock success; periodic refresh is 5 seconds, not pushed realtime.
 

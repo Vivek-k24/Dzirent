@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-quer
 import type { CategoryTree, Facets, MetroList, References } from "@dzirent/client";
 import { api, mode } from "@/lib/api";
 import { useBag, useSession } from "@/lib/store";
+import { restoreSession } from "@/lib/auth";
 
 interface Runtime { ready: boolean; error: string; demo: boolean; revision: number; reset: () => Promise<void>; simulate: (which: "catalog" | "save") => Promise<void> }
 const RuntimeContext = createContext<Runtime>({ ready: false, error: "", demo: true, revision: 0, reset: async () => {}, simulate: async () => {} });
@@ -47,6 +48,12 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     return () => { active = false; };
   }, []);
   const mockReady = useCallback((error: string) => setBoot(s => ({ ...s, ready: !error, error })), []);
+  useEffect(() => {
+    if (mode.mode === "connected" && boot.ready) void restoreSession();
+  }, [boot.ready]);
+  useEffect(() => useSession.subscribe((next, previous) => {
+    if (previous.user && next.user?.id !== previous.user.id) client.clear();
+  }), [client]);
   const runtime: Runtime = { ...boot, demo: mode.mode === "demo",
     reset: async () => {
       if (mode.mode !== "demo") return;
