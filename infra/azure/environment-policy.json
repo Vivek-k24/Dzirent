@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "description": "Explicit environment destinations; never export the entire owner-input file.",
+  "azureRuntimeSecrets": [
+    "DZIRENT_DATABASE_URL",
+    "DZIRENT_AUTH_CSRF_KEY",
+    "DZIRENT_AUTH_OUTBOX_KEYS",
+    "DZIRENT_AUTH_SMTP_USER",
+    "DZIRENT_AUTH_SMTP_PASSWORD",
+    "DZIRENT_AUTH_STAGING_PROXY_KEY"
+  ],
+  "azureRuntimeConfiguration": [
+    "DZIRENT_MODE",
+    "DZIRENT_ENVIRONMENT",
+    "DZIRENT_IDENTITY_MODE",
+    "DZIRENT_DB_POOL_SIZE",
+    "DZIRENT_DB_CONNECT_TIMEOUT_S",
+    "DZIRENT_DB_STATEMENT_TIMEOUT_MS",
+    "DZIRENT_CORS_ORIGINS",
+    "DZIRENT_LOG_LEVEL",
+    "DZIRENT_AUTH_WEB_ORIGIN",
+    "DZIRENT_AUTH_SESSION_HOURS",
+    "DZIRENT_AUTH_VERIFICATION_MINUTES",
+    "DZIRENT_AUTH_RESET_MINUTES",
+    "DZIRENT_AUTH_EMAIL_BACKEND",
+    "DZIRENT_AUTH_EMAIL_SENDER",
+    "DZIRENT_AUTH_SMTP_HOST",
+    "DZIRENT_AUTH_SMTP_PORT",
+    "DZIRENT_AUTH_SMTP_TLS",
+    "DZIRENT_AUTH_OUTBOX_ACTIVE_KEY_ID",
+    "DZIRENT_AUTH_EMAIL_WORKER_ENABLED",
+    "DZIRENT_AUTH_OUTBOX_CAPACITY",
+    "DZIRENT_AUTH_OUTBOX_POLL_SECONDS",
+    "DZIRENT_AUTH_STAGING_SIGNUP_WITHOUT_EMAIL"
+  ],
+  "restrictedMigrationCredentials": ["DZIRENT_MIGRATOR_DATABASE_URL", "DZIRENT_MIGRATOR_ROLE_PASSWORD"],
+  "localOnly": [
+    "DZIRENT_AZURE_PG_ADMIN_USER", "DZIRENT_AZURE_PG_ADMIN_PASSWORD",
+    "DZIRENT_AZURE_PG_HOST", "DZIRENT_AZURE_PG_PORT", "DZIRENT_AZURE_PG_DATABASE",
+    "DZIRENT_AZURE_PG_SSLMODE", "DZIRENT_AZURE_PG_SSLROOTCERT",
+    "DZIRENT_APP_ROLE", "DZIRENT_MIGRATOR_ROLE", "DZIRENT_APP_ROLE_PASSWORD",
+    "DZIRENT_API_BASE_URL", "DZIRENT_MEDIA_ROOT", "DZIRENT_AUTH_OPERATOR_ACK",
+    "DZIRENT_STAGING_TEST_PASSWORD", "DZIRENT_STAGING_TEST_EMAIL"
+  ],
+  "vercelServerConfiguration": ["DZIRENT_API_UPSTREAM_URL", "DZIRENT_WEB_ORIGIN", "DZIRENT_AUTH_STAGING_PROXY_KEY"],
+  "vercelPublicBuildConfiguration": ["NEXT_PUBLIC_DZIRENT_MODE"],
+  "githubActionsDeploymentSecrets": [],
+  "proposedOidcDeploymentVariables": [
+    "AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID",
+    "AZURE_RESOURCE_GROUP", "AZURE_WEBAPP_NAME"
+  ],
+  "proposedOidcEnvironment": "staging-backend",
+  "notYetIntegrated": {
+    "DZIRENT_MEDIA_BACKEND": "PR75 configuration; disabled in hosted mode. No cloud adapter yet."
+  },
+  "invariants": [
+    "No administrator or migrator credentials in application runtime, Vercel or browser variables.",
+    "Only dzirent_app is permitted in the runtime database URL.",
+    "Azure App Settings supplies runtime values to the existing Settings loader.",
+    "No runtime retrieval of GitHub Secrets; no repository secrets currently required.",
+    "SMTP and worker remain disabled until provider, sender, TLS and keys are verified.",
+    "Issue84 temporary signup is staging-only, default off, with direct API proxy-key enforcement; verification stays pending.",
+    "Filesystem media stays local/test only; never a hosted fallback.",
+    "Approved exact HTTPS origins only; preserve production demo configuration."
+  ]
+}

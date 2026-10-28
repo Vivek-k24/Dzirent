@@ -5,9 +5,6 @@
   "buildCommand": "pnpm --filter @dzirent/web build",
   "outputDirectory": ".next",
   "git": {
-    "deploymentEnabled": {
-      "*": false,
-      "main": true
-    }
+    "deploymentEnabled": false
   }
 }

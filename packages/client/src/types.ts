@@ -11,6 +11,9 @@ export type CategoryTree = Schema["CategoryTree"];
 export type Facets = Schema["Facets"];
 export type MetroList = Schema["MetroList"];
 export type CurrentUser = Schema["CurrentUser"];
+export type AuthSessionRead = Schema["AuthSessionRead"];
+export type AuthNotice = Schema["AuthNotice"];
+export type CsrfChallenge = Schema["CsrfChallenge"];
 export type ApiErrorBody = Schema["Error"];
 export type SortOrder = "featured" | "price_asc" | "price_desc" | "newest" | "top_rated";
 export interface CatalogSelection {

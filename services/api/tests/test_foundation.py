@@ -13,7 +13,7 @@ from dzirent_api.reference import BAND_LABELS, BANDS, UNMAPPED_METRO_SLUG
 from dzirent_api.settings import Settings
 
 ROOT = Path(__file__).resolve().parents[3]
-NATIVE = {"identity_mode": "native"}
+NATIVE = {"identity_mode": "native", "auth_csrf_key": "x" * 32}
 
 
 @pytest.mark.parametrize(
@@ -46,6 +46,7 @@ def test_valid_connected_configuration_accepted() -> None:
         environment="production",
         database_url="postgresql://u:p@db/x",
         cors_origins=["https://app.dzirent.test"],
+        auth_web_origin="https://app.dzirent.test",
         **NATIVE,  # type: ignore[arg-type]
     )
     assert not settings.mock_identity_allowed and settings.deployed

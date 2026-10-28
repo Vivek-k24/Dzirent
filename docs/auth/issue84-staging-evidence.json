@@ -1,0 +1,518 @@
+{
+  "recorded_at": "2026-10-28T23:26:29.582623+00:00",
+  "source_sha": "9a2d9c67ec118d41abbe1c39e24456e1214c2f65",
+  "review_branch": "codex/auth-integration-issue84",
+  "base_main_sha": "8bbc9eb1e2eabb5bb73fefc85963498b03b0f0b9",
+  "contract_version": "0.1.0-candidate.3",
+  "schema_revision": "0005_auth_email_outbox",
+  "hosted_auth_acceptance": "passed_across_recorded_focused_runs_on_unchanged_application_source",
+  "preview_url": "https://dzirent-git-codex-connected-staging-stage3-vivekkallakuri-8617.vercel.app",
+  "preview_deployment_id": "dpl_HDnbfRoScriWerwugpuiowUCBSnR",
+  "azure_publication_id": "9cfd0563-6413-4d93-a9cb-5e2a8c0be866",
+  "azure_artifact_sha256": "92bb604835295e646b93121c39fdd332c063ffcc6935db70b971225248b124aa",
+  "actual_deployed_source": {
+    "observed_at": "2026-10-28T23:05:55.664782+00:00",
+    "http_status": 200,
+    "command_exit_code": 0,
+    "source_sha": "9a2d9c67ec118d41abbe1c39e24456e1214c2f65",
+    "schema_revision": "0005_auth_email_outbox",
+    "mode": "connected",
+    "manifest_file_count": 47,
+    "status": "passed"
+  },
+  "protected_proxy_preflight": {
+    "source_sha": "9a2d9c67ec118d41abbe1c39e24456e1214c2f65",
+    "deployment_id": "dpl_HDnbfRoScriWerwugpuiowUCBSnR",
+    "started_at": "2026-10-28T23:05:32.283Z",
+    "checks": [
+      {
+        "name": "unauthenticated_preview_protected",
+        "passed": true,
+        "status": 302
+      },
+      {
+        "name": "protected_signup_navigation",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "name": "native_signup_form",
+        "passed": true
+      },
+      {
+        "name": "clean_header_no_prototype_controls",
+        "passed": true
+      },
+      {
+        "name": "csrf_is_actual_json_challenge",
+        "passed": true
+      },
+      {
+        "name": "anonymous_native_session_401",
+        "passed": true
+      },
+      {
+        "name": "secure_host_only_httponly_csrf_cookies",
+        "passed": true
+      },
+      {
+        "name": "no_uncaught_browser_errors",
+        "passed": true,
+        "count": 0
+      }
+    ],
+    "credentials_recorded": false,
+    "screenshots_or_traces": false,
+    "protection_enabled": true,
+    "csrf_status": 200,
+    "csrf_challenge_present": true,
+    "csrf_json": true,
+    "session_status": 401,
+    "session_code": "unauthenticated",
+    "status": "passed",
+    "completed_at": "2026-10-28T23:05:37.509Z"
+  },
+  "signup_session_run": {
+    "started_at": "2026-10-28T23:18:11.116Z",
+    "completed_at": "2026-10-28T23:20:02.845Z",
+    "checks": [
+      {
+        "name": "unauthenticated_preview_protected",
+        "passed": true,
+        "status": 302
+      },
+      {
+        "name": "protected_signup_navigation",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "name": "native_signup_form",
+        "passed": true
+      },
+      {
+        "name": "clean_header_no_prototype_controls",
+        "passed": true
+      },
+      {
+        "name": "csrf_is_actual_json_challenge",
+        "passed": true
+      },
+      {
+        "name": "anonymous_native_session_401",
+        "passed": true
+      },
+      {
+        "name": "secure_host_only_httponly_csrf_cookies",
+        "passed": true
+      },
+      {
+        "name": "no_uncaught_browser_errors",
+        "passed": true,
+        "count": 0
+      },
+      {
+        "name": "fresh_real_owner_mailbox_before_signup",
+        "passed": true
+      },
+      {
+        "name": "one_signup_action_registration_committed",
+        "passed": true,
+        "status": 202
+      },
+      {
+        "name": "same_action_normal_login_http_200",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "name": "genuine_real_account_session_and_me",
+        "passed": true
+      },
+      {
+        "name": "genuine_secure_httponly_session_cookie",
+        "passed": true
+      },
+      {
+        "name": "refresh_restores_header_account",
+        "passed": true
+      },
+      {
+        "name": "truthful_unverified_account_ui",
+        "passed": true
+      },
+      {
+        "name": "no_credentials_identity_or_session_in_browser_storage",
+        "passed": true
+      },
+      {
+        "name": "azure_argon2id_null_verification_renter_no_mail",
+        "passed": true
+      },
+      {
+        "name": "actual_staging_api_container_restart",
+        "passed": true
+      },
+      {
+        "name": "original_cookie_session_and_me_survive_api_restart",
+        "passed": true
+      },
+      {
+        "name": "browser_ui_restored_after_api_restart",
+        "passed": true
+      },
+      {
+        "name": "ordinary_own_renter_profile_preferences_allowed",
+        "passed": true
+      },
+      {
+        "name": "unverified_lender_enrollment_listing_admin_denied",
+        "passed": true,
+        "statuses": [
+          403,
+          403,
+          403
+        ]
+      },
+      {
+        "name": "lender_ui_keeps_verification_boundary",
+        "passed": true
+      },
+      {
+        "name": "smtp_disabled_resend_truthful_failure",
+        "passed": true
+      },
+      {
+        "name": "password_recovery_stays_unavailable_without_smtp",
+        "passed": true
+      },
+      {
+        "name": "invalid_csrf_denied",
+        "passed": true
+      },
+      {
+        "name": "foreign_origin_denied",
+        "passed": true
+      },
+      {
+        "name": "invalid_input_and_browser_claims_rejected",
+        "passed": true,
+        "statuses": [
+          422,
+          422
+        ]
+      },
+      {
+        "name": "duplicate_generic_no_password_takeover_unknown_generic",
+        "passed": true
+      },
+      {
+        "name": "failed_login_does_not_destroy_current_session",
+        "passed": true
+      },
+      {
+        "name": "logout_ends_browser_session",
+        "passed": true
+      },
+      {
+        "name": "old_session_cookie_server_revoked",
+        "passed": true
+      },
+      {
+        "name": "browser_relogin_original_password_same_account",
+        "passed": true
+      },
+      {
+        "name": "identity_rate_limit_ten_then_429",
+        "passed": true,
+        "statuses": [
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          429
+        ],
+        "retryAfter": "900"
+      }
+    ],
+    "database": {
+      "phase": "after",
+      "observed_at": "2026-10-28T23:18:34.754652+00:00",
+      "transaction_read_only": true,
+      "owner_input_modified": false,
+      "credentials_recorded": false,
+      "app_role_authenticated": true,
+      "certificate_verified_connection": true,
+      "tls_version": "TLSv1.3",
+      "schema_revision": "0005_auth_email_outbox",
+      "matching_accounts": 1,
+      "real_native_active_account": true,
+      "argon2id_password_matches": true,
+      "email_verified_at_is_null": true,
+      "synthetic": false,
+      "roles": [
+        "renter"
+      ],
+      "no_elevated_roles_or_mail_artifacts": true,
+      "session_hashes_only": true,
+      "persisted_session_count": 1,
+      "active_session_count": 1,
+      "status": "passed"
+    },
+    "restart": {
+      "started_at": "2026-10-28T23:18:38.884387+00:00",
+      "only_existing_staging_api_restarted": true,
+      "settings_or_database_modified": false,
+      "restart_http_status": 200,
+      "restart_requested_at": "2026-10-28T23:18:40.234092+00:00",
+      "actual_fresh_container_markers": [
+        "2026-10-28T23:18:57.4470196Z",
+        "2026-10-28T23:18:57.4738809Z"
+      ],
+      "post_restart_ready_status": 200,
+      "attempts": 6,
+      "status": "passed",
+      "completed_at": "2026-10-28T23:19:01.299912+00:00"
+    },
+    "interruption": "Final logout-all harness label selector timed out; no application change. Focused fixed-ID UI rerun below completed the remaining assertions."
+  },
+  "logout_all_focused_rerun": {
+    "source_sha": "9a2d9c67ec118d41abbe1c39e24456e1214c2f65",
+    "deployment_id": "dpl_HDnbfRoScriWerwugpuiowUCBSnR",
+    "started_at": "2026-10-28T23:21:38.387Z",
+    "checks": [
+      {
+        "name": "private_owner_input_and_short_lived_oidc",
+        "passed": true
+      },
+      {
+        "name": "actual_browser_login_before_all_session_revocation",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "name": "account_security_action_visible",
+        "passed": true
+      },
+      {
+        "name": "logout_all_action_selected",
+        "passed": true
+      },
+      {
+        "name": "password_confirmed_logout_all_returns_204",
+        "passed": true,
+        "status": 204
+      },
+      {
+        "name": "browser_and_replayed_cookie_revoked",
+        "passed": true,
+        "statuses": [
+          401,
+          401
+        ]
+      },
+      {
+        "name": "all_persisted_sessions_revoked_account_preserved",
+        "passed": true
+      },
+      {
+        "name": "no_uncaught_browser_errors",
+        "passed": true,
+        "count": 0
+      }
+    ],
+    "new_accounts_created": false,
+    "credentials_recorded": false,
+    "final_database_proof": {
+      "phase": "final",
+      "observed_at": "2026-10-28T23:21:50.262484+00:00",
+      "transaction_read_only": true,
+      "owner_input_modified": false,
+      "credentials_recorded": false,
+      "app_role_authenticated": true,
+      "certificate_verified_connection": true,
+      "tls_version": "TLSv1.3",
+      "schema_revision": "0005_auth_email_outbox",
+      "matching_accounts": 1,
+      "real_native_active_account": true,
+      "argon2id_password_matches": true,
+      "email_verified_at_is_null": true,
+      "synthetic": false,
+      "roles": [
+        "renter"
+      ],
+      "no_elevated_roles_or_mail_artifacts": true,
+      "session_hashes_only": true,
+      "persisted_session_count": 3,
+      "active_session_count": 0,
+      "status": "passed"
+    },
+    "status": "passed",
+    "completed_at": "2026-10-28T23:21:53.484Z"
+  },
+  "anonymous_security_run": {
+    "source_sha": "9a2d9c67ec118d41abbe1c39e24456e1214c2f65",
+    "deployment_id": "dpl_HDnbfRoScriWerwugpuiowUCBSnR",
+    "started_at": "2026-10-28T23:14:19.611Z",
+    "accounts_created": false,
+    "checks": [
+      {
+        "name": "development_oidc_present",
+        "passed": true
+      },
+      {
+        "name": "invalid_registration_schema_rejected",
+        "passed": true
+      },
+      {
+        "name": "browser_verified_and_role_claims_rejected",
+        "passed": true
+      },
+      {
+        "name": "invalid_csrf_rejected",
+        "passed": true
+      },
+      {
+        "name": "foreign_origin_rejected",
+        "passed": true
+      },
+      {
+        "name": "anonymous__auth_session_denied",
+        "passed": true,
+        "status": 401
+      },
+      {
+        "name": "anonymous__me_denied",
+        "passed": true,
+        "status": 401
+      },
+      {
+        "name": "anonymous__lender_products_denied",
+        "passed": true,
+        "status": 401
+      },
+      {
+        "name": "anonymous__admin_access_denied",
+        "passed": true,
+        "status": 401
+      },
+      {
+        "name": "unknown_login_generic_and_ten_then_rate_limited",
+        "passed": true,
+        "statuses": [
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          429
+        ],
+        "retryAfter": "900"
+      },
+      {
+        "name": "no_uncaught_browser_errors",
+        "passed": true,
+        "count": 0
+      }
+    ],
+    "status": "passed",
+    "completed_at": "2026-10-28T23:14:30.375Z"
+  },
+  "local_pg_auth_suite": {
+    "started_at": "2026-10-28T22:35:05.907267+00:00",
+    "hosted_credentials_used": false,
+    "real_smtp_used": false,
+    "test_exit_code": 0,
+    "local_loopback_only": true,
+    "postgres_image": "sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3",
+    "summary_lines": [
+      "120 passed, 1 warning in 152.30s (0:02:32)"
+    ],
+    "status": "passed",
+    "owned_container_removed": true,
+    "local_password_file_cleared": true,
+    "completed_at": "2026-10-28T22:37:47.214587+00:00"
+  },
+  "other_local_checks": {
+    "web_tests": {
+      "passed": 44,
+      "files": 4
+    },
+    "typescript": "passed",
+    "contract_drift": "passed",
+    "targeted_eslint": "passed",
+    "ruff_check_and_format": "passed",
+    "mypy": "passed_31_sources",
+    "connected_build": "passed",
+    "demo_build": "passed",
+    "full_pnpm_check": "passed_deployment_guards_root_eslint_typescript_media_ruff_mypy_contracts_deterministic_fixtures"
+  },
+  "additional_demo_check": {
+    "command": "pnpm exec playwright test --config tests/workflows/playwright.config.ts tests/workflows/collections.spec.ts",
+    "environment": "Windows; local demo at loopback port13384",
+    "passed": 3,
+    "failed": 1,
+    "failure": "Desktop all40 PDP refresh remained at Loading outfit beyond12s; isolated desktop retry timed out on a different public sample product. No test weakened or timeout raised. A same-product diagnostic completed50 reloads without errors; it does not replace the failed check.",
+    "ci_status": "not_yet_triggered"
+  },
+  "configuration": {
+    "temporary_signup_enabled": true,
+    "server_proxy_gate_verified": true,
+    "smtp_backend": "disabled",
+    "email_worker_enabled": false,
+    "database_network_or_acl_or_migration_changes": false,
+    "new_cloud_or_paid_resources": false,
+    "github_secrets_created": false,
+    "private_owner_input_files_modified": false,
+    "credentials_recorded": false
+  },
+  "production": {
+    "modified": false,
+    "preserved_deployment_id": "dpl_A7AvvLu1XmuzcWuvTRiRpHcTqAUd",
+    "preserved_source_sha": "8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c"
+  },
+  "failed_attempts": [
+    "Private-key CLI relay initially failed through a Windows batch wrapper; direct Node CLI stdin relay passed. Signup remained off.",
+    "Activation preflight initially checked the automatic-alias list; dedicated alias readback proved the exact staging deployment before activation.",
+    "Initial protected test identity used a reserved sample domain and returned422; owner corrected it privately. No account was created and no policy changed.",
+    "First real-mailbox attempt returned503 after the App Settings write. An explicit staging restart and fresh-container/readiness proof preceded successful202 registration and200 login.",
+    "Final original browser harness selector timed out. Focused UI rerun returned204, rejected replayed cookies with401 and verified all3 sessions revoked in read-only SQL."
+  ],
+  "unrun": [
+    "Real SMTP/delivery and token-click acceptance",
+    "Verified lender/admin positive flows for real accounts",
+    "Public production rollout or main merge",
+    "Independent human review and PR-triggered CI at time of this evidence generation"
+  ],
+  "final_readonly_verification": {
+    "observed_at": "2026-10-28T23:28:37.658502+00:00",
+    "read_only": true,
+    "source_sha": "9a2d9c67ec118d41abbe1c39e24456e1214c2f65",
+    "native_staging_runtime_validated": true,
+    "smtp_disabled": true,
+    "email_worker_disabled": true,
+    "direct_api_get_post_403": true,
+    "private_gate_200": true,
+    "database_readiness_200": true,
+    "matching_server_key_readback_private": true,
+    "public_production_preserved": true,
+    "protected_staging_preview_preserved": true,
+    "existing_hobby_and_f1_only": true,
+    "no_private_values_in_report_or_diff": true,
+    "source_freeze_verified": true,
+    "existing_migrations_byte_preserved": true,
+    "status": "passed",
+    "completed_at": "2026-10-28T23:29:25.854154+00:00"
+  }
+}

@@ -4,6 +4,195 @@ This registry is maintained only by Codex. It is a coordination record, not a sh
 
 ## Focused assignments
 
+### Native staging auth consolidation — issue84, 2026-10-28
+
+Codex owns only [issue84](https://github.com/Vivek-k24/Dzirent/issues/84) in
+`H:\DziRent\worktrees\codex-auth-integration-84`, branch `codex/auth-integration-issue84`,
+exact current-main base `8bbc9eb1e2eabb5bb73fefc85963498b03b0f0b9` (includes merged60).
+Targeted ancestry proved61/71/76 already included in78; merged that source once at211ee3f on
+this isolated branch. No main/PR merge. Retain main's owner assets. All other worktrees preserved.
+
+Explicit issue handoff covers necessary native Settings/register/transport/renter gates, connected
+signup/login/session/proxy, focused auth/PG/browser regressions, staging configuration/packaging,
+environment destinations/examples, auth design/report, project status and own log. Only83's
+auth-dialog/providers/shell plus necessary header CSS are reconciled; preserve its clean header
+while keeping61's real session restoration/logout/forms. Only83’s three existing no-banner test assertions are carried forward as a required header
+dependency, recorded on84; do not import the rest of83 or activate its QA lane.
+No AI/media/other issue, dependency upgrade or general branch audit/pruning.
+
+One default-off temporary registration setting; only connected/native staging at the existing
+protected preview, with a private server-to-server proxy key and independent direct-Azure denial
+verified before activation. Never claim email ownership: timestamps remain null, no token/outbox
+in this mode, renter only, lender/admin still verified-only. SMTP/worker disabled. Owner-controlled
+test values read privately from the supplied separate file; owner intake files stay unchanged.
+No migrations0001–0005 edits, SQL firewall/roles/ACLs, real admin, paid resource, production/DNS or
+public demo change. Stop at one main-targeted ready PR only after actual acceptance; otherwise
+record the exact failed/unrun blocker and do not declare readiness.
+
+### Connected staging Stage 3 — 2026-10-28
+
+Owner authorized Stage3 prerequisites and isolated staging integration, with no main/PR merge or
+public website cutover. [Scoped claim #77](https://github.com/Vivek-k24/Dzirent/issues/77), exact
+base `a02e180f0147f4f06fd61d47c1f3997b922e9e6b`. New own checkout
+`H:\DziRent\worktrees\codex-connected-staging-stage3`, branch `codex/connected-staging-stage3`;
+all previous checkouts/branches/drafts and user work preserved. No agent started.
+
+Own focused `infra/azure`, `infra/runtime`, necessary staging deployment/verification scripts,
+`docs/infra/connected-staging-*`, this registry, project status and own log. The owner's explicit
+integration handoff includes only demonstrated API Settings/media/provider and same-origin Next
+adapter dependencies; record any expansion on #77/PR before edits. Canonical contract/media source
+remains with its dependency owner unless explicitly handed over. Shared manifests/locks integrated
+serially only if needed. Do not edit other agent logs or worktrees.
+
+Audit actual consumers and variable destinations first. Reuse Settings and Azure App Settings;
+no application GitHub Secrets client or bulk copying owner-input values to hosted platforms.
+Administrator stays local, migrator restricted; runtime only dzirent_app. Validate recovery and
+migrations before hosting, then strict TLS/native auth/verified email/server-side web/private media.
+No destructive Azure fixtures, verification bypass, mock fallback or speculative/billable resources
+outside verified credit/spending limits. Networking expansion needs concrete review. Keep automatic
+Vercel guards false, production environment and public demo unchanged. Stop at a precise blocker
+when required review/provider input is unavailable; never call skipped acceptance tests passed.
+
+Focused CI integration addition recorded on issue77: Codex serializes only the new branch-scoped
+`.github/workflows/staging-api-readonly-probe.yml` and `infra/azure/probe_staging_https.py` for
+GET-only external verification. No existing Antigravity suite/workflow/log changes, credentials,
+deployment, email, account or database writes. Public-repository standard runner; no artifact storage.
+
+Milestone: API bc55f71 and protected preview8d9ac65 deployed; actual source IDs, SQL CRUD/restart,
+network approvals and config custody in `docs/infra/connected-staging-verification-2026-10-28.md`.
+Owner approved the13 declared /32s and separately observed172.214.222.211/32; all old rules preserved.
+Three Vercel entries only on this branch/preview; production demo unchanged. SMTP stays disabled;
+no hosted accounts/admins, full signed-in acceptance or private media release. Draft PR78, no merge.
+
+### Connection/secret recovery Stage 2 — 2026-10-28
+
+Owner explicitly authorized administrator read-only inspection and password resets for **only the
+existing `dzirent_app` and `dzirent_migrator` roles**, with separate generated passwords and protected
+local configuration updates. This supersedes the earlier no-reset boundary only for those two
+passwords. Existing [issue #25 claim](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6459311814)
+and draft #76 remain the scoped handoff. Exact start `19b850bb42102525590c792bed2a63487301813c`,
+same isolated `codex/azure-backend-phase1`; no other checkout, history or agent is modified.
+
+Own the protected external owner-input/Azure-staging files, one temporary protected recovery journal
+(removed after successful persistence/login/ACL verification), necessary ignored administrative
+helpers, `docs/infra/azure-connection-recovery-2026-10-28.md`, previous phase report's supersession
+notice, this registry, project status and own log. No runtime/schema/contract/lock change.
+
+Both role logins and native runtime-role adapter SELECT passed with verify-full/TLS1.3. OIDs,
+attributes, memberships, ownership/ACLs/effective permissions and 18 public table counts unchanged;
+schema remains0002. Only the two passwords changed in PostgreSQL. No creation, privilege grant,
+application-data/schema write, migration, network/billing/hosting setting, live email, account/admin
+grant, website change, merge or deployment. Stage 3 is **not started**; stop at this Stage 2 report.
+
+### Azure backend Phase 1 / issue #25 — 2026-10-27 priority
+
+Owner explicitly limits this assignment to existing native FastAPI Azure hosting/PostgreSQL, then stop.
+[Scoped claim](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6459311814). New isolated
+`H:\DziRent\worktrees\codex-azure-backend-phase1`, branch `codex/azure-backend-phase1`, exact recovered
+base `83ba85525e6db23fb5af150c0c705d1fe13f4def` (#71+#61 plus local test-only corrections).
+#31 tooling at131ca66 reused; no source worktree/branch/history reset, other agent edit or activation.
+
+Own only necessary Azure hosting/configuration/packaging/bounded deployment verification, this registry,
+project status, own Codex log and `docs/infra/azure-backend-phase1-2026-10-27.md`. This checkpoint edits
+only the four documentation paths; runtime/locks/contracts/migrations/product behavior stay unchanged.
+Storefront/media/AI lanes are suspended and not included. Root automatic Vercel guards stay false.
+No PostgreSQL recreation/role reset, destructive Azure fixtures, billing-limit removal or real public
+accounts. Migrations/network/hosting require actual protected SQL/recovery/cost gates. Stop Phase1
+at precise blocker if these cannot be established. Private settings/evidence remain outside Git.
+
+Fresh read-only checks and real local image build completed. Owner populated/corrected the protected
+URLs, then authorized direct password encoding repair at22:35 CDT. Reserved characters encoded using
+the known host boundary, preserving valid percent sequences/credentials/settings/ACL. Saved-byte and
+exact-target/TLS guards pass, but final read-only checks still reject both roles at authentication.
+No successful SQL login/results/CRUD/migration, cloud mutation or HTTPS endpoint/deployment exists yet.
+Additional hosting suitability/retail reads advertise native Python3.12/Linux F1 at USD0/hour in North
+Central US; provider unregistered and quota GET404, so allocation/capacity remain unverified.
+The full report preserves exact sources, actual checks, unrun items and the owner's concrete next action.
+
+### REL-2 / issue #70 — owner-authorized integration, 2026-10-27
+
+Codex claim and explicit cross-owner handoff:
+[#70](https://github.com/Vivek-k24/Dzirent/issues/70). Worktree
+`H:\DziRent\worktrees\codex-production-integration`, branch `codex/production-integration-20261027`,
+exact base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`.
+The master assignment authorizes scoped production integration but conditions cloud writes/migrations,
+merges and release on actual cost, security, recovery and review gates. It does not authorize real mail tests.
+
+This checkpoint edits only both `vercel.json` files, `scripts/check-deployment-guards.mjs`, check wiring
+in `scripts/task.mjs` / root `package.json`, this registry, `docs/PROJECT_STATUS.md`, own Codex log,
+and `docs/releases/2026-10-27-production-readiness.md`. The deployment change prevents an automatic
+preview/promotion while preparing and eventually merging partial candidates; it does not itself deploy.
+Pinned dependencies/locks, contract/fixtures, product/API code and other agent logs are unchanged.
+Read-only Azure helpers/raw evidence remain ignored; the existing PR #31 tooling branch is not edited.
+Missing protected SQL settings block schema/data/ACL verification; hosted phase stops there. Do not
+reuse destructive test fixtures, reset SQL passwords, grant admin or skip the gate. Broader feature work
+and the serial merge/release sequence remain pending under the owner's master assignment.
+
+### AUTH-EMAIL / issue #64 — local email workflow
+
+Codex owns the [scoped claim](https://github.com/Vivek-k24/Dzirent/issues/64#issuecomment-6329775385)
+on existing `codex/native-auth-phase1` / draft PR #61, exact start
+`5b130d3dfc16d5514dcde6815aea8d78aa47b9a0`; preserved main base
+`c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. This is the focused owner-authorized handoff for
+auth delivery runtime/ORM/settings/readiness/lifespan, new **0005 only**, required Python pin/lock,
+related API regression fixtures/migration/ACL tests, focused sign-up/verification UI and unit checks,
+auth design/runbook/report, own status and project status. Old migrations, canonical contract
+signatures/fixtures, other logs and parallel lanes stay preserved. No root JS dependency changes.
+The [publication scope addition](https://github.com/Vivek-k24/Dzirent/issues/64#issuecomment-6345080654)
+permits one documented `.gitleaksignore` historical fingerprint for a verified Git revision in the
+report. Scanner/workflow rules, broad paths and runtime behavior remain unchanged.
+
+Unit/FastAPI TestClient and disposable loopback PG17 with simulated transport only. No browser,
+live E2E, SMTP network delivery, Azure/hosted migrations/accounts, real admin, deployment, merge,
+provider settings or domain changes. Recheck exact source branch preview suppression before any
+push. Stop at tested implementation and updated **draft** PR #61; no Phase 2B.
+
+### AUTH-CONNECT / issue #62 — local Phase 2A
+
+Codex owns the [scoped local claim](https://github.com/Vivek-k24/Dzirent/issues/62#issuecomment-6328682956)
+on `codex/native-auth-phase1` in `H:\DziRent\worktrees\codex-web`, pinned PR #61 baseline
+`db7d1888183c6362ad5087ab1fc13a4bed983114`, main base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`.
+This explicitly authorized regression assignment supersedes the historical no-unit-test restriction
+only for auth and demonstrated regressions. No other lane or agent log is handed over.
+
+Scope: native-auth runtime/migration ACL corrections, disposable DB guards and auth/migration/operator
+regression cases in `services/api/tests`; focused web recovery/transport and proxy tests; local
+Chromium harness in `tests/auth`; exact-branch preview guards and their root regression test;
+auth ADR/report, own log and integration status. The recorded
+[static-check expansion](https://github.com/Vivek-k24/Dzirent/issues/62#issuecomment-6329101208)
+permits formatting the Phase 1 auth additions in identity/ORM/profiles/settings and the fixture
+generator only. The [health-test expansion](https://github.com/Vivek-k24/Dzirent/issues/62#issuecomment-6329293611)
+permits correcting demonstrated test isolation in `test_platform.py`. Canonical fixture content,
+contracts/generated client signatures, locks, historical migrations 0001–0003 and CI workflows
+remain unchanged. Existing work and other worktrees remain preserved.
+
+Only owned loopback PG17 `*_test` databases, fabricated local identities and in-memory mail may
+be used. No Azure/AWS/Neon, real mail/admin, hosted migration/account, deployment, merge or Phase 2B.
+No push until the exact auth branch's Vercel preview suppression is established without changing
+provider settings. Stop at the tested draft handoff; parent #26 stays open.
+
+### AUTH-CONNECT / issue #26 — native auth Phase 1 implementation only
+
+Owner assignment and [recorded claim](https://github.com/Vivek-k24/Dzirent/issues/26#issuecomment-6327900575)
+hand auth-specific API/schema/contract work to Codex in `H:\DziRent\worktrees\codex-web`, isolated
+branch `codex/native-auth-phase1`; refreshed exact base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`.
+Preserved `codex/azure-staging-setup` and all parallel PR branches. Owner review is the stopping gate.
+
+Owned here: focused API identity/settings/ORM/profiles/main/readiness/contract models and new `auth/**`,
+new additive `0004` migration; focused web auth routes/components/session/API/store/provider/shell and
+mode configuration; client transport/types and generated bindings; canonical mode/OpenAPI/change
+notes; required Python pin/lock, environment templates and focused docs/own status/project status.
+The [contract dependency handoff](https://github.com/Vivek-k24/Dzirent/issues/26#issuecomment-6328154174)
+includes the fixture generator's auth denial examples and regenerated version metadata only; no
+catalog product/reference/image changes or QA script ownership transfer. Shared files are edited
+serially by Codex under the explicit owner assignment, not by parallel agents.
+
+No tests, lint, typecheck, builds, migrations, seeds, accounts, Azure calls/writes, hosted/browser
+checks, manual CI, merge, deployment or demo changes. Contract/fixture generation is source output,
+not validation. Other agent logs and all AI-MEASURE/QUALITY work remain untouched. Overlapping
+future integration files: API main/settings/manifest/lock/environment docs; reconcile only later via
+reviewed serial integration. Detailed handoff: [Phase 1](../auth/phase1-handoff.md).
+
 The current explicit assignment defines required context, exact baseline, owned files, verification
 budget and stopping point. Read required context once. Inspect other files only for a demonstrated
 dependency, instruction boundary or failure. Historical lane/batch instructions below do not require

@@ -3,7 +3,7 @@
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, selectinload
@@ -43,17 +43,52 @@ def current_user(
     return user
 
 
-def active_user(user: orm.User = Depends(current_user)) -> orm.User:
+def active_user(
+    user: orm.User = Depends(current_user), session: Session = Depends(get_session)
+) -> orm.User:
     if user.status != "active":
         raise ApiError(403, "account_inactive", "This application profile is deactivated.")
+    if user.auth_provider == "native":
+        credential = session.get(orm.AuthCredential, user.id)
+        if credential is None or credential.email_verified_at is None:
+            raise ApiError(
+                403,
+                "email_verification_required",
+                "Verify your email before changing profile or lender data.",
+            )
     return user
 
 
 def current_lender(user: orm.User = Depends(active_user)) -> orm.LenderProfile:
     profile = user.lender_profile
-    if profile is None or profile.status != "active":
+    if (
+        profile is None
+        or profile.status != "active"
+        or not any(role.role == "lender" for role in user.roles)
+    ):
         raise ApiError(403, "lender_required", "Lender enrollment required.")
     return profile
+
+
+def active_renter(
+    request: Request,
+    user: orm.User = Depends(current_user),
+    session: Session = Depends(get_session),
+) -> orm.User:
+    """Only ordinary profile/preferences use the opt-in staging exception.
+
+    Keep active_user/current_lender and enrollment verified-only, including direct internal calls.
+    Disabling the single staging setting restores the original verification gate immediately.
+    """
+    if (
+        request.app.state.settings.auth_staging_signup_without_email
+        and user.status == "active"
+        and user.auth_provider == "native"
+    ):
+        credential = session.get(orm.AuthCredential, user.id)
+        if credential is not None and not credential.synthetic:
+            return user
+    return active_user(user, session)
 
 
 def require_metro(session: Session, metro_id: object, field: str, errors: list[Detail]) -> None:
@@ -70,6 +105,13 @@ def require_metro(session: Session, metro_id: object, field: str, errors: list[D
 def bootstrap_me(
     principal: Principal = Depends(current_principal), session: Session = Depends(get_session)
 ) -> Any:
+    if principal.provider == "native":
+        # A resolved native session already has its canonical user and renter membership.
+        # Bootstrap must never manufacture a password identity or promote a dormant subject.
+        user = find_user(session, principal)
+        if user is None:
+            raise ApiError(401, "unauthenticated", "Sign in to continue.")
+        return serializers.current_user(user)
     # Idempotent for the verified subject; concurrent first calls converge on one row.
     name = (principal.name or "").strip()[:100] or DEFAULT_DISPLAY_NAME
     session.execute(
@@ -102,7 +144,7 @@ def get_me(user: orm.User = Depends(current_user)) -> Any:
 @router.patch("/me", response_model=wire.CurrentUser, operation_id="updateMe")
 def update_me(
     body: wire.ProfilePatch,
-    user: orm.User = Depends(active_user),
+    user: orm.User = Depends(active_renter),
     session: Session = Depends(get_session),
 ) -> Any:
     errors: list[Detail] = []
@@ -119,6 +161,12 @@ def update_me(
 def deactivate_me(
     user: orm.User = Depends(current_user), session: Session = Depends(get_session)
 ) -> Any:
+    if user.auth_provider == "native":
+        raise ApiError(
+            403,
+            "reauthentication_required",
+            "Use POST /auth/deactivate with your current password.",
+        )
     # Deactivates the application profile; the inactive lender profile hides owned listings from
     # the public catalog while preserving their history. Provider identity is untouched.
     if user.status != "inactive":
@@ -147,7 +195,7 @@ def get_preferences(
 @router.patch("/me/preferences", response_model=wire.Preferences, operation_id="updatePreferences")
 def update_preferences(
     body: wire.Preferences,
-    user: orm.User = Depends(active_user),
+    user: orm.User = Depends(active_renter),
     session: Session = Depends(get_session),
 ) -> Any:
     # Only supplied fields change; an explicit null clears that field.

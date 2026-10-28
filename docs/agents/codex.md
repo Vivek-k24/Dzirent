@@ -1,5 +1,234 @@
 # Codex Phase 1A status
 
+## Issue84 — native staging authentication consolidation
+
+Base main `8bbc9eb1e2eabb5bb73fefc85963498b03b0f0b9`, isolated auth-integration-84 checkout/branch.
+Merged tested78 source once at211ee3f (includes61/71/76); no main/PR merge or duplication of60.
+Only83 auth-dialog/providers/shell/header CSS reconciled; retained restoration/native logout/forms.
+Implemented default-off staging-only no-mail registration plus independent private proxy-key gate,
+normal committed-registration → real-login flow and ordinary renter-only exception. Verification
+remains null/false; full token/outbox and verified lender/admin checks retained. Production refuses
+activation. Local120 PG tests/44 web tests/TS/contracts/lint/mypy/connected build passed. Actual
+protected preview/API source `9a2d9c67ec118d41abbe1c39e24456e1214c2f65` passed the required auth story:
+real committed signup and native cookie login, Azure Argon2id/unverified/renter proof, refresh/API
+restart persistence, renter CRUD and lender/admin denial, negative security/rate cases, logout,
+re-login and password-confirmed all-session revocation (3 SQL sessions, none active). Temporary
+setting enabled after direct Azure denial/private-proxy proof; SMTP/worker remain disabled.
+Additional Windows demo collections smoke:3 passed/1 desktop PDP refresh timeout; isolated retry
+also timed out. No broad-green claim or unrelated presentation fix. Review/CI still pending.
+No private owner-input, SQL network/role/ACL, migration history, live demo, other worktree/log or
+paid-resource changes. [Focused evidence](../auth/issue84-staging-auth.md). Stop at this auth PR;
+no main merge, production cutover or new phase.
+
+## Connected staging Stage 3 — 2026-10-28, America/Chicago
+
+Own issue77 / isolated `codex/connected-staging-stage3`, exact base
+`a02e180f0147f4f06fd61d47c1f3997b922e9e6b`; all other work preserved. Audited actual environment
+consumers before cloud writes: 26 typed FastAPI settings classified, two server-only Vercel fields,
+local/migrator inputs separated, zero new GitHub Secrets required for manual staging deployment.
+No admin credentials exported, no custom GitHub Secrets application loader.
+
+13:37 protected read-only logical backup; 13:42 actual isolated local PG17.11 restore and unchanged
+0003–0005 rehearsal passed. 13:44 serialized Azure migrator upgrade passed to0005/25 tables;
+original18 counts and old ACLs/ownership preserved, seven new auth tables empty, runtime identity/TLS
+and DDL/admin restrictions verified. No account/admin provisioning or Azure destructive fixtures.
+Free F1 host allocated and deployed: API sourcebc55f71113c06814532df5b82b3af0cdedd97994,
+publication eede9fed-93c0-4baa-959c-d4a80f37ca1e. Owner separately approved13 declared /32s plus
+one actual observed /32; original rule preserved, no broad exception. App Settings only runtime
+allowlist; admin/migrator absent, SMTP/worker disabled, no GitHub deployment secrets.
+
+Actual app-role SQL CRUD + HTTPS reads passed, update survived explicit API restart, owned row
+deleted; all25 counts restored, users/products/credentials/sessions0. New process PG17.11/TLS1.3,
+verify-full, Python3.12.15/0005. Native anonymous CSRF/cookie/origin guards verified, not signed-in
+sessions. External7/7 checks and local Next proxy5/5 passed. Protected connected Vercel preview
+READY from8d9ac658c19673cbed1436ad3a723dce179f3db3, three branch-preview variables only; actual
+stable origin configured in API, no production variable/alias/guard change. No mail, account/admin
+provisioning, hosted lender/media acceptance, PR merge or public cutover. Full release remains gated.
+[Sanitized results](../infra/connected-staging-verification-2026-10-28.md),
+[startup/configuration/recovery](../infra/connected-staging-runbook.md), draft PR78. All other worktrees/logs preserved.
+
+## Connection recovery Stage 2 — 2026-10-28, America/Chicago
+
+Owner explicitly authorized existing-role password resets after administrator verification.
+Exact start19b850bb42102525590c792bed2a63487301813c, same own isolated Azure branch/draft #76;
+prior #25 claim and all other worktrees/edits preserved. Stage1 discovered the actual administrator
+login via GET-only Azure metadata and created the protected external owner intake; no guessed login.
+
+11:24 CDT administrator SELECT-only inspection passed PG17.11/verify-full/TLS1.3. 11:32 CDT two distinct
+cryptographically secure role passwords committed together, with client-side SCRAM and no logging
+setting change. Protected recovery values durable before commit; both approved local files updated,
+saved bytes/parsed values checked, exact ACLs preserved with no unexpected allowed principal.
+Recovery copy removed only after verified persistence and successful role logins. Independent native
+CSRF/outbox secrets generated privately; no prior active authentication key overwritten.
+
+Independent runtime/migrator connections both passed identity, schema revision, counts and TLS.
+Before/after role OIDs/flags/config/memberships, ownership/direct/default/column/function ACLs,
+effective privileges/RLS and18 public table counts unchanged. Native database adapter SELECT through
+real `dzirent_app` also passed using the local loader, explicit Azure URL and no `.env` fallback.
+Runtime CREATE database/schema and UPDATE alembic remain false; no privileged runtime connection.
+
+No application data/schema/migration, creation, grants, account/admin provisioning, mail, provider/
+firewall/billing setting, website, merge or deployment. Schema stays0002, native code expects0005.
+SMTP/worker/media disabled; approved staging origins/HTTPS host/hosted media adapter remain missing.
+Stage3 not started. Stop at [Stage2 results and planning handoff](../infra/azure-connection-recovery-2026-10-28.md).
+The October27 rejected-login result below is historical; credential acceptance is now verified.
+
+## Azure backend Phase 1 — 2026-10-27, America/Chicago
+
+Owner's latest backend-only priority supersedes further storefront/media/AI work. Scoped claim on
+[#25](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6459311814). Recovered clean local
+integration `83ba85525e6db23fb5af150c0c705d1fe13f4def`; created only own isolated
+`H:\DziRent\worktrees\codex-azure-backend-phase1`, `codex/azure-backend-phase1`. All 17 worktrees
+inspected/preserved, including owner review, coordination checkout, separate drafts and one old edit.
+Fetched all three object stores; main still c7b3db3. Reused #31 SDK/preflight, #71 guards and #61
+native backend; runtime/schema/Docker/locks identical to #61. No other agent/log or source lane edited.
+
+Fresh GET-only evidence: correct VS Code identity/subscription, positive nonestimated credit after
+pending charges and limits On, PG17.11 ARM Ready, DB present, secure transport/minTLS1.2, narrow
+unchanged firewall, seven backups, empty HTTPS-host inventory. Owner-CA hostname/chain verified
+TLS1.3 at 21:56 CDT, no SQL login. Optional admin-list failed400; hosting SKU list empty (unknown,
+not zero capacity). Benefits/SKU preflights exit2 intentionally, not passing deployment gates.
+Provider usage14 records totals reported USD0 through Oct27, not a future cost guarantee.
+
+Resumed 22:21–22:36 CDT: owner populated both protected SQL URLs and explicitly authorized agent
+encoding repair at22:35. Both password components saved using the known hostname boundary;
+valid percent sequences, credential semantics, nonpassword settings and original ACL preserved.
+Saved-byte and exact target/role/verify-full/CA guards pass. Reader and final bounded per-role checks
+exit2: both still report server authentication rejection, ready=false, no successful login/SELECT/write.
+No secret/config output or unexpected ACL principal. Accepted role passwords remain required;
+no reset, guessed/alternate credential or additional encoding attempt. SQL/schema/data/
+roles/CRUD and migration recovery gates remain unknown. Additional GET-only hosting evidence:
+Microsoft.Web unregistered; native Python3.12/Linux F1 region advertised; retail F1 USD0/hour,
+B1 USD0.018/hour (not selected); quota GET404, capacity unknown. No hosting package change/allocation.
+No cloud/network/billing/SQL write or new resource/host, migration,
+account/admin grant, live mail, verification bypass, merge/release/DNS/tag or frontend change.
+
+Existing image built successfully, source83ba855, uid10001/Python3.12.15/psycopg3.3.6. Offline read-only,
+network-disabled container probe passed crypto, schemahead0005, missing connected DB rejection and
+SMTP-disabled checks; no hosted health/CRUD proof. Guard script passed; no full suite rerun claimed.
+[Full exact report/next action](../infra/azure-backend-phase1-2026-10-27.md). Stop at this blocked Phase1;
+resume only dependent SQL/HTTPS work after accepted protected SQL credentials, not later storefront/AI phases.
+
+## REL-2 / issue #70 — production integration checkpoint, 2026-10-27
+
+Master assignment and complete brief read; scoped claim/handoff on
+[#70](https://github.com/Vivek-k24/Dzirent/issues/70). Isolated checkout
+`H:\DziRent\worktrees\codex-production-integration`, branch `codex/production-integration-20261027`,
+main base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. All three object stores fetched; 11 existing
+checkouts inspected with no unpublished named-branch work. Inactive main refs fast-forwarded/created;
+owner review and old release `.gitignore` work preserved. No other agent started/log edited.
+
+Read-only Azure/production findings and smallest-gap matrix are in the
+[checkpoint](../releases/2026-10-27-production-readiness.md). Existing VS Code authentication worked.
+Current Students credit/limits, PG17.11 Ready, TLS 1.3 and seven automatic backups verified at the stated
+layers; no SQL credentials located, so current schema/data/privileges remain unknown. No hosted API or
+storage resource exists. Existing usage records report zero accrued cost through October 27, not a future
+guarantee. Requested protected SQL and sender settings paths; no credential in chat/source or live mail.
+
+Owner follow-up supplied an external SQL settings path, with passwords still held privately. The file
+and parent were absent; created only a credential-free template, restricted to the current Windows user
+and SYSTEM, without overwriting an existing file. Private values remain pending. The established owner
+CA bundle exists and verified PostgreSQL TLS 1.3/hostname at 19:29 UTC. No SQL or trust fallback used.
+SMTP configuration remains unanswered. Draft [#71](https://github.com/Vivek-k24/Dzirent/pull/71) initial
+head `3a945bdd78e99d7f4500a389c07632665b18b345` passed all seven checks and has no listed Vercel deployment.
+
+Guard source `513fb9c40c735b269834dc0f6ba50824baee43cb`: both Vercel files now use
+`git.deploymentEnabled=false`, with a root policy check to prevent automatic partial deployment during
+serial integration. Check rejected old configs then passed; frozen offline install, focused ESLint,
+both script syntax checks and whitespace passed. Lock/dependency pins unchanged. No product feature change.
+
+Retried the cancelled Foundation job on unchanged #61 source
+`8c98d88d5a12164d562f595dc1f3f78d031f1db6`: attempt 2 passed, including 10 bounded workflow tests.
+All seven checks green; formal review still absent. No new full 400-test run claimed.
+Cloud mutation, hosted migration/CRUD, account/admin provisioning, real email, merge, release/tag/DNS
+change and combined connected testing were not performed. Production remains at its verified prior source.
+
+Stop hosted phase at missing SQL security/recovery and hosting prerequisites; publish the narrow guard/evidence
+PR for review. Resume only with protected settings and fresh readiness, then follow the owner's dependency
+order. Existing auth/Studio/quality/measurement branches remain unchanged. Only this agent log updated.
+
+## AUTH-EMAIL #64 — local scope completed, 2026-10-22
+
+Existing checkout/branch: `H:\DziRent\worktrees\codex-web`, `codex/native-auth-phase1`, draft PR #61.
+Exact clean start `5b130d3dfc16d5514dcde6815aea8d78aa47b9a0`; main base preserved at
+`c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. Scoped owner handoff recorded on #64 before editing;
+no other agents launched, no parallel lane/main/history changes. Code candidate
+`9e2af2cdb579aa18a5f4f0bd2e5854366c3e8f94` (API `64814c132ffd3431c57191986d46e87d946c582b`).
+
+Implemented encrypted PostgreSQL transactional mail outbox in additive 0005, lease/fencing/restart
+recovery, bounded retries/cleanup, resend coalescing/supersession/failure recovery, strict fake-tested
+SMTP/rendering and explicit-confirmation session refresh. 0001–0004, native/RBAC policy, canonical
+contract `.3`, fixtures, JS lock/dependencies and demo remain preserved. Required new Python pin:
+`cryptography==50.0.1`; audit found no known vulnerabilities (editable project excluded).
+
+Focused regressions **78 passed**, web unit **38 passed**, DB target guards **36 passed**, preview
+guards **3 passed**; Python/web static and contract drift passed. Final complete API suite **400 passed / 0 skipped** at the exact code candidate above.
+Exact commands, all initial failures/corrections, local DB safeguards and remaining operational
+limits are recorded in [Issue #64 report](../auth/email-verification-test-report.md) and
+[design/runbook](../auth/email-verification.md). New disposable loopback PG17.11 only, simulated
+email transport and private random test passwords. No real mail/hosted acceptance claimed.
+
+No local browser/E2E, Azure/hosted migration/account, real admin, deployment, domain/settings,
+merge or Phase 2B. Exact branch preview guards are preserved/rechecked before publication.
+Stop at the tested draft PR handoff for owner review; parent #26/#62 lifecycle stays with owner.
+
+Publication CI reported the backend Git revision in report prose as `generic-api-key`. Verified the
+matched value with Git; recorded the integrator tooling scope and relabeled it, adding only that
+historical commit/file/line fingerprint to the existing scanner ignore file. No application/test,
+rule/workflow or broad path exclusion changed; the exact local code evidence remains `9e2af2c`.
+
+## AUTH-CONNECT #62 — local Phase 2A completed, 2026-10-21
+
+Assigned checkout/branch preserved: `H:\DziRent\worktrees\codex-web`, `codex/native-auth-phase1`.
+Exact pinned PR #61 base `db7d1888183c6362ad5087ab1fc13a4bed983114`; main base
+`c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. Clean start; refs, issue/PR discussions, focused
+instructions, architecture/contracts and logs inspected. Scoped claim and demonstrated check/test
+scope expansions are recorded on #62. No other agent was launched, lane edited or history changed.
+
+Tested code `82450720030d7fde31aeb04b432104bbbce0a28a` (guard `aa18e9f`, API `7b16e8d`, web/harness
+`8245072`). Final full API run **337 passed / 0 skipped**; web **33 passed**, guard **3 passed**,
+connected real local Chromium **4 passed**, existing demo desktop/mobile **10 passed**. Pinned
+check, final affected lint/TypeScript/build/Ruff/Mypy, contract and fixture drift passed. Exact
+commands, earlier failed/partial runs, warnings and verification limits are in the
+[Phase 2A report](../auth/phase2a-test-report.md); no unrun/skipped test is represented as a pass.
+
+Corrected transaction-safe bounded mail dispatch, shared-peer lockout, inherited sensitive ACLs
+and immutable rate keys, recovery hydration lint, BFF Host validation, safe local test/operator
+targets and health-test isolation. Local PG17.11 only, separate container/tmpfs/port, guarded
+`*_test` DBs, actual migrator/runtime SQL split, private random passwords and in-memory mail.
+Only fabricated local admin evidence/identities were used. Graceful harness shutdown/DB-role cleanup
+was executed and verified. Read-only Vercel project metadata confirmed `dzirent`, root `apps/web`,
+demo build; exact branch suppression is source-controlled and tested before any publication.
+
+No Azure/AWS/Neon, hosted migration/account or test, real email/admin grant, deployment, merge,
+live-demo change or Phase 2B. No dependency/contract/data upgrade or independent QA claim.
+PR #61 remains draft; #26 stays open. Next action is owner review, with any new Phase 2B scope
+explicitly authorized separately. Delivery durability, internet abuse controls, hosted TLS/mail,
+and actual real-admin identity evidence remain open.
+
+## AUTH-CONNECT #26 — native auth implementation only, 2026-10-21
+
+Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/native-auth-phase1`; refreshed exact main
+base `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. Clean start; Azure branch preserved. Issue claimed and
+scoped API/schema/contracts/fixtures handoff recorded before corresponding edits. Read the issue,
+applicable instructions/ownership, focused current architecture/schema/contracts/logs/PR state and
+pinned PartGraph source (read-only). No parallel agent was launched or another lane modified.
+
+Implemented native Argon2id auth/session/email/recovery lifecycle, strict Origin plus session-bound
+signed CSRF, same-origin transport, additive `0004` after immutable `0003`, guarded table privileges,
+independent renter/lender plus narrow owner-controlled admin capability, connected UI and secure
+unexecuted operator utilities. Passwords/tokens are private inputs; only salted hashes/digests persist.
+Existing admin origin is unknown; no fabricated account/reset/grant. Draft ADR/contract `.3` records
+security behavior changes. Catalog products/images/ownership and demo path preserved.
+
+Actual executed generation only: pinned Python dependency lock (exit 0), wheel-only declaration
+dependencies (exit 0; hardlink fallback warning), `pnpm contracts:generate` with `UV_NO_SYNC=true`
+(exit 0), deterministic fixture generation (exit 0, 39 cases). No tests, lint/format/typecheck, builds,
+drift checks, DB/network validation, migrations, seed/provisioning, accounts, cloud calls, deployment,
+merge or manual CI. Automatic PR CI is incidental only. **Implemented but untested.**
+Review exact SHA/full file list in the draft PR; [implementation and owner handoff](../auth/phase1-handoff.md).
+Next: stop for owner code/security/migration review; Phase 2 needs separate explicit authorization.
+
 ## AZ-DISC / issue #23 — read-only Azure discovery, 2026-10-19
 
 Workspace `H:\DziRent\worktrees\codex-web`; branch `codex/azure-discovery`; exact fixed base

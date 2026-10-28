@@ -1,5 +1,5 @@
 {
-  "contract_version": "0.1.0-candidate.2",
+  "contract_version": "0.1.0-candidate.3",
   "cases": [
     {
       "operation_id": "getLiveness",
@@ -14,7 +14,7 @@
         "status": 200,
         "body": {
           "status": "live",
-          "contract_version": "0.1.0-candidate.2"
+          "contract_version": "0.1.0-candidate.3"
         }
       }
     },
@@ -31,7 +31,7 @@
         "status": 200,
         "body": {
           "status": "ready",
-          "contract_version": "0.1.0-candidate.2"
+          "contract_version": "0.1.0-candidate.3"
         }
       }
     },
@@ -3087,7 +3087,7 @@
         "path": "/api/v1/me/bootstrap",
         "query": "",
         "body": null,
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -3118,7 +3118,7 @@
         "path": "/api/v1/me",
         "query": "",
         "body": null,
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -3151,7 +3151,7 @@
         "body": {
           "display_name": "Updated Sample"
         },
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -3182,7 +3182,7 @@
         "path": "/api/v1/me",
         "query": "",
         "body": null,
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -3213,7 +3213,7 @@
         "path": "/api/v1/me/preferences",
         "query": "",
         "body": null,
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -3233,7 +3233,7 @@
           "metro_id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a",
           "postal_code": "78701"
         },
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -3253,7 +3253,7 @@
           "display_name": "Sample Lender",
           "metro_id": "2a9f9bea-25b8-5c50-9cc7-ff71b57f467a"
         },
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -3272,7 +3272,7 @@
         "path": "/api/v1/lender/products",
         "query": "page=1&page_size=40",
         "body": null,
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -6940,7 +6940,7 @@
             "5579329b-3085-586e-93e1-5c804bc3ca99"
           ]
         },
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 201,
@@ -7041,7 +7041,7 @@
         "path": "/api/v1/lender/products/742ea3cf-199e-5703-944b-d2654ffb4c3c",
         "query": "",
         "body": null,
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -7145,7 +7145,7 @@
           "expected_version": 1,
           "is_available": false
         },
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -7246,7 +7246,7 @@
         "path": "/api/v1/lender/products/742ea3cf-199e-5703-944b-d2654ffb4c3c",
         "query": "expected_version=1",
         "body": null,
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -7351,7 +7351,7 @@
           "content_type": "image/jpeg",
           "size_bytes": 100000
         },
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -7378,7 +7378,7 @@
           "alt_text": "Sample garment",
           "expected_version": 1
         },
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -7488,7 +7488,7 @@
         "path": "/api/v1/me/studio",
         "query": "",
         "body": null,
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -7518,7 +7518,7 @@
           "is_public": true,
           "expected_version": 1
         },
-        "identity": "sample-lender (MSW only); verified provider bearer in connected"
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
       "response": {
         "status": 200,
@@ -8264,6 +8264,300 @@
           "total": 40,
           "page": 1,
           "page_size": 12
+        }
+      }
+    },
+    {
+      "operation_id": "getAuthCsrf",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/auth/csrf",
+        "query": "",
+        "body": null,
+        "identity": "anonymous"
+      },
+      "response": {
+        "status": 503,
+        "body": {
+          "error": {
+            "code": "dependency_unavailable",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-getAuthCsrf"
+        }
+      }
+    },
+    {
+      "operation_id": "registerAccount",
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/register",
+        "query": "",
+        "body": {
+          "email": "native@example.invalid",
+          "display_name": "Contract example",
+          "password": "<PRIVATE RUNTIME INPUT ONLY>"
+        },
+        "identity": "connected; exact allowed Origin; missing CSRF challenge"
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "auth_csrf_failed",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-registerAccount"
+        }
+      }
+    },
+    {
+      "operation_id": "loginAccount",
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/login",
+        "query": "",
+        "body": {
+          "email": "native@example.invalid",
+          "password": "<PRIVATE RUNTIME INPUT ONLY>"
+        },
+        "identity": "connected; exact allowed Origin; missing CSRF challenge"
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "auth_csrf_failed",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-loginAccount"
+        }
+      }
+    },
+    {
+      "operation_id": "getAuthSession",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/auth/session",
+        "query": "",
+        "body": null,
+        "identity": "anonymous"
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "error": {
+            "code": "unauthenticated",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-getAuthSession"
+        }
+      }
+    },
+    {
+      "operation_id": "logoutAccount",
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/logout",
+        "query": "",
+        "body": null,
+        "identity": "connected; exact allowed Origin; missing CSRF challenge"
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "auth_csrf_failed",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-logoutAccount"
+        }
+      }
+    },
+    {
+      "operation_id": "logoutAllSessions",
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/logout-all",
+        "query": "",
+        "body": {
+          "current_password": "<PRIVATE RUNTIME INPUT ONLY>"
+        },
+        "identity": "connected; exact allowed Origin; missing CSRF challenge"
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "auth_csrf_failed",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-logoutAllSessions"
+        }
+      }
+    },
+    {
+      "operation_id": "changePassword",
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/password/change",
+        "query": "",
+        "body": {
+          "current_password": "<PRIVATE RUNTIME INPUT ONLY>",
+          "new_password": "<PRIVATE RUNTIME INPUT ONLY>"
+        },
+        "identity": "connected; exact allowed Origin; missing CSRF challenge"
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "auth_csrf_failed",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-changePassword"
+        }
+      }
+    },
+    {
+      "operation_id": "requestEmailVerification",
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/email/request",
+        "query": "",
+        "body": null,
+        "identity": "connected; exact allowed Origin; missing CSRF challenge"
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "auth_csrf_failed",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-requestEmailVerification"
+        }
+      }
+    },
+    {
+      "operation_id": "verifyEmailOwnership",
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/email/verify",
+        "query": "",
+        "body": {
+          "token": "<PRIVATE TOKEN INPUT>!!!!!!!!!!!!!!!!!!!!!!"
+        },
+        "identity": "connected; exact allowed Origin; missing CSRF challenge"
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "auth_csrf_failed",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-verifyEmailOwnership"
+        }
+      }
+    },
+    {
+      "operation_id": "requestPasswordReset",
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/password/request",
+        "query": "",
+        "body": {
+          "email": "native@example.invalid"
+        },
+        "identity": "connected; exact allowed Origin; missing CSRF challenge"
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "auth_csrf_failed",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-requestPasswordReset"
+        }
+      }
+    },
+    {
+      "operation_id": "resetPassword",
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/password/reset",
+        "query": "",
+        "body": {
+          "token": "<PRIVATE TOKEN INPUT>!!!!!!!!!!!!!!!!!!!!!!",
+          "new_password": "<PRIVATE RUNTIME INPUT ONLY>"
+        },
+        "identity": "connected; exact allowed Origin; missing CSRF challenge"
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "auth_csrf_failed",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-resetPassword"
+        }
+      }
+    },
+    {
+      "operation_id": "deactivateAccount",
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/auth/deactivate",
+        "query": "",
+        "body": {
+          "current_password": "<PRIVATE RUNTIME INPUT ONLY>"
+        },
+        "identity": "connected; exact allowed Origin; missing CSRF challenge"
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "auth_csrf_failed",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-deactivateAccount"
+        }
+      }
+    },
+    {
+      "operation_id": "getAdminAccess",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/admin/access",
+        "query": "",
+        "body": null,
+        "identity": "anonymous"
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "error": {
+            "code": "unauthenticated",
+            "message": "Illustrative denial; private inputs required.",
+            "details": []
+          },
+          "request_id": "contract-getAdminAccess"
         }
       }
     }
