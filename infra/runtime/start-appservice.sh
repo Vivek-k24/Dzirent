@@ -11,6 +11,9 @@ cp infra/runtime/azure-postgres-roots.pem /home/dzirent/azure-postgres-roots.pem
 export PYTHONPATH="$PWD/services/api/src${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONUNBUFFERED=1
 export PYTHONDONTWRITEBYTECODE=1
+if [ "${1:-}" = "--diagnose-connectivity" ]; then
+  python infra/runtime/diagnose_appservice.py
+fi
 # Trust no incoming forwarded headers by default. Authentication uses the explicit
 # approved web origin, not caller-controlled host/proxy headers.
 exec python -m uvicorn dzirent_api.main:app --host 0.0.0.0 --port "${PORT:-8000}" \

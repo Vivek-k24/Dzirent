@@ -67,6 +67,7 @@ def main() -> None:
                 "services/api/alembic.ini",
                 "contracts/modes.json",
                 "infra/runtime/start-appservice.sh",
+                "infra/runtime/diagnose_appservice.py",
                 "fixtures/catalog/taxonomy.json",
                 "fixtures/catalog/manifest.json",
             ],
