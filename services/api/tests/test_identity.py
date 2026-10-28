@@ -34,6 +34,7 @@ def test_native_identity_is_never_mock_verifier() -> None:
         _env_file=None,
         mode="connected",
         identity_mode="native",
+        auth_csrf_key="x" * 32,
         database_url="postgresql://unused:unused@127.0.0.1/unconnected",
     )
     assert not isinstance(build_verifier(settings), MockVerifier)

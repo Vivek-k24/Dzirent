@@ -13,7 +13,7 @@ from dzirent_api.reference import BAND_LABELS, BANDS, UNMAPPED_METRO_SLUG
 from dzirent_api.settings import Settings
 
 ROOT = Path(__file__).resolve().parents[3]
-NATIVE = {"identity_mode": "native"}
+NATIVE = {"identity_mode": "native", "auth_csrf_key": "x" * 32}
 
 
 @pytest.mark.parametrize(
