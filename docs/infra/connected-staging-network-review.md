@@ -33,6 +33,27 @@ requires a new review. These are shared App Service egress addresses, not a priv
 network. Database authentication, least privilege and verify-full certificate validation remain
 mandatory. This proposal is for isolated staging, not sufficient evidence for public production.
 
-**No firewall additions have been applied.** The owner required networking review; exact proposed
-changes are now available for approval while packaging/runtime configuration work continues.
-Rollback would remove only these newly created named staging rules, retaining the owner rule.
+The owner explicitly approved these13 rules in the session. Applied and read back at13:59 CDT:
+all13 exact start=end entries present, original owner rule's complete properties unchanged, total14
+rules, no all-Azure exception. Azure's asynchronous rule operations initially produced a partial list;
+completed missing entries serially with operation/visibility waits and verified the complete list.
+Rollback removes only the new `dzirent-stage3-api-01` through `-13` rules, retaining the owner rule.
+
+## Additional observed source — separate approval required
+
+At14:18:51 CDT, the **actual API process** from source
+`bc55f71113c06814532df5b82b3af0cdedd97994`, deployment
+`eede9fed-93c0-4baa-959c-d4a80f37ca1e`, reported public HTTPS egress
+**`172.214.222.211`**. This address is absent from Azure's still-unchanged13-address
+`outboundIpAddresses` property. The Kudu sidecar independently observed the same public address.
+The optional one-shot diagnostic sent no credentials to the egress observer; it then attempted
+read-only PostgreSQL through the existing Settings/driver. Actual Python3.12.15, connected/native,
+email disabled, CA file present, **ConnectionTimeout; no successful SQL connection**.
+
+Proposed smallest next change: **one additional `172.214.222.211/32` database firewall rule**,
+start=end this exact address, retaining all14 existing rules. No broader range, all-Azure exception,
+paid network or new database resource. The original approval covered only the13 declared addresses,
+so this new rule has **not** been applied. Recheck the process diagnostic before execution.
+Machine-readable [additional proposal](../../infra/azure/staging-observed-egress-proposal.json).
+This is a bounded connectivity investigation, not a guarantee that this rule alone resolves the
+connection. Successful hosted SQL/TLS/CRUD must still be demonstrated afterward.
