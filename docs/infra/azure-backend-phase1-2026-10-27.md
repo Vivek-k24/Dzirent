@@ -1,0 +1,192 @@
+# Azure backend Phase 1 — 2026-10-27, America/Chicago
+
+**Blocked; not deployed.** This is the owner's highest-priority Azure backend-only assignment,
+not storefront/AI development, public onboarding activation or completion of the production master.
+Claim: [issue #25](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6459311814).
+Observations below were collected approximately 21:47–22:09 CDT (UTC October 28).
+
+## Exact recovered source and preservation
+
+- New isolated checkout: `H:\DziRent\worktrees\codex-azure-backend-phase1`.
+- Branch: `codex/azure-backend-phase1`.
+- Recovered integration Git revision: `83ba85525e6db23fb5af150c0c705d1fe13f4def`.
+  Parent `e5405a4299f5e076a3a75fcfec48def001330c1d` combines [#71](https://github.com/Vivek-k24/Dzirent/pull/71)
+  and [#61](https://github.com/Vivek-k24/Dzirent/pull/61); the final commit changes only test CSRF
+  settings/current-contract assertions. The existing coordination checkout is untouched.
+- Native-auth source remains `8c98d88d5a12164d562f595dc1f3f78d031f1db6`. A direct comparison found **no
+  difference** in runtime Python, migrations, dependency manifests/lock, Dockerfile or image allowlist
+  between #61 and the recovered candidate. Contract stays `0.1.0-candidate.3`; expected schema is
+  `0005_auth_email_outbox`. No authentication rebuild or dependency upgrade.
+- Guard source/handoff remains `1d48763ed8c4a43b8fb690233d74c92264af617b`. Both Vercel files contain
+  `git.deploymentEnabled=false`; the actual policy command passed in the recovered checkout.
+- Existing [#31](https://github.com/Vivek-k24/Dzirent/pull/31) SDK/preflight code at
+  `131ca66fef46fa085e667ba645ce220e9d6d86ea` was reused. Its old allocation-blocked conclusions are
+  historical; the owner-created PostgreSQL server/database now exist. No PostgreSQL provisioner ran.
+- Fetched all three local object stores. Remote/main is
+  `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`. No reset, main push, branch switch in another checkout,
+  rewrite, merge to main, new agent or other-agent log edit.
+
+All **17** worktrees were inspected. Sixteen were clean; the one pre-existing tracked edit in the
+old detached release was preserved. Source/reference snapshots are listed below. These branches
+were not integrated into this backend candidate merely because they exist.
+
+| Checkout suffix | Git revision | State |
+| --- | --- | --- |
+| `Dzirent_dev` | `0fd9a2b057f67f33111f4a28d7a842cc22814bfc` | clean at inspection |
+| `antigravity-demo-realism` | `806f72f18d154ef410bc10f2b7d621bba1526e10` | clean at inspection |
+| `antigravity-measure-2a` | `2ca4e980326738a48b59f93f21b92176385bfd73` | clean at inspection |
+| `antigravity-qa` | `8c98d88d5a12164d562f595dc1f3f78d031f1db6` | clean at inspection |
+| `pr61-local-review` | `8c98d88d5a12164d562f595dc1f3f78d031f1db6` | clean at inspection |
+| `codex-web` | `8c98d88d5a12164d562f595dc1f3f78d031f1db6` | clean at inspection |
+| `codex-azure-backend-phase1` | `83ba85525e6db23fb5af150c0c705d1fe13f4def` | clean at inspection |
+| `codex-azure-readiness` | `131ca66fef46fa085e667ba645ce220e9d6d86ea` | clean at inspection |
+| `codex-lender-media` | `deee0a13c191ddd05cc832771afcad58cee11a1f` | clean at inspection |
+| `codex-production-integration` | `1d48763ed8c4a43b8fb690233d74c92264af617b` | clean at inspection |
+| `codex-storefront-release` | `ca7e75db2e888a473a7fd514ccf35b50c10fe317` | clean at inspection |
+| `coord-integration-guards-auth` | `83ba85525e6db23fb5af150c0c705d1fe13f4def` | clean at inspection |
+| `release-rental-refresh` | `4c5b8864edb7715951cb4d65d0a50fdaea22ca43` | one pre-existing tracked edit preserved |
+| `claude-api` | `639ab37206414962d1c1328aa7f26a8c3dc89724` | clean at inspection |
+| `claude-measure` | `784d76d140a31938abec8b5769c356625d250675` | clean at inspection |
+| `claude-paper-snap` | `31c1bc25ebcf4bc1e85a85db0465cc5db010a8ba` | clean at inspection |
+| `claude-proxy-tests` | `e298b22ebfa9a0e06ce3c32817b031552acdfe43` | clean at inspection |
+
+The separate storefront #73 and media #75 drafts remain preserved and suspended for this assignment.
+No media/AI code, candidate.4 schema or 0006 migration is included in the selected image.
+
+## Current Azure and TLS evidence
+
+Fresh authentication used **VisualStudioCodeCredential**, with exact subscription/tenant verification.
+No interactive login, token export, key retrieval, password reset or credential publication.
+Read-only wrappers retained the existing fixed GET-only ARM transport and wrote only new ignored evidence.
+
+- Existing `dzirent-pg17-ncus-4265`: **Ready**, North Central US, control-plane version **17.11**
+  (`version=17`, `minorVersion=11`), Burstable `Standard_B1ms`, 32 GiB Premium LRS. This is management
+  metadata, not a new SQL-reported version observation.
+- Intended `dzirent_staging` is present. No server, database, role or resource group was created/recreated.
+- Password authentication is enabled; Entra authentication is disabled. Azure management sign-in does
+  **not** supply SQL-role passwords. Optional administrators-list lookup returned HTTP 400; no SQL
+  administrator/privilege conclusion is drawn from that failed lookup.
+- Secure transport required, minimum TLS 1.2, neither setting pending restart. Public network has one
+  firewall rule and zero broad all-IP/all-Azure rules in the complete returned inventory; unchanged.
+- At **21:56 CDT**, a PostgreSQL SSLRequest followed by chain/hostname validation using the owner's
+  exact CA bundle negotiated **TLS 1.3**. No alternate trust fallback and **no SQL authentication**.
+- Seven automatic Full backups listed, latest **2026-10-27 12:09:29 CDT**. Retention seven days,
+  earliest restore point October 21. Metadata is verified; restore rehearsal/logical backup and
+  current data preservation prerequisites remain unverified without SQL access.
+- Complete subscription inventory has **one PostgreSQL resource**. Web sites/plans, Container Apps/
+  environments and storage inventories are empty. **No HTTPS FastAPI host or deployment exists.**
+- Hosting-SKU GET returned HTTP 200 with an empty list. This is **unknown eligibility/capacity**,
+  not zero quota or proof that a free/custom-container runtime can be allocated.
+
+## Protected SQL blocker
+
+`H:\DziRent\secrets\azure-staging.env` exists and was inspected without printing its contents.
+Both `DZIRENT_DATABASE_URL` and `DZIRENT_MIGRATOR_DATABASE_URL` remain blank. File modification time
+was unchanged from its initial empty template; ACL inspection found zero unexpected allowed principals.
+The existing file was **not overwritten**. The user was asked to populate it privately from their
+password manager and reply when ready; no secret is requested in chat/GitHub.
+
+The guarded reader at **21:47 CDT**, rechecked at **22:09 CDT** with the same result, exited **2**, status `blocked_private_values_pending`, with
+`sql_attempted=false`. It accepts only the existing database, exact runtime/migrator roles,
+`sslmode=verify-full` and the established `%APPDATA%/postgresql/azure-postgres-roots.pem` bundle.
+No project/local database defaults or permissive TLS fallback were substituted.
+
+Therefore current Alembic revision, table ownership/data, effective table/column/default privileges,
+role memberships, migrator separation and **all SQL CRUD are unverified**. Historical owner evidence
+of 0002/17 tables/zero users-products is not treated as a fresh SQL result. No migrations, synthetic
+row/account creation, administrator grant, destructive fixture or hosted write ran.
+
+The backend requires genuine connected/native database configuration. An empty/invented URL or
+healthy liveness response would not establish readiness or CRUD. Hosting without its required SQL
+configuration would not complete this assignment, so no unused metered host was allocated.
+
+## Credit, cost and hosting boundary
+
+Fresh linked billing reads at approximately 21:50 CDT established:
+
+- Subscription Enabled and Azure for Students; subscription and billing-profile spending limits **On**.
+- Free/Active billing, positive non-estimated current credit after pending charges, above the initial
+  USD 10 planning reserve; listed credit expiry extends beyond seven days. Exact balances/financial
+  identifiers remain private. This does not mean a selected resource's complete budget is approved by
+  the preflight or that every service has a verified free meter.
+- Free-service entitlement lookup failed; subscription-specific free meter quantities remain unknown.
+  Eligible credit-funded staging usage is authorized, so a nonzero retail rate alone is not a new
+  permission requirement. No personal charge, upgrade, limit removal or Marketplace purchase.
+- Fresh usage query: **14 cost-bearing records, provider-reported USD 0 through October 27** for the
+  existing resource. Billing reports can lag; this is not a forecast or a guarantee of future free use.
+- **New hosting resources: 0. New hosting commitments/charges: none introduced.** No budget/alert,
+  provider registration, networking, service setting or resource mutation occurred in this run.
+
+Once SQL gates pass, verify the minimal supported host/region/SKU and current incremental compute,
+registry/build/logging/network meters before allocation. Reuse the existing runtime; do not assume an
+empty SKU response establishes F1/custom-container eligibility. For App Service, use its actual outbound
+IP set and narrow database firewall entries, preserving the owner rule; do not enable blanket Azure access.
+See [Azure's outbound-address guidance](https://learn.microsoft.com/en-us/azure/app-service/overview-inbound-outbound-ips)
+and [plan behavior](https://learn.microsoft.com/en-us/azure/app-service/overview-hosting-plans).
+No paid plan/registry/logging service has been selected or falsely quoted as allocated.
+
+## Actual local preparation and checks
+
+The existing runtime image is built, not yet deployment-configured with the protected SQL settings/CA file.
+Existing `services/api/Dockerfile` built successfully from the exact recovered revision, with frozen
+runtime dependencies and an explicit Docker context allowlist. `.env`, tools, other applications and
+private configuration were excluded; no credential was passed to the build. The image has never
+been uploaded to a registry or deployed.
+
+- Local tag: `dzirent-api:azure-phase1-83ba855`.
+- Image ID: `sha256:2d849e1c38e989f368a5f8b02b00f4b1d920402ccfe42590884bf94af55660c7`.
+- Revision label equals the recovered Git revision above.
+- Runtime uid **10001**, Python **3.12.15**, psycopg **3.3.6**.
+- Network-disabled/read-only container probe passed Argon2 hash/verify, AES-GCM round trip,
+  packaged migration head 0005, missing connected database rejection, disabled email default and
+  exclusion of `.tools`/`.env`. The ephemeral probe container was automatically removed.
+
+| Command/check | Actual result |
+| --- | --- |
+| `git fetch --all --prune` in the three object stores; worktree/status inspection | Passed; exact references and preserved edit above. |
+| Runtime-source comparison against #61 | Empty diff for all listed runtime/build/schema/lock paths. |
+| `node scripts/check-deployment-guards.mjs` | Passed, both automatic deployment guards false. |
+| Existing `staging_preflight.py --benefits-only ... --timeout 90` | Exit 2 by non-provisioning design; successful financial observations evaluated above; free-meter lookup failed. |
+| GET-only readiness wrapper reusing #31 | Completed; server/DB/TLS/backups/inventories verified; optional administrator lookup failed as disclosed. |
+| Existing `staging_preflight.py --hosting-skus-only ... --timeout 60` | Exit 2; empty SKU list, capacity/eligibility unknown. |
+| Guarded protected-config SQL reader | Exit 2 before connection; both required private values absent. |
+| Certificate/hostname-verified PostgreSQL TLS probe | Passed TLS 1.3; no SQL login. |
+| GET-only complete resource/usage wrapper | Completed; one resource, 14 records totaling reported USD 0. |
+| `docker build --label org.opencontainers.image.revision=83ba85525e6db23fb5af150c0c705d1fe13f4def --file services/api/Dockerfile --tag dzirent-api:azure-phase1-83ba855 .` | Passed, unchanged frozen runtime; artifact above. |
+| `docker run --rm -i --network none --read-only --tmpfs /tmp:rw,noexec,nosuid,size=16m --entrypoint python dzirent-api:azure-phase1-83ba855 -` with the bounded offline configuration/crypto probe | Passed; no network or hosted database. |
+
+Not run: hosted HTTP health/readiness, any SQL SELECT/CRUD, migrations, restart/persistence against
+Azure, public account provisioning, live mail, external hosted acceptance, production isolation
+exercise or the full native-auth regression suite. Prior #61 results are referenced, not rerun claims.
+No storefront/browser/AI development or manual UI suite was started in this phase. Publication CI is
+separate exact-head evidence and will be recorded on the draft PR; it cannot prove hosted readiness.
+
+## Deployment state, isolation and concrete next action
+
+| Requested release field | Actual state |
+| --- | --- |
+| Hosted HTTPS endpoint | **None** |
+| Azure deployment ID | **None** |
+| Deployed Git revision | **None**; prepared source is recorded above |
+| Tested hosted database operations | **None**, blocked before login |
+| New cloud resource/configuration writes | **None** |
+
+`dzirent_staging` remains staging and must not host real public production accounts by default.
+No production database/role/environment isolation is established or claimed by this run. Public
+registration stays inactive; outbound email remains disabled/unverified, with no verification bypass
+or administrator grant. The existing web demo remains at https://dzirent.com/, source
+`8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`, deployment `dpl_A7AvvLu1XmuzcWuvTRiRpHcTqAUd`,
+confirmed READY by a fresh read-only provider lookup. No frontend environment/DNS/tag/alias changed.
+
+**Next required input:** privately fill the two existing SQL settings and reply ready. Then perform
+strict SELECT-only schema/data/ACL inspection, confirm recovery/no concurrent writer, serialize only
+needed additive migrations, allocate the verified minimal HTTPS host and narrowly scoped network
+access, supply runtime-only secrets and the owner CA bundle at its verified Linux path, and perform explicit controlled staging CRUD plus persistence/
+restart and external HTTPS verification. Distinguish SQL-role CRUD from authenticated HTTP business
+writes; no synthetic account or email-verification shortcut is implied. Preserve/clean only the
+specific approved test rows. A successful health check alone never proves CRUD.
+
+No rollback is required because no cloud deployment/configuration/schema changed. Preserve the
+existing web deployment; keep the local image if useful for the resumed staging rollout. Never drop
+or downgrade data-bearing auth schema as an application rollback. **Stop this assignment at the
+missing protected SQL input; do not continue storefront, AI, public onboarding or a later phase.**

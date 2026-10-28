@@ -1,5 +1,26 @@
 # Project status
 
+## Azure backend Phase 1 — 2026-10-27, America/Chicago
+
+**Highest-priority backend-only assignment; blocked on private SQL input, not deployed.**
+Recovered guards+native-auth integration `83ba85525e6db23fb5af150c0c705d1fe13f4def` in isolated
+`codex/azure-backend-phase1`. Reused #71/#61/#31; all 17 worktrees and one prior edit preserved.
+No storefront/AI work or other agent activation. Main remains `c7b3db3929e3cbda6a7d689d3e398b12a792a0bc`.
+
+**Completed:** built existing frozen backend image, non-root/read-only/network-disabled configuration/
+crypto probe passed, automatic frontend deployment guards verified. No runtime/schema/dependency edit.
+**Verified:** current VS Code Azure sign-in, Students credit available and both spending limits On,
+existing PG17.11 Ready, CA/hostname-verified TLS1.3, intended DB and seven backup records. No HTTPS
+host exists. Latest provider usage reports USD0 through Oct27; no new hosting resource/charge.
+**Blocked:** protected SQL file exists but runtime/migrator URLs remain blank. Guarded reader made
+no connection. Current schema/privileges/CRUD/migration safety remain unverified; no host/deployment ID.
+**Next:** owner privately fills the existing file, then SELECT-only SQL/recovery/security gates,
+controlled migrations/HTTPS hosting/staging CRUD and restart/external checks. Stop after this phase.
+The staging DB is not production isolation; no real public accounts or verification bypass.
+
+Live demo remains unchanged. No cloud/SQL/network/billing mutation, migration/account/admin grant,
+merge/deploy/DNS/tag change or live email. See [exact recovered sources, commands, image and blocker](infra/azure-backend-phase1-2026-10-27.md).
+
 ## REL-2 production integration checkpoint — 2026-10-27
 
 Claim [#70](https://github.com/Vivek-k24/Dzirent/issues/70); isolated branch

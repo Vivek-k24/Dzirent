@@ -4,6 +4,26 @@ This registry is maintained only by Codex. It is a coordination record, not a sh
 
 ## Focused assignments
 
+### Azure backend Phase 1 / issue #25 — 2026-10-27 priority
+
+Owner explicitly limits this assignment to existing native FastAPI Azure hosting/PostgreSQL, then stop.
+[Scoped claim](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6459311814). New isolated
+`H:\DziRent\worktrees\codex-azure-backend-phase1`, branch `codex/azure-backend-phase1`, exact recovered
+base `83ba85525e6db23fb5af150c0c705d1fe13f4def` (#71+#61 plus local test-only corrections).
+#31 tooling at131ca66 reused; no source worktree/branch/history reset, other agent edit or activation.
+
+Own only necessary Azure hosting/configuration/packaging/bounded deployment verification, this registry,
+project status, own Codex log and `docs/infra/azure-backend-phase1-2026-10-27.md`. This checkpoint edits
+only the four documentation paths; runtime/locks/contracts/migrations/product behavior stay unchanged.
+Storefront/media/AI lanes are suspended and not included. Root automatic Vercel guards stay false.
+No PostgreSQL recreation/role reset, destructive Azure fixtures, billing-limit removal or real public
+accounts. Migrations/network/hosting require actual protected SQL/recovery/cost gates. Stop Phase1
+at precise blocker if these cannot be established. Private settings/evidence remain outside Git.
+
+Fresh read-only checks and real local image build completed; both protected SQL URLs remain blank,
+so no SQL authentication/CRUD/migration, cloud mutation or HTTPS endpoint/deployment exists yet.
+The full report preserves exact sources, actual checks, unrun items and the owner's concrete next action.
+
 ### REL-2 / issue #70 — owner-authorized integration, 2026-10-27
 
 Codex claim and explicit cross-owner handoff:

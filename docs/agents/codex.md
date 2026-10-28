@@ -1,5 +1,33 @@
 # Codex Phase 1A status
 
+## Azure backend Phase 1 — 2026-10-27, America/Chicago
+
+Owner's latest backend-only priority supersedes further storefront/media/AI work. Scoped claim on
+[#25](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6459311814). Recovered clean local
+integration `83ba85525e6db23fb5af150c0c705d1fe13f4def`; created only own isolated
+`H:\DziRent\worktrees\codex-azure-backend-phase1`, `codex/azure-backend-phase1`. All 17 worktrees
+inspected/preserved, including owner review, coordination checkout, separate drafts and one old edit.
+Fetched all three object stores; main still c7b3db3. Reused #31 SDK/preflight, #71 guards and #61
+native backend; runtime/schema/Docker/locks identical to #61. No other agent/log or source lane edited.
+
+Fresh GET-only evidence: correct VS Code identity/subscription, positive nonestimated credit after
+pending charges and limits On, PG17.11 ARM Ready, DB present, secure transport/minTLS1.2, narrow
+unchanged firewall, seven backups, empty HTTPS-host inventory. Owner-CA hostname/chain verified
+TLS1.3 at 21:56 CDT, no SQL login. Optional admin-list failed400; hosting SKU list empty (unknown,
+not zero capacity). Benefits/SKU preflights exit2 intentionally, not passing deployment gates.
+Provider usage14 records totals reported USD0 through Oct27, not a future cost guarantee.
+
+Protected SQL file exists, both URL values blank, no overwrite/unexpected ACL principal. Guarded
+reader exit2 before connection; SQL/schema/data/roles/CRUD and migration recovery gates unknown.
+Asked owner to populate privately. No cloud/network/billing/SQL write or new resource/host, migration,
+account/admin grant, live mail, verification bypass, merge/release/DNS/tag or frontend change.
+
+Existing image built successfully, source83ba855, uid10001/Python3.12.15/psycopg3.3.6. Offline read-only,
+network-disabled container probe passed crypto, schemahead0005, missing connected DB rejection and
+SMTP-disabled checks; no hosted health/CRUD proof. Guard script passed; no full suite rerun claimed.
+[Full exact report/next action](../infra/azure-backend-phase1-2026-10-27.md). Stop at this blocked Phase1;
+resume only dependent SQL/HTTPS work when protected values are ready, not later storefront/AI phases.
+
 ## REL-2 / issue #70 — production integration checkpoint, 2026-10-27
 
 Master assignment and complete brief read; scoped claim/handoff on
