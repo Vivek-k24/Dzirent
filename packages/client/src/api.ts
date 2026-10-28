@@ -8,7 +8,7 @@ export function createApiClient(config: { mode: "demo" | "connected"; baseUrl?: 
   return async function request<T>(path: string, options: RequestInit & { protected?: boolean } = {}): Promise<T> {
     const { protected: protectedCall = false, ...init } = options;
     const headers = new Headers(init.headers);
-    if (init.body) headers.set("Content-Type", "application/json");
+    if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
     const token = protectedCall && !config.cookieAuth ? await config.getToken?.() : null;
     if (protectedCall && !config.cookieAuth && !token) throw new ApiError(401, { error: { code: "unauthenticated", message: "Sign in to continue.", details: [] }, request_id: "client-identity-required" });
     if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -18,7 +18,7 @@ export function createApiClient(config: { mode: "demo" | "connected"; baseUrl?: 
         const csrf = await config.getCsrf?.();
         if (!csrf) throw new Error("Session protection is unavailable. Refresh and try again.");
         headers.set("X-Dzirent-CSRF", csrf);
-        headers.set("Content-Type", "application/json");
+        if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
       }
     }
     const response = await fetch(`${base}${path}`, { ...init, headers, cache: "no-store", credentials: config.cookieAuth ? "same-origin" : "omit", redirect: "error" });

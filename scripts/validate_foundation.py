@@ -114,7 +114,7 @@ for example in examples["cases"]:
     params = op.get("parameters", [])
     assert set(query) <= {p["name"] for p in params if p["in"] == "query"}
     if "requestBody" in op:
-        validate(op["requestBody"]["content"]["application/json"]["schema"], request["body"])
+        validate(op["requestBody"]["content"][request.get("content_type", "application/json")]["schema"], request["body"])
     else:
         assert request["body"] is None
     response = example["response"]

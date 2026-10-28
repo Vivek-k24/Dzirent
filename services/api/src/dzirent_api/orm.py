@@ -472,3 +472,41 @@ class PlatformAdminEvent(Base):
     reason: Mapped[str] = mapped_column(String(500))
     evidence_sha256: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = created_column()
+
+
+class MediaUpload(Base):
+    __tablename__ = "media_uploads"
+    __table_args__ = (
+        CheckConstraint(
+            "content_type IN ('image/jpeg', 'image/png', 'image/webp')", name="content_type"
+        ),
+        CheckConstraint("declared_size BETWEEN 1 AND 4000000", name="declared_size"),
+        CheckConstraint("rights_confirmed", name="rights_confirmed"),
+        CheckConstraint("status IN ('pending', 'uploaded', 'complete')", name="status"),
+        CheckConstraint(
+            "expires_at > created_at AND expires_at <= created_at + interval '15 minutes'",
+            name="expiry",
+        ),
+        CheckConstraint(
+            "(status = 'pending' AND object_key IS NULL AND byte_size IS NULL AND sha256 IS NULL AND width IS NULL AND height IS NULL) OR (status <> 'pending' AND object_key IS NOT NULL AND byte_size IS NOT NULL AND sha256 IS NOT NULL AND width IS NOT NULL AND height IS NOT NULL AND byte_size BETWEEN 1 AND 4000000 AND length(sha256) = 64 AND width >= 200 AND height >= 200)",
+            name="payload_state",
+        ),
+        Index("ix_media_uploads_product_expiry", "product_id", "expires_at"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"))
+    lender_profile_id: Mapped[UUID] = mapped_column(ForeignKey("lender_profiles.id"))
+    content_type: Mapped[str] = mapped_column(String(32))
+    declared_size: Mapped[int] = mapped_column(Integer)
+    rights_confirmed: Mapped[bool] = mapped_column(Boolean)
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    object_key: Mapped[str | None] = mapped_column(String(64), unique=True)
+    byte_size: Mapped[int | None] = mapped_column(Integer)
+    sha256: Mapped[str | None] = mapped_column(String(64))
+    width: Mapped[int | None] = mapped_column(Integer)
+    height: Mapped[int | None] = mapped_column(Integer)
+    completed_image_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("product_images.id", ondelete="SET NULL"), unique=True
+    )
+    created_at: Mapped[datetime] = created_column()
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

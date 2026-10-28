@@ -373,7 +373,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Complete Upload */
+        /** Complete */
         post: operations["completeUpload"];
         delete?: never;
         options?: never;
@@ -390,8 +390,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Upload Intent */
+        /** Create Intent */
         post: operations["createUploadIntent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lender/products/{id}/images/uploads/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Bytes */
+        put: operations["putUploadBytes"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -497,6 +514,23 @@ export interface paths {
         get: operations["getMyStudio"];
         /** Save My Studio */
         put: operations["saveMyStudio"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/media/{image_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Content */
+        get: operations["getMediaContent"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -735,7 +769,7 @@ export interface components {
         Health: {
             /**
              * Contract Version
-             * @default 0.1.0-candidate.3
+             * @default 0.1.0-candidate.4
              */
             contract_version: string;
             /**
@@ -1396,8 +1430,30 @@ export interface components {
             content_type: "image/jpeg" | "image/png" | "image/webp";
             /** Filename */
             filename: string;
+            /**
+             * Rights Confirmed
+             * @default false
+             */
+            rights_confirmed: boolean;
             /** Size Bytes */
             size_bytes: number;
+        };
+        /** UploadReceipt */
+        UploadReceipt: {
+            /** Height */
+            height: number;
+            /**
+             * Status
+             * @constant
+             */
+            status: "uploaded";
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Width */
+            width: number;
         };
     };
     responses: never;
@@ -2882,6 +2938,15 @@ export interface operations {
                     "application/json": components["schemas"]["CategoryTree"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -2911,6 +2976,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2967,6 +3050,15 @@ export interface operations {
                     "application/json": components["schemas"]["Facets"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -2996,6 +3088,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3066,6 +3176,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProductPage"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -3095,6 +3214,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3151,6 +3288,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProductDetail"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -3180,6 +3326,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3234,6 +3398,15 @@ export interface operations {
                     "application/json": components["schemas"]["Health"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -3263,6 +3436,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3317,6 +3508,15 @@ export interface operations {
                     "application/json": components["schemas"]["Health"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -3346,6 +3546,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3404,6 +3622,15 @@ export interface operations {
                     "application/json": components["schemas"]["LenderProductPage"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -3433,6 +3660,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3491,6 +3736,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProductDetail"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -3520,6 +3774,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3576,6 +3848,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProductDetail"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -3605,6 +3886,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3663,6 +3962,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProductDetail"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -3692,6 +4000,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3752,6 +4078,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProductDetail"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -3781,6 +4116,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3841,6 +4194,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProductDetail"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -3870,6 +4232,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3930,6 +4310,15 @@ export interface operations {
                     "application/json": components["schemas"]["UploadIntent"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -3959,6 +4348,143 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Invalid input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    putUploadBytes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/jpeg": string;
+                "image/png": string;
+                "image/webp": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadReceipt"];
+                };
+            };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Lender enrollment required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or not owned (non-enumerating) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Stale version */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4013,6 +4539,15 @@ export interface operations {
                     "application/json": components["schemas"]["MetroList"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4042,6 +4577,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4096,6 +4649,15 @@ export interface operations {
                     "application/json": components["schemas"]["CurrentUser"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4125,6 +4687,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4179,6 +4759,15 @@ export interface operations {
                     "application/json": components["schemas"]["CurrentUser"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4208,6 +4797,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4266,6 +4873,15 @@ export interface operations {
                     "application/json": components["schemas"]["CurrentUser"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4295,6 +4911,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4349,6 +4983,15 @@ export interface operations {
                     "application/json": components["schemas"]["CurrentUser"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4378,6 +5021,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4436,6 +5097,15 @@ export interface operations {
                     "application/json": components["schemas"]["LenderProfile"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4465,6 +5135,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4519,6 +5207,15 @@ export interface operations {
                     "application/json": components["schemas"]["Preferences"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4548,6 +5245,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4606,6 +5321,15 @@ export interface operations {
                     "application/json": components["schemas"]["Preferences"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4635,6 +5359,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4689,6 +5431,15 @@ export interface operations {
                     "application/json": components["schemas"]["StudioSettings"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4718,6 +5469,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4776,6 +5545,15 @@ export interface operations {
                     "application/json": components["schemas"]["StudioSettings"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4805,6 +5583,136 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Invalid input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Dependency unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getMediaContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or invalid identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Lender enrollment required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing or not owned (non-enumerating) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Stale version */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4862,6 +5770,15 @@ export interface operations {
                     "application/json": components["schemas"]["StudioPage"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4891,6 +5808,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4947,6 +5882,15 @@ export interface operations {
                     "application/json": components["schemas"]["Studio"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -4976,6 +5920,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5035,6 +5997,15 @@ export interface operations {
                     "application/json": components["schemas"]["StudioProductPage"];
                 };
             };
+            /** @description Interrupted request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Missing or invalid identity */
             401: {
                 headers: {
@@ -5064,6 +6035,24 @@ export interface operations {
             };
             /** @description Stale version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Photo or request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported photo or request type */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };

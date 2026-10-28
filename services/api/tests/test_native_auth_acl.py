@@ -73,7 +73,7 @@ def acl(database_url: str) -> Any:
     command.upgrade(config, "head")
     with migration_engine.begin() as connection:
         for table in Base.metadata.tables:
-            if table.startswith(("auth_", "platform_admin_")):
+            if table == "media_uploads" or table.startswith(("auth_", "platform_admin_")):
                 continue
             connection.exec_driver_sql(
                 f'GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "{table}" TO dzirent_app'
@@ -103,7 +103,7 @@ def test_runtime_denials_and_ownership(acl: Any) -> None:
         assert connection.scalar(text("SELECT current_user")) == "dzirent_app"
         assert (
             connection.scalar(text("SELECT version_num FROM alembic_version"))
-            == "0005_auth_email_outbox"
+            == "0006_lender_media_uploads"
         )
     with acl["admin"].connect() as connection:
         assert set(

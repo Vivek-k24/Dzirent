@@ -9,7 +9,7 @@ import { useBag, useSession } from "@/lib/store";
 
 export function GarmentImage({ image, priority = false, sizes = "(min-width: 1280px) 23vw, (min-width: 1024px) 31vw, (min-width: 640px) 46vw, 94vw" }: { image: Product["image"]; priority?: boolean; sizes?: string }) {
   const [failed, setFailed] = useState(false);
-  return <Image fill src={failed ? "/fixtures/garment-placeholder.svg" : image.url} alt={image.alt_text} sizes={sizes} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} onError={() => { if (!failed) setFailed(true); }} className="garment-image" />;
+  return <Image fill unoptimized={image.url.startsWith("/auth/api/media/")} src={failed ? "/fixtures/garment-placeholder.svg" : image.url} alt={image.alt_text} sizes={sizes} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} onError={() => { if (!failed) setFailed(true); }} className="garment-image" />;
 }
 export function ProductCard({ product, index = 10, start = "", end = "" }: { product: Product; index?: number; start?: string; end?: string }) {
   const saved = useBag(s => s.wishlist.includes(product.id));

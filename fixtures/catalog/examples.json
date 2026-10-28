@@ -1,5 +1,5 @@
 {
-  "contract_version": "0.1.0-candidate.3",
+  "contract_version": "0.1.0-candidate.4",
   "cases": [
     {
       "operation_id": "getLiveness",
@@ -14,7 +14,7 @@
         "status": 200,
         "body": {
           "status": "live",
-          "contract_version": "0.1.0-candidate.3"
+          "contract_version": "0.1.0-candidate.4"
         }
       }
     },
@@ -31,7 +31,7 @@
         "status": 200,
         "body": {
           "status": "ready",
-          "contract_version": "0.1.0-candidate.3"
+          "contract_version": "0.1.0-candidate.4"
         }
       }
     },
@@ -7349,7 +7349,8 @@
         "body": {
           "filename": "sample.jpg",
           "content_type": "image/jpeg",
-          "size_bytes": 100000
+          "size_bytes": 100000,
+          "rights_confirmed": true
         },
         "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected"
       },
@@ -7363,7 +7364,7 @@
             "Content-Type": "image/jpeg"
           },
           "expires_at": "2026-11-02T12:05:00Z",
-          "max_size_bytes": 10000000
+          "max_size_bytes": 4000000
         }
       }
     },
@@ -7478,6 +7479,47 @@
             }
           ],
           "date_blocks": []
+        }
+      }
+    },
+    {
+      "operation_id": "putUploadBytes",
+      "request": {
+        "method": "PUT",
+        "path": "/api/v1/lender/products/742ea3cf-199e-5703-944b-d2654ffb4c3c/images/uploads/c05f39ca-fc02-52f6-830e-34bed8a34e52",
+        "query": "",
+        "body": "Binary JPEG bytes supplied by the device; not a JSON string",
+        "identity": "sample-lender (MSW only); verified native cookie with exact Origin/CSRF in connected",
+        "content_type": "image/jpeg"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "upload_id": "c05f39ca-fc02-52f6-830e-34bed8a34e52",
+          "status": "uploaded",
+          "width": 900,
+          "height": 1200
+        }
+      }
+    },
+    {
+      "operation_id": "getMediaContent",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/media/f25e8cea-0f65-524c-b367-f23c3995b369",
+        "query": "",
+        "body": null,
+        "identity": "anonymous"
+      },
+      "response": {
+        "status": 503,
+        "body": {
+          "error": {
+            "code": "dependency_unavailable",
+            "message": "Photo storage is disabled.",
+            "details": []
+          },
+          "request_id": "sample-media-disabled"
         }
       }
     },

@@ -64,11 +64,10 @@ def size(row: orm.Size) -> wire.Size:
 
 
 def image(row: orm.ProductImage) -> wire.ProductImage:
-    # Object-key media needs the connected media milestone's trusted CDN base; until then only
-    # allowlisted local fixture paths are ever stored or returned.
+    # All uploaded bytes pass the API visibility/owner gate; no private object key is exposed.
     return wire.ProductImage(
         id=row.id,
-        url=row.fixture_url or "",
+        url=row.fixture_url or f"/auth/api/media/{row.id}",
         alt_text=row.alt_text,
         width=row.width,
         height=row.height,

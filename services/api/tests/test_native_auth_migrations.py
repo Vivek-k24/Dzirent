@@ -49,7 +49,7 @@ def test_upgrade_from_0002_preserves_mock_without_credentials(migration_db: Any)
     with engine.connect() as connection:
         assert (
             connection.scalar(text("SELECT version_num FROM alembic_version"))
-            == "0005_auth_email_outbox"
+            == "0006_lender_media_uploads"
         )
         assert (
             connection.scalar(text("SELECT auth_provider FROM users WHERE id=:id"), {"id": user_id})
@@ -151,7 +151,7 @@ def test_0005_is_additive_to_native_credentials_and_refuses_data_loss(migration_
     with engine.connect() as connection:
         assert (
             connection.scalar(text("SELECT version_num FROM alembic_version"))
-            == "0005_auth_email_outbox"
+            == "0006_lender_media_uploads"
         )
         assert connection.scalar(text("SELECT count(*) FROM auth_email_outbox")) == 1
 
@@ -214,6 +214,6 @@ def test_native_data_refuses_destructive_downgrade(migration_db: Any, table: str
     with engine.connect() as connection:
         assert (
             connection.scalar(text("SELECT version_num FROM alembic_version"))
-            == "0005_auth_email_outbox"
+            == "0006_lender_media_uploads"
         )
         assert connection.scalar(text(f"SELECT count(*) FROM {table}")) == 1

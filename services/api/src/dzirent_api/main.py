@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,7 @@ from .contract import include_routes
 from .db import create_db_engine, session_factory
 from .errors import install_error_handlers
 from .identity import build_verifier
+from .media_storage import PrivateFiles
 from .models import CONTRACT_VERSION
 from .observability import RequestContextMiddleware, configure_logging
 from .settings import Settings
@@ -46,6 +48,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         docs_url="/docs" if interactive_docs else None,
         redoc_url=None,
         openapi_url="/openapi.json" if interactive_docs else None,
+    )
+    app.state.media_storage = (
+        PrivateFiles(Path(settings.media_root)) if settings.media_backend == "filesystem" else None
     )
     app.state.settings = settings
     app.state.engine = engine

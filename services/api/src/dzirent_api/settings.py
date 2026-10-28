@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     db_statement_timeout_ms: int = Field(default=5000, ge=100, le=60000)
     cors_origins: list[str] = ["http://127.0.0.1:3000"]
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    media_backend: Literal["disabled", "filesystem"] = "disabled"
+    media_root: str = ""
     auth_web_origin: str = "http://127.0.0.1:3000"
     auth_csrf_key: SecretStr = SecretStr("")
     auth_session_hours: int = Field(default=24, ge=1, le=168)
@@ -54,6 +56,11 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def enforce_modes(self) -> Self:
+        if self.media_backend == "filesystem":
+            if self.deployed:
+                raise ValueError("Filesystem media is local/test only; hosted media stays disabled")
+            if not self.media_root or not Path(self.media_root).is_absolute():
+                raise ValueError("Filesystem media needs an explicit absolute private directory")
         if self.identity_mode == "mock" and not self.mock_identity_allowed:
             raise ValueError("Mock identity is restricted to explicit local/test demo mode")
         if self.mode == "connected" and (

@@ -36,6 +36,7 @@ EXAMPLES = {
     for case in json.loads((FIXTURES / "examples.json").read_text(encoding="utf-8"))["cases"]
 }
 MAIL_KEY = secrets.token_urlsafe(32)
+CSRF_KEY = secrets.token_urlsafe(32)
 
 
 @pytest.fixture(autouse=True)
@@ -130,6 +131,7 @@ def settings_for(database_url: str, **overrides: Any) -> Settings:
         "database_url": database_url,
         "cors_origins": ["http://127.0.0.1:3000"],
         "log_level": "WARNING",
+        "auth_csrf_key": CSRF_KEY,
         "auth_email_worker_enabled": False,
         "auth_outbox_active_key_id": "local64",
         "auth_outbox_keys": json.dumps({"local64": MAIL_KEY}),

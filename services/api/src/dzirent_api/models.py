@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-CONTRACT_VERSION = "0.1.0-candidate.3"
+CONTRACT_VERSION = "0.1.0-candidate.4"
 MinorUnits = Annotated[int, Field(strict=True, ge=0)]
 Band = Literal["A", "B", "C", "D"]
 ProductStatus = Literal["draft", "published", "archived"]
@@ -234,6 +234,7 @@ class LenderEnrollment(WireModel):
 
 
 class UploadIntentRequest(WireModel):
+    rights_confirmed: bool = False
     filename: str = Field(min_length=1, max_length=160)
     content_type: Literal["image/jpeg", "image/png", "image/webp"]
     size_bytes: int = Field(gt=0, le=10000000)
@@ -246,6 +247,13 @@ class UploadIntent(WireModel):
     headers: dict[str, str]
     expires_at: datetime
     max_size_bytes: int = Field(gt=0)
+
+
+class UploadReceipt(WireModel):
+    upload_id: UUID
+    status: Literal["uploaded"]
+    width: int = Field(ge=200)
+    height: int = Field(ge=200)
 
 
 class UploadComplete(WireModel):

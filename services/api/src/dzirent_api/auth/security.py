@@ -8,6 +8,7 @@ from fastapi import Request, Response
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from ..errors import ApiError, error_response
+from ..media_policy import MAX_BYTES, PHOTO_TYPES, raw_upload
 from ..settings import Settings
 from .crypto import TOKEN_PATTERN, digest, new_token
 
@@ -154,7 +155,8 @@ class NativeTransportMiddleware:
         request = Request(scope)
         settings: Settings = request.app.state.settings
         path = request.url.path
-        if settings.mode != "connected" or not path.startswith("/api/v1/"):
+        photo_put = raw_upload(path, request.method)
+        if not path.startswith("/api/v1/") or (settings.mode != "connected" and not photo_put):
             await self.app(scope, receive, send)
             return
 
@@ -178,13 +180,19 @@ class NativeTransportMiddleware:
         buffered_body: bytes | None = None
         try:
             if request.method in UNSAFE:
-                require_csrf(request, settings)
-                if (
-                    request.method != "DELETE"
-                    and request.headers.get("content-type", "").split(";")[0] != "application/json"
-                ):
-                    raise ApiError(415, "unsupported_media_type", "Use application/json.")
-                limit = 16384 if path.startswith("/api/v1/auth/") else 1048576
+                if settings.mode == "connected":
+                    require_csrf(request, settings)
+                content_type = request.headers.get("content-type", "").split(";", 1)[0]
+                if photo_put:
+                    if content_type not in PHOTO_TYPES:
+                        raise ApiError(
+                            415, "unsupported_media_type", "Use JPEG, PNG or WebP photo bytes."
+                        )
+                    limit = MAX_BYTES
+                else:
+                    if request.method != "DELETE" and content_type != "application/json":
+                        raise ApiError(415, "unsupported_media_type", "Use application/json.")
+                    limit = 16384 if path.startswith("/api/v1/auth/") else 1048576
                 parts: list[bytes] = []
                 size = 0
                 while True:
