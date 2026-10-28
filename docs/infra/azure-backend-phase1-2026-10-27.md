@@ -4,7 +4,7 @@
 not storefront/AI development, public onboarding activation or completion of the production master.
 Claim: [issue #25](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6459311814).
 Initial observations were collected approximately 21:47–22:09 CDT (UTC October 28).
-The owner-supplied SQL configuration and hosting suitability were rechecked at 22:21–22:31 CDT.
+The owner-supplied SQL configuration and hosting suitability were rechecked at 22:21–22:36 CDT.
 
 ## Exact recovered source and preservation
 
@@ -79,12 +79,13 @@ Read-only wrappers retained the existing fixed GET-only ARM transport and wrote 
 - Hosting-SKU GET returned HTTP 200 with an empty list. This is **unknown eligibility/capacity**,
   not zero quota or proof that a free/custom-container runtime can be allocated.
 
-## Protected SQL authentication blocker — resumed at 22:21–22:31 CDT
+## Protected SQL authentication blocker — resumed at 22:21–22:36 CDT
 
 `H:\DziRent\secrets\azure-staging.env` exists and was inspected without printing its contents.
 The owner populated both `DZIRENT_DATABASE_URL` and `DZIRENT_MIGRATOR_DATABASE_URL` privately.
-ACL inspection again found zero unexpected allowed principals. The existing file was **not edited
-or overwritten by the agent**; no secret or connection string was printed, logged or uploaded.
+ACL inspection again found zero unexpected allowed principals. Initial checks left the file unchanged;
+the subsequent owner-authorized encoding repair is recorded below. No secret or connection string
+was printed, logged, committed or uploaded.
 
 The earlier 21:47 and 22:09 CDT runs exited **2** before connection because both values were blank.
 At **22:21 CDT**, populated values failed the exact-host guard before connection: reserved password
@@ -95,9 +96,20 @@ independent check of each role classified both failures as **server authenticati
 neither was a DNS, timeout, firewall or certificate-validation failure. No alternate password,
 role, target, permissive TLS setting or local database fallback was tried.
 
-No SQL login succeeded and no SELECT result was obtained. The owner was asked to privately verify
-the two existing role passwords and ensure password URL-encoding occurs exactly once, then save
-the same protected file. Password reset, role recreation and broader access are not a proposed fix.
+At **22:35 CDT**, the owner explicitly authorized direct repair of both URLs in the existing protected
+file. The agent used the **known full Azure hostname** as the password boundary, percent-encoded
+reserved characters, and preserved every existing valid percent-encoded sequence. Both entries
+changed. An exclusive open of the existing file retained its ACL; all nonpassword URL/settings text
+and credential semantics were preserved in memory, and the saved bytes were checked. No private
+backup/copy, raw diagnostic output or repository file containing credentials was created.
+
+Both saved URLs pass the exact server/database/role/port/verify-full/CA and decoded-password
+preservation guards. The unchanged guarded reader still exited **2** on SQL authentication. A final
+bounded, SELECT-only check of **each** role also exited **2**, with both classified as **authentication
+rejected** and `ready=false`. No SQL login succeeded and no SELECT result was obtained. URL syntax
+validation passed; **SQL credential acceptance did not**. Correct, accepted passwords for the existing
+roles are now the concrete dependency. No guessed/alternate password, reset, role recreation or
+broader access is a proposed fix.
 
 Therefore current Alembic revision, table ownership/data, effective table/column/default privileges,
 role memberships, migrator separation and **all SQL CRUD are unverified**. Historical owner evidence
@@ -185,6 +197,8 @@ been uploaded to a registry or deployed.
 | Guarded protected-config SQL reader, initial runs | Exit 2 before connection; both required private values absent. |
 | Resumed protected-config reader and boolean-only URI diagnostics | First stopped before connection on host parsing; owner corrected privately; final exact-target/TLS guards passed, reader exit 2 on rejected SQL authentication. |
 | Bounded SELECT-only per-role diagnosis | Both runtime and migrator logins rejected authentication; no SQL results or writes. Diagnostic wrapper exit 0 means its report completed, not that SQL checks passed. |
+| Owner-authorized local URI repair at 22:35 CDT | Both password components encoded using the known host boundary; valid existing percent sequences/credential semantics/ACL preserved; saved bytes and strict configuration guards passed. No database change. |
+| Post-repair reader and per-role verification | Both exit 2; both role logins still rejected authentication, `ready=false`. No SQL results/writes; not reported ready. |
 | GET-only hosting suitability/runtime and public retail queries | F1 rate USD 0/hour; native Python 3.12 and region advertised; provider unregistered, quota GETs 404; no allocation. |
 | Certificate/hostname-verified PostgreSQL TLS probe | Passed TLS 1.3; no SQL login. |
 | GET-only complete resource/usage wrapper | Completed; one resource, 14 records totaling reported USD 0. |
@@ -214,8 +228,9 @@ or administrator grant. The existing web demo remains at https://dzirent.com/, s
 `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`, deployment `dpl_A7AvvLu1XmuzcWuvTRiRpHcTqAUd`,
 confirmed READY by a fresh read-only provider lookup. No frontend environment/DNS/tag/alias changed.
 
-**Next required input:** privately correct the existing role passwords/URL encoding and reply ready;
-the URLs are populated but both SQL logins are rejected. Then perform
+**Next required input:** accepted passwords for the existing SQL roles in the protected file. Both
+URLs are populated, encoding is repaired and configuration guards pass, but both SQL logins are
+rejected. Do not repeat encoding/credential guesses or reset roles to bypass this gate. Then perform
 strict SELECT-only schema/data/ACL inspection, confirm recovery/no concurrent writer, serialize only
 needed additive migrations, allocate the verified minimal HTTPS host and narrowly scoped network
 access, supply runtime-only secrets and the owner CA bundle at its verified Linux path, and perform explicit controlled staging CRUD plus persistence/

@@ -17,11 +17,13 @@ TLS1.3 at 21:56 CDT, no SQL login. Optional admin-list failed400; hosting SKU li
 not zero capacity). Benefits/SKU preflights exit2 intentionally, not passing deployment gates.
 Provider usage14 records totals reported USD0 through Oct27, not a future cost guarantee.
 
-Resumed 22:21–22:31 CDT: owner populated both protected SQL URLs and corrected password URI parsing.
-Both exact target/role/verify-full/CA guards now pass. Guarded reader exit2, SQL attempted; independent
-bounded role checks both report server authentication rejection, no successful login/SELECT or write.
-No secret/config output, agent file edit or unexpected ACL principal. Owner asked to privately verify
-role passwords and encoding exactly once; no reset or alternate credential attempt. SQL/schema/data/
+Resumed 22:21–22:36 CDT: owner populated both protected SQL URLs and explicitly authorized agent
+encoding repair at22:35. Both password components saved using the known hostname boundary;
+valid percent sequences, credential semantics, nonpassword settings and original ACL preserved.
+Saved-byte and exact target/role/verify-full/CA guards pass. Reader and final bounded per-role checks
+exit2: both still report server authentication rejection, ready=false, no successful login/SELECT/write.
+No secret/config output or unexpected ACL principal. Accepted role passwords remain required;
+no reset, guessed/alternate credential or additional encoding attempt. SQL/schema/data/
 roles/CRUD and migration recovery gates remain unknown. Additional GET-only hosting evidence:
 Microsoft.Web unregistered; native Python3.12/Linux F1 region advertised; retail F1 USD0/hour,
 B1 USD0.018/hour (not selected); quota GET404, capacity unknown. No hosting package change/allocation.

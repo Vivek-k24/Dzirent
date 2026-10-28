@@ -21,7 +21,9 @@ accounts. Migrations/network/hosting require actual protected SQL/recovery/cost 
 at precise blocker if these cannot be established. Private settings/evidence remain outside Git.
 
 Fresh read-only checks and real local image build completed. Owner populated/corrected the protected
-URLs; at 22:30 CDT both exact-target/TLS guards pass, but both SQL roles are rejected at authentication.
+URLs, then authorized direct password encoding repair at22:35 CDT. Reserved characters encoded using
+the known host boundary, preserving valid percent sequences/credentials/settings/ACL. Saved-byte and
+exact-target/TLS guards pass, but final read-only checks still reject both roles at authentication.
 No successful SQL login/results/CRUD/migration, cloud mutation or HTTPS endpoint/deployment exists yet.
 Additional hosting suitability/retail reads advertise native Python3.12/Linux F1 at USD0/hour in North
 Central US; provider unregistered and quota GET404, so allocation/capacity remain unverified.
