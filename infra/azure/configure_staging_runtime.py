@@ -28,7 +28,10 @@ from dzirent_api.settings import Settings
 
 logging.disable(logging.CRITICAL)
 SITE = "dzirent-api-staging-4265"
-ORIGIN = "https://" + SITE + ".azurewebsites.net"
+API_ORIGIN = "https://" + SITE + ".azurewebsites.net"
+STAGING_WEB_ORIGIN = (
+    "https://dzirent-git-codex-connected-staging-stage3-vivekkallakuri-8617.vercel.app"
+)
 HOST = "dzirent-pg17-ncus-4265.postgres.database.azure.com"
 LINUX_CA = "/home/dzirent/azure-postgres-roots.pem"
 PLATFORM = {
@@ -50,7 +53,11 @@ def require(ok: object, reason: str) -> None:
         raise Stop(reason)
 
 
-def assemble(owner_path: Path, azure_path: Path) -> dict[str, str]:
+def assemble(owner_path: Path, azure_path: Path, web_origin: str) -> dict[str, str]:
+    require(
+        web_origin in {API_ORIGIN, STAGING_WEB_ORIGIN},
+        "reviewed_staging_origin_required",
+    )
     for path in (owner_path, azure_path):
         require(
             path.is_file() and not path.is_relative_to(ROOT),
@@ -87,8 +94,8 @@ def assemble(owner_path: Path, azure_path: Path) -> dict[str, str]:
         identity_mode="native",
         database_url=linux_url,
         db_pool_size=2,
-        cors_origins=[],
-        auth_web_origin=ORIGIN,
+        cors_origins=[] if web_origin == API_ORIGIN else [web_origin],
+        auth_web_origin=web_origin,
         auth_csrf_key=owner["DZIRENT_AUTH_CSRF_KEY"],
         auth_email_backend="disabled",
         auth_email_worker_enabled=False,
@@ -127,6 +134,7 @@ def main() -> int:
     parser.add_argument("--subscription", required=True)
     parser.add_argument("--owner-input", type=Path, required=True)
     parser.add_argument("--azure-input", type=Path, required=True)
+    parser.add_argument("--web-origin", default=STAGING_WEB_ORIGIN)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
@@ -141,7 +149,9 @@ def main() -> int:
     phase = "local_validation"
     try:
         require(not args.output.exists(), "existing_evidence_preserved")
-        values = assemble(args.owner_input.resolve(), args.azure_input.resolve())
+        values = assemble(
+            args.owner_input.resolve(), args.azure_input.resolve(), args.web_origin
+        )
         report["runtime_names"] = sorted(k for k in values if k.startswith("DZIRENT_"))
         report["platform_names"] = sorted(PLATFORM)
         report["settings_loader_validation"] = True
@@ -176,13 +186,34 @@ def main() -> int:
                     and site.get("tags", {}).get("environment") == "staging"
                     and site.get("properties", {}).get("httpsOnly") is True
                     and site["properties"]["defaultHostName"]
-                    == ORIGIN.removeprefix("https://"),
+                    == API_ORIGIN.removeprefix("https://"),
                     "actual_staging_host_guard",
                 )
                 existing = request("POST", "/config/appsettings/list")["properties"]
                 require(
                     set(existing) <= set(values),
                     "unexpected_existing_settings_preserved",
+                )
+                require(
+                    existing.get("DZIRENT_AUTH_WEB_ORIGIN", API_ORIGIN)
+                    in {API_ORIGIN, args.web_origin},
+                    "different_existing_origin_requires_review",
+                )
+                require(
+                    existing.get("DZIRENT_AUTH_EMAIL_BACKEND") == "disabled"
+                    and existing.get("DZIRENT_AUTH_EMAIL_WORKER_ENABLED") == "false",
+                    "existing_email_provider_configuration_preserved",
+                )
+                policy = json.loads(
+                    (Path(__file__).parent / "environment-policy.json").read_text()
+                )
+                require(
+                    all(
+                        existing[name] == values[name]
+                        for name in policy["azureRuntimeSecrets"]
+                        if name in existing
+                    ),
+                    "existing_runtime_secret_change_requires_review",
                 )
                 phase = "set_allowlisted_runtime"
                 request("PUT", "/config/appsettings", {"properties": values})

@@ -4,7 +4,7 @@ Scope [#77](https://github.com/Vivek-k24/Dzirent/issues/77); exact base
 `a02e180f0147f4f06fd61d47c1f3997b922e9e6b`, isolated `codex/connected-staging-stage3`.
 Names and consumers only: no secret values or private connection strings in this document.
 
-## Current inventory and loading
+## Initial inventory before writes and loading
 
 - Audited native API Settings, migrations/operator, Next same-origin proxy/client, runtime Compose,
   root scripts and all GitHub workflows, plus names/presence in10 relevant local/template files.
@@ -29,6 +29,13 @@ Names and consumers only: no secret values or private connection strings in this
 
 The machine-readable destination allowlist is
 [`infra/azure/environment-policy.json`](../../infra/azure/environment-policy.json).
+
+Final configured state: one free Linux App Service plan/app,24 API App Settings plus six platform
+fields, three active runtime secrets (app URL, CSRF key, AES keyring). Conditional SMTP credentials
+absent; SMTP/worker explicitly disabled. No KeyVault/storage. Three Vercel entries only for
+`codex/connected-staging-stage3` / preview; production unchanged. New GitHub deployment secrets,
+variables/environments: **none**. New CI is GET-only external verification, not deployment.
+[Actual resource/source/validation evidence](connected-staging-verification-2026-10-28.md).
 
 ## Exact API runtime names and destinations
 
@@ -93,8 +100,8 @@ adapter's exact fields and identity scope must be added to this manifest and rev
 
 | Variable | Classification/destination | Consumer and present state |
 | --- | --- | --- |
-| `DZIRENT_API_UPSTREAM_URL` | Vercel server-side configuration, staging branch only | Same-origin proxy; actual HTTPS API `/api/v1`. Currently unset. |
-| `DZIRENT_WEB_ORIGIN` | Vercel server-side configuration, staging branch only | Proxy origin/authority validation; actual approved stable preview origin. Currently unset. |
+| `DZIRENT_API_UPSTREAM_URL` | Vercel server-side configuration, staging branch/preview only, encrypted | `https://dzirent-api-staging-4265.azurewebsites.net/api/v1`. Configured. |
+| `DZIRENT_WEB_ORIGIN` | Vercel server-side configuration, staging branch/preview only, encrypted | Actual stable preview origin below. Configured. |
 | `NEXT_PUBLIC_DZIRENT_MODE` | **Public Vercel build selector**, explicit nonsecret exception | Client/store/MSW/proxy. Public demo remains demo; only an isolated staging build may use connected. Never put credentials here. |
 | `GITHUB_TOKEN` | GitHub Actions automatic token | Existing Security/CodeQL; platform-issued, not an owner-created deployment secret. |
 | `AZURE_CLIENT_ID` | Proposed GitHub deployment variable | OIDC application/client identifier, only if a reviewed deployment job and federation are established. |
@@ -118,10 +125,11 @@ Existing disposable CI/test-only consumers remain separate: `DZIRENT_TEST_DATABA
 the Azure staging database for a destructive fixture. Platform variables (`PORT`, `NODE_ENV`,
 GitHub/Vercel context) are not copied private intake credentials.
 
-## Current checks and next gates
+## Initial checks and subsequent gates
 
-Name-only authenticated inventories and code consumer search completed. No secrets were decrypted,
-printed or uploaded; no platform configuration changed. Stage2's real role logins and preserved ACLs
+Initial name-only authenticated inventories and code consumer search completed without retrieving
+secret values or changing platform configuration. Subsequent allowlisted runtime writes are recorded
+above and in the verification report; secret values were never printed. Stage2's real role logins and preserved ACLs
 are recorded in [the prior report](azure-connection-recovery-2026-10-28.md), not inferred from CI.
 
 Fresh read-only October28 financial observations: Students Enabled, both spending limits On,
@@ -130,7 +138,15 @@ expiry beyond seven days. Free-meter entitlement lookup still failed; this does 
 allocation, service quota, budget or bill. Existing database Ready, TLS required/min1.2, one narrow
 firewall rule; seven Full backup records, newest12:10 CDT October28. No host/storage allocated.
 
-Next: protected logical backup and isolated PG17 restore/migration rehearsal; only then serialized
-reviewed additive migrations, costed minimal HTTPS hosting, concrete networking review, explicit
-runtime App Settings and staged frontend integration. Email delivery and hosted media acceptance
-remain blocked on actual provider/implementation dependencies; never simulate them as passes.
+Those recovery/migration/hosting/network/transport gates subsequently passed as recorded in the
+verification report. Final exact frontend origin, derived from Vercel deployment metadata:
+`https://dzirent-git-codex-connected-staging-stage3-vivekkallakuri-8617.vercel.app`.
+It is both `DZIRENT_WEB_ORIGIN` and Azure `DZIRENT_AUTH_WEB_ORIGIN`; Azure `DZIRENT_CORS_ORIGINS`
+contains only that HTTPS origin. `NEXT_PUBLIC_DZIRENT_MODE=connected` only on this preview branch.
+Production keeps its demo source/defaults. Operator runtime configuration defaults to this reviewed
+origin and refuses unrelated existing origins or later verified SMTP configuration.
+It also refuses changes to an existing runtime secret; rotation needs separate review rather than
+silently replacing platform values from a stale local input file.
+
+Email delivery, signed-in/lender/media acceptance and production database isolation remain incomplete.
+Do not create proposed media variables as secrets before an actual provider consumer is reviewed.

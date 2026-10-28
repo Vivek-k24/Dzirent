@@ -2,7 +2,7 @@
 
 ## Connected staging Stage 3 — 2026-10-28, America/Chicago
 
-**Recovery/migration prerequisites passed; HTTPS hosting in progress.** Owner-authorized issue77,
+**Azure backend and protected connected web transport operational; full release gated.** Issue77,
 isolated `codex/connected-staging-stage3`, base `a02e180f0147f4f06fd61d47c1f3997b922e9e6b`.
 Environment audit complete before cloud writes: actual API Settings/Vercel/CI consumers and explicit
 destination allowlists, no bulk GitHub secrets, administrator local only, migrator separate.
@@ -11,13 +11,23 @@ Actual protected backup restored locally into disposable PG17.11; unchanged nati
 rehearsed successfully, then applied once to Azure at13:44 CDT with the existing migrator.
 Azure now `0005_auth_email_outbox`, 25 tables, original18 counts/old privileges/ownership preserved,
 new auth tables empty; independent app-role login and TLS1.3/verify-full passed. No accounts created.
-Free Linux F1 host preflight passed with Students credit and both spending limits On; no host yet.
+Free Linux F1 host deployed with verified Students credit and both spending limits On. API
+`https://dzirent-api-staging-4265.azurewebsites.net/api/v1`, source
+`bc55f71113c06814532df5b82b3af0cdedd97994`, publication `eede9fed-93c0-4baa-959c-d4a80f37ca1e`.
+App-role SQL CRUD/HTTPS reads, persisted update across app restart and owned-row cleanup passed;
+all25 counts restored, no users/accounts/products. Actual native process PG17.11/verify-full/TLS1.3,
+Python3.12.15. External7/7 and local Next proxy5/5 checks passed.
 
-Email remains **blocked by owner instruction**; SMTP and worker disabled. Hosted private media and
-connected session/upload/restart acceptance remain unverified. Database networking still unchanged;
-actual host outbound additions require concrete review. No main merge, public cutover, production
-Vercel setting or live demo change. [Exact checks and blockers](infra/connected-staging-verification-2026-10-28.md),
-[variable destinations](infra/connected-staging-environment-audit.md).
+Protected connected Vercel preview READY from8d9ac658c19673cbed1436ad3a723dce179f3db3. Actual branch
+URL/exact API origin configured with only three branch-preview values; no credentials in Vercel.
+Owner separately approved13 declared plus one observed /32 source; all prior rules preserved.
+Native anonymous CSRF/origin/cookie/restart checks passed; full signed-in/lender sessions untested.
+Email remains **blocked by owner instruction**, SMTP/worker disabled; private hosted media still
+unimplemented/unprovisioned (unmerged local-only PR75 dependency). Production DB isolation/public
+cutover approval remain gates. No merge, production Vercel setting/alias, DNS or live demo change.
+[Exact checks/blockers](infra/connected-staging-verification-2026-10-28.md),
+[variable destinations](infra/connected-staging-environment-audit.md),
+[startup/recovery handoff](infra/connected-staging-runbook.md), draft PR78.
 
 ## Connection recovery Stage 2 — 2026-10-28, America/Chicago
 

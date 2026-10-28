@@ -1,10 +1,11 @@
-# Staging API database access — owner review required
+# Staging API database access — approved and applied
 
 At13:52 CDT October28, Azure completed deployment `dzirent-stage3-issue77-f1`.
 Allocated **Linux F1** plan `asp-dzirent-staging-f1` and HTTPS staging app
 `dzirent-api-staging-4265`. Actual hostname:
 `https://dzirent-api-staging-4265.azurewebsites.net`.
-This is a hosting allocation result; application publication and database readiness are not yet proven.
+This opening observation records allocation only. Subsequent publication, database readiness and
+controlled CRUD/restart evidence are in the [verification report](connected-staging-verification-2026-10-28.md).
 
 Verified from ARM: Linux/Python3.12, HTTPS-only, app/SCM minTLS1.2, FTPS disabled, SCM/FTP basic
 publishing disabled, remote debug disabled, readiness path, system-assigned identity, free F1 SKU.
@@ -39,7 +40,7 @@ rules, no all-Azure exception. Azure's asynchronous rule operations initially pr
 completed missing entries serially with operation/visibility waits and verified the complete list.
 Rollback removes only the new `dzirent-stage3-api-01` through `-13` rules, retaining the owner rule.
 
-## Additional observed source — separate approval required
+## Additional observed source — separately approved and applied
 
 At14:18:51 CDT, the **actual API process** from source
 `bc55f71113c06814532df5b82b3af0cdedd97994`, deployment
@@ -53,7 +54,12 @@ email disabled, CA file present, **ConnectionTimeout; no successful SQL connecti
 Proposed smallest next change: **one additional `172.214.222.211/32` database firewall rule**,
 start=end this exact address, retaining all14 existing rules. No broader range, all-Azure exception,
 paid network or new database resource. The original approval covered only the13 declared addresses,
-so this new rule has **not** been applied. Recheck the process diagnostic before execution.
+so that frozen proposal at `fd0877143a2d8fa6e1a9f1de6eb171afac88cdc4` required separate approval.
 Machine-readable [additional proposal](../../infra/azure/staging-observed-egress-proposal.json).
-This is a bounded connectivity investigation, not a guarantee that this rule alone resolves the
-connection. Successful hosted SQL/TLS/CRUD must still be demonstrated afterward.
+
+The owner then explicitly approved this additional /32. Rechecked the actual process diagnostic and
+applied only `dzirent-stage3-api-observed-01` at14:25:57 CDT. All14 previous rules' properties were
+unchanged; final total15, no range/all-Azure exception. Readiness became200. Subsequent actual
+runtime-role SQL CRUD, HTTPS reads and restart persistence passed; see the verification report.
+Rollback removes only this separately owned rule if explicitly requested. Future egress changes
+require a fresh review; neither this approval nor the original13 authorize further addresses.

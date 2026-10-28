@@ -1,6 +1,10 @@
 {
   "schemaVersion": 1,
-  "status": "proposed-awaiting-owner-network-review",
+  "status": "owner-approved-applied-and-verified",
+  "approvalSource": "explicit owner response in this session",
+  "reviewedProposalCommit": "cd5c20b622d15ce57908175349a77da379d8660e",
+  "appliedAndVerifiedAt": "2026-10-28T18:59:30Z",
+  "ownedRuleNames": "dzirent-stage3-api-01 through dzirent-stage3-api-13",
   "observedAt": "2026-10-28T18:52:11Z",
   "hostingResource": "dzirent-api-staging-4265",
   "hostingSku": "Linux F1",

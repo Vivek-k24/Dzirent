@@ -12,9 +12,20 @@ No admin credentials exported, no custom GitHub Secrets application loader.
 0003–0005 rehearsal passed. 13:44 serialized Azure migrator upgrade passed to0005/25 tables;
 original18 counts and old ACLs/ownership preserved, seven new auth tables empty, runtime identity/TLS
 and DDL/admin restrictions verified. No account/admin provisioning or Azure destructive fixtures.
-13:47 authenticated free Linux F1 hosting preflight passed; allocation/hosting not yet executed.
-Owner says keep email blocked. No SQL firewall expansion, live demo/production update, merge or
-public cutover. [Sanitized evidence and remaining gates](../infra/connected-staging-verification-2026-10-28.md).
+Free F1 host allocated and deployed: API sourcebc55f71113c06814532df5b82b3af0cdedd97994,
+publication eede9fed-93c0-4baa-959c-d4a80f37ca1e. Owner separately approved13 declared /32s plus
+one actual observed /32; original rule preserved, no broad exception. App Settings only runtime
+allowlist; admin/migrator absent, SMTP/worker disabled, no GitHub deployment secrets.
+
+Actual app-role SQL CRUD + HTTPS reads passed, update survived explicit API restart, owned row
+deleted; all25 counts restored, users/products/credentials/sessions0. New process PG17.11/TLS1.3,
+verify-full, Python3.12.15/0005. Native anonymous CSRF/cookie/origin guards verified, not signed-in
+sessions. External7/7 checks and local Next proxy5/5 passed. Protected connected Vercel preview
+READY from8d9ac658c19673cbed1436ad3a723dce179f3db3, three branch-preview variables only; actual
+stable origin configured in API, no production variable/alias/guard change. No mail, account/admin
+provisioning, hosted lender/media acceptance, PR merge or public cutover. Full release remains gated.
+[Sanitized results](../infra/connected-staging-verification-2026-10-28.md),
+[startup/configuration/recovery](../infra/connected-staging-runbook.md), draft PR78. All other worktrees/logs preserved.
 
 ## Connection recovery Stage 2 — 2026-10-28, America/Chicago
 

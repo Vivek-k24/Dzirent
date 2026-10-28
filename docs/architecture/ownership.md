@@ -33,6 +33,12 @@ Focused CI integration addition recorded on issue77: Codex serializes only the n
 GET-only external verification. No existing Antigravity suite/workflow/log changes, credentials,
 deployment, email, account or database writes. Public-repository standard runner; no artifact storage.
 
+Milestone: API bc55f71 and protected preview8d9ac65 deployed; actual source IDs, SQL CRUD/restart,
+network approvals and config custody in `docs/infra/connected-staging-verification-2026-10-28.md`.
+Owner approved the13 declared /32s and separately observed172.214.222.211/32; all old rules preserved.
+Three Vercel entries only on this branch/preview; production demo unchanged. SMTP stays disabled;
+no hosted accounts/admins, full signed-in acceptance or private media release. Draft PR78, no merge.
+
 ### Connection/secret recovery Stage 2 — 2026-10-28
 
 Owner explicitly authorized administrator read-only inspection and password resets for **only the
