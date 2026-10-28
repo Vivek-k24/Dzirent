@@ -28,6 +28,11 @@ outside verified credit/spending limits. Networking expansion needs concrete rev
 Vercel guards false, production environment and public demo unchanged. Stop at a precise blocker
 when required review/provider input is unavailable; never call skipped acceptance tests passed.
 
+Focused CI integration addition recorded on issue77: Codex serializes only the new branch-scoped
+`.github/workflows/staging-api-readonly-probe.yml` and `infra/azure/probe_staging_https.py` for
+GET-only external verification. No existing Antigravity suite/workflow/log changes, credentials,
+deployment, email, account or database writes. Public-repository standard runner; no artifact storage.
+
 ### Connection/secret recovery Stage 2 — 2026-10-28
 
 Owner explicitly authorized administrator read-only inspection and password resets for **only the
