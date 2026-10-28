@@ -10,6 +10,37 @@ See [actual local evidence and remaining gates](../auth/phase2a-test-report.md).
 
 ## Decision
 
+### Issue84 — temporary protected staging exception
+
+The owner explicitly authorizes real staging signup without SMTP in issue84. Only
+`DZIRENT_AUTH_STAGING_SIGNUP_WITHOUT_EMAIL=true` selects this exception; default false. Startup
+rejects production, local/test, demo/mock, other origins, absent/invalid private proxy keys and
+enabled email/worker. Only the existing protected connected staging origin is accepted. This
+supersedes the email prerequisite below solely for that bounded deployment; verification/token/
+outbox code and the normal transactional path remain intact.
+
+In this mode registration skips token/job creation, commits a real salted Argon2id credential,
+ordinary renter membership and null verification timestamp. Generic202 remains unchanged in shape.
+The UI follows it with normal login and accepts only that real HttpOnly-cookie session response.
+Duplicate/dormant identities never get a replacement credential or an inferred session. Unverified
+users may edit their ordinary profile/preferences only while this staging setting is active;
+existing verified-only lender enrollment/listing/Studio and administrator gates remain intact.
+
+`DZIRENT_AUTH_STAGING_PROXY_KEY` is a separate protected server-to-server credential, shared only
+between Azure App Settings and the Next server's branch-preview environment. FastAPI checks it
+before body/auth/SQL work for all API paths except exact live/ready probes; forged Origin/forwarded
+headers alone do not grant access. The proxy supplies its own key and strips a browser assertion.
+It never returns the key, stores it in a browser, or replaces native CSRF/session/rate controls.
+The Vercel server refuses this credential in a production runtime. Gate enforcement continues
+when the single temporary signup setting is switched off.
+
+No activation until actual Vercel preview protection and direct Azure denial are verified. SMTP and
+worker remain disabled. Turning the setting off restores the normal outbox prerequisite and
+verified-only profile/preferences. Previously unverified users must request and confirm a real
+verification email once authorized delivery is configured; no bulk verification/backfill. Existing
+sessions retain their normal expiry/revocation rules and do not acquire privileges. Password
+recovery is not operational without mail. See [focused rollout/test report](../auth/issue84-staging-auth.md).
+
 FastAPI owns native passwords, database-backed sessions, verification/recovery and authorization.
 Next.js forwards an allowlist of API paths through `/auth/api/**`, using server-only
 `DZIRENT_API_UPSTREAM_URL` and one exact `DZIRENT_WEB_ORIGIN`. It never handles password hashing,

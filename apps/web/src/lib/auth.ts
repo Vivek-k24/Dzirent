@@ -35,6 +35,13 @@ export async function logoutSession() {
   useSession.getState().signOut();
 }
 
+// Registration remains a generic 202 with no session. Only normal login after the committed
+// response can authenticate; duplicate-email responses never manufacture or adopt an identity.
+export async function registerAndLogin(input: { email: string; password: string; display_name: string }): Promise<AuthSessionRead> {
+  await api<AuthNotice>("/auth/register", { method: "POST", body: JSON.stringify(input) });
+  return api<AuthSessionRead>("/auth/login", { method: "POST", body: JSON.stringify({ email: input.email, password: input.password }) });
+}
+
 // Explicit submission only. Refresh the existing session from the API after confirmation;
 // confirmation itself never creates a login or asserts client-side verification.
 export async function verifyEmail(token: string): Promise<AuthNotice> {

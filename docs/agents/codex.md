@@ -1,5 +1,18 @@
 # Codex Phase 1A status
 
+## Issue84 — native staging authentication consolidation
+
+Base main `8bbc9eb1e2eabb5bb73fefc85963498b03b0f0b9`, isolated auth-integration-84 checkout/branch.
+Merged tested78 source once at211ee3f (includes61/71/76); no main/PR merge or duplication of60.
+Only83 auth-dialog/providers/shell/header CSS reconciled; retained restoration/native logout/forms.
+Implemented default-off staging-only no-mail registration plus independent private proxy-key gate,
+normal committed-registration → real-login flow and ordinary renter-only exception. Verification
+remains null/false; full token/outbox and verified lender/admin checks retained. Production refuses
+activation. Local120 PG tests/44 web tests/TS/contracts/lint/mypy/connected build passed; hosted
+activation/actual browser acceptance still pending. No private owner-input, SQL network/role/ACL,
+migration history, live demo, other worktree/log or paid-resource changes.
+[Focused evidence](../auth/issue84-staging-auth.md). Stop at one reviewable auth PR after acceptance.
+
 ## Connected staging Stage 3 — 2026-10-28, America/Chicago
 
 Own issue77 / isolated `codex/connected-staging-stage3`, exact base

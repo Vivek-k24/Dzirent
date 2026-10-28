@@ -12,6 +12,7 @@ from ..settings import Settings
 from .crypto import TOKEN_PATTERN, digest, new_token
 
 CSRF_HEADER = "X-Dzirent-CSRF"
+STAGING_PROXY_HEADER = "X-Dzirent-Staging-Proxy"
 CSRF_TTL = 1800
 CLIENT_TTL = 86400
 UNSAFE = frozenset({"POST", "PUT", "PATCH", "DELETE"})
@@ -177,6 +178,19 @@ class NativeTransportMiddleware:
 
         buffered_body: bytes | None = None
         try:
+            key = settings.auth_staging_proxy_key.get_secret_value()
+            if key and path not in {"/api/v1/health/live", "/api/v1/health/ready"}:
+                supplied = request.headers.get(STAGING_PROXY_HEADER, "")
+                if (
+                    not supplied.isascii()
+                    or len(supplied) > 128
+                    or not hmac.compare_digest(supplied, key)
+                ):
+                    raise ApiError(
+                        403,
+                        "auth_staging_access_required",
+                        "Use the protected staging website to access this API.",
+                    )
             if request.method in UNSAFE:
                 require_csrf(request, settings)
                 if (

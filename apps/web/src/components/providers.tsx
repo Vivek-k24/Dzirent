@@ -8,8 +8,8 @@ import { api, mode } from "@/lib/api";
 import { useBag, useSession } from "@/lib/store";
 import { restoreSession } from "@/lib/auth";
 
-interface Runtime { ready: boolean; error: string; demo: boolean; revision: number; reset: () => Promise<void>; simulate: (which: "catalog" | "save") => Promise<void> }
-const RuntimeContext = createContext<Runtime>({ ready: false, error: "", demo: true, revision: 0, reset: async () => {}, simulate: async () => {} });
+interface Runtime { ready: boolean; error: string; demo: boolean; revision: number }
+const RuntimeContext = createContext<Runtime>({ ready: false, error: "", demo: true, revision: 0 });
 const ReferenceContext = createContext<{ refs?: References; error: string; retry: () => void }>({ error: "", retry: () => {} });
 const MockBootstrap = dynamic(() => import("@/mocks/bootstrap"), { ssr: false });
 export const useRuntime = () => useContext(RuntimeContext);
@@ -54,21 +54,6 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => useSession.subscribe((next, previous) => {
     if (previous.user && next.user?.id !== previous.user.id) client.clear();
   }), [client]);
-  const runtime: Runtime = { ...boot, demo: mode.mode === "demo",
-    reset: async () => {
-      if (mode.mode !== "demo") return;
-      (await import("@/mocks/handlers")).resetDemo();
-      useBag.getState().reset(); useSession.getState().signOut(); client.clear();
-      setBoot(s => ({ ...s, revision: s.revision + 1 }));
-      useSession.getState().notify("Demo reset. All 40 original outfits are restored.");
-    },
-    simulate: async which => {
-      if (mode.mode !== "demo") return;
-      const { scenario } = await import("@/mocks/handlers");
-      if (which === "catalog") { scenario.catalogError = true; await client.invalidateQueries({ queryKey: ["catalog"] }); }
-      else scenario.saveError = true;
-      useSession.getState().notify(which === "catalog" ? "Catalog error simulation enabled. Use Retry to recover." : "The next listing save will fail so you can inspect recovery.");
-    },
-  };
+  const runtime: Runtime = { ...boot, demo: mode.mode === "demo" };
   return <QueryClientProvider client={client}><RuntimeContext.Provider value={runtime}>{mode.mode === "demo" ? <MockBootstrap onReady={mockReady} /> : null}<ReferenceProvider>{children}</ReferenceProvider></RuntimeContext.Provider></QueryClientProvider>;
 }

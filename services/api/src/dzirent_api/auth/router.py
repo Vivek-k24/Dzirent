@@ -78,7 +78,7 @@ def register(
     with service.public_response_budget():
         try:
             service.register(session, body, settings)
-            session.commit()  # Account, token digest and encrypted job commit atomically.
+            session.commit()  # Normal account/token/job commit atomically; staging omits mail only.
         except IntegrityError as exc:
             session.rollback()
             unique_email = (
@@ -88,7 +88,14 @@ def register(
             )
             if not unique_email:
                 raise
-    return schemas.AuthNotice(message=outbox.ACCEPTED)
+    return schemas.AuthNotice(
+        message=(
+            "Registration request accepted. Sign in with your account password. "
+            "Email verification remains pending."
+            if settings.auth_staging_signup_without_email
+            else outbox.ACCEPTED
+        )
+    )
 
 
 @router.post("/auth/login", response_model=schemas.AuthSessionRead, operation_id="loginAccount")

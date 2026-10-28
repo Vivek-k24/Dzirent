@@ -272,7 +272,9 @@ def register(session: Session, body: schemas.RegistrationInput, settings: Settin
         raise ApiError(
             422, "auth_reserved_email", "Use an address you own; sample domains cannot register."
         )
-    outbox.require_ready(settings)  # Fail before writing any account when unavailable.
+    without_email = settings.auth_staging_signup_without_email
+    if not without_email:
+        outbox.require_ready(settings)  # Normal registration still fails before any account write.
     encoded = hash_password(body.password.get_secret_value())
     existing = session.scalar(
         select(orm.AuthCredential.user_id).where(orm.AuthCredential.email_normalized == body.email)
@@ -286,7 +288,8 @@ def register(session: Session, body: schemas.RegistrationInput, settings: Settin
         .limit(1)
     )
     if existing is not None or dormant is not None:
-        outbox.require_capacity(session, settings)
+        if not without_email:
+            outbox.require_capacity(session, settings)
         # Same response as accepted registration. Never attach passwords to an existing subject.
         return
     name = body.display_name.strip()
@@ -315,7 +318,10 @@ def register(session: Session, body: schemas.RegistrationInput, settings: Settin
         ]
     )
     session.flush()
-    send_token(session, credential, "verify_email", settings)
+    if not without_email:
+        send_token(session, credential, "verify_email", settings)
+    # The explicit staging exception never creates a verification token/job or verification claim.
+    # email_verified_at stays NULL; the caller commits before a separate normal login.
 
 
 def login(

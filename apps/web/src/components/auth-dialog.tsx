@@ -42,7 +42,7 @@ export function AuthDialog({ role, action, onClose }: { role: "renter" | "lender
   const close = () => { if (onClose) onClose(); else router.push(returnTo.startsWith("/lender/") ? "/" : returnTo); };
   const destination = () => { router.push(role === "lender" ? "/lender/dashboard" : returnTo.startsWith("/lender/") ? "/" : returnTo); useSession.getState().notify(runtime.demo ? role === "lender" ? "Welcome to your demo lender workspace." : "You’re signed in as a sample renter." : "Signed in to Dzirent."); };
   const title = enroll ? "Share your wardrobe" : action === "signup" ? `Create your ${role} account` : `Welcome back, ${role}`;
-  return <Modal open onOpenChange={open => { if (!open) close(); }} title={title} description={runtime.demo ? "Presentation demo · sample identity only" : "Connected identity"} restoreId="header-account">
+  return <Modal open onOpenChange={open => { if (!open) close(); }} title={title} description={runtime.demo ? "Presentation demo · sample identity only" : "Connected account"} restoreId="header-account">
     {!runtime.demo ? <ConnectedAuth role={role} action={action} destination={destination} enrollment={<EnrollmentForm done={destination} />} />
       : enroll ? <EnrollmentForm done={destination} />
       : user?.lender_profile && role === "lender" ? <div className="stack-form"><Shirt size={30} /><p>You’re already using the sample lender profile, {user.display_name}.</p><Button onClick={destination}>Open lender dashboard<ArrowRight size={17} /></Button></div>

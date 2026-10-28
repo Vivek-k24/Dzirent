@@ -3,7 +3,7 @@
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, selectinload
@@ -70,6 +70,27 @@ def current_lender(user: orm.User = Depends(active_user)) -> orm.LenderProfile:
     return profile
 
 
+def active_renter(
+    request: Request,
+    user: orm.User = Depends(current_user),
+    session: Session = Depends(get_session),
+) -> orm.User:
+    """Only ordinary profile/preferences use the opt-in staging exception.
+
+    Keep active_user/current_lender and enrollment verified-only, including direct internal calls.
+    Disabling the single staging setting restores the original verification gate immediately.
+    """
+    if (
+        request.app.state.settings.auth_staging_signup_without_email
+        and user.status == "active"
+        and user.auth_provider == "native"
+    ):
+        credential = session.get(orm.AuthCredential, user.id)
+        if credential is not None and not credential.synthetic:
+            return user
+    return active_user(user, session)
+
+
 def require_metro(session: Session, metro_id: object, field: str, errors: list[Detail]) -> None:
     if metro_id is None:
         return
@@ -123,7 +144,7 @@ def get_me(user: orm.User = Depends(current_user)) -> Any:
 @router.patch("/me", response_model=wire.CurrentUser, operation_id="updateMe")
 def update_me(
     body: wire.ProfilePatch,
-    user: orm.User = Depends(active_user),
+    user: orm.User = Depends(active_renter),
     session: Session = Depends(get_session),
 ) -> Any:
     errors: list[Detail] = []
@@ -174,7 +195,7 @@ def get_preferences(
 @router.patch("/me/preferences", response_model=wire.Preferences, operation_id="updatePreferences")
 def update_preferences(
     body: wire.Preferences,
-    user: orm.User = Depends(active_user),
+    user: orm.User = Depends(active_renter),
     session: Session = Depends(get_session),
 ) -> Any:
     # Only supplied fields change; an explicit null clears that field.

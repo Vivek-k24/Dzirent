@@ -10,6 +10,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 MODES = json.loads((Path(__file__).resolve().parents[4] / "contracts/modes.json").read_text())
 # Exact browser origin: scheme, host and optional port. No wildcard, path or trailing slash.
 EXACT_ORIGIN = re.compile(r"^https?://[A-Za-z0-9.-]+(:\d{1,5})?$")
+# This temporary exception is restricted to the existing owner-protected staging preview.
+STAGING_AUTH_ORIGIN = (
+    "https://dzirent-git-codex-connected-staging-stage3-vivekkallakuri-8617.vercel.app"
+)
 
 
 class Settings(BaseSettings):
@@ -42,6 +46,8 @@ class Settings(BaseSettings):
     auth_email_worker_enabled: bool = True
     auth_outbox_capacity: int = Field(default=1000, ge=1, le=10000)
     auth_outbox_poll_seconds: float = Field(default=2, ge=0.1, le=60)
+    auth_staging_signup_without_email: bool = False
+    auth_staging_proxy_key: SecretStr = SecretStr("")
 
     @property
     def mock_identity_allowed(self) -> bool:
@@ -54,6 +60,26 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def enforce_modes(self) -> Self:
+        proxy_key = self.auth_staging_proxy_key.get_secret_value()
+        if self.auth_staging_signup_without_email or proxy_key:
+            if (
+                self.environment != "staging"
+                or self.mode != "connected"
+                or self.identity_mode != "native"
+                or self.auth_web_origin != STAGING_AUTH_ORIGIN
+                or not re.fullmatch(r"[A-Za-z0-9_-]{43,128}", proxy_key)
+            ):
+                raise ValueError(
+                    "Temporary staging auth requires native connected staging, the protected "
+                    "preview origin and a private server-to-server proxy key"
+                )
+        if self.auth_staging_signup_without_email and (
+            self.auth_email_backend != "disabled" or self.auth_email_worker_enabled
+        ):
+            raise ValueError(
+                "Disable temporary staging signup before configuring email delivery; "
+                "SMTP and the worker must remain disabled while it is enabled"
+            )
         if self.identity_mode == "mock" and not self.mock_identity_allowed:
             raise ValueError("Mock identity is restricted to explicit local/test demo mode")
         if self.mode == "connected" and (

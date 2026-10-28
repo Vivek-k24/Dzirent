@@ -6,7 +6,8 @@
     "DZIRENT_AUTH_CSRF_KEY",
     "DZIRENT_AUTH_OUTBOX_KEYS",
     "DZIRENT_AUTH_SMTP_USER",
-    "DZIRENT_AUTH_SMTP_PASSWORD"
+    "DZIRENT_AUTH_SMTP_PASSWORD",
+    "DZIRENT_AUTH_STAGING_PROXY_KEY"
   ],
   "azureRuntimeConfiguration": [
     "DZIRENT_MODE",
@@ -29,7 +30,8 @@
     "DZIRENT_AUTH_OUTBOX_ACTIVE_KEY_ID",
     "DZIRENT_AUTH_EMAIL_WORKER_ENABLED",
     "DZIRENT_AUTH_OUTBOX_CAPACITY",
-    "DZIRENT_AUTH_OUTBOX_POLL_SECONDS"
+    "DZIRENT_AUTH_OUTBOX_POLL_SECONDS",
+    "DZIRENT_AUTH_STAGING_SIGNUP_WITHOUT_EMAIL"
   ],
   "restrictedMigrationCredentials": ["DZIRENT_MIGRATOR_DATABASE_URL", "DZIRENT_MIGRATOR_ROLE_PASSWORD"],
   "localOnly": [
@@ -40,7 +42,7 @@
     "DZIRENT_API_BASE_URL", "DZIRENT_MEDIA_ROOT", "DZIRENT_AUTH_OPERATOR_ACK",
     "DZIRENT_STAGING_TEST_PASSWORD", "DZIRENT_STAGING_TEST_EMAIL"
   ],
-  "vercelServerConfiguration": ["DZIRENT_API_UPSTREAM_URL", "DZIRENT_WEB_ORIGIN"],
+  "vercelServerConfiguration": ["DZIRENT_API_UPSTREAM_URL", "DZIRENT_WEB_ORIGIN", "DZIRENT_AUTH_STAGING_PROXY_KEY"],
   "vercelPublicBuildConfiguration": ["NEXT_PUBLIC_DZIRENT_MODE"],
   "githubActionsDeploymentSecrets": [],
   "proposedOidcDeploymentVariables": [
@@ -57,6 +59,7 @@
     "Azure App Settings supplies runtime values to the existing Settings loader.",
     "No runtime retrieval of GitHub Secrets; no repository secrets currently required.",
     "SMTP and worker remain disabled until provider, sender, TLS and keys are verified.",
+    "Issue84 temporary signup is staging-only, default off, with direct API proxy-key enforcement; verification stays pending.",
     "Filesystem media stays local/test only; never a hosted fallback.",
     "Approved exact HTTPS origins only; preserve production demo configuration."
   ]

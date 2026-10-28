@@ -9,7 +9,7 @@ import { Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AuthNotice, AuthSessionRead } from "@dzirent/client";
 import { api } from "@/lib/api";
-import { acceptSession, restoreSession } from "@/lib/auth";
+import { acceptSession, registerAndLogin, restoreSession } from "@/lib/auth";
 import { useSession } from "@/lib/store";
 import { Button } from "@/components/ui/primitives";
 
@@ -22,7 +22,7 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
 
 function VerificationNotice() {
   const [notice, setNotice] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false);
-  return <div className="stack-form"><p>Verify the email address you own before updating your profile or becoming a lender. Your account has limited access until then.</p><p>Email can be delayed. Check your inbox and spam folder. Requests made within one minute keep the current link; a later request replaces it. Use the newest email and confirm the link explicitly.</p>
+  return <div className="stack-form"><p>Email verification is pending. Lender access requires a confirmed email address. You can continue browsing with your ordinary account.</p><p>Verification and password recovery require email delivery and may be unavailable in staging. When delivery is available, request a verification email and confirm the newest link explicitly.</p>
     <Button disabled={busy} onClick={async () => {
       setBusy(true); setError(""); setNotice("");
       try { const result = await api<AuthNotice>("/auth/email/request", { method: "POST", body: "{}", protected: true }); setNotice(result.message); }
@@ -41,7 +41,9 @@ export function ConnectedAuth({ role, action, destination, enrollment }: { role:
   const client = useQueryClient();
   const schema = z.object({ email: z.email("Enter a valid email address.").max(254), password: z.string().min(action === "signup" ? 12 : 1).max(128), display_name: z.string().max(100) });
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "", display_name: "" } });
-  return <SessionBoundary>{user ? !verified ? <VerificationNotice /> : <div className="stack-form">
+  return <SessionBoundary>{user ? role === "lender" && !verified ? <VerificationNotice /> : <div className="stack-form">
+    {!verified ? <p role="status">Email verification pending. Your account has renter access; lender access requires verification.</p> : null}
+    {!verified ? <VerificationNotice /> : null}
     {synthetic ? <p className="info-note">Synthetic staging identity. Email status is operator asserted; no sample-domain email is sent.</p> : null}
     {role === "lender" && !user.lender_profile ? enrollment : <><p>Signed in as {user.display_name}.</p><Button onClick={destination}>{role === "lender" ? "Open lender dashboard" : "Continue browsing"}<ArrowRight size={17} /></Button></>}
     <Link href="/auth/account">Account security and sign out</Link>
@@ -49,14 +51,11 @@ export function ConnectedAuth({ role, action, destination, enrollment }: { role:
     setError(""); setNotice("");
     if (action === "signup" && !values.display_name.trim()) { form.setError("display_name", { message: "Enter a display name." }); return; }
     try {
-      if (action === "signup") {
-        const result = await api<AuthNotice>("/auth/register", { method: "POST", body: JSON.stringify(values) });
-        setNotice(`${result.message} Registration does not verify your email. Follow the link before using lender or profile changes.`);
-      } else {
-        const result = await api<AuthSessionRead>("/auth/login", { method: "POST", body: JSON.stringify({ email: values.email, password: values.password }) });
-        client.clear(); acceptSession(result);
-        if (result.email_verified && (role !== "lender" || result.user.lender_profile)) destination();
-      }
+      const result = action === "signup"
+        ? await registerAndLogin(values)
+        : await api<AuthSessionRead>("/auth/login", { method: "POST", body: JSON.stringify({ email: values.email, password: values.password }) });
+      client.clear(); acceptSession(result);
+      if (role !== "lender" || (result.email_verified && result.user.lender_profile)) destination();
     } catch (error) { setError(error instanceof Error ? error.message : "Authentication is unavailable."); }
     finally { form.resetField("password"); setVisible(false); }
   })}>
@@ -67,6 +66,6 @@ export function ConnectedAuth({ role, action, destination, enrollment }: { role:
     <p id="native-password-rules" className="tiny muted">{action === "signup" ? "Use 12–128 characters. A long, unique passphrase is recommended; no character pattern is required." : "Use your Dzirent account password."}</p><p className="field-error">{form.formState.errors.password?.message}</p>
     {error ? <p className="field-error" role="alert">{error}</p> : null}{notice ? <p role="status">{notice}</p> : null}
     <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Working…" : action === "signup" ? "Create account" : "Sign in"}<ArrowRight size={17} /></Button>
-    <Link href={`/auth/${role}/${action === "signup" ? "login" : "signup"}`}>{action === "signup" ? "Already registered? Sign in" : "Create an account"}</Link><Link href="/auth/forgot-password">Forgot your password?</Link>
+    <Link href={`/auth/${role}/${action === "signup" ? "login" : "signup"}`}>{action === "signup" ? "Already registered? Sign in" : "Create an account"}</Link><Link href="/auth/forgot-password">Password recovery (requires email delivery)</Link>
   </form>}</SessionBoundary>;
 }

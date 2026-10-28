@@ -45,6 +45,33 @@ describe("native authentication BFF", () => {
     expect(target.searchParams.get("q")).toBe("https://example.invalid/../");
   });
 
+  it("replaces a browser-supplied proxy credential with the server-only value", async () => {
+    const key = "a".repeat(64); // Non-secret local fixture, never a deployed value.
+    vi.stubEnv("DZIRENT_AUTH_STAGING_PROXY_KEY", key);
+    vi.stubEnv("VERCEL_ENV", "preview");
+    const fetch = vi.fn().mockResolvedValue(Response.json({})); vi.stubGlobal("fetch", fetch);
+    const response = await GET(request("auth/session", { headers: { "X-Dzirent-Staging-Proxy": "browser-asserted" } }), context("auth", "session"));
+    expect(response.status).toBe(200);
+    expect(fetch.mock.calls[0][1].headers.get("X-Dzirent-Staging-Proxy")).toBe(key);
+    expect(response.headers.has("X-Dzirent-Staging-Proxy")).toBe(false);
+    expect(await response.text()).not.toContain(key);
+  });
+
+  it("never forwards a client proxy key when no server credential is configured", async () => {
+    vi.stubEnv("DZIRENT_AUTH_STAGING_PROXY_KEY", "");
+    const fetch = vi.fn().mockResolvedValue(Response.json({})); vi.stubGlobal("fetch", fetch);
+    await GET(request("auth/session", { headers: { "X-Dzirent-Staging-Proxy": "browser-asserted" } }), context("auth", "session"));
+    expect(fetch.mock.calls[0][1].headers.has("X-Dzirent-Staging-Proxy")).toBe(false);
+  });
+
+  it("refuses staging credentials in a production Vercel runtime", async () => {
+    vi.stubEnv("DZIRENT_AUTH_STAGING_PROXY_KEY", "a".repeat(64));
+    vi.stubEnv("VERCEL_ENV", "production");
+    const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
+    expect((await GET(request("auth/session"), context("auth", "session"))).status).toBe(503);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("rejects an unapproved Host even with the approved Origin", async () => {
     const fetch = vi.fn().mockResolvedValue(Response.json({})); vi.stubGlobal("fetch", fetch);
     const result = await GET(request("auth/session", { headers: { Host: "evil.example", Origin: origin } }), context("auth", "session"));

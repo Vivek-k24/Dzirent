@@ -4,6 +4,30 @@ This registry is maintained only by Codex. It is a coordination record, not a sh
 
 ## Focused assignments
 
+### Native staging auth consolidation — issue84, 2026-10-28
+
+Codex owns only [issue84](https://github.com/Vivek-k24/Dzirent/issues/84) in
+`H:\DziRent\worktrees\codex-auth-integration-84`, branch `codex/auth-integration-issue84`,
+exact current-main base `8bbc9eb1e2eabb5bb73fefc85963498b03b0f0b9` (includes merged60).
+Targeted ancestry proved61/71/76 already included in78; merged that source once at211ee3f on
+this isolated branch. No main/PR merge. Retain main's owner assets. All other worktrees preserved.
+
+Explicit issue handoff covers necessary native Settings/register/transport/renter gates, connected
+signup/login/session/proxy, focused auth/PG/browser regressions, staging configuration/packaging,
+environment destinations/examples, auth design/report, project status and own log. Only83's
+auth-dialog/providers/shell plus necessary header CSS are reconciled; preserve its clean header
+while keeping61's real session restoration/logout/forms. Do not import the rest of83 or its QA lane.
+No AI/media/other issue, dependency upgrade or general branch audit/pruning.
+
+One default-off temporary registration setting; only connected/native staging at the existing
+protected preview, with a private server-to-server proxy key and independent direct-Azure denial
+verified before activation. Never claim email ownership: timestamps remain null, no token/outbox
+in this mode, renter only, lender/admin still verified-only. SMTP/worker disabled. Owner-controlled
+test values read privately from the supplied separate file; owner intake files stay unchanged.
+No migrations0001–0005 edits, SQL firewall/roles/ACLs, real admin, paid resource, production/DNS or
+public demo change. Stop at one main-targeted ready PR only after actual acceptance; otherwise
+record the exact failed/unrun blocker and do not declare readiness.
+
 ### Connected staging Stage 3 — 2026-10-28
 
 Owner authorized Stage3 prerequisites and isolated staging integration, with no main/PR merge or

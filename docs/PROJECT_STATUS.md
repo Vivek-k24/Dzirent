@@ -1,5 +1,17 @@
 # Project status
 
+## Issue84 — native staging auth consolidation, 2026-10-28
+
+One isolated `codex/auth-integration-issue84` from main8bbc9eb; absorbed tested78 once, including
+61/71/76 and main's merged60. Only83's auth/header/CSS intersections reconciled; native forms,
+session restoration and cookie logout retained with its cleaned header. Other worktrees preserved.
+One default-off protected staging signup exception implemented; null verification, no email jobs,
+ordinary renter only. Direct Azure API proxy-key gate, production refusal and existing CSRF/rate/
+verified-only lender/admin rules covered. Local120 PG auth tests,44 web tests, TS/contracts/lint/
+mypy/connected build passed. **Not yet activated or browser-accepted.** Owner test input now valid
+after private correction. [Exact scope and evidence](auth/issue84-staging-auth.md).
+SMTP/worker remain disabled; no main merge/public demo change, migration/ACL/firewall edit or new resource.
+
 ## Connected staging Stage 3 — 2026-10-28, America/Chicago
 
 **Azure backend and protected connected web transport operational; full release gated.** Issue77,

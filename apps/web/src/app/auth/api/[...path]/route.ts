@@ -36,12 +36,14 @@ function failure(status: number, code: string, message: string) {
 function configuration() {
   const originValue = process.env.DZIRENT_WEB_ORIGIN;
   const upstreamValue = process.env.DZIRENT_API_UPSTREAM_URL;
+  const stagingProxyKey = process.env.DZIRENT_AUTH_STAGING_PROXY_KEY;
   if (!originValue || !upstreamValue) throw new Error("Missing transport configuration");
+  if (stagingProxyKey && (!/^[A-Za-z0-9_-]{43,128}$/.test(stagingProxyKey) || process.env.VERCEL_ENV === "production")) throw new Error("Invalid staging proxy configuration");
   const origin = new URL(originValue), upstream = new URL(upstreamValue);
   const local = (url: URL) => url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname) && process.env.NODE_ENV !== "production";
   if (originValue !== origin.origin || origin.username || origin.password || (origin.protocol !== "https:" && !local(origin))) throw new Error("Invalid origin");
   if (!upstream.pathname.endsWith("/api/v1") || upstream.username || upstream.password || upstream.search || upstream.hash || (upstream.protocol !== "https:" && !local(upstream))) throw new Error("Invalid upstream");
-  return { origin, upstream };
+  return { origin, upstream, stagingProxyKey };
 }
 
 async function bodyText(request: Request, limit: number) {
@@ -85,6 +87,8 @@ async function proxy(request: Request, context: Context) {
     return names.includes(name) && /^[A-Za-z0-9_.-]{0,200}$/.test(rest.join("="));
   });
   const headers = new Headers({ Accept: "application/json" });
+  // A server-only credential, never accepted from the browser or returned in response headers.
+  if (config.stagingProxyKey) headers.set("X-Dzirent-Staging-Proxy", config.stagingProxyKey);
   if (cookies.length) headers.set("Cookie", cookies.join("; "));
   if (origin) headers.set("Origin", origin);
   if (site) headers.set("Sec-Fetch-Site", site);
