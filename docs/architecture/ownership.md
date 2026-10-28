@@ -4,6 +4,26 @@ This registry is maintained only by Codex. It is a coordination record, not a sh
 
 ## Focused assignments
 
+### Connection/secret recovery Stage 2 — 2026-10-28
+
+Owner explicitly authorized administrator read-only inspection and password resets for **only the
+existing `dzirent_app` and `dzirent_migrator` roles**, with separate generated passwords and protected
+local configuration updates. This supersedes the earlier no-reset boundary only for those two
+passwords. Existing [issue #25 claim](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6459311814)
+and draft #76 remain the scoped handoff. Exact start `19b850bb42102525590c792bed2a63487301813c`,
+same isolated `codex/azure-backend-phase1`; no other checkout, history or agent is modified.
+
+Own the protected external owner-input/Azure-staging files, one temporary protected recovery journal
+(removed after successful persistence/login/ACL verification), necessary ignored administrative
+helpers, `docs/infra/azure-connection-recovery-2026-10-28.md`, previous phase report's supersession
+notice, this registry, project status and own log. No runtime/schema/contract/lock change.
+
+Both role logins and native runtime-role adapter SELECT passed with verify-full/TLS1.3. OIDs,
+attributes, memberships, ownership/ACLs/effective permissions and 18 public table counts unchanged;
+schema remains0002. Only the two passwords changed in PostgreSQL. No creation, privilege grant,
+application-data/schema write, migration, network/billing/hosting setting, live email, account/admin
+grant, website change, merge or deployment. Stage 3 is **not started**; stop at this Stage 2 report.
+
 ### Azure backend Phase 1 / issue #25 — 2026-10-27 priority
 
 Owner explicitly limits this assignment to existing native FastAPI Azure hosting/PostgreSQL, then stop.

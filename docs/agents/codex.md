@@ -1,5 +1,31 @@
 # Codex Phase 1A status
 
+## Connection recovery Stage 2 — 2026-10-28, America/Chicago
+
+Owner explicitly authorized existing-role password resets after administrator verification.
+Exact start19b850bb42102525590c792bed2a63487301813c, same own isolated Azure branch/draft #76;
+prior #25 claim and all other worktrees/edits preserved. Stage1 discovered the actual administrator
+login via GET-only Azure metadata and created the protected external owner intake; no guessed login.
+
+11:24 CDT administrator SELECT-only inspection passed PG17.11/verify-full/TLS1.3. 11:32 CDT two distinct
+cryptographically secure role passwords committed together, with client-side SCRAM and no logging
+setting change. Protected recovery values durable before commit; both approved local files updated,
+saved bytes/parsed values checked, exact ACLs preserved with no unexpected allowed principal.
+Recovery copy removed only after verified persistence and successful role logins. Independent native
+CSRF/outbox secrets generated privately; no prior active authentication key overwritten.
+
+Independent runtime/migrator connections both passed identity, schema revision, counts and TLS.
+Before/after role OIDs/flags/config/memberships, ownership/direct/default/column/function ACLs,
+effective privileges/RLS and18 public table counts unchanged. Native database adapter SELECT through
+real `dzirent_app` also passed using the local loader, explicit Azure URL and no `.env` fallback.
+Runtime CREATE database/schema and UPDATE alembic remain false; no privileged runtime connection.
+
+No application data/schema/migration, creation, grants, account/admin provisioning, mail, provider/
+firewall/billing setting, website, merge or deployment. Schema stays0002, native code expects0005.
+SMTP/worker/media disabled; approved staging origins/HTTPS host/hosted media adapter remain missing.
+Stage3 not started. Stop at [Stage2 results and planning handoff](../infra/azure-connection-recovery-2026-10-28.md).
+The October27 rejected-login result below is historical; credential acceptance is now verified.
+
 ## Azure backend Phase 1 — 2026-10-27, America/Chicago
 
 Owner's latest backend-only priority supersedes further storefront/media/AI work. Scoped claim on

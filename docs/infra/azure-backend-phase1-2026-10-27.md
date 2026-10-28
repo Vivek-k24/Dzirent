@@ -1,5 +1,11 @@
 # Azure backend Phase 1 — 2026-10-27, America/Chicago
 
+**Historical October 27 checkpoint.** The SQL-authentication blocker below was resolved by the
+owner-authorized [October28 Stage2 connection recovery](azure-connection-recovery-2026-10-28.md).
+Both roles now authenticate, with original permissions/data/schema retained. Hosting remains
+undeployed; no migration or Stage3 activity followed automatically. Preserve the timestamped
+observations below as the original evidence, not the current credential state.
+
 **Blocked; not deployed.** This is the owner's highest-priority Azure backend-only assignment,
 not storefront/AI development, public onboarding activation or completion of the production master.
 Claim: [issue #25](https://github.com/Vivek-k24/Dzirent/issues/25#issuecomment-6459311814).

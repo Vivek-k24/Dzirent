@@ -1,5 +1,31 @@
 # Project status
 
+## Connection recovery Stage 2 — 2026-10-28, America/Chicago
+
+**Stage 2 complete; SQL credentials recovered, not deployed.** Exact start
+`19b850bb42102525590c792bed2a63487301813c`, own `codex/azure-backend-phase1` / draft #76.
+Owner authorized password resets only for the two existing database roles after administrator login.
+Administrator inspection passed at11:24 CDT; rotation/verification completed11:32 CDT.
+
+Two independent secure passwords committed in one transaction, using client-generated SCRAM
+verifiers. Both protected external files updated and checked, exact file ACLs retained, temporary
+recovery copy removed. Independent CSRF/AES outbox material generated only in protected owner input.
+Both **`dzirent_app` and `dzirent_migrator` logins passed** with verify-full/TLS1.3/PG17.11 and read-only
+identity/schema/count checks. Existing native FastAPI database adapter also selected through
+`dzirent_app`, without administrator/migrator runtime privileges.
+
+Before/after role identities/attributes, memberships, database/schema/object/column/default/function
+ACLs and ownership, RLS/role settings, effective permissions and all18 public table counts match.
+Runtime still cannot CREATE database/schema or UPDATE migration history. **Schema remains
+`0002_studios`, users0/products0; no application-data/schema write or migration.**
+
+**Ready for Stage 3 planning, not hosted acceptance.** Native runtime expects0005; migrations need
+review/authorization before execution. HTTPS hosting/cost/network/runtime-secret/origin configuration,
+verified outbound email and a hosted private media provider remain unfinished. SMTP/worker/media
+remain disabled; no public accounts or live website change. No new resource, deployment or merge.
+[Actual commands, preservation evidence, limits and handoff](infra/azure-connection-recovery-2026-10-28.md).
+Older SQL-authentication blockers below describe the October27 checkpoint and are superseded here.
+
 ## Azure backend Phase 1 — 2026-10-27, America/Chicago
 
 **Highest-priority backend-only assignment; blocked on private SQL input, not deployed.**
