@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "status": "proposed-awaiting-owner-network-review",
+  "observedAt": "2026-10-28T18:52:11Z",
+  "hostingResource": "dzirent-api-staging-4265",
+  "hostingSku": "Linux F1",
+  "sourceProperty": "outboundIpAddresses",
+  "databaseResource": "dzirent-pg17-ncus-4265",
+  "existingRulesToChangeOrRemove": [],
+  "allowAllAzureServices": false,
+  "additionalSourceCidrs": [
+    "172.214.221.44/32",
+    "172.214.221.213/32",
+    "172.214.221.74/32",
+    "172.214.221.86/32",
+    "172.214.221.155/32",
+    "172.214.221.230/32",
+    "172.214.171.186/32",
+    "172.214.172.122/32",
+    "172.214.171.56/32",
+    "172.214.171.75/32",
+    "172.214.172.125/32",
+    "172.214.173.221/32",
+    "52.162.107.0/32"
+  ],
+  "guards": [
+    "Owner approval required before applying any database firewall addition",
+    "Re-read actual host outboundIpAddresses and require an exact set match",
+    "Retain the existing single owner access rule unchanged",
+    "No range aggregation, possibleOutboundIpAddresses or 0.0.0.0 rule",
+    "Runtime remains restricted dzirent_app with verify-full and the established CA",
+    "Remove only these newly named staging rules if explicitly rolling back network access"
+  ]
+}
