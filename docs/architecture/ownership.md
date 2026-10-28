@@ -4,6 +4,30 @@ This registry is maintained only by Codex. It is a coordination record, not a sh
 
 ## Focused assignments
 
+### Connected staging Stage 3 — 2026-10-28
+
+Owner authorized Stage3 prerequisites and isolated staging integration, with no main/PR merge or
+public website cutover. [Scoped claim #77](https://github.com/Vivek-k24/Dzirent/issues/77), exact
+base `a02e180f0147f4f06fd61d47c1f3997b922e9e6b`. New own checkout
+`H:\DziRent\worktrees\codex-connected-staging-stage3`, branch `codex/connected-staging-stage3`;
+all previous checkouts/branches/drafts and user work preserved. No agent started.
+
+Own focused `infra/azure`, `infra/runtime`, necessary staging deployment/verification scripts,
+`docs/infra/connected-staging-*`, this registry, project status and own log. The owner's explicit
+integration handoff includes only demonstrated API Settings/media/provider and same-origin Next
+adapter dependencies; record any expansion on #77/PR before edits. Canonical contract/media source
+remains with its dependency owner unless explicitly handed over. Shared manifests/locks integrated
+serially only if needed. Do not edit other agent logs or worktrees.
+
+Audit actual consumers and variable destinations first. Reuse Settings and Azure App Settings;
+no application GitHub Secrets client or bulk copying owner-input values to hosted platforms.
+Administrator stays local, migrator restricted; runtime only dzirent_app. Validate recovery and
+migrations before hosting, then strict TLS/native auth/verified email/server-side web/private media.
+No destructive Azure fixtures, verification bypass, mock fallback or speculative/billable resources
+outside verified credit/spending limits. Networking expansion needs concrete review. Keep automatic
+Vercel guards false, production environment and public demo unchanged. Stop at a precise blocker
+when required review/provider input is unavailable; never call skipped acceptance tests passed.
+
 ### Connection/secret recovery Stage 2 — 2026-10-28
 
 Owner explicitly authorized administrator read-only inspection and password resets for **only the

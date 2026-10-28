@@ -1,5 +1,21 @@
 # Codex Phase 1A status
 
+## Connected staging Stage 3 — 2026-10-28, America/Chicago
+
+Own issue77 / isolated `codex/connected-staging-stage3`, exact base
+`a02e180f0147f4f06fd61d47c1f3997b922e9e6b`; all other work preserved. Audited actual environment
+consumers before cloud writes: 26 typed FastAPI settings classified, two server-only Vercel fields,
+local/migrator inputs separated, zero new GitHub Secrets required for manual staging deployment.
+No admin credentials exported, no custom GitHub Secrets application loader.
+
+13:37 protected read-only logical backup; 13:42 actual isolated local PG17.11 restore and unchanged
+0003–0005 rehearsal passed. 13:44 serialized Azure migrator upgrade passed to0005/25 tables;
+original18 counts and old ACLs/ownership preserved, seven new auth tables empty, runtime identity/TLS
+and DDL/admin restrictions verified. No account/admin provisioning or Azure destructive fixtures.
+13:47 authenticated free Linux F1 hosting preflight passed; allocation/hosting not yet executed.
+Owner says keep email blocked. No SQL firewall expansion, live demo/production update, merge or
+public cutover. [Sanitized evidence and remaining gates](../infra/connected-staging-verification-2026-10-28.md).
+
 ## Connection recovery Stage 2 — 2026-10-28, America/Chicago
 
 Owner explicitly authorized existing-role password resets after administrator verification.

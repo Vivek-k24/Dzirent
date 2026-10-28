@@ -1,5 +1,24 @@
 # Project status
 
+## Connected staging Stage 3 — 2026-10-28, America/Chicago
+
+**Recovery/migration prerequisites passed; HTTPS hosting in progress.** Owner-authorized issue77,
+isolated `codex/connected-staging-stage3`, base `a02e180f0147f4f06fd61d47c1f3997b922e9e6b`.
+Environment audit complete before cloud writes: actual API Settings/Vercel/CI consumers and explicit
+destination allowlists, no bulk GitHub secrets, administrator local only, migrator separate.
+
+Actual protected backup restored locally into disposable PG17.11; unchanged native migrations
+rehearsed successfully, then applied once to Azure at13:44 CDT with the existing migrator.
+Azure now `0005_auth_email_outbox`, 25 tables, original18 counts/old privileges/ownership preserved,
+new auth tables empty; independent app-role login and TLS1.3/verify-full passed. No accounts created.
+Free Linux F1 host preflight passed with Students credit and both spending limits On; no host yet.
+
+Email remains **blocked by owner instruction**; SMTP and worker disabled. Hosted private media and
+connected session/upload/restart acceptance remain unverified. Database networking still unchanged;
+actual host outbound additions require concrete review. No main merge, public cutover, production
+Vercel setting or live demo change. [Exact checks and blockers](infra/connected-staging-verification-2026-10-28.md),
+[variable destinations](infra/connected-staging-environment-audit.md).
+
 ## Connection recovery Stage 2 — 2026-10-28, America/Chicago
 
 **Stage 2 complete; SQL credentials recovered, not deployed.** Exact start
