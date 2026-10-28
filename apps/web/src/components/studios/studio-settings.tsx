@@ -78,7 +78,7 @@ function Settings({ user }: { user: CurrentUser }) {
       <h1 className={styles.title}>Studio settings</h1>
       <p className={styles.lede}>Your Studio is your public lender profile. It lists the outfits you have published.</p>
     </div></div>
-    {runtime.demo ? <p className={styles.demoNote}>Demo identity. Changes last for this browser session only and are not saved to a hosted database.</p> : null}
+    {runtime.demo ? <p className={styles.demoNote}>In demo mode, changes last for this browser session only.</p> : null}
     {runtime.error || query.error ? <div className={styles.state} role="alert"><h2>Studio settings didn’t load</h2><p>{runtime.error || query.error?.message}</p><button type="button" className={`${styles.button} ${styles.buttonOutline}`} onClick={() => void query.refetch()}>Retry</button></div>
       : query.data === undefined ? <div className={styles.state} aria-busy="true"><p>Loading your Studio…</p></div>
       : <SettingsForm key={query.data ? `${query.data.id}-${query.data.version}` : "new"} user={user} current={query.data} />}
@@ -87,6 +87,6 @@ function Settings({ user }: { user: CurrentUser }) {
 
 export function StudioSettingsPage() {
   const user = useSession(s => s.user);
-  if (!user?.lender_profile) return <><main id="main-content" className={styles.page}><div className={styles.state}><h1 className={styles.title}>Studio settings</h1><p>Sign in with a lender identity to manage your Studio.</p><Link className={styles.link} href="/studios">Explore Studios</Link></div></main><AuthDialog role="lender" action="login" /></>;
+  if (!user?.lender_profile) return <><main id="main-content" className={styles.page}><div className={styles.state}><h1 className={styles.title}>Studio settings</h1><p>Sign in with a lender account to manage your Studio.</p><Link className={styles.link} href="/studios">Explore Studios</Link></div></main><AuthDialog role="lender" action="login" /></>;
   return <Settings key={user.id} user={user} />;
 }

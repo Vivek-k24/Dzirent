@@ -43,7 +43,7 @@ export function StudioDirectory() {
       </div>
       {query.data ? <p className={styles.muted} aria-live="polite">{total} {total === 1 ? "Studio" : "Studios"}</p> : null}
     </div>
-    {runtime.demo ? <p className={styles.demoNote}>Demo Studio data. Profiles and outfits are fictional sample listings; no rentals, payments or deliveries happen here.</p> : null}
+    {runtime.demo ? <p className={styles.demoNote}>Explore curated lender Studios across Texas.</p> : null}
     {error ? <div className={styles.state} role="alert"><h2>Studios didn’t load</h2><p>{error}</p><button type="button" className={`${styles.button} ${styles.buttonOutline}`} onClick={() => void query.refetch()}>Retry</button></div>
       : !query.data ? <div className={styles.state} aria-busy="true"><p>Loading Studios…</p></div>
       : !studios.length ? <div className={styles.state}><h2>No public Studios yet</h2><p>Studios appear here once a lender makes their Studio public and publishes an outfit.</p><Link className={styles.link} href="/">Browse all collections</Link></div>

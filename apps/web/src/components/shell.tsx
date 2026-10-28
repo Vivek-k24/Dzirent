@@ -2,7 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+<<<<<<< HEAD
 import { useQueryClient } from "@tanstack/react-query";
+=======
+>>>>>>> d62da9c (feat(web): remove prototype banner, demo simulator, and fake claims; complete truthful web UI controls (#79))
 import { serializeSelection } from "@dzirent/client";
 import { Search, UserRound, Shirt, Plus, ShoppingBag, MapPin, ArrowRight, X, LogOut, LayoutDashboard } from "lucide-react";
 import { useCatalogState } from "@/lib/use-catalog";
