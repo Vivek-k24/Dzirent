@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,7 +7,7 @@ import { ArrowRight, Camera, Check, ImagePlus, Plus, Trash2, Upload, X } from "l
 import { dateOnly, minorUnits } from "@dzirent/client";
 import type { ProductDetail, ProductWrite, References } from "@dzirent/client";
 import { productWriteSchema } from "@/lib/listing-schema";
-import { photoIssue, uploadPhoto } from "@/lib/photo-upload";
+import { photoIssue, sanitizePreviewUrl, uploadPhoto } from "@/lib/photo-upload";
 import media from "@/mocks/media.json";
 import { Button, Modal } from "./ui/primitives";
 import { useRuntime } from "./providers";
@@ -26,6 +26,22 @@ const formSchema = z.object({
   is_available: z.boolean(), image_id: z.uuid("Choose a demo photo."),
 });
 type Values = z.infer<typeof formSchema>;
+
+function LocalPhotoPreview({ url }: { url: string }) {
+  const ref = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const safe = sanitizePreviewUrl(url);
+    if (!safe) {
+      el.removeAttribute("src");
+      return;
+    }
+    // codeql[js/dom-text-reinterpreted-as-html]
+    el.src = safe;
+  }, [url]);
+  return <img ref={ref} width={900} height={1200} alt="Selected photo preview" />;
+}
 
 export function ListingForm({ product, refs, pending, close, save, onProductUpdated }: {
   product?: ProductDetail; refs: References; pending: boolean; close: () => void; save: (data: ProductWrite) => Promise<void>;
@@ -179,7 +195,7 @@ export function ListingForm({ product, refs, pending, close, save, onProductUpda
     </div><aside className="listing-photo-column">
       <div className="listing-photo-preview">
         {localPreviewUrl ? (
-          <img src={localPreviewUrl} width={900} height={1200} alt="Selected photo preview" />
+          <LocalPhotoPreview url={localPreviewUrl} />
         ) : attachedImages.length > 0 ? (
           <img src={attachedImages[0].url} width={900} height={1200} alt={attachedImages[0].alt_text || "Attached garment photograph"} />
         ) : photo ? (

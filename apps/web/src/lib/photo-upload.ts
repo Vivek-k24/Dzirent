@@ -4,6 +4,16 @@ import { api, mode } from "./api";
 type UploadIntent = components["schemas"]["UploadIntent"];
 const photoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 export const MAX_PHOTO_BYTES = 4_000_000;
+const BLOB_URL_PATTERN = /^blob:https?:\/\/[A-Za-z0-9.:-]+\/[A-Za-z0-9-]+$/;
+
+export function sanitizePreviewUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const trimmed = url.trim();
+  if (BLOB_URL_PATTERN.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
 
 export function photoIssue(file: Pick<File, "size" | "type">): string | null {
   if (!photoTypes.has(file.type)) return "Export your photo as JPEG, PNG or WebP; HEIC and animations are not supported.";

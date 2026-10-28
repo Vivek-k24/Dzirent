@@ -485,7 +485,12 @@ example(
         "expires_at": "2026-11-02T12:05:00Z",
         "max_size_bytes": 4000000,
     },
-    body={"filename": "sample.jpg", "content_type": "image/jpeg", "size_bytes": 100000, "rights_confirmed": True},
+    body={
+        "filename": "sample.jpg",
+        "content_type": "image/jpeg",
+        "size_bytes": 100000,
+        "rights_confirmed": True,
+    },
     protected=True,
 )
 example(
@@ -512,14 +517,26 @@ example(
     protected=True,
 )
 example(
-    "putUploadBytes", "PUT", f"/lender/products/{p['id']}/images/uploads/{upload_id}",
+    "putUploadBytes",
+    "PUT",
+    f"/lender/products/{p['id']}/images/uploads/{upload_id}",
     {"upload_id": upload_id, "status": "uploaded", "width": 900, "height": 1200},
-    body="Binary JPEG bytes supplied by the device; not a JSON string", protected=True,
+    body="Binary JPEG bytes supplied by the device; not a JSON string",
+    protected=True,
     content_type="image/jpeg",
 )
 example(
-    "getMediaContent", "GET", f"/media/{uid('image:uploaded-example')}",
-    {"error": {"code": "dependency_unavailable", "message": "Photo storage is disabled.", "details": []}, "request_id": "sample-media-disabled"},
+    "getMediaContent",
+    "GET",
+    f"/media/{uid('image:uploaded-example')}",
+    {
+        "error": {
+            "code": "dependency_unavailable",
+            "message": "Photo storage is disabled.",
+            "details": [],
+        },
+        "request_id": "sample-media-disabled",
+    },
     status=503,
 )
 public_studio = {
