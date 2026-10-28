@@ -8,10 +8,17 @@ Only83 auth-dialog/providers/shell/header CSS reconciled; retained restoration/n
 Implemented default-off staging-only no-mail registration plus independent private proxy-key gate,
 normal committed-registration → real-login flow and ordinary renter-only exception. Verification
 remains null/false; full token/outbox and verified lender/admin checks retained. Production refuses
-activation. Local120 PG tests/44 web tests/TS/contracts/lint/mypy/connected build passed; hosted
-activation/actual browser acceptance still pending. No private owner-input, SQL network/role/ACL,
-migration history, live demo, other worktree/log or paid-resource changes.
-[Focused evidence](../auth/issue84-staging-auth.md). Stop at one reviewable auth PR after acceptance.
+activation. Local120 PG tests/44 web tests/TS/contracts/lint/mypy/connected build passed. Actual
+protected preview/API source `9a2d9c67ec118d41abbe1c39e24456e1214c2f65` passed the required auth story:
+real committed signup and native cookie login, Azure Argon2id/unverified/renter proof, refresh/API
+restart persistence, renter CRUD and lender/admin denial, negative security/rate cases, logout,
+re-login and password-confirmed all-session revocation (3 SQL sessions, none active). Temporary
+setting enabled after direct Azure denial/private-proxy proof; SMTP/worker remain disabled.
+Additional Windows demo collections smoke:3 passed/1 desktop PDP refresh timeout; isolated retry
+also timed out. No broad-green claim or unrelated presentation fix. Review/CI still pending.
+No private owner-input, SQL network/role/ACL, migration history, live demo, other worktree/log or
+paid-resource changes. [Focused evidence](../auth/issue84-staging-auth.md). Stop at this auth PR;
+no main merge, production cutover or new phase.
 
 ## Connected staging Stage 3 — 2026-10-28, America/Chicago
 

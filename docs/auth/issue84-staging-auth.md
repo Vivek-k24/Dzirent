@@ -66,11 +66,79 @@ The staging proxy credential stays in place until a separately reviewed access d
 
 ## Verification record
 
-Local candidate checks passed; hosted activation/browser acceptance is pending. The exact deployed
-candidate and actual staging results will be recorded before a ready PR. Failed/skipped checks are
-not passes. Protected test email/password are read only from the owner-supplied separate file and
-never copied into this report, artifacts, screenshots or logs. Initial private password was rejected
-as shorter than the existing minimum; the owner corrected it privately. Policy was not weakened.
+Required local and **actual hosted auth acceptance** completed on frozen application source
+`9a2d9c67ec118d41abbe1c39e24456e1214c2f65`; subsequent report commits change documentation only.
+The extra Windows demo workflow has a separate unresolved timeout below. Failed/skipped checks are
+not passes. Protected test email/password were read only from the owner-supplied separate file and
+never copied into this report, artifacts, screenshots or logs. The owner privately corrected an
+initial short password and later a reserved sample mailbox. Neither policy was weakened.
+
+### Deployed candidate and actual browser/SQL results
+
+Protected preview: https://dzirent-git-codex-connected-staging-stage3-vivekkallakuri-8617.vercel.app
+at deployment `dpl_HDnbfRoScriWerwugpuiowUCBSnR`, actual Git source9a2d9c6, Preview target (not production).
+Existing Azure API: https://dzirent-api-staging-4265.azurewebsites.net/api/v1, publication
+`9cfd0563-6413-4d93-a9cb-5e2a8c0be866`. The actual Oryx archive's release manifest reports the same
+full source SHA and schema0005; artifact SHA256
+`92bb604835295e646b93121c39fdd332c063ffcc6935db70b971225248b124aa` (48 archive files).
+Only the existing protected staging alias moved. Production `dzirent.com` stayed on
+`dpl_A7AvvLu1XmuzcWuvTRiRpHcTqAUd`, source `8fcdc8dcf3bbe39d3e8bfc219d420e5d534c1a5c`.
+
+The following results are from actual Chromium → protected Vercel → Next proxy → Azure FastAPI →
+Azure PostgreSQL, using the real private owner-controlled test input. No fake account or seeded
+identity was used. Browser access used an origin-scoped short-lived development OIDC header from
+the existing authenticated CLI; protection stayed enabled. No token or credentials were persisted.
+
+| Actual check | Observed result |
+| --- | --- |
+| Public preview / direct Azure exposure | Unauthenticated preview302; direct Azure csrfGET/registerPOST with correct Origin but no server key403. Private proxy challenge200 and anonymous session401. Verified before enabling signup. |
+| One signup action | Browser register202 followed by ordinary login200, genuine Secure/HttpOnly/host-only/SameSite=Lax session. No browser credential/session/identity storage. |
+| SQL identity | Exactly one real active native account, matching Argon2id password, `email_verified_at IS NULL`, synthetic=false, renter only, zero lender/admin grants/tokens/outbox jobs. Read-only application-role transaction, verify-full/CA, TLS1.3, schema0005. |
+| Persistence | Browser header/account and session/me restore on refresh. Actual API restart200, new container markers at23:18:57Z, readiness200; original cookie still authenticates session/me and restored account UI. |
+| Ordinary vs elevated access | Own profile/preferences PATCH200. Unverified lender enrollment/listing/admin403; lender UI requires verification. No role or ownership exception added. |
+| Pending verification/delivery | UI says pending; resend and recovery fail truthfully with mail disabled. No verification claim, mail job or delivery attempt. |
+| Negative/security behavior | Invalid inputs and browser verification/role claims422, bad CSRF403, foreign Origin403; duplicate202 cannot replace password; unknown/wrong login generic401;10 unknown logins401 then429 with Retry-After900. |
+| Logout / re-login / revocation | UI logout makes current and replayed cookie401; original password logs in to the same account. Password-confirmed logout-all204; browser/replayed cookie401. Final read-only SQL: all3 hashed sessions revoked, account/hash/unverified/renter state preserved. |
+| Browser errors | Zero uncaught page errors in the completed focused auth runs. |
+
+[Sanitized machine-readable evidence](issue84-staging-evidence.json) retains individual results,
+timestamps and failed attempts. The initial long browser run completed34 assertions but its final
+logout-all label selector timed out. A focused UI rerun used the existing fixed control IDs,
+received204 and independently checked cookie rejection plus zero active SQL sessions. Application
+code stayed unchanged. Do not describe the interrupted original run as a single all-green run.
+
+Runtime preparation first hit a Windows CLI wrapper failure; direct Node CLI stdin relay succeeded
+without printing or saving the private key. The automatic-alias list did not include the manually
+assigned staging alias; the dedicated alias endpoint verified its exact target before activation.
+An initial reserved-mailbox422 created no account. After the owner corrected it, the first attempt
+returned503 following the App Settings change. An explicit existing staging API restart and fresh
+container/readiness proof preceded successful signup. Runtime changes require this restart gate;
+App Settings readback alone does not prove the running process has reloaded.
+
+No new cloud resource or paid tier was created. Reused Azure F1 Free and active Vercel Hobby; no
+billing/spending-limit change. Existing PostgreSQL credit usage continues; this issue did not measure
+an incremental database bill or claim zero existing database cost. Zero GitHub Secrets were created.
+Only Azure's two new auth setting names and four auth-branch Preview variables were configured;
+existing values stayed unchanged. No private owner-input, SQL ACL/role/firewall or migration edit.
+
+### Startup, review and remaining gates
+
+Azure startup remains `bash infra/runtime/start-appservice.sh` (normal mode, no diagnostic override).
+It verifies/copies the public CA and starts uvicorn without access logs. Vercel uses the existing
+`apps/web` root, pinned Node22 and connected production build. Automatic deployment guards remain
+false. Existing hosted native keys and application-role DSN were preserved; no administrator or
+migrator setting was put in runtime or Vercel. Deployment tooling reused VS Code Entra and the
+authenticated Vercel project; no custom application secret retrieval or GitHub credential was added.
+
+Review branch `codex/auth-integration-issue84`, exact tested/deployed source9a2d9c6. Inspect this
+branch's auth tests and report; do not run Azure migrations or destructive DB fixtures. For isolated
+local DB tests use only an owned loopback `*_test` PostgreSQL17 target with the existing destruction
+guards. Connected browser acceptance uses the protected URL above and owner input read privately;
+do not seed or reset the real account to repeat signup. It is retained unverified and signed out.
+
+CI/reviewer approval and any main merge are separate gates. SMTP delivery/token-click acceptance and
+positive verified lender/admin real-account flows were not run. No public-production cutover,
+DNS/network/role changes, other issue or follow-up phase is included.
 
 Frozen dependencies installed locally: pnpm10.29.3 offline/frozen355 packages, uv0.13.1
 Python3.12.15 frozen/offline81 packages. No lockfile change; uv hardlink fallback warning only.
@@ -84,8 +152,15 @@ Actual local checks (PowerShell, pinned tools), source tree frozen after these c
 | `pnpm typecheck` | Passed client and Next route generation/TypeScript. |
 | `pnpm contracts:check` | Runtime OpenAPI and generated TypeScript byte drift checks passed; candidate.3 unchanged. |
 | Targeted `pnpm exec eslint` on changed auth/proxy/header sources/tests | Passed. |
+| `pnpm check`, frozen/offline tool environment matching Foundation configuration | Passed complete deployment guards, full root ESLint, TypeScript, all40 licensed image checks, Ruff/check-format60 files, mypy31 sources, contract drift and deterministic fixtures. |
 | API `ruff check` / `ruff format` on changed Python paths; `mypy` | Passed,31 source files for mypy. |
 | `NEXT_PUBLIC_DZIRENT_MODE=connected pnpm build` | Passed Next16.4.2 production build,15 static pages. |
+| `NEXT_PUBLIC_DZIRENT_MODE=demo pnpm build` | Passed, same frozen source. |
+| `pnpm exec playwright test --config tests/workflows/playwright.config.ts tests/workflows/collections.spec.ts`, Windows loopback demo13384 | **3 passed/1 failed**: desktop all40 PDP refresh remained in Loading outfit past12s. Isolated desktop retry failed on a different sample product. Not an auth acceptance pass. |
+
+A diagnostic with50 reloads of one demo PDP passed without page errors; that does **not** replace
+the failed all40 navigation case. The broader Windows demo timeout remains an explicit review/CI
+concern. No assertion was deleted, timeout raised or unassigned UI/MSW path changed to hide it.
 
 The test container used cached PG17.11 image
 `sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3`, tmpfs data, a random
@@ -95,6 +170,7 @@ No Azure fixture, migrations/roles/firewall write or owner-input modification wa
 
 Rollback starts by disabling the temporary signup setting, keeping the private proxy gate and mail
 disabled, then using an approved known artifact if required. Preserve real accounts/session metadata
-and all native keys. No automatic SQL downgrade, destructive fixtures, database restore or old-demo
-promotion. Public demo is independent. Stop at one main-targeted reviewable auth PR after acceptance;
+and all native keys. Never restore an older API artifact that lacks the private proxy gate while
+calling it restricted staging. No automatic SQL downgrade, destructive fixtures, database restore or
+old-demo promotion. Public demo is independent. Stop at one main-targeted reviewable auth PR after acceptance;
 no full repo audit, pruning, media/AI phase or automatic main merge/public rollout follows.

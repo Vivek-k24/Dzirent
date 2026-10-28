@@ -8,9 +8,17 @@ session restoration and cookie logout retained with its cleaned header. Other wo
 One default-off protected staging signup exception implemented; null verification, no email jobs,
 ordinary renter only. Direct Azure API proxy-key gate, production refusal and existing CSRF/rate/
 verified-only lender/admin rules covered. Local120 PG auth tests,44 web tests, TS/contracts/lint/
-mypy/connected build passed. **Not yet activated or browser-accepted.** Owner test input now valid
-after private correction. [Exact scope and evidence](auth/issue84-staging-auth.md).
-SMTP/worker remain disabled; no main merge/public demo change, migration/ACL/firewall edit or new resource.
+mypy/connected build passed. **Actual protected staging auth acceptance completed** on source
+`9a2d9c67ec118d41abbe1c39e24456e1214c2f65`: real signup202 → native login200, SQL Argon2id/null
+verification/renter only, refresh and API restart continuity, ordinary own profile/preferences,
+duplicate/unknown/CSRF/origin/rate/elevation denial, logout/re-login and all3 sessions revoked.
+Existing protected staging alias now uses preview `dpl_HDnbfRoScriWerwugpuiowUCBSnR`; Azure publication
+`9cfd0563-6413-4d93-a9cb-5e2a8c0be866`. Temporary setting enabled only after independent direct
+Azure403/private-proxy200 gates. SMTP/worker disabled. **Additional Windows demo smoke is red**:
+3/4 collection tests passed; desktop all40 PDP refresh timed out, including isolated retry.
+No suppressed assertion or all-tests-green claim. PR CI/review remain separate gates.
+[Exact scope, failures and evidence](auth/issue84-staging-auth.md).
+No main merge/public demo change, migration/ACL/firewall edit, private input edit or new resource.
 
 ## Connected staging Stage 3 — 2026-10-28, America/Chicago
 
