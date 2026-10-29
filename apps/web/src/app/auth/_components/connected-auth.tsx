@@ -42,7 +42,6 @@ export function ConnectedAuth({ role, action, destination, enrollment }: { role:
   const schema = z.object({ email: z.email("Enter a valid email address.").max(254), password: z.string().min(action === "signup" ? 12 : 1).max(128), display_name: z.string().max(100) });
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "", display_name: "" } });
   return <SessionBoundary>{user ? role === "lender" && !verified ? <VerificationNotice /> : <div className="stack-form">
-    {!verified ? <p role="status">Email verification pending. Your account has renter access; lender access requires verification.</p> : null}
     {!verified ? <VerificationNotice /> : null}
     {synthetic ? <p className="info-note">Synthetic staging identity. Email status is operator asserted; no sample-domain email is sent.</p> : null}
     {role === "lender" && !user.lender_profile ? enrollment : <><p>Signed in as {user.display_name}.</p><Button onClick={destination}>{role === "lender" ? "Open lender dashboard" : "Continue browsing"}<ArrowRight size={17} /></Button></>}
