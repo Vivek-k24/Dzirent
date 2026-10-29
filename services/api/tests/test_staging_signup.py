@@ -155,10 +155,12 @@ def test_unverified_staging_lender_enrolls_without_granting_admin(
             )
             == 1
         )
-        credential = connection.scalar(
-            select(orm.AuthCredential).join(orm.User).where(orm.User.email == EMAIL)
-        )
-        assert credential is not None and credential.email_verified_at is None
+        credential = connection.execute(
+            select(orm.AuthCredential.user_id, orm.AuthCredential.email_verified_at)
+            .join(orm.User)
+            .where(orm.User.email == EMAIL)
+        ).one()
+        assert credential.email_verified_at is None
         assert connection.scalar(select(func.count()).select_from(orm.PlatformAdminGrant)) == 0
         roles = sorted(
             connection.execute(
