@@ -59,17 +59,6 @@ def active_user(
     return user
 
 
-def current_lender(user: orm.User = Depends(active_renter)) -> orm.LenderProfile:
-    profile = user.lender_profile
-    if (
-        profile is None
-        or profile.status != "active"
-        or not any(role.role == "lender" for role in user.roles)
-    ):
-        raise ApiError(403, "lender_required", "Lender enrollment required.")
-    return profile
-
-
 def active_renter(
     request: Request,
     user: orm.User = Depends(current_user),
@@ -89,6 +78,17 @@ def active_renter(
         if credential is not None and not credential.synthetic:
             return user
     return active_user(user, session)
+
+
+def current_lender(user: orm.User = Depends(active_renter)) -> orm.LenderProfile:
+    profile = user.lender_profile
+    if (
+        profile is None
+        or profile.status != "active"
+        or not any(role.role == "lender" for role in user.roles)
+    ):
+        raise ApiError(403, "lender_required", "Lender enrollment required.")
+    return profile
 
 
 def require_metro(session: Session, metro_id: object, field: str, errors: list[Detail]) -> None:
