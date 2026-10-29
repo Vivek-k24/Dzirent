@@ -43,10 +43,10 @@ export function StudioDirectory() {
       </div>
       {query.data ? <p className={styles.muted} aria-live="polite">{total} {total === 1 ? "Studio" : "Studios"}</p> : null}
     </div>
-    {runtime.demo ? <p className={styles.demoNote}>Demo Studio data. Profiles and outfits are fictional sample listings; no rentals, payments or deliveries happen here.</p> : null}
+    {runtime.demo ? <p className={styles.demoNote}>Presentation demo with sample lender profiles.</p> : null}
     {error ? <div className={styles.state} role="alert"><h2>Studios didn’t load</h2><p>{error}</p><button type="button" className={`${styles.button} ${styles.buttonOutline}`} onClick={() => void query.refetch()}>Retry</button></div>
       : !query.data ? <div className={styles.state} aria-busy="true"><p>Loading Studios…</p></div>
-      : !studios.length ? <div className={styles.state}><h2>No public Studios yet</h2><p>Studios appear here once a lender makes their Studio public and publishes an outfit.</p><Link className={styles.link} href="/">Browse all collections</Link></div>
+      : !studios.length ? <div className={styles.state}><h2>No public Studios yet</h2><p>Public Studios will appear here once lenders publish verified wardrobes.</p><Link className={styles.link} href="/">Browse all collections</Link></div>
       : <>
         <ul className={styles.directory} aria-label="Studios">{studios.map(studio => <StudioCard key={studio.id} studio={studio} />)}</ul>
         {query.hasNextPage ? <div className={styles.more}><button type="button" className={`${styles.button} ${styles.buttonOutline}`} disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? "Loading Studios…" : "Load more Studios"}</button></div> : null}

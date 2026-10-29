@@ -22,7 +22,7 @@ const formSchema = z.object({
   stretch: z.string(), alterations: z.string(), known_wear: z.string(),
   chest: z.string().refine(v => v === "" || (Number.isFinite(Number(v)) && Number(v) > 0), "Enter a positive cm measurement."),
   length: z.string().refine(v => v === "" || (Number.isFinite(Number(v)) && Number(v) > 0), "Enter a positive cm measurement."),
-  is_available: z.boolean(), image_id: z.uuid("Choose a demo photo."),
+  is_available: z.boolean(), image_id: z.uuid("Choose a photo."),
 });
 type Values = z.infer<typeof formSchema>;
 
@@ -62,7 +62,7 @@ export function ListingForm({ product, refs, pending, close, save }: {
     if (!candidate.success) { setError(candidate.error.issues.map(x => x.message).join(" ")); return; }
     try { await save(candidate.data); } catch (error) { setError(error instanceof Error ? error.message : "Your listing could not be saved."); }
   }, () => setError("Please review the highlighted fields before saving."))}>
-    <p className="info-note">{runtime.demo ? "MOCK LISTING · Changes stay in this page session. Choose licensed fixture photography; uploads are not connected." : "Connected listing · Media uploads require the approved provider integration."} One listing represents one physical garment.</p>
+    <p className="info-note">{runtime.demo ? "Demo listing · changes stay in this page session." : "Connected listing."} One listing represents one physical garment.</p>
     <div className="listing-form-layout"><div className="listing-fields">
       <section className="form-section"><h3>Tell its story</h3>
         <label htmlFor="listing-title">Outfit title<input id="listing-title" {...form.register("title")} aria-invalid={!!fieldError("title")} aria-describedby="title-error" placeholder="A little something for the occasion" /></label><p id="title-error" className="field-error">{fieldError("title")}</p>
@@ -85,22 +85,22 @@ export function ListingForm({ product, refs, pending, close, save }: {
         <div className="form-grid"><label htmlFor="listing-stretch">Stretch<input id="listing-stretch" {...form.register("stretch")} placeholder="e.g. non-stretch" /></label><label htmlFor="listing-alterations">Alterations<input id="listing-alterations" {...form.register("alterations")} placeholder="Describe any alterations" /></label></div>
         <label htmlFor="listing-wear">Known wear<textarea id="listing-wear" rows={2} {...form.register("known_wear")} placeholder="Describe condition honestly" /></label>
       </section>
-      <section className="form-section"><h3>Sample rental amounts</h3><p className="tiny muted">Display amounts only. No payout, tax calculation or payment is created.</p><input type="hidden" {...form.register("metro_id")} /><div className="form-grid">
-        <label htmlFor="listing-band">Sample price band<select id="listing-band" {...form.register("band")}><option value="A">A · under $50</option><option value="B">B · $50–$99.99</option><option value="C">C · $100–$149.99</option><option value="D">D · $150+</option></select></label>
-        <label htmlFor="listing-rental">Four-day sample rental ($)<input id="listing-rental" inputMode="decimal" {...form.register("rental")} aria-invalid={!!fieldError("rental")} /><span className="field-error">{fieldError("rental")}</span></label>
-        <label htmlFor="listing-retail">Sample retail ($)<input id="listing-retail" inputMode="decimal" {...form.register("retail")} aria-invalid={!!fieldError("retail")} /><span className="field-error">{fieldError("retail")}</span></label>
-      </div><p className="tiny muted">Only in Texas. Delivery estimate unavailable in this demo.</p></section>
-      <section className="form-section"><h3>Availability</h3><label className="choice"><input type="checkbox" {...form.register("is_available")} />Available for demo date selection</label>
+      <section className="form-section"><h3>Rental pricing</h3><p className="tiny muted">{runtime.demo ? "Display amounts only. No payout, tax calculation or payment is created." : "Set 4-day rental price and retail value."}</p><input type="hidden" {...form.register("metro_id")} /><div className="form-grid">
+        <label htmlFor="listing-band">Price band<select id="listing-band" {...form.register("band")}><option value="A">A · under $50</option><option value="B">B · $50–$99.99</option><option value="C">C · $100–$149.99</option><option value="D">D · $150+</option></select></label>
+        <label htmlFor="listing-rental">Four-day rental rate ($)<input id="listing-rental" inputMode="decimal" {...form.register("rental")} aria-invalid={!!fieldError("rental")} /><span className="field-error">{fieldError("rental")}</span></label>
+        <label htmlFor="listing-retail">Estimated retail ($)<input id="listing-retail" inputMode="decimal" {...form.register("retail")} aria-invalid={!!fieldError("retail")} /><span className="field-error">{fieldError("retail")}</span></label>
+      </div><p className="tiny muted">Only in Texas.</p></section>
+      <section className="form-section"><h3>Availability</h3><label className="choice"><input type="checkbox" {...form.register("is_available")} />Available for rental date selection</label>
         <p className="tiny muted">Date blocks include both endpoints. They affect the availability filter and bag validation.</p>
         <div className="form-grid block-inputs"><label htmlFor="block-start">Unavailable from<input id="block-start" type="date" value={blockStart} onChange={event => setBlockStart(event.target.value)} /></label><label htmlFor="block-end">Unavailable through<input id="block-end" type="date" value={blockEnd} onChange={event => setBlockEnd(event.target.value)} /></label></div>
         <Button variant="outline" onClick={() => { if (!dateOnly(blockStart) || !dateOnly(blockEnd) || blockEnd < blockStart) { setBlockError("Choose complete, ordered unavailable dates."); return; } setBlocks(b => [...b, { start: blockStart, end: blockEnd, reason: "owner-unavailable" }]); setBlockStart(""); setBlockEnd(""); setBlockError(""); }}><Plus size={15} />Add date block</Button>{blockError ? <p className="field-error" role="alert">{blockError}</p> : null}
         <ul className="date-blocks">{blocks.map((block, i) => <li key={`${block.start}-${block.end}-${i}`}><span>{block.start} – {block.end}</span><button type="button" className="icon-button" aria-label={`Remove date block ${block.start} through ${block.end}`} onClick={() => setBlocks(b => b.filter((_, index) => index !== i))}><X size={16} /></button></li>)}</ul>
       </section>
-    </div><aside className="listing-photo-column"><div className="listing-photo-preview">{photo ? <img src={photo.url} width={900} height={1200} alt="Selected illustrative demo fashion photograph" /> : <ImagePlus size={32} />}</div><Button id="choose-fixture-photo" variant="outline" onClick={() => setPhotos(true)}><ImagePlus size={16} />Choose fixture photo</Button><p className="tiny muted">Licensed illustrative photography. It may differ from the fictional item details. No personal uploads in Phase 1A.</p></aside></div>
+    </div><aside className="listing-photo-column"><div className="listing-photo-preview">{photo ? <img src={photo.url} width={900} height={1200} alt="Selected fashion photograph" /> : <ImagePlus size={32} />}</div><Button id="choose-fixture-photo" variant="outline" onClick={() => setPhotos(true)}><ImagePlus size={16} />Choose fixture photo</Button><p className="tiny muted">{runtime.demo ? "Licensed illustrative photography. It may differ from item details." : "Select a photograph representing this garment."}</p></aside></div>
     {error ? <p className="field-error form-error" role="alert">{error}</p> : null}
-    <div className="listing-form-footer"><Button variant="quiet" disabled={busy} onClick={close}>Cancel</Button><Button type="submit" variant="outline" disabled={busy} onClick={() => setStatus("draft")}>{busy && status === "draft" ? "Saving…" : "Save draft"}</Button><Button type="submit" disabled={busy} onClick={() => setStatus("published")}>{busy && status === "published" ? "Saving…" : product ? "Save & publish" : "Publish mock listing"}<ArrowRight size={16} /></Button></div>
+    <div className="listing-form-footer"><Button variant="quiet" disabled={busy} onClick={close}>Cancel</Button><Button type="submit" variant="outline" disabled={busy} onClick={() => setStatus("draft")}>{busy && status === "draft" ? "Saving…" : "Save draft"}</Button><Button type="submit" disabled={busy} onClick={() => setStatus("published")}>{busy && status === "published" ? "Saving…" : product ? "Save & publish" : "Publish listing"}<ArrowRight size={16} /></Button></div>
     <Modal open={photos} onOpenChange={setPhotos} title="Choose a fixture photo" description="Forty licensed illustrative fashion photographs. No upload or external image URL is needed." restoreId="choose-fixture-photo">
-      <div className="photo-picker">{media.map((m, i) => <button key={m.image_id} type="button" aria-label={`Use demo photo ${i + 1}`} aria-pressed={selectedImage === m.image_id} onClick={() => { form.setValue("image_id", m.image_id, { shouldDirty: true }); setPhotos(false); }}><img src={m.url} alt={`Illustrative fashion photo ${i + 1}`} width={90} height={120} loading="lazy" />{selectedImage === m.image_id ? <span><Check size={18} /></span> : null}</button>)}</div>
+      <div className="photo-picker">{media.map((m, i) => <button key={m.image_id} type="button" aria-label={`Use photo ${i + 1}`} aria-pressed={selectedImage === m.image_id} onClick={() => { form.setValue("image_id", m.image_id, { shouldDirty: true }); setPhotos(false); }}><img src={m.url} alt={`Fashion photograph ${i + 1}`} width={90} height={120} loading="lazy" />{selectedImage === m.image_id ? <span><Check size={18} /></span> : null}</button>)}</div>
     </Modal>
   </form>;
 }
