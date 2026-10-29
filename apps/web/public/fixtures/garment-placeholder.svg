@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-labelledby="title desc">
-  <title id="title">Demo garment placeholder</title>
-  <desc id="desc">A simple outline of a garment on a neutral background.</desc>
-  <rect width="900" height="1200" fill="#f2f0ec"/>
-  <path d="M330 300 240 360 150 510 260 570 300 500 300 850 600 850 600 500 640 570 750 510 660 360 570 300Q450 420 330 300Z" fill="none" stroke="#77716b" stroke-width="12"/>
-  <text x="450" y="1020" text-anchor="middle" font-family="sans-serif" font-size="30" fill="#666">DEMO · GARMENT IMAGE</text>
-</svg>
