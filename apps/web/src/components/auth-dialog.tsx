@@ -18,7 +18,7 @@ const credentials = z.object({ display_name: z.string().trim().min(1, "Enter a d
 const enrollment = z.object({ display_name: z.string().trim().min(1, "Enter a display name.").max(100), metro_id: z.uuid("Choose a metro.") });
 
 function EnrollmentForm({ done }: { done: () => void }) {
-  const user = useSession(s => s.user), role = useSession(s => s.role), { refs } = useReferences(), [error, setError] = useState("");
+  const user = useSession(s => s.user), { refs } = useReferences(), [error, setError] = useState("");
   const runtime = useRuntime();
   const form = useForm<z.infer<typeof enrollment>>({ resolver: zodResolver(enrollment), defaultValues: { display_name: user?.display_name ?? "New Lender", metro_id: "" } });
   return <form className="stack-form" onSubmit={form.handleSubmit(async values => {
