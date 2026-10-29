@@ -85,4 +85,5 @@ jobs:
           uv run --directory services/api --frozen --python 3.12.15 pytest -q
           tests/test_listings.py::test_create_persists_and_server_assigns_identity
           tests/test_listings.py::test_cross_owner_access_is_non_enumerating_404
+          tests/test_staging_signup.py
           tests/workflows
