@@ -277,11 +277,14 @@ def test_turning_setting_off_restores_required_verification(
 ) -> None:
     assert register(staging, password).status_code == 202
     assert login(staging, password, EMAIL).status_code == 200
-    assert mutate(
-        staging,
-        "/me/lender-profile",
-        {"display_name": "Staging lender", "metro_id": TAXONOMY["locations"]["items"][0]["id"]},
-    ).status_code == 200
+    assert (
+        mutate(
+            staging,
+            "/me/lender-profile",
+            {"display_name": "Staging lender", "metro_id": TAXONOMY["locations"]["items"][0]["id"]},
+        ).status_code
+        == 200
+    )
     strict = make_client(
         client_base_url=STAGING_AUTH_ORIGIN,
         **staging_values(auth_staging_signup_without_email=False),
@@ -293,10 +296,13 @@ def test_turning_setting_off_restores_required_verification(
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "email_verification_required"
     assert strict.get("/api/v1/lender/products").status_code == 403
-    assert mutate(
-        strict,
-        "/me/lender-profile",
-        {"display_name": "Staging lender", "metro_id": TAXONOMY["locations"]["items"][0]["id"]},
-    ).status_code == 403
+    assert (
+        mutate(
+            strict,
+            "/me/lender-profile",
+            {"display_name": "Staging lender", "metro_id": TAXONOMY["locations"]["items"][0]["id"]},
+        ).status_code
+        == 403
+    )
     assert register(strict, password, "other-issue84@mail.dzirent.com").status_code == 503
     assert mutate(strict, "/auth/email/request").status_code == 503
