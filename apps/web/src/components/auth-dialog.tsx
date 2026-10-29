@@ -20,10 +20,10 @@ const enrollment = z.object({ display_name: z.string().trim().min(1, "Enter a di
 function EnrollmentForm({ done }: { done: () => void }) {
   const user = useSession(s => s.user), role = useSession(s => s.role), { refs } = useReferences(), [error, setError] = useState("");
   const runtime = useRuntime();
-  const form = useForm<z.infer<typeof enrollment>>({ resolver: zodResolver(enrollment), defaultValues: { display_name: user?.display_name ?? "Sample Lender", metro_id: refs?.locations.items[0]?.id ?? "" } });
+  const form = useForm<z.infer<typeof enrollment>>({ resolver: zodResolver(enrollment), defaultValues: { display_name: user?.display_name ?? "New Lender", metro_id: "" } });
   return <form className="stack-form" onSubmit={form.handleSubmit(async values => {
     setError("");
-    try { await api("/me/lender-profile", { method: "POST", body: JSON.stringify(values), protected: true }); const updated = await api<CurrentUser>("/me", { protected: true }); useSession.getState().signIn(updated, role!); done(); }
+    try { await api("/me/lender-profile", { method: "POST", body: JSON.stringify(values), protected: true }); const updated = await api<CurrentUser>("/me", { protected: true }); useSession.getState().signIn(updated, "lender"); done(); }
     catch (error) { setError(error instanceof Error ? error.message : "Enrollment failed."); }
   })}><p className="info-note">{runtime.demo ? "You’re signed in as a sample renter. Add a lender profile to start your own demo wardrobe." : "Add a lender profile using a configured metro. Your renter membership remains available."}</p>
     <label htmlFor="enroll-name">Lender display name<input id="enroll-name" {...form.register("display_name")} aria-invalid={!!form.formState.errors.display_name} /></label><p className="field-error">{form.formState.errors.display_name?.message}</p>
