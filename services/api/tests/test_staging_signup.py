@@ -119,7 +119,7 @@ def test_real_local_account_without_mail_then_normal_login(
     assert all(flag in cookie for flag in ("httponly", "secure", "samesite=lax", "path=/"))
 
 
-def test_unverified_renter_access_does_not_grant_lender_or_admin(
+def test_unverified_staging_lender_enrolls_without_granting_admin(
     staging: TestClient, password: SecretStr, db: Engine
 ) -> None:
     assert register(staging, password).status_code == 202
@@ -131,15 +131,20 @@ def test_unverified_renter_access_does_not_grant_lender_or_admin(
     assert (
         mutate(staging, "/me/preferences", {"postal_code": None}, method="PATCH").status_code == 200
     )
+    metro = TAXONOMY["locations"]["items"][0]["id"]
     response = mutate(
         staging,
         "/me/lender-profile",
-        {"display_name": "Forbidden lender", "metro_id": TAXONOMY["locations"]["items"][0]["id"]},
+        {"display_name": "Local lender", "metro_id": metro},
     )
-    assert response.status_code == 403
-    assert response.json()["error"]["code"] == "email_verification_required"
-    assert staging.get("/api/v1/lender/products").status_code == 403
+    assert response.status_code == 200
+    assert response.json()["metro_id"] == metro
+    assert staging.get("/api/v1/lender/products").status_code == 200
     assert staging.get("/api/v1/admin/access").status_code == 403
+    current = staging.get("/api/v1/auth/session").json()
+    assert current["email_verified"] is False
+    assert current["capabilities"] == []
+    assert current["user"]["lender_profile"] is not None
     with db.connect() as connection:
         assert (
             connection.scalar(
@@ -148,17 +153,23 @@ def test_unverified_renter_access_does_not_grant_lender_or_admin(
                 .join(orm.User)
                 .where(orm.User.email == EMAIL)
             )
-            == 0
+            == 1
         )
+        credential = connection.execute(
+            select(orm.AuthCredential.user_id, orm.AuthCredential.email_verified_at)
+            .join(orm.User)
+            .where(orm.User.email == EMAIL)
+        ).one()
+        assert credential.email_verified_at is None
         assert connection.scalar(select(func.count()).select_from(orm.PlatformAdminGrant)) == 0
-        roles = (
+        roles = sorted(
             connection.execute(
                 select(orm.UserRole.role).join(orm.User).where(orm.User.email == EMAIL)
             )
             .scalars()
             .all()
         )
-        assert roles == ["renter"]
+        assert roles == ["lender", "renter"]
 
 
 def test_duplicate_does_not_replace_password_or_reveal_existing_subject(
@@ -268,6 +279,14 @@ def test_turning_setting_off_restores_required_verification(
 ) -> None:
     assert register(staging, password).status_code == 202
     assert login(staging, password, EMAIL).status_code == 200
+    assert (
+        mutate(
+            staging,
+            "/me/lender-profile",
+            {"display_name": "Staging lender", "metro_id": TAXONOMY["locations"]["items"][0]["id"]},
+        ).status_code
+        == 200
+    )
     strict = make_client(
         client_base_url=STAGING_AUTH_ORIGIN,
         **staging_values(auth_staging_signup_without_email=False),
@@ -278,5 +297,14 @@ def test_turning_setting_off_restores_required_verification(
     response = mutate(strict, "/me", {"display_name": "Must verify first"}, method="PATCH")
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "email_verification_required"
+    assert strict.get("/api/v1/lender/products").status_code == 403
+    assert (
+        mutate(
+            strict,
+            "/me/lender-profile",
+            {"display_name": "Staging lender", "metro_id": TAXONOMY["locations"]["items"][0]["id"]},
+        ).status_code
+        == 403
+    )
     assert register(strict, password, "other-issue84@mail.dzirent.com").status_code == 503
     assert mutate(strict, "/auth/email/request").status_code == 503

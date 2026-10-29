@@ -59,26 +59,15 @@ def active_user(
     return user
 
 
-def current_lender(user: orm.User = Depends(active_user)) -> orm.LenderProfile:
-    profile = user.lender_profile
-    if (
-        profile is None
-        or profile.status != "active"
-        or not any(role.role == "lender" for role in user.roles)
-    ):
-        raise ApiError(403, "lender_required", "Lender enrollment required.")
-    return profile
-
-
 def active_renter(
     request: Request,
     user: orm.User = Depends(current_user),
     session: Session = Depends(get_session),
 ) -> orm.User:
-    """Only ordinary profile/preferences use the opt-in staging exception.
+    """Temporarily allow real native accounts to use renter/lender operations in protected staging.
 
-    Keep active_user/current_lender and enrollment verified-only, including direct internal calls.
-    Disabling the single staging setting restores the original verification gate immediately.
+    Production and SMTP-enabled modes still require a verified email. This never grants
+    a lender role: current_lender checks an actual active profile and lender membership.
     """
     if (
         request.app.state.settings.auth_staging_signup_without_email
@@ -89,6 +78,17 @@ def active_renter(
         if credential is not None and not credential.synthetic:
             return user
     return active_user(user, session)
+
+
+def current_lender(user: orm.User = Depends(active_renter)) -> orm.LenderProfile:
+    profile = user.lender_profile
+    if (
+        profile is None
+        or profile.status != "active"
+        or not any(role.role == "lender" for role in user.roles)
+    ):
+        raise ApiError(403, "lender_required", "Lender enrollment required.")
+    return profile
 
 
 def require_metro(session: Session, metro_id: object, field: str, errors: list[Detail]) -> None:
@@ -238,10 +238,10 @@ def update_preferences(
 @router.post("/me/lender-profile", response_model=wire.LenderProfile, operation_id="enrollLender")
 def enroll_lender(
     body: wire.LenderEnrollment,
-    user: orm.User = Depends(active_user),
+    user: orm.User = Depends(active_renter),
     session: Session = Depends(get_session),
 ) -> Any:
-    # Idempotent enrollment of the verified subject only; an existing profile is returned as-is.
+    # Idempotent enrollment of a real session subject; staging may waive email verification.
     if user.lender_profile is not None:
         return serializers.lender_profile(user.lender_profile)
     errors: list[Detail] = []

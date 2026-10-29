@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
-import type { AuthSessionRead } from "@dzirent/client";
+import type { AuthNotice, AuthSessionRead } from "@dzirent/client";
 import { api, clearCsrf, mode } from "@/lib/api";
 import { acceptSession, logoutSession } from "@/lib/auth";
 import { useSession } from "@/lib/store";
@@ -19,7 +19,14 @@ export default function Account() {
   const router = useRouter(), client = useQueryClient();
   return <main id="main-content" className="content-width credits-page"><h1>Account security</h1>{mode.mode !== "connected" ? <p>Demo accounts simulate identity. Account security is available in connected mode.</p> : <SessionBoundary>{!user ? <Link href="/auth/renter/login">Sign in to manage your account</Link> : <div className="stack-form">
     <p>{user.display_name} · {user.email} · {verified ? "Email confirmed" : "Email verification pending"}</p>
-    {!verified ? <Link href="/auth/renter/login">Request verification or check email status</Link> : null}
+    {!verified ? <Button variant="outline" disabled={busy} onClick={async () => {
+      setBusy(true); setError(""); setNotice("");
+      try {
+        const result = await api<AuthNotice>("/auth/email/request", { method: "POST", body: "{}", protected: true });
+        setNotice(result.message);
+      } catch (error) { setError(error instanceof Error ? error.message : "Verification email unavailable."); }
+      finally { setBusy(false); }
+    }}>Request verification email (requires email delivery)</Button> : null}
     <p>Account deactivation hides owned listings and revokes sessions. There is no self-service reactivation.</p>
     <form className="stack-form" onSubmit={async event => {
       event.preventDefault(); setBusy(true); setError(""); setNotice("");
