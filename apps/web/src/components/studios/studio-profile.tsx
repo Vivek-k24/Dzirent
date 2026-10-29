@@ -52,7 +52,7 @@ export function StudioProfile({ handle }: { handle: string }) {
             {studio.bio ? <p className={styles.bio}>{studio.bio}</p> : null}
           </div>
         </header>
-        {runtime.demo ? <p className={styles.demoNote}>Curated Texas Studio collection.</p> : null}
+        {runtime.demo ? <p className={styles.demoNote}>Sample Studio profile for presentation demonstration.</p> : null}
         <Wardrobe studio={studio} />
       </>}
   </main>;

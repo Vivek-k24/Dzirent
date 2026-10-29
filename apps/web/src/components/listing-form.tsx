@@ -22,7 +22,7 @@ const formSchema = z.object({
   stretch: z.string(), alterations: z.string(), known_wear: z.string(),
   chest: z.string().refine(v => v === "" || (Number.isFinite(Number(v)) && Number(v) > 0), "Enter a positive cm measurement."),
   length: z.string().refine(v => v === "" || (Number.isFinite(Number(v)) && Number(v) > 0), "Enter a positive cm measurement."),
-  is_available: z.boolean(), image_id: z.uuid("Choose a demo photo."),
+  is_available: z.boolean(), image_id: z.uuid("Choose a photo."),
 });
 type Values = z.infer<typeof formSchema>;
 
@@ -100,7 +100,7 @@ export function ListingForm({ product, refs, pending, close, save }: {
     {error ? <p className="field-error form-error" role="alert">{error}</p> : null}
     <div className="listing-form-footer"><Button variant="quiet" disabled={busy} onClick={close}>Cancel</Button><Button type="submit" variant="outline" disabled={busy} onClick={() => setStatus("draft")}>{busy && status === "draft" ? "Saving…" : "Save draft"}</Button><Button type="submit" disabled={busy} onClick={() => setStatus("published")}>{busy && status === "published" ? "Saving…" : product ? "Save & publish" : "Publish listing"}<ArrowRight size={16} /></Button></div>
     <Modal open={photos} onOpenChange={setPhotos} title="Choose a fixture photo" description="Forty licensed illustrative fashion photographs. No upload or external image URL is needed." restoreId="choose-fixture-photo">
-      <div className="photo-picker">{media.map((m, i) => <button key={m.image_id} type="button" aria-label={`Use demo photo ${i + 1}`} aria-pressed={selectedImage === m.image_id} onClick={() => { form.setValue("image_id", m.image_id, { shouldDirty: true }); setPhotos(false); }}><img src={m.url} alt={`Illustrative fashion photo ${i + 1}`} width={90} height={120} loading="lazy" />{selectedImage === m.image_id ? <span><Check size={18} /></span> : null}</button>)}</div>
+      <div className="photo-picker">{media.map((m, i) => <button key={m.image_id} type="button" aria-label={`Use photo ${i + 1}`} aria-pressed={selectedImage === m.image_id} onClick={() => { form.setValue("image_id", m.image_id, { shouldDirty: true }); setPhotos(false); }}><img src={m.url} alt={`Fashion photograph ${i + 1}`} width={90} height={120} loading="lazy" />{selectedImage === m.image_id ? <span><Check size={18} /></span> : null}</button>)}</div>
     </Modal>
   </form>;
 }
