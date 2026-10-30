@@ -1,0 +1,36 @@
+# libraries and build output
+node_modules/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+__pycache__/
+*.pyc
+
+# Android and iOS build files
+.gradle/
+.kotlin/
+local.properties
+.idea/
+*.iml
+DerivedData/
+xcuserdata/
+
+# test output
+test-results/
+playwright-report/
+coverage/
+
+# secrets and local tool state
+.env
+.env.*
+!.env.example
+.vercel/
+supabase/.temp/
+supabase/.branches/
+
+# system files
+.DS_Store
+Thumbs.db
