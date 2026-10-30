@@ -2,7 +2,5 @@
   "framework": null,
   "outputDirectory": ".",
   "buildCommand": "",
-  "git": {
-    "deploymentEnabled": false
-  }
+  "ignoreCommand": "if [ \"$VERCEL_GIT_COMMIT_REF\" = \"main\" ] || [ \"$VERCEL_GIT_COMMIT_REF\" = \"Preview\" ]; then exit 1; else exit 0; fi"
 }
