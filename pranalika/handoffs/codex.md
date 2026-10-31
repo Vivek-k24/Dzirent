@@ -2,6 +2,69 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 2A - 2026-10-31 - website foundation
+
+Done:
+- Replaced the old static site with Next.js App Router, TypeScript, pinned
+  dependencies and a lockfile. Matched the mobile palette, original vector logos,
+  Roboto typography, home rows, date chip, navigation and simple listing cards.
+- Built responsive Home (Products/Studios), search/filter/sort, complete listing
+  detail and photo gallery, sign-up/sign-in/sign-out, first-visit guest choice,
+  guest gates, signed-in studios, Saved pieces/studios, fit results, About/footer,
+  loading/error/empty states, and the requested Step 2B app panels.
+- All browsing uses contract RPCs; direct table access is limited to the caller's
+  own profile and saved rows. SSR cookie sessions and authenticated server actions
+  use @supabase/ssr and @supabase/supabase-js. No service/admin key in the website.
+- Location defaults to Austin, TX. Browser location and city confirmation use
+  search_cities; date ranges filter results. Cards use price/distance only,
+  under 1 mi for zero, and no save buttons. City labels are City, ST.
+- Configured both NEXT_PUBLIC variables via Vercel CLI for Preview and Production,
+  with values supplied from the loaded environment through stdin.
+- Updated apps/web/vercel.json to nextjs, removed static output/build overrides,
+  and kept the existing git deployment setting. There was no source ignoreCommand,
+  so none was added or changed. Set server functions to Portland (pdx1).
+- With the owner's explicit approval, appended only the production and stable
+  Preview /auth/callback URLs to Supabase Auth's allowlist, preserving existing
+  entries. Signup uses the exact callback path and a safe return-path cookie.
+- Published and verified https://dzirent.vercel.app as a protected Preview.
+  Production traffic was not promoted or redeployed.
+
+Files changed:
+- apps/web/: App Router pages/API routes/actions, proxy, components, data/auth
+  utilities, responsive CSS, local logo/font assets and license, package/lock,
+  TypeScript/ESLint/Next/Vercel config, README and ignored build state rules.
+- Removed the five old static HTML/CSS files.
+- pranalika/handoffs/codex.md only; BOARD.md and decisions.md were not edited.
+
+How verified:
+- npm run lint and npm run build passed on the final source with the environment
+  loaded and no credential values printed. The hosted Next.js build also passed.
+- Started the built site locally. Home and a live listing returned HTTP 200 and
+  contained the same listing title. Verified guest save gating, under 1 mi wording,
+  a reachable public Storage photo and 11 Austin city-picker results.
+- Protected Preview HTTP checks with vercel curl: home, listing and sign-in page
+  returned 200; live listing title was present on home and detail.
+- Existing test-account multipart sign-in persisted an SSR cookie session;
+  authenticated Saved and the Step 2B app panel returned 200. Revoked only the new
+  test session afterward. No user accounts or listing/saved rows changed.
+- Runtime dependency audit: zero advisories. Lint dependency peer graph is valid.
+- Staged whitespace check passed; Gitleaks scanned the staged source with redacted
+  output and found no secrets.
+- First hosted artifact retained old static settings and served 404. Corrected
+  the project defaults and rebuilt with the explicit website config; final
+  protected Preview now serves the real Next.js application.
+
+Open issues:
+- No browser surface was connected for screenshot or desktop/phone visual QA;
+  responsive styling is implemented, and built-site/hosted HTTP checks passed.
+- Email delivery/confirmation was not exercised by creating a new account;
+  required callbacks are verified allowlisted. Existing-account sign-in passed.
+- The compatible development lint toolchain reports moderate audit advisories;
+  runtime dependencies have zero advisories.
+- Existing git.deploymentEnabled=false remains in vercel.json. This Preview was
+  deployed manually; future pushes require manual deployment until that existing
+  workflow setting is changed. The Step 2B features remain intentional app panels.
+
 ## Step 4 fix - 2026-10-31 - empty Supabase config
 
 Done:

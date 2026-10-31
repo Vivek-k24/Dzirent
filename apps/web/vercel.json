@@ -1,8 +1,9 @@
 {
-  "framework": null,
-  "outputDirectory": ".",
-  "buildCommand": "",
+  "framework": "nextjs",
   "git": {
     "deploymentEnabled": false
-  }
+  },
+  "regions": [
+    "pdx1"
+  ]
 }
