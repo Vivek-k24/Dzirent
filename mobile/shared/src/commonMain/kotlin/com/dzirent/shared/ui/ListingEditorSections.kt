@@ -1,74 +1,76 @@
 package com.dzirent.shared.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.dzirent.shared.model.DateRange
-import com.dzirent.shared.model.MEASUREMENT_LABEL_MAX
-import com.dzirent.shared.model.MeasurementInput
-import com.dzirent.shared.model.validateMeasurements
+import com.dzirent.shared.util.DateRange
+import com.dzirent.shared.util.MEASUREMENT_LABEL_MAX
+import com.dzirent.shared.util.MeasurementInput
+import com.dzirent.shared.util.firstOverlap
+import com.dzirent.shared.util.validateMeasurements
+import com.dzirent.shared.repository.generateUuid
+import com.dzirent.shared.util.today
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toLocalDateTime
 
+/**
+ * One measurement row in the editor; [key] doubles as the row id when saved. [template] rows
+ * come from the garment kind with only a label; left without a value they're simply skipped.
+ */
 data class MeasurementRow(
-    val id: String,
+    val key: String = generateUuid(),
     val label: String = "",
-    val valueText: String = ""
+    val valueText: String = "",
+    val template: Boolean = false
 ) {
     fun toInput() = MeasurementInput(label, valueText)
+
+    /** Not saved and not checked: blank, or a template row nobody filled in. */
+    val isUnused: Boolean get() = toInput().isBlank || (template && valueText.isBlank())
 }
 
-enum class PhotoSlot(val key: String, val label: String, val required: Boolean) {
-    FRONT("front", "Front", true),
-    BACK("back", "Back", true),
-    TAG("tag", "Tag / Brand", false),
-    DETAIL("detail", "Detail", false),
-    FLAW("flaw", "Flaw / Note", false);
-
-    companion object {
-        fun fromKey(key: String?): PhotoSlot = entries.firstOrNull { it.key == key } ?: FRONT
-    }
-}
-
-data class EditorPhoto(
-    val slot: PhotoSlot,
-    val storagePath: String? = null,
-    val localBytes: ByteArray? = null
-)
-
+/**
+ * Dynamic measurement rows with one cm/in unit for the whole listing and quick-add chips
+ * ([suggestions], from the category or accessory type). Errors show once a value is typed,
+ * or for every row after [showAllErrors].
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MeasurementsSection(
+    suggestions: List<String>,
     unit: String,
     onUnitChange: (String) -> Unit,
     rows: List<MeasurementRow>,
     onRowsChange: (List<MeasurementRow>) -> Unit,
     showAllErrors: Boolean
 ) {
-    val errors = validateMeasurements(rows.map { it.toInput() })
+    val errors = validateMeasurements(rows.map { if (it.isUnused) MeasurementInput("", "") else it.toInput() })
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
             Text(text = "Measurements", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(
-                text = "Help renters find the right fit.",
+                text = "Optional, but renters love them.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        val units = listOf("in", "cm")
+        val units = listOf("cm", "in")
         SingleChoiceSegmentedButtonRow {
             units.forEachIndexed { index, option ->
                 SegmentedButton(
@@ -79,43 +81,42 @@ fun MeasurementsSection(
             }
         }
     }
-    Spacer(modifier = Modifier.height(12.dp))
+    Spacer(modifier = Modifier.height(8.dp))
 
     rows.forEachIndexed { index, row ->
-        val error = errors.getOrNull(index)?.takeIf { showAllErrors || row.valueText.isNotBlank() }
-        Row(
-            verticalAlignment = Alignment.Top,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-        ) {
+        val error = errors[index]?.takeIf { showAllErrors || row.valueText.isNotBlank() }
+        Row(verticalAlignment = Alignment.Top) {
             OutlinedTextField(
                 value = row.label,
                 onValueChange = { text ->
                     if (text.length <= MEASUREMENT_LABEL_MAX) {
-                        onRowsChange(rows.map { if (it.id == row.id) it.copy(label = text) else it })
+                        onRowsChange(rows.map { if (it.key == row.key) it.copy(label = text) else it })
                     }
                 },
                 label = { Text("Label") },
                 singleLine = true,
                 isError = error != null,
-                modifier = Modifier.weight(1.2f)
+                modifier = Modifier.weight(1f)
             )
             Spacer(modifier = Modifier.width(8.dp))
             OutlinedTextField(
                 value = row.valueText,
                 onValueChange = { text ->
-                    onRowsChange(rows.map { if (it.id == row.id) it.copy(valueText = text) else it })
+                    val cleaned = text.filter { it.isDigit() || it == '.' }
+                    onRowsChange(rows.map { if (it.key == row.key) it.copy(valueText = cleaned) else it })
                 },
-                label = { Text("Value ($unit)") },
+                label = { Text("Value") },
+                suffix = { Text(unit) },
                 singleLine = true,
                 isError = error != null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(0.9f)
+                modifier = Modifier.width(112.dp)
             )
             IconButton(
-                onClick = { onRowsChange(rows.filterNot { it.id == row.id }) },
-                modifier = Modifier.align(Alignment.CenterVertically)
+                onClick = { onRowsChange(rows.filterNot { it.key == row.key }) },
+                modifier = Modifier.padding(top = 8.dp)
             ) {
-                Icon(Icons.Default.Close, contentDescription = "Remove")
+                Icon(Icons.Default.Close, contentDescription = "Remove ${row.label.ifBlank { "measurement" }}")
             }
         }
         if (error != null) {
@@ -123,102 +124,143 @@ fun MeasurementsSection(
                 text = error,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
             )
         }
+        Spacer(modifier = Modifier.height(4.dp))
     }
 
-    TextButton(
-        onClick = {
-            onRowsChange(rows + MeasurementRow(id = "${rows.size}_${kotlin.random.Random.nextInt(10000)}"))
+    val present = rows.map { it.label.trim().lowercase() }.toSet()
+    val remaining = suggestions.filter { it.lowercase() !in present }
+    if (remaining.isNotEmpty()) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(remaining) { suggestion ->
+                AssistChip(
+                    onClick = { onRowsChange(rows + MeasurementRow(label = suggestion)) },
+                    label = { Text(suggestion) },
+                    leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+            }
         }
-    ) {
-        Icon(Icons.Default.Add, contentDescription = null)
+    }
+    TextButton(onClick = { onRowsChange(rows + MeasurementRow()) }) {
+        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
         Spacer(modifier = Modifier.width(4.dp))
         Text("Add measurement")
     }
 }
 
+/** Availability ranges picked with a DateRangePicker; no past days and no overlaps. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AvailabilitySection(
     ranges: List<DateRange>,
     onRangesChange: (List<DateRange>) -> Unit
 ) {
+    var showPicker by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    Text(text = "Available dates", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     Text(
-        text = "Availability",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold
-    )
-    Text(
-        text = "Dates this piece is available for rent.",
+        text = "Required. Renters find your piece only for dates inside these ranges.",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(4.dp))
 
-    ranges.forEachIndexed { index, range ->
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-        ) {
-            AssistChip(
-                onClick = {},
-                label = { Text("${range.start} – ${range.end}") },
-                modifier = Modifier.weight(1f)
+    ranges.sortedBy { it.start }.forEach { range ->
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.DateRange,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
             )
-            IconButton(onClick = { onRangesChange(ranges.filterIndexed { i, _ -> i != index }) }) {
-                Icon(Icons.Default.Close, contentDescription = "Remove")
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = range.format(), modifier = Modifier.weight(1f))
+            IconButton(onClick = { onRangesChange(ranges - range); error = null }) {
+                Icon(Icons.Default.Close, contentDescription = "Remove ${range.format()}")
             }
         }
     }
-
-    var startText by remember { mutableStateOf("") }
-    var endText by remember { mutableStateOf("") }
-    var addError by remember { mutableStateOf<String?>(null) }
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-    ) {
-        OutlinedTextField(
-            value = startText,
-            onValueChange = { startText = it; addError = null },
-            label = { Text("Start (YYYY-MM-DD)") },
-            singleLine = true,
-            modifier = Modifier.weight(1f)
-        )
+    error?.let {
+        Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+    }
+    OutlinedButton(onClick = { showPicker = true; error = null }) {
+        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
         Spacer(modifier = Modifier.width(8.dp))
-        OutlinedTextField(
-            value = endText,
-            onValueChange = { endText = it; addError = null },
-            label = { Text("End (YYYY-MM-DD)") },
-            singleLine = true,
-            modifier = Modifier.weight(1f)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        IconButton(
-            onClick = {
-                try {
-                    val s = LocalDate.parse(startText.trim())
-                    val e = LocalDate.parse(endText.trim())
-                    if (e >= s) {
-                        onRangesChange(ranges + DateRange(s, e))
-                        startText = ""
-                        endText = ""
-                        addError = null
-                    } else {
-                        addError = "End date must be after start date."
-                    }
-                } catch (_: Exception) {
-                    addError = "Format: YYYY-MM-DD"
+        Text("Add dates")
+    }
+
+    if (showPicker) {
+        DateRangePickerDialog(
+            title = "Select available dates",
+            allowPast = false,
+            onDismiss = { showPicker = false },
+            onConfirm = { picked ->
+                showPicker = false
+                val clash = firstOverlap(picked, ranges)
+                if (clash != null) {
+                    error = "Those dates overlap ${clash.format()}. Pick different dates or remove that range first."
+                } else {
+                    onRangesChange(ranges + picked)
                 }
             }
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Add date range")
-        }
-    }
-    addError?.let {
-        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        )
     }
 }
 
+/**
+ * Material 3 DateRangePicker in a dialog. A single tapped day counts as a one-day range.
+ * With [allowPast] false, days before today can't be picked.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateRangePickerDialog(
+    title: String,
+    allowPast: Boolean,
+    initial: DateRange? = null,
+    confirmLabel: String = "Add",
+    onDismiss: () -> Unit,
+    onConfirm: (DateRange) -> Unit
+) {
+    val todayUtcMillis = remember { today().utcMillis() }
+    val currentYear = remember { today().year }
+    val state = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = initial?.start?.utcMillis(),
+        initialSelectedEndDateMillis = initial?.end?.utcMillis(),
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long) = allowPast || utcTimeMillis >= todayUtcMillis
+            override fun isSelectableYear(year: Int) = allowPast || year >= currentYear
+        }
+    )
+    val startMillis = state.selectedStartDateMillis
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val start = startMillis?.toUtcDate() ?: return@TextButton
+                    val end = state.selectedEndDateMillis?.toUtcDate() ?: start
+                    onConfirm(DateRange(start, end))
+                },
+                enabled = startMillis != null
+            ) { Text(confirmLabel) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    ) {
+        DateRangePicker(
+            state = state,
+            title = { Text(title, modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp)) },
+            showModeToggle = false,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+private fun Long.toUtcDate(): LocalDate = Instant.fromEpochMilliseconds(this).toLocalDateTime(TimeZone.UTC).date
+
+private fun LocalDate.utcMillis(): Long = atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()

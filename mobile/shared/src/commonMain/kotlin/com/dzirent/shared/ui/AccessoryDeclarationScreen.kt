@@ -3,7 +3,6 @@ package com.dzirent.shared.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -14,21 +13,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.dzirent.shared.model.AccessoryDeclaration
+import com.dzirent.shared.util.AccessoryDeclaration
 import kotlinx.coroutines.launch
 
 /**
- * The accessory declaration, full screen, signed once per user.
+ * The accessory declaration, full screen, signed once per user: every statement ticked and the
+ * full legal name typed. The typed name and the ticks are the signature (no drawing, no GPS).
+ * [onSign] records it on the server; if that fails the screen stays, with the reason.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AccessoryDeclarationScreen(
-    onSign: suspend (name: String) -> Unit,
-    onDismiss: () -> Unit
-) {
+fun AccessoryDeclarationScreen(onSign: suspend (String) -> Unit, onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
     val checked = remember { mutableStateListOf(*Array(AccessoryDeclaration.STATEMENTS.size) { false }) }
     var name by remember { mutableStateOf("") }
@@ -55,23 +54,14 @@ fun AccessoryDeclarationScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 24.dp, vertical = 8.dp)
                 ) {
-                    Text(
-                        text = AccessoryDeclaration.INTRO,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
+                    Text(AccessoryDeclaration.INTRO, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(modifier = Modifier.height(12.dp))
                     AccessoryDeclaration.STATEMENTS.forEachIndexed { i, statement ->
                         Row(
                             verticalAlignment = Alignment.Top,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .toggleable(
-                                    value = checked[i],
-                                    role = Role.Checkbox,
-                                    enabled = !saving
-                                ) { checked[i] = it }
+                                .toggleable(value = checked[i], role = Role.Checkbox, enabled = !saving) { checked[i] = it }
                                 .padding(vertical = 6.dp)
                         ) {
                             Checkbox(checked = checked[i], onCheckedChange = null)
@@ -79,8 +69,7 @@ fun AccessoryDeclarationScreen(
                             Text(statement, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     val nameError = AccessoryDeclaration.nameError(name).takeIf { name.isNotEmpty() }
                     OutlinedTextField(
                         value = name,
@@ -95,17 +84,15 @@ fun AccessoryDeclarationScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = AccessoryDeclaration.SIGNATURE_NOTE,
+                        AccessoryDeclaration.SIGNATURE_NOTE,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
                     error?.let {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                     }
-
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = {
                             saving = true
@@ -113,17 +100,18 @@ fun AccessoryDeclarationScreen(
                             scope.launch {
                                 try {
                                     onSign(name.trim())
-                                    onDismiss()
                                 } catch (e: Exception) {
                                     error = e.userMessage("Couldn't save your declaration. Please try again.")
+                                } finally {
                                     saving = false
                                 }
                             }
                         },
-                        enabled = !saving && AccessoryDeclaration.canSign(checked, name),
-                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                        enabled = !saving && AccessoryDeclaration.canSign(checked.toList(), name),
+                        modifier = Modifier.fillMaxWidth().height(50.dp)
                     ) {
-                        Text(if (saving) "Signing..." else AccessoryDeclaration.SIGN_BUTTON)
+                        if (saving) CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                        else Text(AccessoryDeclaration.SIGN_BUTTON, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -131,4 +119,3 @@ fun AccessoryDeclarationScreen(
         }
     }
 }
-
