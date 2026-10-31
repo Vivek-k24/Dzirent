@@ -2,6 +2,82 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 4 - 2026-10-31 - Android app and release workflow
+
+Done:
+- Created Android application module `mobile/androidApp` inside the `mobile/` Gradle project:
+  - Target/compile SDK 36, minSdk 26, `applicationId com.dzirent.app`, `versionName "2.0.0"`.
+  - `MainActivity.kt` hosting the shared Compose Multiplatform `DzirentApp()` with `AndroidSettingsStorage`.
+  - `AppLinks.kt` defining web links (`TERMS_URL`, `PRIVACY_URL`, `SUPPORT_EMAIL`).
+  - Copied launcher icons, logo mark/wordmark, adaptive background/monochrome drawables, and `file_paths.xml` from the Android reference.
+  - Configured `AndroidManifest.xml` with permissions (`INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_COARSE_LOCATION`, `CAMERA`), `FileProvider`, launcher intent filters, and deep-link intent filters for `https://dzirent.com` and `dzirent://`.
+- Debug build configuration:
+  - Configured `applicationIdSuffix = ".debug"` and `app_name = "Dzirent Debug"` so debug builds install side-by-side with the Play Store release version.
+- Release signing configuration:
+  - Reads `DZIRENT_KEYSTORE`, `DZIRENT_STORE_PASSWORD`, `DZIRENT_KEY_ALIAS`, and `DZIRENT_KEY_PASSWORD` from environment variables, matching the reference workflow conventions. Never commits a keystore file.
+- Version code logic:
+  - Computed as `versionCode = GITHUB_RUN_NUMBER + ANDROID_VERSION_CODE_OFFSET`.
+  - Local debug builds evaluate to 1.
+  - Release builds fail fast with `GradleException` if `ANDROID_VERSION_CODE_OFFSET` is missing.
+- Release workflow `.github/workflows/android-release.yml`:
+  - Trigger: `workflow_dispatch` only (manual execution).
+  - Concurrency group `android-release` to ensure serialized Play internal track deployments.
+  - Sets up JDK 17, Android SDK 36 platform and build tools, and Gradle.
+  - Validates `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from GitHub repository secrets and injects them into build environment.
+  - Validates `ANDROID_VERSION_CODE_OFFSET` from repository variables or secrets.
+  - Decodes `ANDROID_RELEASE_KEYSTORE_BASE64` into a temporary keystore and exports signing environment variables.
+  - Builds `:androidApp:bundleRelease :androidApp:assembleRelease`.
+  - Verifies release APK with `apksigner verify` and release AAB with `jarsigner -verify`.
+  - Backs up release artifacts via `actions/upload-artifact@v4`.
+  - Publishes direct-download GitHub Release with release notes.
+  - Detects `PLAY_SERVICE_ACCOUNT_JSON` and uploads the release bundle to Google Play internal testing track via `r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5`.
+
+Files changed:
+- `mobile/gradle/libs.versions.toml`
+- `mobile/build.gradle.kts`
+- `mobile/settings.gradle.kts`
+- `mobile/androidApp/build.gradle.kts`
+- `mobile/androidApp/proguard-rules.pro`
+- `mobile/androidApp/src/main/AndroidManifest.xml`
+- `mobile/androidApp/src/main/java/com/dzirent/app/MainActivity.kt`
+- `mobile/androidApp/src/main/java/com/dzirent/app/AppLinks.kt`
+- `mobile/androidApp/src/main/res/drawable/ic_launcher_foreground.xml`
+- `mobile/androidApp/src/main/res/drawable/ic_launcher_monochrome.xml`
+- `mobile/androidApp/src/main/res/drawable/logo_mark.xml`
+- `mobile/androidApp/src/main/res/drawable/logo_wordmark.xml`
+- `mobile/androidApp/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`
+- `mobile/androidApp/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml`
+- `mobile/androidApp/src/main/res/values/ic_launcher_background.xml`
+- `mobile/androidApp/src/main/res/xml/file_paths.xml`
+- `.github/workflows/android-release.yml`
+- `pranalika/BOARD.md`
+- `pranalika/handoffs/antigravity.md`
+
+How verified:
+- Validated YAML syntax of `.github/workflows/android-release.yml` with Python `yaml.safe_load`.
+- Ran `.\gradlew.bat :androidApp:assembleDebug` with JDK 21 on Windows; built `androidApp-debug.apk` (21,263,819 bytes) in 5m 17s.
+- Ran `.\gradlew.bat :shared:testDebugUnitTest`; all 4 test suites (`ListingValidationTest`, `GuestGateTest`, `ModelTest`, `SmokeTest`) passed with 0 errors.
+- Verified release version code guards: running `:androidApp:bundleRelease` without `ANDROID_VERSION_CODE_OFFSET` failed with `Release builds require ANDROID_VERSION_CODE_OFFSET environment variable.`, and running `:androidApp:assembleRelease` with offset and Supabase variables built successfully in 3m 53s.
+
+Open issues:
+- None.
+
+Debug APK file path:
+- `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+
+Exact list of GitHub secrets and variables needed for the workflow:
+- Actions Secrets:
+  - `SUPABASE_URL`: Supabase project URL (`https://<project-ref>.supabase.co`).
+  - `SUPABASE_PUBLISHABLE_KEY`: Supabase anon/publishable key for client-side API requests.
+  - `ANDROID_RELEASE_KEYSTORE_BASE64`: Base64-encoded release `.jks` or `.keystore` signing file.
+  - `ANDROID_RELEASE_STORE_PASSWORD`: Keystore store password.
+  - `ANDROID_RELEASE_KEY_ALIAS`: Keystore key alias.
+  - `ANDROID_RELEASE_KEY_PASSWORD`: Keystore key password.
+  - `PLAY_SERVICE_ACCOUNT_JSON`: Google Play service account private key JSON for internal testing publishing.
+- Actions Variables:
+  - `ANDROID_VERSION_CODE_OFFSET`: Numeric offset added to `GITHUB_RUN_NUMBER` to maintain monotonic version code ordering on Google Play (e.g. `100`).
+  - `PLAY_RELEASE_STATUS`: (Optional, default `completed`) Rollout status on Play internal track (`completed` or `draft`).
+
 ## Step 3B-2 - 2026-10-31 - remaining screens
 
 Done:

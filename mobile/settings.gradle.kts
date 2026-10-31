@@ -22,4 +22,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "dzirent-mobile"
 include(":shared")
+include(":androidApp")
 

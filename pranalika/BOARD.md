@@ -52,7 +52,15 @@ Planned after Step 1. Environment wiring, guest mode, home, search, listing page
 
 ## Step 4 - Android on shared code
 
-Planned after Step 3.
+| Item | Status |
+| --- | --- |
+| Done by: Antigravity | |
+| 4.1 Android app module `mobile/androidApp` (`applicationId com.dzirent.app`, compileSdk 36, targetSdk 36, minSdk 26, versionName 2.0.0, hosts shared `DzirentApp()`) | Done |
+| 4.2 Manifest permissions, deep links (`AppLinks`), launcher icons & resources copied from reference | Done |
+| 4.3 Debug configuration (`applicationIdSuffix ".debug"`, app name "Dzirent Debug") | Done |
+| 4.4 Release signing configuration using environment variables | Done |
+| 4.5 Version code calculation (`GITHUB_RUN_NUMBER + ANDROID_VERSION_CODE_OFFSET`, release failure check) | Done |
+| 4.6 Manual release workflow `.github/workflows/android-release.yml` (`workflow_dispatch`, Play internal testing upload) | Done |
 
 ## Step 5 - iOS
 
