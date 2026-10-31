@@ -7,6 +7,9 @@ project_id = "Dzirent_dev"
 [functions.delete-listing]
 verify_jwt = false
 
+[functions.delete-account]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.

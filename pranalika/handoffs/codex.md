@@ -2,6 +2,64 @@
 
 Add one entry per session, newest at the top.
 
+## 2026-10-31 - Step 1B: shop window functions, delete-account, sample data, tests, contract (by Antigravity covering Codex)
+
+Done:
+- Shop window functions: built migration files `20261031010000_shop_window.sql` and `20261031010001_shop_window_fix.sql` and applied via `supabase db push`. Built:
+  - `browse_listings`: guests and signed-in, text query (`pg_trgm`), category, item type, garment type, size, styles, date range (multirange matching over availability windows), radius (miles), price range, newness, saved only, saved studios only, sort options matching Android reference ('nearest', 'newest', 'price_low', 'price_high', and text similarity). Returns safe cards without coordinates or account IDs.
+  - `get_listing`: guests and signed-in, full safe listing detail with ordered photo paths, measurements, availability windows, pricing, deposit note, city, distance in whole miles, studio name and handle.
+  - `get_studio`: signed-in only, studio name, handle, bio, style tags, city, pickup area, rental count, reply time in minutes, saved state, and up to 30 active listing cards. Replaces `studio_rental_count` and `studio_reply_minutes`.
+  - `fit_listings`: signed-in only, ports Android `Fit.kt` logic exactly (comparing caller's body measurements with garment measurements against category ease ranges, requiring at least 2 matching parts). Returns cards.
+  - `my_conversations`: signed-in only, inbox list with other person's display/studio name without account ID, pinned listing details, cover photo, price, last message body and timestamp, and unread state. Supports optional single conversation lookup.
+  - Additional functions for Android reference screens showing another user's data (item 1f):
+    - `my_saved_studios`: for `SavedScreen.kt` Studios tab.
+    - `save_studio` / `unsave_studio`: allows saving/unsaving studios by handle without exposing lender UUIDs.
+    - `start_conversation`: allows renters to start or open a conversation cleanly, with trigger `app_private.validate_conversation` inferring lender ID.
+- `delete-account` Edge Function: rebuilt in `supabase/functions/delete-account/index.ts`, configured with `verify_jwt = false` in `supabase/config.toml`, deployed to `dzirent-server` (`pwfzkyjeivadbtkfkdxr`). Verifies caller via Auth (`auth.getUser`), refuses if active rentals exist (409), cleans up all listing photo folders through Storage API, then deletes the auth user via service role key from function environment.
+- Sample data script: `supabase/seed/sample_data.mjs`. Signs in as test users 1, 2, and 3 through normal API:
+  - Configures Test User 1 & 2 as Austin lenders with studio details and coordinates.
+  - Configures Test User 3 as Austin renter with private body measurements.
+  - Generates and uploads 12 sample active listings across categories (no Accessories), each with measurements, 90-day availability, and small placeholder JPEG uploaded to `{listing_id}/{random}.jpg`.
+  - Automatically cleans up previous sample listings via `delete-listing` Edge Function.
+- Automated tests: `supabase/tests/step1b.mjs`. All 5 test suites pass cleanly.
+- Coordination updates:
+  - `pranalika/README.md`: updated ownership rules allowing any agent to update `pranalika/` on task completion; added guard for immutable `decisions.md` entries.
+  - `pranalika/contract.md`: complete contract of all shop window RPCs, Edge functions, and raw tables with RLS rules.
+  - `pranalika/security-log.md`: documented all new SECURITY DEFINER functions and `delete-account`.
+  - `pranalika/BOARD.md`: updated Step 1 items to Done.
+
+Files changed:
+- `supabase/migrations/20261031010000_shop_window.sql`
+- `supabase/migrations/20261031010001_shop_window_fix.sql`
+- `supabase/functions/delete-account/index.ts`
+- `supabase/config.toml`
+- `supabase/seed/sample_data.mjs`
+- `supabase/tests/step1b.mjs`
+- `pranalika/README.md`
+- `pranalika/contract.md`
+- `pranalika/security-log.md`
+- `pranalika/BOARD.md`
+- `pranalika/handoffs/codex.md`
+
+How it was verified:
+- `supabase db push --linked`: migrations applied to `dzirent-server` (`pwfzkyjeivadbtkfkdxr`), database reports up to date.
+- `supabase functions deploy delete-account`: deployed, active, version 1, `verify_jwt = false`.
+- Direct endpoint checks on `delete-account`: no token -> HTTP 401 `not_signed_in`, invalid token -> HTTP 401 `not_signed_in`, GET -> HTTP 405.
+- `node supabase/seed/sample_data.mjs`: successfully created 12 active listings, uploaded 12 photos to Storage, populated studio profiles and renter measurements.
+- `node supabase/tests/step1b.mjs`:
+  1. Guest access: `browse_listings` returns 12 cards with no coordinates or account IDs; `get_listing` returns full details with safe fields; `get_studio`, `fit_listings`, and `my_conversations` denied (HTTP 401); raw tables (`listings`, `profiles`, `conversations`, `private_profiles`) denied (HTTP 401).
+  2. Test User 1: successfully created own listing, updated listing, uploaded photo, and deleted listing via `delete-listing` Edge Function.
+  3. Test User 3: cannot update User 1's listing (0 rows affected); cannot read User 1's private profile; started conversation and sent message; User 1 sees it in `my_conversations` with other_name="Jordan Bell" and unread=true.
+  4. Block enforcement: User 1 blocks User 3 -> User 1's listings disappear from User 3's `browse_listings`; User 1 unblocks User 3 -> User 1's listings reappear (6 listings).
+  5. Fit matching: User 3 calls `fit_listings` -> returns 8 pieces matching Jordan Bell's measurements within category ease ranges.
+- Standalone check on `save_studio`, `get_studio`, and `my_saved_studios`: studio saved, `is_saved` toggled true, listed in `my_saved_studios`, then unsaved.
+
+Open issues:
+- None. Step 1B is complete. Ready for Step 2 (Website foundation) and Step 3 (Shared mobile code).
+
+Requests:
+- None.
+
 ## 2026-10-30 - Step 1A completion: credentials and approved deployment
 
 Done:

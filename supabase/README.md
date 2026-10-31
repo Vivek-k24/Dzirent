@@ -2,8 +2,13 @@
 
 Step 1A rebuilds the 20 public tables from the read-only Android project. The
 reference directory contains structure and function source, plus only the
-32,363 `us_cities` rows. `catalog.json` records the structural catalog used to
-build the SQL snapshot; `functions.sql` preserves the original definitions.
+32,363 `us_cities` rows. Schema and city snapshots were refreshed using native
+`pg_dump` through a read-only database connection. `snapshot_extras.sql` exports
+Storage policies, the Auth trigger, event trigger and Realtime memberships that
+fall outside the scoped public-schema dump. `delete-account` was downloaded with
+the CLI's explicit project-ref option; the repo is linked only to `dzirent-server`.
+`catalog.json` records the structural catalog used for the migrations;
+`functions.sql` preserves the original definitions.
 The reference SQL intentionally retains the old project's access rules. Apply
 only files in `migrations/` to the new project.
 
@@ -20,16 +25,16 @@ roles.
 
 Photos use public bucket `listing-photos` and paths `{listing_id}/{random}.{ext}`.
 The owner's Storage API requests can list, upload, update and delete that folder.
-Use the prepared `delete-listing` Edge Function to remove files before deleting
+Use the deployed `delete-listing` Edge Function to remove files before deleting
 the row. A database guard rejects a DELETE while files remain, including cascades
 from account deletion. A Storage trigger locks the parent listing during metadata
 writes to prevent concurrent uploads from leaving orphan metadata. Failed uploads
 are cleaned up by the Storage service. Account deletion must remove owned listing
 folders first; the reference `delete-account` source is unchanged and not deployed.
 
-The prepared Edge Function has **not been deployed**: deployment requires owner
-approval. Its handler verifies the bearer token with Auth; it uses caller RLS and
-no service-role credential. See `functions/delete-listing/README.md`.
+The Edge Function was deployed to `dzirent-server` after owner approval. Its
+handler verifies the bearer token with Auth; it uses caller RLS and no service-role
+credential. See `functions/delete-listing/README.md`.
 
 Minimal checks:
 
