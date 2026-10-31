@@ -28,6 +28,9 @@ interface SettingsStorage {
     suspend fun setMeasureUnit(unit: MeasureUnit)
     suspend fun setRentalDays(days: Int)
     suspend fun setDefaultDistanceStep(step: Int)
+    fun getRecentSearches(userId: String): List<String> = emptyList()
+    fun addRecentSearch(userId: String, query: String): List<String> = emptyList()
+    fun clearRecentSearches(userId: String) {}
 }
 
 /** System photo picker. */

@@ -83,7 +83,7 @@ fun StudioScreen(
     LaunchedEffect(lenderId) { load() }
 
     val page = (uiState as? UiState.Success)?.data
-    val isMine = lenderId == currentUserId
+    val isMine = page?.isOwn == true || lenderId == currentUserId
 
     if (showPiecePicker && page != null) {
         PiecePickerSheet(
@@ -163,7 +163,7 @@ private fun StudioContent(
                 Avatar(name = lender.studioTitle, size = 72.dp)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(lender.studioTitle, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                val place = listOfNotNull(lender.city.ifBlank { null }, sinceText(lender.createdAt)).joinToString(" · ")
+                val place = listOfNotNull(lender.city.ifBlank { null }, page.since ?: sinceText(lender.createdAt)).joinToString(" · ")
                 if (place.isNotEmpty()) {
                     Text(place, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

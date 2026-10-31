@@ -171,6 +171,8 @@ async function main() {
     body: JSON.stringify({
       display_name: "Jordan Bell",
       role: "renter",
+      studio_name: "Jordan Bell",
+      studio_handle: "jordanbell",
       city: "Austin, TX",
       approx_lat: 30.25,
       approx_lng: -97.75,

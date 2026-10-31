@@ -1,224 +1,98 @@
 package com.dzirent.shared.ui
 
-import com.dzirent.shared.util.*
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.dzirent.shared.model.ListingCard
-import com.dzirent.shared.model.SavedStudioCard
+import com.dzirent.shared.model.Listing
+import com.dzirent.shared.model.PrivateProfile
 import com.dzirent.shared.repository.DzirentRepository
+import com.dzirent.shared.util.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.datetime.LocalDate
 
-/** A Home row is only shown with at least this many listings. */
-const val HOME_ROW_MIN = 3
-
-/** "New near you" covers listings created in the last 7 days. */
-const val NEW_NEAR_YOU_DAYS = 7L
-
-/** The "Under $15" row: pieces priced below this. */
-const val UNDER_PRICE_USD = 15.0
-
-/** The reference app's Search sort options, as browse_listings' p_sort values. */
-val SearchSort.dbSort: String
-    get() = when (this) {
-        SearchSort.NEAREST -> "nearest"
-        SearchSort.NEWEST -> "newest"
-        SearchSort.PRICE_LOW -> "price_low"
-        SearchSort.PRICE_HIGH -> "price_high"
-    }
-
-/** The search radius in miles for the distance filter's step, in the chosen unit. */
-fun radiusMiles(step: Int, unit: DistanceUnit): Double = unit.radiusKm(step) / KM_PER_MILE
-
-
-/** One lender on Home's Studios tab, built from their listings that match the filters. */
-data class StudioSummary(
-    val studioName: String,
-    val studioHandle: String?,
-    val pieceCount: Int,
-    val coverPhotoPath: String?,
-    val distance: Int?
-)
-
-/** Everything Home shows, from the listings loaded for the current distance. */
-data class HomeSections(
-    val visible: List<ListingCard>,
-    /** Null when the renter has no measurements or is a guest (Home shows the prompt card). */
-    val likelyFit: List<ListingCard>?,
-    val newNearYou: List<ListingCard>,
-    /** Pieces in a style I'm interested in; empty when I picked no styles. */
-    val forYourStyle: List<ListingCard>,
-    val underPrice: List<ListingCard>,
-    val fromSavedStudios: List<ListingCard>,
-    val studios: List<StudioSummary>
-)
-
-/** Home's rows, in the order they are shown. */
-enum class HomeRow(val title: String, val subtitle: String?) {
-    FIT("Likely to fit you", "Matched to your measurements"),
-    NEW("New near you", null),
-    STYLE("For your style", null),
-    UNDER_PRICE("Under \$15", null),
-    SAVED_STUDIOS("From studios you saved", null);
-
-    fun listings(sections: HomeSections): List<ListingCard> = when (this) {
-        FIT -> sections.likelyFit.orEmpty()
-        NEW -> sections.newNearYou
-        STYLE -> sections.forYourStyle
-        UNDER_PRICE -> sections.underPrice
-        SAVED_STUDIOS -> sections.fromSavedStudios
-    }
-}
-
+/** Nearby listings plus what Home needs to sort them into rows. */
 data class BrowseData(
-    val listings: List<ListingCard>,
-    val fitListings: List<ListingCard>?,
-    val savedStudios: List<SavedStudioCard>,
-    val newNearYou: List<ListingCard> = emptyList(),
-    val forYourStyle: List<ListingCard> = emptyList()
+    val listings: List<Listing>,
+    val savedStudioIds: Set<String>,
+    val body: PrivateProfile
 )
 
 /**
- * Shared by Home, See all and Search: the sidebar filters, the date range and listings loaded
- * from shop window functions.
+ * Shared by Home, See all and Search: the sidebar filters, the date range and one load of
+ * nearby listings (reloaded when the location or distance changes, or on refresh).
+ * The distance and the date range start from Settings > Preferences.
  */
 @Stable
 class BrowseSession(
     private val repository: DzirentRepository,
-    private val userId: String?,
+    private val userId: String,
     defaultDistanceStep: Int = DEFAULT_DISTANCE_STEP,
     rentalDays: Int = DEFAULT_RENTAL_DAYS
 ) {
-    private val today: LocalDate get() = today()
-
     var filters by mutableStateOf(BrowseFilters(distanceStep = defaultDistanceStep))
-    var dates by mutableStateOf(defaultBrowseRange(today, rentalDays))
+    var dates by mutableStateOf(defaultBrowseRange(today(), rentalDays))
     var state by mutableStateOf<UiState<BrowseData>>(UiState.Loading)
         private set
 
-    private var loadedKey: String? = null
+    private var loadedFor: Triple<Double, Double, Double>? = null
     private val mutex = Mutex()
 
     /**
-     * Loads listings within [radiusMiles] using shop window RPCs.
+     * Loads listings within [radiusKm] unless this location and radius are already loaded;
+     * [force] always reloads.
      */
-    suspend fun load(
-        lat: Double?,
-        lng: Double?,
-        radiusMiles: Double?,
-        force: Boolean = false
-    ) = mutex.withLock {
-        val key = "$lat,$lng,$radiusMiles,${dates.start},${dates.end},${filters.category},${filters.itemType},${filters.size},${filters.minPrice},${filters.maxPrice}"
-        if (!force && key == loadedKey && state is UiState.Success) return@withLock
+    suspend fun load(lat: Double, lng: Double, radiusKm: Double, force: Boolean = false) = mutex.withLock {
+        val key = Triple(lat, lng, radiusKm)
+        if (!force && key == loadedFor && state is UiState.Success) return@withLock
         if (state !is UiState.Success) state = UiState.Loading
         state = try {
-            val listings = repository.browseListings(
-                lat = lat,
-                lng = lng,
-                radiusMiles = radiusMiles,
-                category = filters.category,
-                itemType = filters.itemType,
-                size = filters.size,
-                minPrice = filters.minPrice,
-                maxPrice = filters.maxPrice,
-                startDate = dates.start.toString(),
-                endDate = dates.end.toString(),
-                limit = 30
-            )
-            val newNear = repository.browseListings(
-                lat = lat,
-                lng = lng,
-                radiusMiles = radiusMiles,
-                category = filters.category,
-                itemType = filters.itemType,
-                size = filters.size,
-                minPrice = filters.minPrice,
-                maxPrice = filters.maxPrice,
-                startDate = dates.start.toString(),
-                endDate = dates.end.toString(),
-                newDays = NEW_NEAR_YOU_DAYS.toInt(),
-                sort = "nearest",
-                limit = 30
-            )
-            // Null without measurements, so Home shows the "Add your measurements" card instead.
-            val body = if (!userId.isNullOrBlank()) runCatching { repository.getPrivateProfile() }.getOrNull() else null
-            val fit = if (body != null && hasFitMeasurements(body)) {
-                runCatching {
-                    repository.fitListings(lat = lat, lng = lng, radiusMiles = radiusMiles, limit = 30)
-                }.getOrElse { emptyList() }
-                    .filter { filters.category == null || it.category == filters.category }
-            } else null
-            val interests = body?.styleInterests.orEmpty()
-            val forStyle = if (interests.isNotEmpty()) {
-                runCatching {
-                    repository.browseListings(
-                        lat = lat,
-                        lng = lng,
-                        radiusMiles = radiusMiles,
-                        category = filters.category,
-                        itemType = filters.itemType,
-                        size = filters.size,
-                        styles = interests,
-                        minPrice = filters.minPrice,
-                        maxPrice = filters.maxPrice,
-                        startDate = dates.start.toString(),
-                        endDate = dates.end.toString(),
-                        sort = "nearest",
-                        limit = 30
-                    )
-                }.getOrElse { emptyList() }
-            } else emptyList()
-
-            val saved = if (!userId.isNullOrBlank()) {
-                runCatching { repository.mySavedStudios(limit = 20) }.getOrElse { emptyList() }
-            } else emptyList()
-
-            loadedKey = key
-            UiState.Success(BrowseData(listings, fit, saved, newNear, forStyle))
+            val radiusMiles = radiusKm / KM_PER_MILE
+            val listings = repository.browseListings(lat = lat, lng = lng, radiusMiles = radiusMiles, limit = 30)
+                .map { it.toListing() }
+            val saved = if (userId.isNotBlank()) repository.getSavedStudioIds(userId) else emptySet()
+            val body = if (userId.isNotBlank()) runCatching { repository.getPrivateProfile() }.getOrNull() ?: PrivateProfile() else PrivateProfile()
+            loadedFor = key
+            UiState.Success(BrowseData(listings, saved, body))
         } catch (e: Exception) {
             UiState.Error(e.userMessage("Couldn't load listings. Please try again."))
         }
     }
 
+    /** My "Styles you're interested in" (from private_profiles, loaded with the listings). */
+    fun styleInterests(): Set<String> = (state as? UiState.Success)?.data?.body?.styleInterests.orEmpty().toSet()
+
+    /** Everything loaded for the current distance (before filters and dates). */
+    fun loadedListings(): List<Listing> = (state as? UiState.Success)?.data?.listings.orEmpty()
+
+    private var wider: Pair<Triple<Double, Double, Double>, List<Listing>>? = null
+
+    /** Listings within [radiusKm] for the "wider distance" suggestion, loaded once per place and radius. */
+    suspend fun widerListings(lat: Double, lng: Double, radiusKm: Double): List<Listing> {
+        val key = Triple(lat, lng, radiusKm)
+        wider?.takeIf { it.first == key }?.let { return it.second }
+        val radiusMiles = radiusKm / KM_PER_MILE
+        return repository.browseListings(lat = lat, lng = lng, radiusMiles = radiusMiles, limit = 30)
+            .map { it.toListing() }
+            .also { wider = key to it }
+    }
+
+    /** Close text matches for a search that found nothing (typos), with their distance from me. */
+    suspend fun similarListings(query: String, lat: Double, lng: Double): List<Listing> =
+        repository.browseListings(query = query, lat = lat, lng = lng, limit = 10)
+            .map { it.toListing() }
+
+    /** The next [load] fetches again, e.g. after saving measurements or a studio. */
     fun invalidate() {
-        loadedKey = null
+        loadedFor = null
+        wider = null
     }
 
     /**
-     * Home's rows and tabs for the current filters and dates.
+     * Home's rows and tabs for the current filters and dates, once loaded. [anyDates]
+     * (Search only) ignores the date range.
      */
-    fun sections(): HomeSections? = (state as? UiState.Success)?.data?.let { data ->
-        val visible = data.listings
-        val underPrice = visible.filter { (it.price ?: Double.MAX_VALUE) < UNDER_PRICE_USD }.sortedBy { it.distance ?: Int.MAX_VALUE }
-        val savedHandles = data.savedStudios.map { it.studioHandle }.toSet()
-        val fromSaved = visible.filter { it.studioHandle != null && it.studioHandle in savedHandles }
-
-        val studios = visible
-            .filter { !it.studioHandle.isNullOrBlank() || !it.studioName.isNullOrBlank() }
-            .groupBy { it.studioHandle ?: it.studioName.orEmpty() }
-            .map { (_, pieces) ->
-                val first = pieces.first()
-                StudioSummary(
-                    studioName = first.studioName?.ifBlank { null } ?: "Studio",
-                    studioHandle = first.studioHandle,
-                    pieceCount = pieces.size,
-                    coverPhotoPath = pieces.firstNotNullOfOrNull { it.coverPhotoPath },
-                    distance = pieces.mapNotNull { it.distance }.minOrNull()
-                )
-            }.sortedBy { it.distance ?: Int.MAX_VALUE }
-
-        HomeSections(
-            visible = visible,
-            likelyFit = data.fitListings,
-            newNearYou = data.newNearYou,
-            forYourStyle = data.forYourStyle,
-            underPrice = underPrice,
-            fromSavedStudios = fromSaved,
-            studios = studios
-        )
+    fun sections(anyDates: Boolean = false): HomeSections? = (state as? UiState.Success)?.data?.let {
+        buildHomeSections(it.listings, userId, filters, if (anyDates) null else dates, it.body, it.savedStudioIds)
     }
 }
-

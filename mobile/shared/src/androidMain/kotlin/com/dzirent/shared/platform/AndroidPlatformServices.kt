@@ -154,6 +154,7 @@ private val Context.settingsDataStore: DataStore<Preferences> by preferencesData
 
 class AndroidSettingsStorage(context: Context) : SettingsStorage {
     private val store = context.applicationContext.settingsDataStore
+    private val prefs = context.applicationContext.getSharedPreferences("dzirent_prefs", Context.MODE_PRIVATE)
 
     override val settings: Flow<AppSettings> = store.data
         .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
@@ -185,6 +186,19 @@ class AndroidSettingsStorage(context: Context) : SettingsStorage {
 
     override suspend fun setDefaultDistanceStep(step: Int) {
         store.edit { it[DEFAULT_DISTANCE] = step }
+    }
+
+    override fun getRecentSearches(userId: String): List<String> =
+        prefs.getString("recent_searches_$userId", null)?.split('\n')?.filter { it.isNotBlank() }.orEmpty()
+
+    override fun addRecentSearch(userId: String, query: String): List<String> {
+        val updated = com.dzirent.shared.util.addRecentSearch(getRecentSearches(userId), query)
+        prefs.edit().putString("recent_searches_$userId", updated.joinToString("\n")).apply()
+        return updated
+    }
+
+    override fun clearRecentSearches(userId: String) {
+        prefs.edit().remove("recent_searches_$userId").apply()
     }
 
     private companion object {

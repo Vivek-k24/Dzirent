@@ -1097,13 +1097,26 @@ class DzirentRepository(
     suspend fun getMyBlockedUsers(): List<Block> {
         val uid = requireUserId()
         return try {
-            postgrest.from("blocks").select {
-                filter { eq("blocker_id", uid) }
-            }.decodeList<Block>()
+            val items = postgrest.rpc("my_blocked_users").decodeList<BlockedUserItem>()
+            items.map { item ->
+                Block(
+                    blockerId = uid,
+                    blockedId = item.blockedId,
+                    blocked = BlockedProfile(
+                        id = item.blockedId,
+                        displayName = item.displayName,
+                        city = item.city
+                    )
+                )
+            }
         } catch (e: Exception) {
             throw fail("load blocked users", e)
         }
     }
+
+    suspend fun getBlockedUsers(blockerId: String): List<Block> = getMyBlockedUsers()
+
+    suspend fun unblockUser(blockerId: String, blockedId: String) = unblockUserById(blockedId)
 
     suspend fun unblockUserById(blockedId: String) {
         val uid = requireUserId()
@@ -1580,12 +1593,15 @@ class DzirentRepository(
                 studioHandle = studio.studioHandle,
                 studioBio = studio.studioBio,
                 styleTags = studio.styleTags,
-                pickupArea = studio.pickupArea
+                pickupArea = studio.pickupArea,
+                createdAt = studio.since
             ),
             pieces = studio.listings.map { it.toListing() },
             rentedCount = studio.rentalCount,
             replyMinutes = studio.replyMinutes,
-            isSaved = studio.isSaved
+            isSaved = studio.isSaved,
+            isOwn = studio.isOwn,
+            since = studio.since
         )
     }
 
@@ -1596,15 +1612,48 @@ class DzirentRepository(
     suspend fun getSavedStudioIds(userId: String): Set<String> =
         getSavedStudios(userId).map { it.lenderId }.toSet()
 
-    /** Saved > Pieces, newest first. Paused or deleted pieces drop out (the shop window hides them). */
+    /** Saved > Pieces, newest first. Paused pieces show with listing = null ("No longer available"). */
     suspend fun getSavedListings(userId: String): List<SavedListing> {
-        val cards = mutableListOf<ListingCard>()
+        val items = mutableListOf<SavedListingItem>()
         while (true) {
-            val page = browseListings(savedOnly = true, sort = "newest", limit = 30, offset = cards.size)
-            cards += page
-            if (page.size < 30 || cards.size >= 300) break
+            val page = try {
+                postgrest.rpc("my_saved_listings", buildJsonObject {
+                    put("p_limit", 30)
+                    put("p_offset", items.size)
+                }).decodeList<SavedListingItem>()
+            } catch (e: Exception) {
+                throw fail("load your saved pieces", e)
+            }
+            items += page
+            if (page.size < 30 || items.size >= 300) break
         }
-        return cards.map { SavedListing(userId = userId, listingId = it.id, listing = it.toListing()) }
+        return items.map { item ->
+            val listing = if (item.isAvailable && item.title != null) {
+                Listing(
+                    id = item.listingId,
+                    lenderId = item.studioHandle.orEmpty(),
+                    title = item.title,
+                    category = item.category ?: "",
+                    priceUsd = item.price,
+                    city = item.city ?: "",
+                    approxLat = 0.0,
+                    approxLng = 0.0,
+                    photos = listOfNotNull(item.coverPhotoPath?.let {
+                        ListingPhoto(id = "", listingId = item.listingId, storagePath = it, position = 0)
+                    }),
+                    lender = Profile(
+                        id = item.studioHandle.orEmpty(),
+                        displayName = item.studioName.orEmpty(),
+                        city = item.city ?: "",
+                        studioName = item.studioName,
+                        studioHandle = item.studioHandle
+                    ),
+                    distanceKm = item.distance?.let { it * KM_PER_MILE },
+                    distanceMiles = item.distance
+                )
+            } else null
+            SavedListing(userId = userId, listingId = item.listingId, listing = listing)
+        }
     }
 
     /** Saved > Studios, with each studio's public details. */

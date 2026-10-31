@@ -30,6 +30,7 @@ import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.ui.theme.DzirentAccent
 import com.dzirent.shared.ui.theme.OnDzirentAccent
 import com.dzirent.shared.util.GuideTarget
+import com.dzirent.shared.util.HomeRow
 import com.dzirent.shared.util.SetupItem
 import com.dzirent.shared.util.SetupStatus
 import com.dzirent.shared.util.datesQuestion
@@ -89,7 +90,7 @@ fun MainAppScaffold(
     // Filters (set from the sidebar), dates and nearby listings, shared by Home and Search.
     val settings = LocalAppSettings.current
     val session = remember(profile?.id, isGuest) {
-        BrowseSession(repository, profile?.id, settings.defaultDistanceStep, settings.rentalDays)
+        BrowseSession(repository, profile?.id.orEmpty(), settings.defaultDistanceStep, settings.rentalDays)
     }
     // Changing a default in Settings applies to the current browse right away.
     LaunchedEffect(session, settings.defaultDistanceStep) {
@@ -358,6 +359,9 @@ fun MainAppScaffold(
                             val row = HomeRow.entries.firstOrNull { it.name == rowName } ?: HomeRow.NEW
                             SeeAllScreen(
                                 session = session,
+                                me = me,
+                                lat = if (isGuest) guestLat else profile?.approxLat,
+                                lng = if (isGuest) guestLng else profile?.approxLng,
                                 row = row,
                                 onBack = { navController.popBackStack() },
                                 onOpenListing = { listingId -> navController.navigate("detail/$listingId") }
@@ -365,13 +369,14 @@ fun MainAppScaffold(
                         }
                         composable("search") {
                             SearchScreen(
-                                repository = repository,
                                 session = session,
                                 profile = profile,
                                 isGuest = isGuest,
                                 guestCity = guestCity,
                                 guestLat = guestLat,
                                 guestLng = guestLng,
+                                settingsStorage = settingsStorage,
+                                repository = repository,
                                 onSetLocation = { showLocationSetup = true },
                                 onOpenListing = { listingId -> navController.navigate("detail/$listingId") }
                             )
@@ -524,12 +529,12 @@ fun MainAppScaffold(
                                 onBack = { navController.popBackStack() },
                                 onSetLocation = { showLocationSetup = true },
                                 onOpenBlockedUsers = { navController.navigate("blocked") },
-                                onClearSearchHistory = { SearchHistory.clear() },
+                                onClearSearchHistory = { settingsStorage?.clearRecentSearches(me) },
                                 onAppTour = { startGuide() },
                                 onOpenAbout = { navController.navigate("about") },
                                 onSignOut = onSignOut,
                                 onAccountDeleted = {
-                                    SearchHistory.clear()
+                                    settingsStorage?.clearRecentSearches(me)
                                     onSignOut()
                                 }
                             )

@@ -2,6 +2,72 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 4C - 2026-10-31 - Android parity finish
+
+Done:
+- Screen parity:
+  - `HomeScreen.kt`: line-by-line copy of the reference screen with PullToRefreshBox, HomeTopBar (logo mark + wordmark vectors, avatar, clickable location), DateBar, HomeRowSection (Fit row highlighted with DzirentAccent), MeasurementsPromptCard, tabs (Products / Studios), zero-result "Suggested for you" groups via `suggestionItems`, and `SeeAllScreen` with `SuggestionsGrid`. Preserved guest mode gating and callbacks.
+  - `SearchScreen.kt`: line-by-line copy of the reference screen with automatic focus, recent searches list, removable filter chips ("Any dates", categories, item types, sizes, etc.), filter sheet launcher, sort dropdown (Nearest, Newest, Price low/high), in-memory query filtering and sorting over loaded listings, zero-result `SuggestionsGrid` (search-related keywords, wider radius, alternate dates, similar titles), and `RecentSearchStore` backed by `SettingsStorage` on the device.
+  - `SeeAllScreen`: line-by-line copy of reference with top bar navigation, grid layout, and zero-result `SuggestionsGrid`.
+  - `Suggestions.kt` & `Home.kt`: ported reference suggestion builders (`buildSuggestions`, `rememberSuggestions`, `SuggestionsGrid`, `suggestionItems`) leveraging `assets/search_related.json` via `DeviceServices.searchRelated`.
+- Local device storage:
+  - Added recent search methods (`getRecentSearches`, `addRecentSearch`, `clearRecentSearches`) to `SettingsStorage` in `PlatformServices.kt`.
+  - Implemented on Android via `AndroidSettingsStorage` using SharedPreferences `dzirent_prefs` under key `recent_searches_$userId` (newline-delimited, newest first, deduplicated, up to 10 entries), exactly matching reference `RecentSearchStore`.
+  - Provided `searchRelated` asset parsing in `AndroidDevice.kt` and iOS stub in `IosDevice.kt`.
+- Backend gaps & migration:
+  - Applied migration `20261031030000_parity_shop_window_gaps.sql` via `supabase db push` to remote `dzirent-server`:
+    - `my_blocked_users`: returns caller's blocked users with display name, studio name, studio handle, and city from `profiles`, resolving "Dzirent member" placeholder.
+    - `my_saved_listings`: returns caller's saved pieces with `is_available` boolean (`false` for paused/blocked pieces, with null title/price/photos).
+    - `get_studio`: returns `is_own` boolean (`v_lender.id = v_uid`) and `since` line (`'Since ' || to_char(v_lender.created_at, 'Mon YYYY')`), with Security Definer and safe search path.
+- Updated UI integrations:
+  - `StudioScreen.kt`: displays `page.since` line ("Since Mon YYYY"); checks `is_own` to hide Save and Message buttons for the studio's own owner.
+  - `SavedScreen.kt`: updated `getSavedListings` in repository to handle `is_available = false` mapping to `listing = null` ("No longer available").
+  - `DzirentRepository.kt`: updated `getMyBlockedUsers()`, `getSavedListings()`, and `getStudio()` to consume the new fields.
+  - Updated `pranalika/contract.md` and `pranalika/security-log.md`.
+  - Made `mobile/gradlew` executable in git (`git update-index --chmod=+x mobile/gradlew`).
+
+Remaining differences:
+- None except allowed (whole-mile distances from the shop window; iOS targets declared but stubbed on Windows).
+
+Files changed:
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/HomeScreen.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/SearchScreen.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/MainAppScaffold.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/StudioScreen.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/Suggestions.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/BrowseSession.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/util/Home.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/model/Models.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/platform/Device.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/platform/PlatformServices.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/repository/DzirentRepository.kt`
+- `mobile/shared/src/androidMain/kotlin/com/dzirent/shared/platform/AndroidDevice.kt`
+- `mobile/shared/src/androidMain/kotlin/com/dzirent/shared/platform/AndroidPlatformServices.kt`
+- `mobile/shared/src/iosMain/kotlin/com/dzirent/shared/platform/IosDevice.kt`
+- `mobile/gradlew` (chmod +x)
+- `supabase/migrations/20261031030000_parity_shop_window_gaps.sql`
+- `supabase/seed/sample_data.mjs`
+- `supabase/tests/step4c_parity_test.mjs`
+- `pranalika/contract.md`
+- `pranalika/security-log.md`
+- `pranalika/handoffs/antigravity.md`
+
+How verified:
+- `:shared:testDebugUnitTest`: passed with 0 errors (BUILD SUCCESSFUL).
+- `:androidApp:assembleDebug`: built debug APK (61,916,052 bytes) in 2m 13s (BUILD SUCCESSFUL).
+- API test `supabase/tests/step4c_parity_test.mjs` using live test users against `dzirent-server`:
+  - User 1 blocks User 3 via `block_user(p_handle = "jordanbell")`.
+  - `my_blocked_users` returns User 3 with real display name "Jordan Bell" and city "Austin, TX".
+  - User 1 unblocks User 3 via `unblock_user(p_handle = "jordanbell")`.
+  - `my_blocked_users` confirms User 3 is unblocked.
+  - User 1 calls `get_studio(p_handle = "studiorostova")`: returns `is_own = true` and `since = "Since Oct 2026"`.
+  - User 1 calls `get_studio(p_handle = "ateliermaya")`: returns `is_own = false` and `since = "Since Oct 2026"`.
+  - `my_saved_listings` returns successfully.
+- No emulator or device used.
+
+Debug APK file path:
+- `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+
 ## Step 4 - 2026-10-31 - Android app and release workflow
 
 Done:

@@ -1,13 +1,6 @@
 package com.dzirent.shared.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.ui.graphics.ColorFilter
-import com.dzirent.shared.resources.Res
-import com.dzirent.shared.resources.logo_mark
-import com.dzirent.shared.resources.logo_wordmark
-import com.dzirent.shared.ui.theme.DzirentLogoMark
-import org.jetbrains.compose.resources.painterResource
-import com.dzirent.shared.util.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -20,64 +13,63 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.LocationOff
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.dzirent.shared.model.ListingCard
+import com.dzirent.shared.model.Listing
 import com.dzirent.shared.model.Profile
+import com.dzirent.shared.resources.Res
+import com.dzirent.shared.resources.logo_mark
+import com.dzirent.shared.resources.logo_wordmark
 import com.dzirent.shared.ui.theme.DzirentAccent
+import com.dzirent.shared.ui.theme.DzirentLogoMark
+import com.dzirent.shared.util.*
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.painterResource
 
 /**
- * Home: top bar (avatar, logo, location), sticky date chip, rows ("Likely to fit you",
- * "New near you", "Under $15", "From studios you saved"), then Products and Studios tabs.
+ * Home: top bar (avatar, wordmark, location), one sticky date chip, then up to three rows
+ * and the Products / Studios grid. Filters come from the sidebar.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     session: BrowseSession,
     profile: Profile?,
-    isGuest: Boolean,
-    guestCity: String?,
-    guestLat: Double?,
-    guestLng: Double?,
+    isGuest: Boolean = false,
+    guestCity: String? = null,
+    guestLat: Double? = null,
+    guestLng: Double? = null,
     onOpenSidebar: () -> Unit,
     onSetLocation: () -> Unit,
     onOpenListing: (String) -> Unit,
-    onOpenStudio: (String) -> Unit,
+    onOpenStudio: ((String) -> Unit)? = null,
     onSeeAll: (HomeRow) -> Unit,
     onOpenMeasurements: () -> Unit,
-    onAuthRequired: (GatedAction) -> Unit
+    onAuthRequired: ((GatedAction) -> Unit)? = null
 ) {
     val lat = if (isGuest) guestLat else profile?.approxLat
     val lng = if (isGuest) guestLng else profile?.approxLng
-    val city = if (isGuest) guestCity else profile?.city
-
     val scope = rememberCoroutineScope()
     var showDatePicker by remember { mutableStateOf(false) }
+    var refreshing by remember { mutableStateOf(false) }
     var studiosTab by rememberSaveable { mutableStateOf(false) }
-    val radiusMiles = radiusMiles(session.filters.distanceStep, LocalAppSettings.current.distanceUnit)
+    val unit = LocalAppSettings.current.distanceUnit
+    val radiusKm = unit.radiusKm(session.filters.distanceStep)
 
-    LaunchedEffect(lat, lng, radiusMiles, session.filters, session.dates) {
-        if (lat != null && lng != null) {
-            session.load(lat, lng, radiusMiles)
-        }
+    LaunchedEffect(lat, lng, radiusKm) {
+        if (lat != null && lng != null) session.load(lat, lng, radiusKm)
     }
 
     if (showDatePicker) {
@@ -98,7 +90,7 @@ fun HomeScreen(
         HomeTopBar(
             profile = profile,
             isGuest = isGuest,
-            city = city,
+            guestCity = guestCity,
             onAvatar = onOpenSidebar,
             onLocation = onSetLocation
         )
@@ -117,47 +109,67 @@ fun HomeScreen(
 
         when (val state = session.state) {
             is UiState.Loading -> LoadingView(message = "Finding pieces near you...")
-            is UiState.Error -> ErrorView(
-                message = state.message,
-                onRetry = { scope.launch { session.load(lat, lng, radiusMiles, force = true) } }
-            )
+            is UiState.Error -> ErrorView(message = state.message, onRetry = { scope.launch { session.load(lat, lng, radiusKm, force = true) } })
             is UiState.Success -> {
                 val sections = remember(state, session.filters, session.dates) { session.sections() } ?: return@Column
-                HomeContent(
-                    sections = sections,
-                    hasMeasurements = !isGuest && sections.likelyFit != null,
-                    studiosTab = studiosTab,
-                    onTabChange = { studiosTab = it },
-                    onOpenListing = onOpenListing,
-                    onOpenStudio = { handle ->
-                        if (isGuest) {
-                            onAuthRequired(GatedAction.OPEN_STUDIO)
-                        } else {
-                            onOpenStudio(handle)
+                val meId = if (isGuest) "guest" else profile?.id.orEmpty()
+                val suggestions = rememberSuggestions(
+                    session, meId, lat, lng, query = "", filters = session.filters, dates = session.dates,
+                    active = sections.visible.isEmpty()
+                )
+                PullToRefreshBox(
+                    isRefreshing = refreshing,
+                    onRefresh = {
+                        scope.launch {
+                            refreshing = true
+                            session.load(lat, lng, radiusKm, force = true)
+                            refreshing = false
                         }
                     },
-                    onSeeAll = onSeeAll,
-                    onOpenMeasurements = {
-                        if (isGuest) {
-                            onAuthRequired(GatedAction.FIT_MATCHING)
-                        } else {
-                            onOpenMeasurements()
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    HomeContent(
+                        sections = sections,
+                        hasMeasurements = !isGuest && sections.likelyFit != null,
+                        studiosTab = studiosTab,
+                        onTabChange = { studiosTab = it },
+                        suggestions = suggestions,
+                        onOpenListing = onOpenListing,
+                        onOpenStudio = onOpenStudio?.let { open ->
+                            { studioId ->
+                                if (isGuest && onAuthRequired != null) {
+                                    onAuthRequired(GatedAction.OPEN_STUDIO)
+                                } else {
+                                    open(studioId)
+                                }
+                            }
+                        },
+                        onSeeAll = onSeeAll,
+                        onOpenMeasurements = {
+                            if (isGuest && onAuthRequired != null) {
+                                onAuthRequired(GatedAction.FIT_MATCHING)
+                            } else {
+                                onOpenMeasurements()
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun HomeTopBar(
+private fun HomeTopBar(
     profile: Profile?,
     isGuest: Boolean,
-    city: String?,
+    guestCity: String?,
     onAvatar: () -> Unit,
     onLocation: () -> Unit
 ) {
+    val displayName = if (isGuest || profile == null) "?" else profile.displayName
+    val cityText = (if (isGuest) guestCity else profile?.city)?.ifBlank { null } ?: "Set location"
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -170,9 +182,10 @@ fun HomeTopBar(
                 .align(Alignment.CenterStart)
                 .guideTarget(GuideTarget.AVATAR)
         ) {
-            Avatar(name = if (!isGuest && profile != null) profile.displayName else "?", size = 32.dp)
+            Avatar(name = displayName, size = 32.dp)
         }
-
+        // The logo: flower mark and wordmark (vectors, tinted for light or dark). Sized in dp,
+        // so large fonts never push it into the location.
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -193,7 +206,6 @@ fun HomeTopBar(
                 modifier = Modifier.height(13.dp).aspectRatio(LOGO_WORDMARK_ASPECT)
             )
         }
-
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -201,12 +213,11 @@ fun HomeTopBar(
                 .clip(RoundedCornerShape(8.dp))
                 .clickable(onClick = onLocation)
                 .padding(horizontal = 4.dp, vertical = 8.dp)
-                .widthIn(max = 130.dp)
+                .widthIn(max = 120.dp)
         ) {
             Icon(Icons.Default.LocationOn, contentDescription = "Location")
-            Spacer(modifier = Modifier.width(2.dp))
             Text(
-                text = city?.ifBlank { null } ?: "Set location",
+                text = cityText,
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -215,8 +226,12 @@ fun HomeTopBar(
     }
 }
 
+/** Width / height of res/drawable/logo_wordmark.xml. */
+private const val LOGO_WORDMARK_ASPECT = 5.634f
+
+/** The one slim bar under the top bar: only the date chip. */
 @Composable
-fun DateBar(text: String, onClick: () -> Unit) {
+private fun DateBar(text: String, onClick: () -> Unit) {
     Surface(color = MaterialTheme.colorScheme.background) {
         Row(
             modifier = Modifier
@@ -251,8 +266,10 @@ private fun HomeContent(
     hasMeasurements: Boolean,
     studiosTab: Boolean,
     onTabChange: (Boolean) -> Unit,
+    /** "Suggested for you" when nothing matches; null while there are results. */
+    suggestions: List<SuggestionGroup>?,
     onOpenListing: (String) -> Unit,
-    onOpenStudio: (String) -> Unit,
+    onOpenStudio: ((String) -> Unit)?,
     onSeeAll: (HomeRow) -> Unit,
     onOpenMeasurements: () -> Unit
 ) {
@@ -264,9 +281,7 @@ private fun HomeContent(
         modifier = Modifier.fillMaxSize()
     ) {
         if (!hasMeasurements) {
-            fullWidth("measure-card") {
-                MeasurementsPromptCard(onClick = onOpenMeasurements)
-            }
+            fullWidth("measure-card") { MeasurementsPromptCard(onClick = onOpenMeasurements) }
         }
         HomeRow.entries.forEach { row ->
             val listings = row.listings(sections)
@@ -288,29 +303,19 @@ private fun HomeContent(
             }
         }
         if (sections.visible.isEmpty()) {
-            fullWidth("empty-results") {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No pieces found nearby matching your filters.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            suggestionItems(suggestions, query = "", onOpenListing = onOpenListing)
         } else if (studiosTab) {
-            items(sections.studios, key = { it.studioHandle ?: it.studioName }) { studio ->
+            items(sections.studios, key = { "studio-${it.lender.id}" }) { studio ->
                 StudioCard(
                     studio = studio,
-                    onClick = studio.studioHandle?.let { handle -> { onOpenStudio(handle) } }
+                    onClick = onOpenStudio?.let { open ->
+                        val handleOrId = studio.lender.studioHandle?.ifBlank { null } ?: studio.lender.id
+                        { open(handleOrId) }
+                    }
                 )
             }
         } else {
-            items(sections.visible, key = { it.id }) { listing ->
+            items(sections.visible, key = { "piece-${it.id}" }) { listing ->
                 ListingCard(listing = listing, onClick = { onOpenListing(listing.id) })
             }
         }
@@ -322,7 +327,7 @@ private fun LazyGridScope.fullWidth(key: String, content: @Composable () -> Unit
 }
 
 @Composable
-fun MeasurementsPromptCard(onClick: () -> Unit) {
+private fun MeasurementsPromptCard(onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
@@ -344,9 +349,9 @@ fun MeasurementsPromptCard(onClick: () -> Unit) {
 }
 
 @Composable
-fun HomeRowSection(
+private fun HomeRowSection(
     row: HomeRow,
-    listings: List<ListingCard>,
+    listings: List<Listing>,
     onSeeAll: () -> Unit,
     onOpenListing: (String) -> Unit
 ) {
@@ -357,6 +362,7 @@ fun HomeRowSection(
                     text = row.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    // The fit row is the one row highlighted in the accent color.
                     color = if (row == HomeRow.FIT) DzirentAccent else MaterialTheme.colorScheme.onSurface
                 )
                 row.subtitle?.let {
@@ -366,13 +372,10 @@ fun HomeRowSection(
             TextButton(onClick = onSeeAll) { Text("See all") }
         }
         Spacer(modifier = Modifier.height(8.dp))
+        // Swipe only: no auto-scroll.
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(listings, key = { it.id }) { listing ->
-                ListingCard(
-                    listing = listing,
-                    onClick = { onOpenListing(listing.id) },
-                    modifier = Modifier.width(140.dp)
-                )
+                ListingCard(listing = listing, onClick = { onOpenListing(listing.id) }, modifier = Modifier.width(140.dp))
             }
         }
     }
@@ -388,10 +391,10 @@ fun StudioCard(studio: StudioSummary, onClick: (() -> Unit)?) {
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(vertical = 12.dp)
     ) {
-        Avatar(name = studio.studioName, size = 64.dp)
+        Avatar(name = studio.lender.displayName, size = 64.dp)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = studio.studioName,
+            text = studio.lender.displayName.ifBlank { "Studio" },
             style = MaterialTheme.typography.titleSmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -399,7 +402,7 @@ fun StudioCard(studio: StudioSummary, onClick: (() -> Unit)?) {
         Text(
             text = listOfNotNull(
                 "${studio.pieceCount} ${if (studio.pieceCount == 1) "piece" else "pieces"}",
-                studio.distance?.let { formatWholeMiles(it, LocalAppSettings.current.distanceUnit) }
+                studio.distanceKm?.let { formatDistance(it, LocalAppSettings.current.distanceUnit) }
             ).joinToString(" · "),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -407,47 +410,22 @@ fun StudioCard(studio: StudioSummary, onClick: (() -> Unit)?) {
     }
 }
 
-/** Single listing card for Home, Search, and See All. */
-@Composable
-fun ListingCard(listing: ListingCard, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-    ) {
-        ListingPhoto(
-            url = listing.coverPhotoPath,
-            contentDescription = listing.title,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(3f / 4f)
-                .clip(RoundedCornerShape(8.dp))
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = listing.title,
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            text = listOfNotNull(listing.price?.let { formatPrice(it) }, listing.distance?.let { formatWholeMiles(it, LocalAppSettings.current.distanceUnit) }).joinToString(" · "),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1
-        )
-    }
-}
-
+/** "See all" for one Home row: the same listings as a grid. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SeeAllScreen(
     session: BrowseSession,
+    me: String = "",
+    lat: Double? = null,
+    lng: Double? = null,
     row: HomeRow,
     onBack: () -> Unit,
     onOpenListing: (String) -> Unit
 ) {
     val listings = session.sections()?.let { row.listings(it) }.orEmpty()
+    val suggestions = rememberSuggestions(
+        session, me, lat, lng, query = "", filters = session.filters, dates = session.dates, active = listings.isEmpty()
+    )
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(row.title) },
@@ -458,16 +436,7 @@ fun SeeAllScreen(
             }
         )
         if (listings.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No pieces currently in ${row.title}.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            SuggestionsGrid(suggestions, query = "", onOpenListing = onOpenListing)
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -483,7 +452,3 @@ fun SeeAllScreen(
         }
     }
 }
-
-
-/** The wordmark vector is 563.4 x 100. */
-private const val LOGO_WORDMARK_ASPECT = 5.634f

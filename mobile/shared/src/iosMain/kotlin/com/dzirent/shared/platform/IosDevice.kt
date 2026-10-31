@@ -6,6 +6,7 @@ class IosDeviceServices : DeviceServices {
     override val photoAnalyzer: PhotoAnalyzer get() = TODO("iOS photo checks not implemented yet")
     override val imageCompressor: ImageCompressor get() = IosImageCompressor()
     override val locationService: LocationService get() = IosLocationService()
+    override val searchRelated: com.dzirent.shared.util.SearchRelated get() = com.dzirent.shared.util.SearchRelated(emptyMap(), emptyMap())
     override val appVersion: String get() = TODO("iOS version not implemented yet")
     override val appBuild: Long get() = TODO("iOS build number not implemented yet")
     override fun photoStore(userId: String): PhotoStore = TODO("iOS photo store not implemented yet")

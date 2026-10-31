@@ -27,6 +27,15 @@ class AndroidDeviceServices(
     override val photoAnalyzer: PhotoAnalyzer by lazy { AndroidPhotoAnalyzer(app) }
     override val imageCompressor: ImageCompressor = AndroidImageCompressor()
     override val locationService: LocationService by lazy { AndroidLocationService(app) }
+    override val searchRelated: com.dzirent.shared.util.SearchRelated by lazy {
+        try {
+            app.assets.open("search_related.json").bufferedReader().use {
+                com.dzirent.shared.util.SearchRelated.parse(it.readText())
+            }
+        } catch (_: Exception) {
+            com.dzirent.shared.util.SearchRelated(emptyMap(), emptyMap())
+        }
+    }
 
     override fun photoStore(userId: String): PhotoStore = AndroidPhotoStore(app, userId)
     override fun draftStore(userId: String, listingId: String?): DraftStore = AndroidDraftStore(app, userId, listingId)

@@ -142,7 +142,35 @@ data class StudioDetail(
     @SerialName("rental_count") val rentalCount: Int = 0,
     @SerialName("reply_minutes") val replyMinutes: Int? = null,
     @SerialName("is_saved") val isSaved: Boolean = false,
-    val listings: List<ListingCard> = emptyList()
+    val listings: List<ListingCard> = emptyList(),
+    @SerialName("is_own") val isOwn: Boolean = false,
+    val since: String? = null
+)
+
+/** Item returned by my_blocked_users RPC. */
+@Serializable
+data class BlockedUserItem(
+    @SerialName("blocked_id") val blockedId: String,
+    @SerialName("display_name") val displayName: String,
+    @SerialName("studio_name") val studioName: String? = null,
+    @SerialName("studio_handle") val studioHandle: String? = null,
+    val city: String? = null
+)
+
+/** Item returned by my_saved_listings RPC. */
+@Serializable
+data class SavedListingItem(
+    @SerialName("listing_id") val listingId: String,
+    @SerialName("is_available") val isAvailable: Boolean = true,
+    val title: String? = null,
+    val price: Double? = null,
+    val distance: Int? = null,
+    val city: String? = null,
+    val category: String? = null,
+    @SerialName("cover_photo_path") val coverPhotoPath: String? = null,
+    @SerialName("studio_name") val studioName: String? = null,
+    @SerialName("studio_handle") val studioHandle: String? = null,
+    @SerialName("created_at") val createdAt: String? = null
 )
 
 /** Saved studio card returned by my_saved_studios RPC. */
@@ -348,7 +376,9 @@ data class StudioPage(
     val rentedCount: Int,
     /** Median first-reply time, or null with too few chats. */
     val replyMinutes: Int?,
-    val isSaved: Boolean
+    val isSaved: Boolean,
+    val isOwn: Boolean = false,
+    val since: String? = null
 )
 
 @Serializable

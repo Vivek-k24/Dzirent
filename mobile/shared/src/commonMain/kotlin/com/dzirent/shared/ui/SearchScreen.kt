@@ -1,6 +1,5 @@
 package com.dzirent.shared.ui
 
-import com.dzirent.shared.util.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -12,13 +11,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.LocationOff
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,106 +23,82 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.dzirent.shared.model.ListingCard
 import com.dzirent.shared.model.Profile
+import com.dzirent.shared.platform.SettingsStorage
 import com.dzirent.shared.repository.DzirentRepository
-import kotlinx.coroutines.delay
+import com.dzirent.shared.util.*
 import kotlinx.coroutines.launch
 
-object SearchHistory {
-    val items = mutableStateListOf("Evening Dress", "Designer Bag", "Cocktail")
+/** Recent searches on this device, per user, newest first. */
+class RecentSearchStore(private val storage: SettingsStorage?, private val userId: String) {
+    private val inMemory = mutableListOf<String>()
 
-    fun add(q: String) {
-        val trimmed = q.trim()
-        if (trimmed.isNotBlank()) {
-            items.remove(trimmed)
-            items.add(0, trimmed)
-            while (items.size > 10) items.removeAt(items.lastIndex)
+    fun load(): List<String> = storage?.getRecentSearches(userId) ?: inMemory.toList()
+
+    fun add(query: String): List<String> {
+        return if (storage != null) {
+            storage.addRecentSearch(userId, query)
+        } else {
+            val updated = addRecentSearch(inMemory, query)
+            inMemory.clear()
+            inMemory.addAll(updated)
+            updated
         }
     }
 
     fun clear() {
-        items.clear()
+        if (storage != null) {
+            storage.clearRecentSearches(userId)
+        } else {
+            inMemory.clear()
+        }
     }
 }
 
+/**
+ * Text search over titles and descriptions. The field is focused right away; recent
+ * searches show while it's empty. Results respect the date range and the sidebar filters,
+ * shown as removable chips, and changed with "Filter results" (the sidebar's filter sheet) next
+ * to them. Results can be sorted with the icon in the results header.
+ */
 @Composable
 fun SearchScreen(
-    repository: DzirentRepository,
     session: BrowseSession,
-    profile: Profile?,
-    isGuest: Boolean,
-    guestCity: String?,
-    guestLat: Double?,
-    guestLng: Double?,
+    profile: Profile? = null,
+    isGuest: Boolean = false,
+    guestCity: String? = null,
+    guestLat: Double? = null,
+    guestLng: Double? = null,
+    settingsStorage: SettingsStorage? = null,
+    repository: DzirentRepository? = null,
     onSetLocation: () -> Unit,
     onOpenListing: (String) -> Unit
 ) {
-    val lat = if (isGuest) guestLat else profile?.approxLat
-    val lng = if (isGuest) guestLng else profile?.approxLng
-
+    val effectiveUserId = if (isGuest) "guest" else profile?.id.orEmpty()
+    val store = remember(effectiveUserId, settingsStorage) { RecentSearchStore(settingsStorage, effectiveUserId) }
     var query by rememberSaveable { mutableStateOf("") }
-    val recentSearches = SearchHistory.items
+    var recent by remember { mutableStateOf(store.load()) }
     var sort by rememberSaveable { mutableStateOf(SearchSort.NEAREST) }
     var sortMenuOpen by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showFilters by remember { mutableStateOf(false) }
+    // Search can drop the date range ("Any dates"); Home always keeps one.
     var anyDates by rememberSaveable { mutableStateOf(false) }
-
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
+    val lat = if (isGuest) guestLat else profile?.approxLat
+    val lng = if (isGuest) guestLng else profile?.approxLng
 
-    var searchResults by remember { mutableStateOf<List<ListingCard>>(emptyList()) }
-    var isSearching by remember { mutableStateOf(false) }
-    var searchError by remember { mutableStateOf<String?>(null) }
-
-    val radiusMiles = radiusMiles(session.filters.distanceStep, LocalAppSettings.current.distanceUnit)
-
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-    }
-
-    suspend fun executeSearch(text: String) {
-        if (lat == null || lng == null) return
-        isSearching = true
-        searchError = null
-        try {
-            val results = repository.browseListings(
-                query = text.trim().ifBlank { null },
-                lat = lat,
-                lng = lng,
-                radiusMiles = radiusMiles,
-                category = session.filters.category,
-                itemType = session.filters.itemType,
-                size = session.filters.size,
-                minPrice = session.filters.minPrice,
-                maxPrice = session.filters.maxPrice,
-                startDate = if (anyDates) null else session.dates.start.toString(),
-                endDate = if (anyDates) null else session.dates.end.toString(),
-                sort = sort.dbSort,
-                limit = 30
-            )
-            searchResults = results
-        } catch (e: Exception) {
-            searchError = e.userMessage("Couldn't search listings. Please try again.")
-        } finally {
-            isSearching = false
-        }
-    }
-
-    // Debounced search when query, filters, or sort change
-    LaunchedEffect(query, session.filters, session.dates, anyDates, sort, lat, lng) {
-        if (query.trim().isBlank()) {
-            searchResults = emptyList()
-            return@LaunchedEffect
-        }
-        delay(350)
-        executeSearch(query)
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    val settings = LocalAppSettings.current
+    val radiusKm = settings.distanceUnit.radiusKm(session.filters.distanceStep)
+    LaunchedEffect(lat, lng, radiusKm) {
+        if (lat != null && lng != null) session.load(lat, lng, radiusKm)
     }
 
     fun saveRecent(q: String) {
-        SearchHistory.add(q)
+        recent = store.add(q)
     }
 
     if (showDatePicker) {
@@ -147,6 +116,7 @@ fun SearchScreen(
         )
     }
 
+    // The sidebar's filter sheet, applied to this search (the results stay on screen).
     if (showFilters) {
         FilterSheet(
             current = session.filters,
@@ -166,9 +136,7 @@ fun SearchScreen(
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
-                    IconButton(onClick = { query = "" }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear search")
-                    }
+                    IconButton(onClick = { query = "" }) { Icon(Icons.Default.Clear, contentDescription = "Clear search") }
                 }
             },
             singleLine = true,
@@ -176,7 +144,6 @@ fun SearchScreen(
             keyboardActions = KeyboardActions(onSearch = {
                 saveRecent(query)
                 focusManager.clearFocus()
-                scope.launch { executeSearch(query) }
             }),
             modifier = Modifier
                 .fillMaxWidth()
@@ -186,13 +153,16 @@ fun SearchScreen(
 
         if (query.isBlank()) {
             RecentSearches(
-                recent = recentSearches,
+                recent = recent,
                 onPick = { picked ->
                     query = picked
                     saveRecent(picked)
                     focusManager.clearFocus()
                 },
-                onClear = { SearchHistory.clear() }
+                onClear = {
+                    store.clear()
+                    recent = emptyList()
+                }
             )
             return@Column
         }
@@ -208,163 +178,119 @@ fun SearchScreen(
             return@Column
         }
 
-        // Active filter chips and "Filter results" button
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-        ) {
+        val chips = filterChips(session.filters, settings.distanceUnit, settings.defaultDistanceStep)
+        Row(verticalAlignment = Alignment.CenterVertically) {
             LazyRow(
                 contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.weight(1f)
             ) {
+                // The dates are a removable chip like the other filters; without them, availability
+                // is ignored and the chip offers to pick dates again.
                 item(key = "dates") {
                     if (anyDates) {
                         AssistChip(
                             onClick = { showDatePicker = true },
                             label = { Text("Any dates") },
-                            leadingIcon = {
-                                Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
-                            }
+                            leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         )
                     } else {
                         InputChip(
                             selected = false,
                             onClick = { anyDates = true },
                             label = { Text(formatDateChip(session.dates)) },
-                            leadingIcon = {
-                                Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
-                            },
+                            leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp)) },
                             trailingIcon = {
                                 Icon(Icons.Default.Close, contentDescription = "Remove dates", modifier = Modifier.size(16.dp))
                             }
                         )
                     }
                 }
-
-                session.filters.category?.let { cat ->
-                    item(key = "cat") {
-                        InputChip(
-                            selected = false,
-                            onClick = { session.filters = session.filters.withCategory(null) },
-                            label = { Text(cat) },
-                            trailingIcon = {
-                                Icon(Icons.Default.Close, contentDescription = "Remove category", modifier = Modifier.size(16.dp))
-                            }
-                        )
-                    }
-                }
-
-                session.filters.itemType?.let { itemType ->
-                    item(key = "itemType") {
-                        InputChip(
-                            selected = false,
-                            onClick = { session.filters = session.filters.copy(itemType = null) },
-                            label = { Text(itemType) },
-                            trailingIcon = {
-                                Icon(Icons.Default.Close, contentDescription = "Remove item type", modifier = Modifier.size(16.dp))
-                            }
-                        )
-                    }
-                }
-
-                session.filters.size?.let { size ->
-                    item(key = "size") {
-                        InputChip(
-                            selected = false,
-                            onClick = { session.filters = session.filters.copy(size = null) },
-                            label = { Text("Size $size") },
-                            trailingIcon = {
-                                Icon(Icons.Default.Close, contentDescription = "Remove size", modifier = Modifier.size(16.dp))
-                            }
-                        )
-                    }
+                items(chips, key = { it.label }) { chip ->
+                    InputChip(
+                        selected = false,
+                        onClick = { session.filters = chip.remove(session.filters) },
+                        label = { Text(chip.label) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = "Remove ${chip.label}", modifier = Modifier.size(16.dp)) }
+                    )
                 }
             }
-
             TextButton(
                 onClick = { showFilters = true },
                 contentPadding = PaddingValues(horizontal = 12.dp),
-                modifier = Modifier.padding(end = 8.dp)
+                modifier = Modifier.padding(end = 4.dp)
             ) {
                 Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Filter")
+                Text("Filter results")
             }
         }
 
-        if (isSearching) {
-            LoadingView(message = "Searching...")
-            return@Column
-        }
-
-        searchError?.let { err ->
-            ErrorView(message = err, onRetry = { scope.launch { executeSearch(query) } })
-            return@Column
-        }
-
-        if (searchResults.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No pieces found matching \"$query\".",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            return@Column
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 16.dp, end = 4.dp, bottom = 8.dp)
-        ) {
-            Text(
-                text = "${searchResults.size} ${if (searchResults.size == 1) "result" else "results"}",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f)
-            )
-            Box {
-                IconButton(onClick = { sortMenuOpen = true }) {
-                    Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort: ${sort.label}")
+        when (val state = session.state) {
+            is UiState.Loading -> LoadingView(message = "Searching...")
+            is UiState.Error -> ErrorView(message = state.message, onRetry = { scope.launch { session.load(lat, lng, radiusKm, force = true) } })
+            is UiState.Success -> {
+                val results = remember(state, session.filters, session.dates, anyDates, query, sort) {
+                    sortSearchResults(session.sections(anyDates)?.visible.orEmpty().filter { it.matchesQuery(query) }, sort)
                 }
-                DropdownMenu(expanded = sortMenuOpen, onDismissRequest = { sortMenuOpen = false }) {
-                    SearchSort.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    option.label,
-                                    fontWeight = if (option == sort) FontWeight.Bold else FontWeight.Normal
+                val suggestions = rememberSuggestions(
+                    session, effectiveUserId, lat, lng, query, session.filters, if (anyDates) null else session.dates,
+                    active = results.isEmpty()
+                )
+                if (results.isEmpty()) {
+                    // Never an empty screen: what's close to the search instead.
+                    SuggestionsGrid(suggestions, query, onOpenListing = { id ->
+                        saveRecent(query)
+                        onOpenListing(id)
+                    })
+                    return@Column
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 16.dp, end = 4.dp)
+                ) {
+                    Text(
+                        text = "${results.size} ${if (results.size == 1) "result" else "results"}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Box {
+                        IconButton(onClick = { sortMenuOpen = true }) {
+                            Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort: ${sort.label}")
+                        }
+                        DropdownMenu(expanded = sortMenuOpen, onDismissRequest = { sortMenuOpen = false }) {
+                            SearchSort.entries.forEach { option ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(option.label, fontWeight = if (option == sort) FontWeight.Bold else FontWeight.Normal)
+                                    },
+                                    onClick = {
+                                        sort = option
+                                        sortMenuOpen = false
+                                    }
                                 )
-                            },
+                            }
+                        }
+                    }
+                }
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(results, key = { it.id }) { listing ->
+                        ListingCard(
+                            listing = listing,
                             onClick = {
-                                sort = option
-                                sortMenuOpen = false
+                                saveRecent(query)
+                                onOpenListing(listing.id)
                             }
                         )
                     }
                 }
-            }
-        }
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(searchResults, key = { it.id }) { listing ->
-                ListingCard(
-                    listing = listing,
-                    onClick = {
-                        saveRecent(query)
-                        onOpenListing(listing.id)
-                    }
-                )
             }
         }
     }
@@ -412,4 +338,3 @@ private fun RecentSearches(recent: List<String>, onPick: (String) -> Unit, onCle
         }
     }
 }
-

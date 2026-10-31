@@ -66,6 +66,8 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - `reply_minutes` (integer): median first-reply time across conversations in last 90 days (null if <3).
   - `is_saved` (boolean): whether caller has saved this studio.
   - `listings` (jsonb): array of up to 30 active listing cards from this studio.
+  - `is_own` (boolean): true if caller is the studio owner, false otherwise.
+  - `since` (text): studio creation date in month/year format ("Since Mon YYYY").
 
 ### `fit_listings`
 - **Who can call:** Signed-in only (`authenticated`).
@@ -106,6 +108,23 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - `p_offset` (integer, default 0): paging offset.
 - **Returns:** Table of saved studios:
   - `studio_name` (text), `studio_handle` (text), `city` (text), `cover_photo_path` (text), `piece_count` (integer), `distance` (integer).
+
+### `my_saved_listings`
+- **Who can call:** Signed-in only (`authenticated`).
+- **Inputs:**
+  - `p_lat` (double precision, default null): caller's latitude.
+  - `p_lng` (double precision, default null): caller's longitude.
+  - `p_limit` (integer, default 30, max 30): page limit.
+  - `p_offset` (integer, default 0): paging offset.
+- **Returns:** Table of saved listings:
+  - `listing_id` (uuid), `is_available` (boolean), `title` (text), `price` (numeric), `distance` (integer), `city` (text), `category` (text), `cover_photo_path` (text), `studio_name` (text), `studio_handle` (text), `created_at` (timestamptz).
+  - Paused or blocked listings return `is_available = false` and null for title, price, and other details.
+
+### `my_blocked_users`
+- **Who can call:** Signed-in only (`authenticated`).
+- **Inputs:** None.
+- **Returns:** Table of caller's own blocked users:
+  - `blocked_id` (uuid), `display_name` (text), `studio_name` (text), `studio_handle` (text), `city` (text).
 
 ### `save_studio` / `unsave_studio`
 - **Who can call:** Signed-in only (`authenticated`).

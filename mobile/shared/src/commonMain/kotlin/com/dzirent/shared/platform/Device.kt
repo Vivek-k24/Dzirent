@@ -50,6 +50,7 @@ interface DeviceServices {
     val photoAnalyzer: PhotoAnalyzer
     val imageCompressor: ImageCompressor
     val locationService: LocationService
+    val searchRelated: com.dzirent.shared.util.SearchRelated
 
     /** The app's version name ("1.0.0"), recorded with the accessory declaration. */
     val appVersion: String
