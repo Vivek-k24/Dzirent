@@ -144,6 +144,12 @@ class DzirentRepository(
     val currentUserId: String? get() = auth.currentUserOrNull()?.id
     val currentEmail: String? get() = auth.currentUserOrNull()?.email
 
+    suspend fun awaitAuth() {
+        runCatching { auth.awaitInitialization() }
+    }
+
+    fun hasSession(): Boolean = auth.currentSessionOrNull() != null
+
     private fun requireUserId(): String =
         currentUserId ?: throw DzirentException("Your session may have expired. Please log out and log in again.")
 
@@ -861,6 +867,20 @@ class DzirentRepository(
             }
         } catch (e: Exception) {
             throw fail("remove saved piece", e)
+        }
+    }
+
+    suspend fun isListingSaved(listingId: String): Boolean {
+        val uid = currentUserId ?: return false
+        return try {
+            postgrest.from("saved_listings").select {
+                filter {
+                    eq("user_id", uid)
+                    eq("listing_id", listingId)
+                }
+            }.decodeList<SavedListing>().isNotEmpty()
+        } catch (_: Exception) {
+            false
         }
     }
 

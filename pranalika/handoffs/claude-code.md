@@ -1,12 +1,5 @@
 # Claude Code handoff
 
-Add one entry per session, newest at the top.
+Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
-<!--
-## YYYY-MM-DD - short title
-Done:
-Files changed:
-How it was verified:
-Open issues:
-Requests:
--->
+No entries yet.

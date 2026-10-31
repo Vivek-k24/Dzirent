@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.kotlin.compose)
 }
 
 val generatedConfigDir = layout.buildDirectory.dir("generated/source/supabaseConfig/commonMain/kotlin")
@@ -61,6 +63,21 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.kotlinx.datetime)
+
+                // Compose Multiplatform
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+                implementation(compose.components.resources)
+                implementation(compose.materialIconsExtended)
+                implementation(libs.navigation.compose)
+                implementation(libs.lifecycle.viewmodel.compose)
+                implementation(libs.lifecycle.runtime.compose)
+
+                // Coil 3
+                implementation(libs.coil.compose)
+                implementation(libs.coil.network.ktor3)
             }
         }
         commonTest {
@@ -87,6 +104,7 @@ kotlin {
         }
         getByName("iosArm64Main").dependsOn(iosMain)
         getByName("iosSimulatorArm64Main").dependsOn(iosMain)
+
         val androidUnitTest by getting {
             dependencies {
                 implementation(libs.junit)
@@ -97,7 +115,7 @@ kotlin {
 
 android {
     namespace = "com.dzirent.shared"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 26

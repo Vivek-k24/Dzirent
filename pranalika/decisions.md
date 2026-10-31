@@ -62,3 +62,8 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - Chat participants can see each other's account IDs in chat rows. Accepted: every table is owner-only, so an ID grants no access.
 - The Android app keeps applicationId com.dzirent.app so the new app updates the existing Play testing app.
 
+## Task assignment (2026-10-31)
+
+- The owner assigns each step to one agent. There is no permanent folder ownership; each prompt lists the folders the agent may change.
+- Each agent writes only in its own handoff file, with entries titled by step number.
+- Agents read the root `README.md` (product features and rules) only for feature or screen work.

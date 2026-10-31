@@ -1,6 +1,6 @@
 # Board
 
-Status: `To do` / `Doing` / `Done`. Only the coordinator moves items. Agents report progress in their handoff files.
+Status: `To do` / `Doing` / `Done`. The owner assigns each step to an agent. The agent that finishes an item updates its status and notes who did it.
 
 ## Step 0 - Provisions (Owner)
 
@@ -16,10 +16,11 @@ Status: `To do` / `Doing` / `Done`. Only the coordinator moves items. Agents rep
 | Supabase CLI access token in `dzirent-server.env` | Done |
 | Test users created in `dzirent-server` and listed in `test-user.env` | Done |
 
-## Step 1 - Backend foundation (Codex)
+## Step 1 - Backend foundation
 
 | Item | Status |
 | --- | --- |
+| Done by: Codex (1A), Antigravity (1B) | |
 | 1.1 Read-only snapshot of `Dzirent_Android` project (schema, rules, functions, triggers, bucket, `delete-account` source, `us_cities` data) into `supabase/reference/` | Done |
 | 1.2 Clean migrations for `dzirent-server`: same tables and workflows, security fixes, owner-only access | Done |
 | 1.3 Seed: `us_cities` (32,363 rows) | Done |
@@ -31,11 +32,11 @@ Status: `To do` / `Doing` / `Done`. Only the coordinator moves items. Agents rep
 | 1.6 Security Advisor clean or every warning logged | Done |
 | 1.7 `contract.md` written | Done |
 
-## Step 2 - Website foundation (Antigravity)
+## Step 2 - Website foundation
 
 Planned after Step 1. Environment wiring, guest mode, home, search, listing page, sign-up gates.
 
-## Step 3 - Shared mobile code (Codex)
+## Step 3 - Shared mobile code
 
 | Item | Status |
 | --- | --- |
@@ -45,13 +46,15 @@ Planned after Step 1. Environment wiring, guest mode, home, search, listing page
 | 3A `DzirentRepository` rewritten against contract | Done |
 | 3A Phone-only interfaces (`commonMain`) + Android implementations + iOS compiling stubs | Done |
 | 3A Unit & smoke tests passing | Done |
-| 3B Mobile screens | To do |
+| Done by: Antigravity (3A, 3B-1) | |
+| 3B-1 Shell, theme, components, welcome and sign-in, guest mode, location, home, search, filters, sidebar, listing page | Done |
+| 3B-2 All remaining screens | To do |
 
-## Step 4 - Android on shared code (Claude Code)
+## Step 4 - Android on shared code
 
 Planned after Step 3.
 
-## Step 5 - iOS (Claude Code)
+## Step 5 - iOS
 
 Planned after Step 4.
 
