@@ -37,7 +37,15 @@ Planned after Step 1. Environment wiring, guest mode, home, search, listing page
 
 ## Step 3 - Shared mobile code (Codex)
 
-Planned after Step 1. Kotlin Multiplatform shared module built from the Android reference.
+| Item | Status |
+| --- | --- |
+| 3A Backend moderation RPCs (`block_user`, `unblock_user`, `report_user`) | Done |
+| 3A KMP shared module setup (`mobile/shared`, Android + iOS targets, catalog) | Done |
+| 3A Common models ported (`commonMain`) | Done |
+| 3A `DzirentRepository` rewritten against contract | Done |
+| 3A Phone-only interfaces (`commonMain`) + Android implementations + iOS compiling stubs | Done |
+| 3A Unit & smoke tests passing | Done |
+| 3B Mobile screens | To do |
 
 ## Step 4 - Android on shared code (Claude Code)
 

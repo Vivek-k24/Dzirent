@@ -56,3 +56,9 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - No emulators, simulators or devices. Builds and unit tests only.
 - Keep tests minimal and token use low.
 - Coordination lives in `pranalika/`. No JIRA.
+
+## Step 3A (2026-10-31)
+
+- Chat participants can see each other's account IDs in chat rows. Accepted: every table is owner-only, so an ID grants no access.
+- The Android app keeps applicationId com.dzirent.app so the new app updates the existing Play testing app.
+

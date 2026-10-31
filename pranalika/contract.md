@@ -112,6 +112,16 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 - **Inputs:** `p_handle` (text).
 - **Behavior:** Resolves handle to lender without client needing lender account UUID.
 
+### `block_user` / `unblock_user`
+- **Who can call:** Signed-in only (`authenticated`).
+- **Inputs:** `p_handle` (text).
+- **Behavior:** Resolves studio handle to user ID internally and adds or removes the block relationship in `blocks`. Never returns account IDs.
+
+### `report_user`
+- **Who can call:** Signed-in only (`authenticated`).
+- **Inputs:** `p_handle` (text), `p_reason` (text), `p_details` (text, default null).
+- **Behavior:** Resolves studio handle to target user ID internally and inserts audit row into `reports`. Never returns account IDs.
+
 ### `start_conversation`
 - **Who can call:** Signed-in only (`authenticated`).
 - **Inputs:** `p_listing_id` (uuid), `p_start` (date, default null), `p_end` (date, default null).

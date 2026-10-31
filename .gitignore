@@ -33,4 +33,5 @@ supabase/.branches/
 
 # system files
 .DS_Store
-Thumbs.db.tools/
+Thumbs.db
+.tools/

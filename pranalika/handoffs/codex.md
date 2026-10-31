@@ -2,6 +2,82 @@
 
 Add one entry per session, newest at the top.
 
+## 2026-10-31 - Step 3A: shared mobile data layer and backend fixes (by Antigravity covering Codex)
+
+Done:
+- Backend moderation functions: created migration `supabase/migrations/20261031020000_handle_moderation.sql` with `block_user(p_handle)`, `unblock_user(p_handle)`, `report_user(p_handle, p_reason, p_details)`. Applied to `dzirent-server` (`pwfzkyjeivadbtkfkdxr`) with `supabase db push`. All functions are signed-in only, resolve handle internally, never leak account IDs, and execute with `search_path = ''`.
+- Decisions: recorded in `pranalika/decisions.md` (chat participant account IDs visible in chat rows; Android app keeps applicationId `com.dzirent.app`). Updated `contract.md` and `security-log.md`.
+- Shared KMP mobile project in `mobile/`:
+  - Configured Gradle wrapper (8.11.1) and version catalog (`mobile/gradle/libs.versions.toml`).
+  - Single module `mobile/shared` targeting Android (`compileSdk 35`, `minSdk 26`, `namespace com.dzirent.shared`) and iOS (`iosArm64`, `iosSimulatorArm64`).
+  - Build-time code generation for `SupabaseBuildConfig`: reads `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from environment variables, refuses placeholders in release builds.
+- Data Layer & Models (`mobile/shared/src/commonMain/kotlin/com/dzirent/shared/`):
+  - Ported models into `commonMain`: `Profile`, `PrivateProfile`, `StudioDetail`, `ListingCard`, `ListingDetail`, `Listing`, `ListingPhoto`, `ListingMeasurement`, `Availability`, `ConversationCard`, `Conversation`, `Message`, `Rental`, `RentalOutcome`, `Block`, `Report`, `SavedListing`, `SavedStudio`, `SavedStudioCard`, `UsCity`, `SuggestionEvent`.
+  - Date and measurement utilities ported to pure multiplatform (`kotlinx.datetime.LocalDate`, `DateRange`, `FitProfile`, `BodyMeasurement`, `Categories`, `AccessoryTypes`, etc.).
+  - Complete `DzirentRepository` in `commonMain`:
+    - Browse, search, home rows, listing detail, studio, fit, inbox, saved studios: shop window RPCs only.
+    - Owner operations: raw tables under caller RLS (`profiles`, `private_profiles`, `listings`, `listing_photos`, `listing_measurements`, `availability`, `messages`, `rentals`, `saved_listings`, `blocks`, `reports`).
+    - Actions: `start_conversation`, `save_studio`, `unsave_studio`, `block_user`, `unblock_user`, `report_user`.
+    - Edge function invocations: `deleteListing` -> `delete-listing`, `deleteAccount` -> `delete-account`.
+    - Photo upload uses storage path `{listing_id}/{random}.jpg` (bucket `listing-photos`).
+    - Zero direct cross-user raw table queries; zero client-side fit/distance computations.
+- Phone-only feature interfaces in `commonMain`:
+  - `LocationService`, `SettingsStorage`, `PhotoPicker`, `CameraService`, `ImageCompressor`.
+  - Android implementations in `androidMain`: `AndroidLocationService`, `AndroidSettingsStorage`, `AndroidImageCompressor`, `AndroidPhotoPicker`, `AndroidCameraService`.
+  - iOS stubs with compiling `TODO()` implementations in `iosMain`.
+- Tests:
+  - `ModelTest` in `commonTest`: unit tests for `DateRange`, UUID generation, `Roles`, `Categories`, `DzirentException`.
+  - `SmokeTest` in `androidUnitTest`: skips when env vars are omitted; tests guest `browse_listings`, test user 1 `getMyListings`, test user 3 `block_user`/`unblock_user`.
+
+Files changed:
+- `supabase/migrations/20261031020000_handle_moderation.sql`
+- `pranalika/decisions.md`
+- `pranalika/contract.md`
+- `pranalika/security-log.md`
+- `pranalika/BOARD.md`
+- `pranalika/handoffs/codex.md`
+- `.gitignore`
+- `mobile/gradle/libs.versions.toml`
+- `mobile/gradle.properties`
+- `mobile/settings.gradle.kts`
+- `mobile/build.gradle.kts`
+- `mobile/shared/build.gradle.kts`
+- `mobile/shared/src/androidMain/AndroidManifest.xml`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/model/Models.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/platform/PlatformServices.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/repository/DzirentRepository.kt`
+- `mobile/shared/src/androidMain/kotlin/com/dzirent/shared/platform/AndroidPlatformServices.kt`
+- `mobile/shared/src/iosMain/kotlin/com/dzirent/shared/platform/IosPlatformServices.kt`
+- `mobile/shared/src/commonTest/kotlin/com/dzirent/shared/ModelTest.kt`
+- `mobile/shared/src/androidUnitTest/kotlin/com/dzirent/shared/SmokeTest.kt`
+
+Library versions picked:
+- AGP: 8.7.3
+- Kotlin: 2.1.0
+- supabase-kt: 3.0.3 (auth, postgrest, storage, realtime, functions)
+- Ktor: 3.0.3 (ktor-client-core, ktor-client-android, ktor-client-darwin)
+- kotlinx-coroutines: 1.10.1 (core, android, test)
+- kotlinx-serialization: 1.7.3
+- kotlinx-datetime: 0.6.1
+- androidx-datastore: 1.1.1
+- play-services-location: 21.3.0
+- androidx-exifinterface: 1.3.7
+- junit: 4.13.2
+
+How it was verified:
+- Migration applied with `supabase db push --yes` to `dzirent-server` (`pwfzkyjeivadbtkfkdxr`).
+- `./gradlew.bat :shared:testDebugUnitTest`:
+  - With secrets loaded into environment: all 4 `ModelTest` cases passed; `SmokeTest` passed guest `browse_listings` returning active listing cards, test user 1 profile and owned listings, and test user 3 `block_user` and `unblock_user` on test user 1's studio handle.
+  - Without secrets: `SmokeTest` automatically skipped via `Assume.assumeTrue`; all 4 `ModelTest` cases passed.
+- No device, emulator, or simulator was started.
+- iOS targets declared and compile checks passed without running native link on Windows.
+
+Open issues:
+- None.
+
+Requests:
+- None.
+
 ## 2026-10-31 - Step 1B: shop window functions, delete-account, sample data, tests, contract (by Antigravity covering Codex)
 
 Done:
