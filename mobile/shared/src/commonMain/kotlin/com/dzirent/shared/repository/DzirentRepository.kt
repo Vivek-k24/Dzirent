@@ -37,6 +37,7 @@ import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import kotlin.random.Random
@@ -47,6 +48,19 @@ class DzirentException(message: String) : Exception(message)
 const val CANT_MESSAGE_USER = "You can't message this user."
 
 /** Live chat subscription handle. */
+@Serializable
+private data class ConversationIdRow(@SerialName("conversation_id") val conversationId: String)
+
+/** Everything Inbox and its dot need: my chats, which are unread, and Activity. */
+data class InboxSnapshot(
+    val conversations: List<Conversation>,
+    val unreadIds: Set<String>,
+    val activity: List<ActivityItem>
+) {
+    /** Shows the dot on the Inbox tab. */
+    val hasNews: Boolean get() = unreadIds.isNotEmpty() || activity.any { it.isNew }
+}
+
 class ChatSubscription(
     val messages: Flow<Message>,
     val rentals: Flow<Rental>,
@@ -723,7 +737,8 @@ class DzirentRepository(
         }
     }
 
-    suspend fun getListingDetail(listingId: String): Listing? {
+    /** My own listing with all its rows, or null if it isn't mine (owner-only read). */
+    suspend fun getMyListing(listingId: String): Listing? {
         val uid = requireUserId()
         return try {
             val listing = postgrest.from("listings").select {
@@ -1023,23 +1038,6 @@ class DzirentRepository(
     }
 
     // --- Messages & Chat ---
-    suspend fun getConversation(conversationId: String): Conversation? {
-        val uid = requireUserId()
-        return try {
-            postgrest.from("conversations").select {
-                filter {
-                    eq("id", conversationId)
-                    or {
-                        eq("renter_id", uid)
-                        eq("lender_id", uid)
-                    }
-                }
-            }.decodeSingleOrNull<Conversation>()
-        } catch (e: Exception) {
-            throw fail("load conversation", e)
-        }
-    }
-
     suspend fun getMessages(conversationId: String): List<Message> {
         return try {
             postgrest.from("messages").select {
@@ -1048,21 +1046,6 @@ class DzirentRepository(
             }.decodeList<Message>()
         } catch (e: Exception) {
             throw fail("load messages", e)
-        }
-    }
-
-    suspend fun sendMessage(conversationId: String, text: String): Message {
-        val uid = requireUserId()
-        return try {
-            val msg = Message(
-                id = generateUuid(),
-                conversationId = conversationId,
-                senderId = uid,
-                body = text
-            )
-            postgrest.from("messages").insert(msg) { select() }.decodeSingle<Message>()
-        } catch (e: Exception) {
-            throw failBlockAware("send message", e)
         }
     }
 
@@ -1095,33 +1078,6 @@ class DzirentRepository(
     }
 
     // --- Rentals ---
-    suspend fun getRental(conversationId: String): Rental? {
-        return try {
-            postgrest.from("rentals").select {
-                filter { eq("conversation_id", conversationId) }
-            }.decodeSingleOrNull<Rental>()
-        } catch (e: Exception) {
-            throw fail("load rental status", e)
-        }
-    }
-
-    suspend fun getMyRentals(): List<Rental> {
-        val uid = requireUserId()
-        return try {
-            postgrest.from("rentals").select {
-                filter {
-                    or {
-                        eq("renter_id", uid)
-                        eq("lender_id", uid)
-                    }
-                }
-                order("updated_at", Order.DESCENDING)
-            }.decodeList<Rental>()
-        } catch (e: Exception) {
-            throw fail("load your rentals", e)
-        }
-    }
-
     suspend fun getRentedOutListingIds(): Set<String> {
         val uid = requireUserId()
         return try {
@@ -1136,78 +1092,7 @@ class DzirentRepository(
         }
     }
 
-    suspend fun saveRental(
-        conversationId: String,
-        listingId: String,
-        renterId: String,
-        lenderId: String,
-        status: String,
-        startDate: String?,
-        endDate: String?
-    ): Rental {
-        val uid = requireUserId()
-        val changes = buildJsonObject {
-            put("status", status)
-            put("updated_by", uid)
-            if (startDate != null && endDate != null) {
-                put("start_date", startDate)
-                put("end_date", endDate)
-            }
-        }
-
-        return try {
-            val existing = getRental(conversationId)
-            if (existing?.id != null) {
-                postgrest.from("rentals").update(changes) {
-                    filter { eq("id", existing.id) }
-                    select()
-                }.decodeSingle<Rental>()
-            } else {
-                postgrest.from("rentals").insert(
-                    buildJsonObject {
-                        put("conversation_id", conversationId)
-                        put("listing_id", listingId)
-                        put("renter_id", renterId)
-                        put("lender_id", lenderId)
-                        changes.forEach { (k, v) -> put(k, v) }
-                    }
-                ) { select() }.decodeSingle<Rental>()
-            }
-        } catch (e: Exception) {
-            throw fail("update rental", e)
-        }
-    }
-
     // --- Rental Outcomes ---
-    suspend fun getMyRentalOutcome(conversationId: String): RentalOutcome? {
-        val uid = requireUserId()
-        return try {
-            postgrest.from("rental_outcomes").select {
-                filter {
-                    eq("conversation_id", conversationId)
-                    eq("user_id", uid)
-                }
-            }.decodeSingleOrNull<RentalOutcome>()
-        } catch (e: Exception) {
-            throw fail("load rental outcome", e)
-        }
-    }
-
-    suspend fun submitRentalOutcome(conversationId: String, happened: Boolean): RentalOutcome {
-        val uid = requireUserId()
-        val outcome = RentalOutcome(
-            conversationId = conversationId,
-            userId = uid,
-            happened = happened
-        )
-        return try {
-            postgrest.from("rental_outcomes").upsert(outcome) { select() }
-                .decodeSingle<RentalOutcome>()
-        } catch (e: Exception) {
-            throw fail("save rental outcome", e)
-        }
-    }
-
     // --- Blocks (Own list) ---
     suspend fun getMyBlockedUsers(): List<Block> {
         val uid = requireUserId()
@@ -1231,21 +1116,6 @@ class DzirentRepository(
             }
         } catch (e: Exception) {
             throw fail("unblock this user", e)
-        }
-    }
-
-    suspend fun haveIBlocked(otherId: String): Boolean {
-        val uid = currentUserId ?: return false
-        return try {
-            val blocks = postgrest.from("blocks").select {
-                filter {
-                    eq("blocker_id", uid)
-                    eq("blocked_id", otherId)
-                }
-            }.decodeList<Block>()
-            blocks.isNotEmpty()
-        } catch (_: Exception) {
-            false
         }
     }
 
@@ -1313,5 +1183,446 @@ class DzirentRepository(
         } catch (_: Exception) {
         }
     }
+
+    // =========================================================================
+    // INBOX, CHAT & RENTALS (participant rows; names and titles from my_conversations)
+    // =========================================================================
+
+    /** All my conversation cards from my_conversations (pages of 30). */
+    private suspend fun allConversationCards(): List<ConversationCard> {
+        val cards = mutableListOf<ConversationCard>()
+        while (true) {
+            val page = myConversations(limit = 30, offset = cards.size)
+            cards += page
+            if (page.size < 30 || cards.size >= 600) break
+        }
+        return cards
+    }
+
+    /** The listing and the other person, as far as the shop window shows them. */
+    private fun Conversation.withCard(card: ConversationCard?, me: String): Conversation {
+        if (card == null) return this
+        val other = Profile(id = otherUserId(me), displayName = card.otherName, studioHandle = card.otherHandle)
+        return copy(
+            listing = cardListing(card, lenderId),
+            renter = if (renterId == me) null else other,
+            lender = if (lenderId == me) null else other
+        )
+    }
+
+    private fun cardListing(card: ConversationCard, lenderId: String): Listing? =
+        card.listingTitle.takeIf { it.isNotBlank() }?.let { title ->
+            Listing(
+                id = card.listingId,
+                lenderId = lenderId,
+                title = title,
+                category = "",
+                priceUsd = card.price,
+                approxLat = 0.0,
+                approxLng = 0.0,
+                photos = listOfNotNull(card.coverPhotoPath?.let { ListingPhoto(id = "", listingId = card.listingId, storagePath = it, position = 0) })
+            )
+        }
+
+    /** My conversations with the latest message embedded, newest activity first. */
+    suspend fun getConversations(): List<Conversation> {
+        val me = requireUserId()
+        return try {
+            val cards = allConversationCards().associateBy { it.id }
+            postgrest.from("conversations").select(
+                Columns.raw("*, messages(id, conversation_id, sender_id, body, created_at)")
+            ) {
+                filter {
+                    or {
+                        eq("renter_id", me)
+                        eq("lender_id", me)
+                    }
+                }
+                order("created_at", Order.DESCENDING, referencedTable = "messages")
+                limit(1, referencedTable = "messages")
+            }.decodeList<Conversation>()
+                // my_conversations leaves out chats with someone blocked, so they're left out here too.
+                .filter { it.id in cards }
+                .map { it.withCard(cards[it.id], me) }
+                .sortedByDescending { timestampMillis(it.lastMessage?.createdAt ?: it.createdAt) }
+        } catch (e: Exception) {
+            throw fail("load your messages", e)
+        }
+    }
+
+    /** Conversations with unread flags plus Activity (rental changes and follow-ups). */
+    suspend fun getInboxSnapshot(): InboxSnapshot {
+        val me = requireUserId()
+        val conversations = getConversations()
+        return try {
+            val unread = allConversationCards().filter { it.unread }.map { it.id }.toSet()
+            val byId = conversations.associateBy { it.id }
+            val rentals = postgrest.from("rentals").select {
+                filter {
+                    or {
+                        eq("renter_id", me)
+                        eq("lender_id", me)
+                    }
+                }
+            }.decodeList<Rental>().map { rental ->
+                val conv = byId[rental.conversationId]
+                rental.copy(listing = conv?.listing, lender = conv?.lender, renter = conv?.renter)
+            }
+            val answered = postgrest.from("rental_outcomes").select(Columns.list("conversation_id")) {
+                filter { eq("user_id", me) }
+            }.decodeList<ConversationIdRow>().map { it.conversationId }.toSet()
+            val seenAt = getPrivateProfile().activitySeenAt
+            InboxSnapshot(
+                conversations = conversations,
+                unreadIds = unread.filter { it in byId }.toSet(),
+                activity = buildActivity(me, conversations, rentals, answered, seenAt)
+            )
+        } catch (e: Exception) {
+            throw fail("load your messages", e)
+        }
+    }
+
+    suspend fun setConversationDates(conversationId: String, dates: DateRange): Boolean =
+        setConversationDates(conversationId, dates.start.toString(), dates.end.toString())
+
+    suspend fun getConversation(conversationId: String): Conversation {
+        val me = requireUserId()
+        return try {
+            val conversation = postgrest.from("conversations").select {
+                filter { eq("id", conversationId) }
+            }.decodeSingle<Conversation>()
+            conversation.withCard(myConversations(conversationId = conversationId).firstOrNull(), me)
+        } catch (e: Exception) {
+            throw fail("open the chat", e)
+        }
+    }
+
+    /** Sends a message and returns the saved row (with the server's id and time). */
+    suspend fun sendMessage(conversationId: String, text: String): Message {
+        val uid = requireUserId()
+        return try {
+            val msg = Message(
+                id = generateUuid(),
+                conversationId = conversationId,
+                senderId = uid,
+                body = text
+            )
+            postgrest.from("messages").insert(msg) { select() }.decodeSingle<Message>()
+        } catch (e: Exception) {
+            throw failBlockAware("send your message", e)
+        }
+    }
+
+    /** Rentals where I am the renter, with the listing and the lender from my conversations. */
+    suspend fun getMyRentals(): List<Rental> {
+        val me = requireUserId()
+        return try {
+            val cards = allConversationCards().associateBy { it.id }
+            postgrest.from("rentals").select {
+                filter { eq("renter_id", me) }
+                order("updated_at", Order.DESCENDING)
+            }.decodeList<Rental>().map { rental ->
+                val card = cards[rental.conversationId]
+                rental.copy(
+                    listing = card?.let { cardListing(it, rental.lenderId) },
+                    lender = card?.let { Profile(id = rental.lenderId, displayName = it.otherName, studioHandle = it.otherHandle) }
+                )
+            }
+        } catch (e: Exception) {
+            throw fail("load your rentals", e)
+        }
+    }
+
+    suspend fun getRental(conversationId: String): Rental? {
+        return try {
+            postgrest.from("rentals").select {
+                filter { eq("conversation_id", conversationId) }
+            }.decodeSingleOrNull<Rental>()
+        } catch (e: Exception) {
+            throw fail("load the rental status", e)
+        }
+    }
+
+    /**
+     * Creates or updates the rental row for a conversation. Dates are only changed when
+     * given. If the other person created the row a moment earlier, this updates it instead.
+     */
+    suspend fun saveRental(
+        conversation: Conversation,
+        status: String,
+        startDate: String?,
+        endDate: String?
+    ): Rental {
+        val uid = requireUserId()
+        val changes = buildJsonObject {
+            put("status", status)
+            put("updated_by", uid)
+            if (startDate != null && endDate != null) {
+                put("start_date", startDate)
+                put("end_date", endDate)
+            }
+        }
+        suspend fun update(rentalId: String): Rental =
+            postgrest.from("rentals").update(changes) {
+                filter { eq("id", rentalId) }
+                select()
+            }.decodeSingle<Rental>()
+
+        return try {
+            val existing = getRental(conversation.id)
+            if (existing?.id != null) {
+                update(existing.id)
+            } else {
+                try {
+                    postgrest.from("rentals").insert(
+                        buildJsonObject {
+                            put("conversation_id", conversation.id)
+                            put("listing_id", conversation.listingId)
+                            put("renter_id", conversation.renterId)
+                            put("lender_id", conversation.lenderId)
+                            changes.forEach { (key, value) -> put(key, value) }
+                        }
+                    ) { select() }.decodeSingle<Rental>()
+                } catch (insertEx: Exception) {
+                    val raced = getRental(conversation.id)?.id ?: throw insertEx
+                    update(raced)
+                }
+            }
+        } catch (e: Exception) {
+            throw fail("update the rental", e)
+        }
+    }
+
+    /** My answer to "Did this rental happen?" for a conversation, if any. */
+    suspend fun getMyRentalOutcome(conversationId: String): RentalOutcome? {
+        val uid = requireUserId()
+        return try {
+            postgrest.from("rental_outcomes").select {
+                filter {
+                    eq("conversation_id", conversationId)
+                    eq("user_id", uid)
+                }
+            }.decodeSingleOrNull<RentalOutcome>()
+        } catch (e: Exception) {
+            throw fail("load your answer", e)
+        }
+    }
+
+    suspend fun submitRentalOutcome(outcome: RentalOutcome) {
+        try {
+            postgrest.from("rental_outcomes").upsert(outcome)
+        } catch (e: Exception) {
+            throw fail("save your answer", e)
+        }
+    }
+
+    /** Blocks a chat partner by account id (chat rows carry them; my own blocks row). */
+    suspend fun blockUserById(blockedId: String) {
+        val uid = requireUserId()
+        try {
+            // Blocking twice is harmless: the primary key makes the second insert a no-op.
+            postgrest.from("blocks").upsert(Block(uid, blockedId)) { ignoreDuplicates = true }
+        } catch (e: Exception) {
+            throw fail("block this user", e)
+        }
+    }
+
+    /** True if I blocked this user (not whether they blocked me). */
+    suspend fun haveIBlocked(otherId: String): Boolean {
+        val uid = requireUserId()
+        return try {
+            postgrest.from("blocks").select(Columns.list("blocker_id")) {
+                filter {
+                    eq("blocker_id", uid)
+                    eq("blocked_id", otherId)
+                }
+            }.decodeList<JsonObject>().isNotEmpty()
+        } catch (e: Exception) {
+            throw fail("load your blocked users", e)
+        }
+    }
+
+    /** A report on a listing, user or message by id (my own reports row). */
+    suspend fun report(report: Report) {
+        try {
+            postgrest.from("reports").insert(report.copy(reporterId = requireUserId()))
+        } catch (e: Exception) {
+            throw fail("send your report", e)
+        }
+    }
+
+
+    // =========================================================================
+    // THE REFERENCE APP'S CALLS, ON THE SHOP WINDOW
+    // The screens are the reference app's, so they keep its calls. The account id arguments
+    // are ignored (the server takes the caller from the login). Other people are known only by
+    // their studio handle, so a studio's handle stands in for its "lender id" on screen.
+    // =========================================================================
+
+    /** A browse card as the reference app's Listing: cover photo, studio, whole-mile distance. */
+    fun ListingCard.toListing(): Listing = Listing(
+        id = id,
+        lenderId = studioHandle.orEmpty(),
+        title = title,
+        category = category,
+        priceUsd = price,
+        city = city,
+        approxLat = 0.0,
+        approxLng = 0.0,
+        photos = listOfNotNull(coverPhotoPath?.let { ListingPhoto(id = "", listingId = id, storagePath = it, position = 0) }),
+        lender = Profile(id = studioHandle.orEmpty(), displayName = studioName.orEmpty(), city = city, studioName = studioName, studioHandle = studioHandle),
+        distanceKm = distance?.let { it * KM_PER_MILE },
+        distanceMiles = distance
+    )
+
+    private fun ListingDetail.toListing(): Listing = Listing(
+        id = id,
+        lenderId = studioHandle.orEmpty(),
+        title = title,
+        category = category,
+        itemType = itemType,
+        sizeLabel = sizeLabel,
+        description = description,
+        priceUsd = price,
+        priceNote = priceNote,
+        city = city,
+        approxLat = 0.0,
+        approxLng = 0.0,
+        createdAt = createdAt,
+        retailValue = retailValue,
+        depositNote = depositNote,
+        listingStyles = listingStyles,
+        garmentType = garmentType,
+        photos = photos.sortedBy { it.position }.mapIndexed { i, p ->
+            ListingPhoto(id = "photo-$i", listingId = id, storagePath = p.storagePath, position = p.position, slot = p.slot)
+        },
+        measurements = measurements.map { ListingMeasurement(listingId = id, label = it.label, value = it.value, unit = it.unit) },
+        availability = availability.map { Availability(listingId = id, startDate = it.startDate, endDate = it.endDate) },
+        lender = Profile(id = studioHandle.orEmpty(), displayName = studioName.orEmpty(), city = city, studioName = studioName, studioHandle = studioHandle),
+        distanceKm = distance?.let { it * KM_PER_MILE },
+        distanceMiles = distance
+    )
+
+    /** My own listing in full, or anyone's active listing through the shop window. */
+    suspend fun getListingDetail(id: String, lat: Double? = null, lng: Double? = null): Listing {
+        if (currentUserId != null) getMyListing(id)?.let { return it }
+        return getListing(id, lat, lng)?.toListing()
+            ?: throw DzirentException("Couldn't load this listing. Please try again.")
+    }
+
+    suspend fun recordListingEvent(userId: String, listingId: String, type: String) = recordListingEvent(listingId, type)
+    suspend fun isListingSaved(userId: String, listingId: String): Boolean = isListingSaved(listingId)
+    suspend fun saveListing(userId: String, listingId: String) = saveListing(listingId)
+    suspend fun unsaveListing(userId: String, listingId: String) = unsaveListing(listingId)
+    suspend fun getMyListings(lenderId: String): List<Listing> = getMyListings()
+    suspend fun getRentedOutListingIds(lenderId: String): Set<String> = getRentedOutListingIds()
+    suspend fun getMyRentals(renterId: String): List<Rental> = getMyRentals()
+    suspend fun getPrivateProfile(userId: String): PrivateProfile = getPrivateProfile()
+    suspend fun updateRole(userId: String, role: String): Profile = updateRole(role)
+    suspend fun updateLocation(userId: String, lat: Double, lng: Double, city: String): Profile = updateLocation(lat, lng, city)
+    suspend fun getInboxSnapshot(userId: String): InboxSnapshot = getInboxSnapshot()
+
+    suspend fun saveBodyMeasurements(
+        userId: String,
+        valuesCm: Map<BodyMeasurement, Double?>,
+        fitProfile: FitProfile?,
+        styleInterests: List<String>
+    ): PrivateProfile = saveBodyMeasurements(valuesCm, fitProfile, styleInterests)
+
+    suspend fun updateStudio(
+        userId: String,
+        name: String,
+        handle: String,
+        bio: String,
+        styleTags: List<String>,
+        pickupArea: String
+    ): Profile = updateStudio(name, handle, bio, styleTags, pickupArea)
+
+    /** True while I have an active rental as renter or lender (account deletion waits for it). */
+    suspend fun hasActiveRental(userId: String): Boolean {
+        val uid = requireUserId()
+        return try {
+            postgrest.from("rentals").select(Columns.raw("id")) {
+                filter {
+                    eq("status", "active")
+                    or {
+                        eq("renter_id", uid)
+                        eq("lender_id", uid)
+                    }
+                }
+                limit(1)
+            }.decodeList<JsonObject>().isNotEmpty()
+        } catch (e: Exception) {
+            throw fail("check your rentals", e)
+        }
+    }
+
+    /** Opens (or starts) my chat about a listing; the server finds the lender. */
+    suspend fun getOrCreateConversation(listingId: String, renterId: String, lenderId: String): Conversation {
+        val id = startConversation(listingId)
+        recordListingEvent(listingId, ListingEvents.MESSAGE)
+        return Conversation(id = id, listingId = listingId, renterId = renterId, lenderId = lenderId)
+    }
+
+    /** Everything a studio page shows; [lenderId] is the studio's handle. */
+    suspend fun getStudio(lenderId: String, userId: String, lat: Double? = null, lng: Double? = null): StudioPage {
+        val studio = try {
+            getStudio(lenderId, lat, lng)
+        } catch (e: Exception) {
+            throw fail("load this studio", e)
+        } ?: throw DzirentException("Couldn't load this studio. Please try again.")
+        return StudioPage(
+            lender = Profile(
+                id = studio.studioHandle,
+                displayName = studio.studioName,
+                city = studio.city,
+                studioName = studio.studioName,
+                studioHandle = studio.studioHandle,
+                studioBio = studio.studioBio,
+                styleTags = studio.styleTags,
+                pickupArea = studio.pickupArea
+            ),
+            pieces = studio.listings.map { it.toListing() },
+            rentedCount = studio.rentalCount,
+            replyMinutes = studio.replyMinutes,
+            isSaved = studio.isSaved
+        )
+    }
+
+    suspend fun saveStudio(userId: String, lenderId: String) = saveStudio(lenderId)
+    suspend fun unsaveStudio(userId: String, lenderId: String) = unsaveStudio(lenderId)
+
+    /** Handles of the studios I saved ("From studios you saved"). */
+    suspend fun getSavedStudioIds(userId: String): Set<String> =
+        getSavedStudios(userId).map { it.lenderId }.toSet()
+
+    /** Saved > Pieces, newest first. Paused or deleted pieces drop out (the shop window hides them). */
+    suspend fun getSavedListings(userId: String): List<SavedListing> {
+        val cards = mutableListOf<ListingCard>()
+        while (true) {
+            val page = browseListings(savedOnly = true, sort = "newest", limit = 30, offset = cards.size)
+            cards += page
+            if (page.size < 30 || cards.size >= 300) break
+        }
+        return cards.map { SavedListing(userId = userId, listingId = it.id, listing = it.toListing()) }
+    }
+
+    /** Saved > Studios, with each studio's public details. */
+    suspend fun getSavedStudios(userId: String): List<SavedStudio> {
+        val studios = mutableListOf<SavedStudioCard>()
+        while (true) {
+            val page = mySavedStudios(limit = 30, offset = studios.size)
+            studios += page
+            if (page.size < 30 || studios.size >= 300) break
+        }
+        return studios.map { s ->
+            SavedStudio(
+                userId = userId,
+                lenderId = s.studioHandle,
+                lender = Profile(id = s.studioHandle, displayName = s.studioName, city = s.city, studioName = s.studioName, studioHandle = s.studioHandle)
+            )
+        }
+    }
+
 }
 

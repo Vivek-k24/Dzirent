@@ -201,7 +201,9 @@ data class Listing(
     val measurements: List<ListingMeasurement> = emptyList(),
     val availability: List<Availability> = emptyList(),
     val lender: Profile? = null,
-    val distanceKm: Double? = null
+    val distanceKm: Double? = null,
+    /** Whole miles from the shop window (it never returns coordinates). */
+    val distanceMiles: Int? = null
 ) {
     /** "Sunglasses" for accessories with a type, otherwise the category. For compact rows. */
     val typeLabel: String get() = itemType ?: category
@@ -244,14 +246,23 @@ data class Conversation(
     @SerialName("lender_id") val lenderId: String,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("requested_start") val requestedStart: String? = null,
-    @SerialName("requested_end") val requestedEnd: String? = null
+    @SerialName("requested_end") val requestedEnd: String? = null,
+    // Filled in by the repository (listing and the other person from my_conversations, the
+    // latest message embedded), never written.
+    val listing: Listing? = null,
+    val renter: Profile? = null,
+    val lender: Profile? = null,
+    val messages: List<Message> = emptyList()
 ) {
     val requestedDates: DateRange? get() = parseDateRange(requestedStart, requestedEnd)
+    fun otherUserId(me: String): String = if (me == renterId) lenderId else renterId
+    fun otherUser(me: String): Profile? = if (me == renterId) lender else renter
+    val lastMessage: Message? get() = messages.firstOrNull()
 }
 
 @Serializable
 data class Message(
-    val id: String? = null,
+    val id: String = "",
     @SerialName("conversation_id") val conversationId: String,
     @SerialName("sender_id") val senderId: String,
     val body: String,
@@ -270,7 +281,11 @@ data class Rental(
     @SerialName("end_date") val endDate: String? = null,
     @SerialName("updated_by") val updatedBy: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
-    @SerialName("updated_at") val updatedAt: String? = null
+    @SerialName("updated_at") val updatedAt: String? = null,
+    // Filled in by the repository from my_conversations, never written.
+    val listing: Listing? = null,
+    val lender: Profile? = null,
+    val renter: Profile? = null
 )
 
 @Serializable
@@ -290,7 +305,9 @@ data class RentalOutcome(
 @Serializable
 data class Block(
     @SerialName("blocker_id") val blockerId: String,
-    @SerialName("blocked_id") val blockedId: String
+    @SerialName("blocked_id") val blockedId: String,
+    // Never filled on this backend: other people's profiles are owner-only.
+    val blocked: Profile? = null
 )
 
 @Serializable
@@ -307,14 +324,31 @@ data class Report(
 data class SavedListing(
     @SerialName("user_id") val userId: String,
     @SerialName("listing_id") val listingId: String,
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("created_at") val createdAt: String? = null,
+    // Filled in from the shop window, never written.
+    val listing: Listing? = null
 )
 
+/** One of my saved studios; [lenderId] holds the studio handle (account ids are never shown). */
 @Serializable
 data class SavedStudio(
     @SerialName("user_id") val userId: String,
     @SerialName("lender_id") val lenderId: String,
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("created_at") val createdAt: String? = null,
+    // Filled in from the shop window, never written.
+    val lender: Profile? = null
+)
+
+/** Everything the studio page shows about one lender. */
+data class StudioPage(
+    val lender: Profile,
+    /** Active listings, newest first. */
+    val pieces: List<Listing>,
+    /** Rentals marked active or returned. */
+    val rentedCount: Int,
+    /** Median first-reply time, or null with too few chats. */
+    val replyMinutes: Int?,
+    val isSaved: Boolean
 )
 
 @Serializable
