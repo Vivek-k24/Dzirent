@@ -256,36 +256,164 @@ fun MainAppScaffold(
                     )
                 }
 
-                // --- 3B-2 PLACEHOLDERS ---
+                // --- 3B-2 SCREENS ---
                 composable("inbox") {
-                    ScreenPlaceholder("Inbox", onBack = { navController.popBackStack() })
+                    InboxScreen(
+                        repository = repository,
+                        onConversationClick = { id -> navController.navigate("chat/$id") },
+                        onBrowse = { openTab(TabHome.route) }
+                    )
                 }
+
                 composable("closet") {
-                    ScreenPlaceholder("Closet", onBack = { navController.popBackStack() })
+                    MyClosetScreen(
+                        repository = repository,
+                        onListItem = { navController.navigate("list") },
+                        onOpenListing = { id -> navController.navigate("detail/$id") },
+                        onEditListing = { id -> navController.navigate("edit/$id") },
+                        onOpenChat = { id -> navController.navigate("chat/$id") },
+                        onBrowse = { openTab(TabHome.route) }
+                    )
                 }
+
                 composable("saved") {
-                    ScreenPlaceholder("Saved", onBack = { navController.popBackStack() })
+                    SavedScreen(
+                        repository = repository,
+                        lat = profile?.approxLat ?: guestLat,
+                        lng = profile?.approxLng ?: guestLng,
+                        onOpenListing = { id -> navController.navigate("detail/$id") },
+                        onOpenStudio = { handle -> navController.navigate("studio/$handle") },
+                        onBrowse = { openTab(TabHome.route) }
+                    )
                 }
+
                 composable("studio/{handle}") { entry ->
-                    val handle = entry.arguments?.getString("handle") ?: "Studio"
-                    ScreenPlaceholder("Studio: @$handle", onBack = { navController.popBackStack() })
+                    val handle = entry.arguments?.getString("handle") ?: ""
+                    StudioScreen(
+                        repository = repository,
+                        handle = handle,
+                        isGuest = isGuest,
+                        currentUserId = profile?.id,
+                        lat = profile?.approxLat ?: guestLat,
+                        lng = profile?.approxLng ?: guestLng,
+                        onBack = { navController.popBackStack() },
+                        onOpenListing = { id -> navController.navigate("detail/$id") },
+                        onMessageAbout = { listingId ->
+                            scope.launch {
+                                try {
+                                    val convId = repository.startConversation(listingId)
+                                    navController.navigate("chat/$convId")
+                                } catch (_: Exception) {}
+                            }
+                        },
+                        onAuthRequired = onGatedAction
+                    )
                 }
+
                 composable("chat/{conversationId}") { entry ->
-                    val id = entry.arguments?.getString("conversationId") ?: ""
-                    ScreenPlaceholder("Chat ($id)", onBack = { navController.popBackStack() })
+                    val convId = entry.arguments?.getString("conversationId") ?: ""
+                    ChatScreen(
+                        repository = repository,
+                        conversationId = convId,
+                        currentUserId = profile?.id.orEmpty(),
+                        onBack = { navController.popBackStack() },
+                        onOpenListing = { id -> navController.navigate("detail/$id") },
+                        onOpenStudio = { handle -> navController.navigate("studio/$handle") }
+                    )
                 }
+
                 composable("profile") {
-                    ScreenPlaceholder("Profile", onBack = { navController.popBackStack() })
+                    MyStudioScreen(
+                        repository = repository,
+                        profile = profile,
+                        onBack = { navController.popBackStack() },
+                        onSaved = { updated ->
+                            profile = updated
+                            navController.popBackStack()
+                        }
+                    )
                 }
+
                 composable("settings") {
-                    ScreenPlaceholder("Settings", onBack = { navController.popBackStack() }, onSignOut = onSignOut)
+                    SettingsScreen(
+                        repository = repository,
+                        profile = profile,
+                        isGuest = isGuest,
+                        onBack = { navController.popBackStack() },
+                        onSetLocation = { showLocationSetup = true },
+                        onOpenMeasurements = { navController.navigate("measurements") },
+                        onOpenBlockedUsers = { navController.navigate("blocked") },
+                        onClearSearchHistory = { SearchHistory.clear() },
+                        onOpenAbout = { navController.navigate("about") },
+                        onSignOut = onSignOut,
+                        onAccountDeleted = onSignOut
+                    )
                 }
+
                 composable("measurements") {
-                    ScreenPlaceholder("Body Measurements", onBack = { navController.popBackStack() })
+                    BodyMeasurementsScreen(
+                        repository = repository,
+                        onBack = { navController.popBackStack() }
+                    )
                 }
+
+                composable("list") {
+                    ListingEditorScreen(
+                        repository = repository,
+                        profile = profile,
+                        listingId = null,
+                        onSetLocation = { showLocationSetup = true },
+                        onBack = { navController.popBackStack() },
+                        onSaved = { navController.popBackStack() }
+                    )
+                }
+
                 composable("edit/{listingId}") { entry ->
-                    val id = entry.arguments?.getString("listingId") ?: ""
-                    ScreenPlaceholder("Edit Listing ($id)", onBack = { navController.popBackStack() })
+                    val id = entry.arguments?.getString("listingId")
+                    ListingEditorScreen(
+                        repository = repository,
+                        profile = profile,
+                        listingId = id,
+                        onSetLocation = { showLocationSetup = true },
+                        onBack = { navController.popBackStack() },
+                        onSaved = { navController.popBackStack() }
+                    )
+                }
+
+                composable("blocked") {
+                    BlockedUsersScreen(
+                        repository = repository,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("about") {
+                    var showPolicyDialog by remember { mutableStateOf<String?>(null) }
+                    showPolicyDialog?.let { title ->
+                        AlertDialog(
+                            onDismissRequest = { showPolicyDialog = null },
+                            title = { Text(title) },
+                            text = {
+                                Text(
+                                    if (title == DzirentPolicy.TITLE) DzirentPolicy.FULL_TEXT
+                                    else DzirentPolicy.COMMUNITY_RULES
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(onClick = { showPolicyDialog = null }) { Text("OK") }
+                            }
+                        )
+                    }
+                    AboutScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenHowItWorks = { showPolicyDialog = DzirentPolicy.TITLE },
+                        onOpenCommunityPolicy = { showPolicyDialog = DzirentPolicy.COMMUNITY_TITLE },
+                        onOpenLicenses = { navController.navigate("licenses") }
+                    )
+                }
+
+                composable("licenses") {
+                    LicensesScreen(onBack = { navController.popBackStack() })
                 }
             }
         }

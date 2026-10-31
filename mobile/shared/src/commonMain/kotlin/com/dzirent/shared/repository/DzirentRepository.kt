@@ -112,6 +112,8 @@ class DzirentRepository(
     val realtime: Realtime get() = client.realtime
     val functions: Functions get() = client.functions
 
+    fun currentEmail(): String? = auth.currentUserOrNull()?.email
+
     private fun fail(operation: String, throwable: Throwable): DzirentException {
         if (throwable is DzirentException) return throwable
         val raw = throwable.message.orEmpty().lowercase()
@@ -624,6 +626,32 @@ class DzirentRepository(
         }
     }
 
+    suspend fun updateStudio(
+        name: String?,
+        handle: String?,
+        bio: String?,
+        styleTags: List<String>,
+        pickupArea: String?
+    ): Profile {
+        val uid = requireUserId()
+        try {
+            postgrest.from("profiles").update(
+                buildJsonObject {
+                    put("studio_name", name?.ifBlank { null })
+                    put("studio_handle", handle?.ifBlank { null })
+                    put("studio_bio", bio?.ifBlank { null })
+                    put("style_tags", buildJsonArray { styleTags.forEach { add(it) } })
+                    put("pickup_area", pickupArea?.ifBlank { null })
+                }
+            ) {
+                filter { eq("id", uid) }
+            }
+            return getCurrentProfile() ?: throw DzirentException("Couldn't load your profile.")
+        } catch (e: Exception) {
+            throw fail("save your studio", e)
+        }
+    }
+
     // --- Private Profiles ---
     suspend fun getPrivateProfile(): PrivateProfile {
         val uid = requireUserId()
@@ -691,6 +719,40 @@ class DzirentRepository(
             }
         } catch (e: Exception) {
             throw fail("load your listings", e)
+        }
+    }
+
+    suspend fun getListingDetail(listingId: String): Listing? {
+        val uid = requireUserId()
+        return try {
+            val listing = postgrest.from("listings").select {
+                filter {
+                    eq("id", listingId)
+                    eq("lender_id", uid)
+                }
+            }.decodeSingleOrNull<Listing>() ?: return null
+
+            val photos = postgrest.from("listing_photos").select {
+                filter { eq("listing_id", listingId) }
+                order("position", Order.ASCENDING)
+            }.decodeList<ListingPhoto>()
+
+            val measurements = postgrest.from("listing_measurements").select {
+                filter { eq("listing_id", listingId) }
+            }.decodeList<ListingMeasurement>()
+
+            val availability = postgrest.from("availability").select {
+                filter { eq("listing_id", listingId) }
+                order("start_date", Order.ASCENDING)
+            }.decodeList<Availability>()
+
+            listing.copy(
+                photos = photos,
+                measurements = measurements,
+                availability = availability
+            )
+        } catch (e: Exception) {
+            throw fail("load listing details", e)
         }
     }
 
@@ -885,6 +947,23 @@ class DzirentRepository(
     }
 
     // --- Messages & Chat ---
+    suspend fun getConversation(conversationId: String): Conversation? {
+        val uid = requireUserId()
+        return try {
+            postgrest.from("conversations").select {
+                filter {
+                    eq("id", conversationId)
+                    or {
+                        eq("renter_id", uid)
+                        eq("lender_id", uid)
+                    }
+                }
+            }.decodeSingleOrNull<Conversation>()
+        } catch (e: Exception) {
+            throw fail("load conversation", e)
+        }
+    }
+
     suspend fun getMessages(conversationId: String): List<Message> {
         return try {
             postgrest.from("messages").select {
@@ -964,6 +1043,20 @@ class DzirentRepository(
             }.decodeList<Rental>()
         } catch (e: Exception) {
             throw fail("load your rentals", e)
+        }
+    }
+
+    suspend fun getRentedOutListingIds(): Set<String> {
+        val uid = requireUserId()
+        return try {
+            postgrest.from("rentals").select {
+                filter {
+                    eq("lender_id", uid)
+                    eq("status", "active")
+                }
+            }.decodeList<Rental>().map { it.listingId }.toSet()
+        } catch (_: Exception) {
+            emptySet()
         }
     }
 
@@ -1048,6 +1141,35 @@ class DzirentRepository(
             }.decodeList<Block>()
         } catch (e: Exception) {
             throw fail("load blocked users", e)
+        }
+    }
+
+    suspend fun unblockUserById(blockedId: String) {
+        val uid = requireUserId()
+        try {
+            postgrest.from("blocks").delete {
+                filter {
+                    eq("blocker_id", uid)
+                    eq("blocked_id", blockedId)
+                }
+            }
+        } catch (e: Exception) {
+            throw fail("unblock this user", e)
+        }
+    }
+
+    suspend fun haveIBlocked(otherId: String): Boolean {
+        val uid = currentUserId ?: return false
+        return try {
+            val blocks = postgrest.from("blocks").select {
+                filter {
+                    eq("blocker_id", uid)
+                    eq("blocked_id", otherId)
+                }
+            }.decodeList<Block>()
+            blocks.isNotEmpty()
+        } catch (_: Exception) {
+            false
         }
     }
 

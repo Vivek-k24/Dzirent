@@ -1,6 +1,9 @@
 package com.dzirent.shared.model
 
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -393,5 +396,226 @@ object ListingEvents {
     const val VIEW = "view"
     const val SAVE = "save"
     const val MESSAGE = "message"
+}
+
+sealed class UiState<out T> {
+    object Loading : UiState<Nothing>()
+    data class Error(val message: String) : UiState<Nothing>()
+    data class Success<T>(val data: T) : UiState<T>()
+}
+
+/** Matches the profiles_*_cm checks: above 0 and below 300 cm. */
+fun isValidBodyCm(cm: Double): Boolean = cm > 0.0 && cm < 300.0
+
+/** Pure Kotlin rounding to 1 decimal place. */
+private fun roundToOneDecimal(v: Double): Double = kotlin.math.round(v * 10.0) / 10.0
+
+/** [text] in [unit] ("cm" or "in") converted to cm and rounded to 1 decimal, or null if not a number. */
+fun bodyInputToCm(text: String, unit: String): Double? {
+    val value = text.trim().toDoubleOrNull() ?: return null
+    val cm = if (unit == "in") value * CM_PER_INCH else value
+    return roundToOneDecimal(cm)
+}
+
+/** A stored cm value as text in [unit], rounded to 1 decimal: "91.5", "36". */
+fun cmToBodyInput(cm: Double?, unit: String): String {
+    if (cm == null) return ""
+    val value = if (unit == "in") cm / CM_PER_INCH else cm
+    val rounded = roundToOneDecimal(value)
+    val integerPart = rounded.toLong()
+    return if (rounded == integerPart.toDouble()) integerPart.toString() else rounded.toString()
+}
+
+object StyleTags {
+    val ALL = listOf(
+        "Minimalist", "Classic", "Vintage", "Streetwear", "Boho", "Glam", "Traditional",
+        "Workwear", "Designer", "Plus size", "Petite", "Maternity"
+    )
+}
+
+const val STYLE_TAGS_MAX = 5
+const val STUDIO_NAME_MAX = 40
+const val STUDIO_BIO_MAX = 200
+const val PICKUP_AREA_MAX = 60
+const val HANDLE_MIN = 3
+const val HANDLE_MAX = 30
+
+private val handleRegex = Regex("^[a-z0-9._]{$HANDLE_MIN,$HANDLE_MAX}$")
+
+fun cleanHandleInput(input: String): String =
+    input.lowercase().removePrefix("@").replace(' ', '.')
+        .filter { (it in 'a'..'z') || (it in '0'..'9') || it == '.' || it == '_' }
+        .take(HANDLE_MAX)
+
+fun isValidHandle(handle: String): Boolean = handleRegex.matches(handle)
+
+fun suggestHandle(name: String): String {
+    val cleaned = cleanHandleInput(name.trim())
+    return if (cleaned.length >= HANDLE_MIN) cleaned.take(HANDLE_MAX) else ""
+}
+
+fun replyTimeText(minutes: Int?): String? = when {
+    minutes == null -> null
+    minutes < 60 -> "Usually replies within an hour"
+    minutes < 6 * 60 -> "Usually replies within a few hours"
+    minutes < 24 * 60 -> "Usually replies within a day"
+    else -> "Usually replies within a few days"
+}
+
+fun sinceText(createdAt: String?): String? {
+    if (createdAt.isNullOrBlank()) return null
+    return try {
+        val instant = Instant.parse(createdAt)
+        val date = instant.toLocalDateTime(TimeZone.UTC).date
+        val month = date.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
+        "Since $month ${date.year}"
+    } catch (_: Exception) {
+        null
+    }
+}
+
+object FashionStyles {
+    val ALL = listOf(
+        "South Asian",
+        "East Asian",
+        "Southeast Asian",
+        "Middle Eastern",
+        "African",
+        "Mexican & Latin American",
+        "Country & Western",
+        "Western formal",
+        "Western casual"
+    )
+
+    const val LISTING_MAX = 3
+}
+
+fun styleOverlap(listingStyles: List<String>, interests: Set<String>): Int =
+    if (interests.isEmpty()) 0 else listingStyles.count { it in interests }
+
+object AccessoryDeclaration {
+    const val VERSION = 1
+    const val TITLE = "Accessory declaration"
+    const val INTRO = "Before you list jewelry or accessories, please confirm:"
+
+    val STATEMENTS = listOf(
+        "This accessory or jewelry is not real silver, gold or platinum, has no pearls and no diamonds or precious gemstones.",
+        "It is not made of precious or expensive metals or materials.",
+        "It is worth less than \$500.",
+        "I understand a false declaration breaks the Dzirent Terms and that I am responsible for this item."
+    )
+
+    const val NAME_LABEL = "Full legal name"
+    const val SIGN_BUTTON = "I agree and sign"
+    const val SIGNATURE_NOTE =
+        "Your typed name and these ticks are your signature. We keep this record with your email, the time and your city."
+    val TEXT: String = "$TITLE (v$VERSION)\n" + STATEMENTS.joinToString("\n") { "- $it" }
+    const val LISTING_CHECKBOX = "This item isn't fine jewelry or precious metal and is worth under \$500."
+    const val NAME_MAX = 120
+
+    fun nameError(name: String): String? {
+        val trimmed = name.trim()
+        return when {
+            trimmed.count { it.isLetter() } < 2 -> "Type your full legal name."
+            trimmed.length > NAME_MAX -> "Up to $NAME_MAX characters."
+            else -> null
+        }
+    }
+
+    fun canSign(checked: List<Boolean>, name: String): Boolean =
+        checked.size == STATEMENTS.size && checked.all { it } && nameError(name) == null
+}
+
+fun declarationNeeded(category: String?, jewelryFound: Boolean, signed: Boolean): Boolean =
+    !signed && (category == Categories.ACCESSORIES || jewelryFound)
+
+enum class ClosetSort(val label: String) {
+    NEWEST("Newest first"),
+    PRICE_LOW("Price: low to high"),
+    PRICE_HIGH("Price: high to low"),
+    TITLE_A_Z("Title: A to Z")
+}
+
+fun sortCloset(listings: List<Listing>, sort: ClosetSort): List<Listing> = when (sort) {
+    ClosetSort.NEWEST -> listings.sortedByDescending { it.createdAt.orEmpty() }
+    ClosetSort.PRICE_LOW -> listings.sortedBy { it.priceUsd ?: Double.MAX_VALUE }
+    ClosetSort.PRICE_HIGH -> listings.sortedByDescending { it.priceUsd ?: 0.0 }
+    ClosetSort.TITLE_A_Z -> listings.sortedBy { it.title.lowercase() }
+}
+
+const val MEASUREMENT_LABEL_MAX = 40
+const val PRICE_NOTE_MAX = 60
+const val DESCRIPTION_MAX = 1000
+const val DEPOSIT_NOTE_MAX = 120
+
+data class MeasurementInput(val label: String, val valueText: String) {
+    val isBlank: Boolean get() = label.isBlank() && valueText.isBlank()
+}
+
+fun validateMeasurements(rows: List<MeasurementInput>): List<String?> {
+    val seen = mutableSetOf<String>()
+    return rows.map { row ->
+        if (row.isBlank) return@map null
+        val label = row.label.trim()
+        val value = row.valueText.trim().toDoubleOrNull()
+        val key = label.lowercase()
+        when {
+            label.isEmpty() -> "Add a label."
+            label.length > MEASUREMENT_LABEL_MAX -> "Label can be up to $MEASUREMENT_LABEL_MAX characters."
+            !seen.add(key) -> "\"$label\" is already listed."
+            row.valueText.isBlank() -> "Enter a number."
+            value == null -> "Enter a number, like 38 or 38.5."
+            value <= 0.0 || value >= 1000.0 -> "Must be more than 0 and less than 1000."
+            else -> null
+        }
+    }
+}
+
+data class ListingValidationResult(
+    val isValid: Boolean,
+    val titleError: String? = null,
+    val priceError: String? = null,
+    val measurementErrors: List<String?> = emptyList(),
+    val firstError: String? = null
+)
+
+fun validateListingForm(
+    title: String,
+    priceUsd: Double?,
+    measurements: List<MeasurementInput> = emptyList()
+): ListingValidationResult {
+    val trimmedTitle = title.trim()
+    val titleError = when {
+        trimmedTitle.isEmpty() -> "Title cannot be empty."
+        trimmedTitle.length < 3 -> "Title must be at least 3 characters."
+        trimmedTitle.length > 80 -> "Title must be 80 characters or less."
+        else -> null
+    }
+
+    val priceError = when {
+        priceUsd == null -> "Price is required."
+        priceUsd <= 0.0 -> "Price must be above $0."
+        priceUsd > 10_000.0 -> "Price must be $10,000 or less."
+        else -> null
+    }
+
+    val mErrors = validateMeasurements(measurements)
+    val hasMeasurementError = mErrors.any { it != null }
+
+    val first = titleError ?: priceError ?: mErrors.firstOrNull { it != null }
+
+    return ListingValidationResult(
+        isValid = titleError == null && priceError == null && !hasMeasurementError,
+        titleError = titleError,
+        priceError = priceError,
+        measurementErrors = mErrors,
+        firstError = first
+    )
+}
+
+object AppLinks {
+    const val TERMS_URL = "https://dzirent.com/terms"
+    const val PRIVACY_URL = "https://dzirent.com/privacy"
+    const val SUPPORT_EMAIL = "support@dzirent.com"
 }
 

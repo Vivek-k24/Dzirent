@@ -35,6 +35,23 @@ import com.dzirent.shared.repository.DzirentRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+object SearchHistory {
+    val items = mutableStateListOf("Evening Dress", "Designer Bag", "Cocktail")
+
+    fun add(q: String) {
+        val trimmed = q.trim()
+        if (trimmed.isNotBlank()) {
+            items.remove(trimmed)
+            items.add(0, trimmed)
+            while (items.size > 10) items.removeAt(items.lastIndex)
+        }
+    }
+
+    fun clear() {
+        items.clear()
+    }
+}
+
 @Composable
 fun SearchScreen(
     repository: DzirentRepository,
@@ -51,7 +68,7 @@ fun SearchScreen(
     val lng = if (isGuest) guestLng else profile?.approxLng
 
     var query by rememberSaveable { mutableStateOf("") }
-    var recentSearches by rememberSaveable { mutableStateOf(listOf("Evening Dress", "Designer Bag", "Cocktail")) }
+    val recentSearches = SearchHistory.items
     var sort by rememberSaveable { mutableStateOf(SearchSort.NEAREST) }
     var sortMenuOpen by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -111,10 +128,7 @@ fun SearchScreen(
     }
 
     fun saveRecent(q: String) {
-        val trimmed = q.trim()
-        if (trimmed.isNotBlank() && trimmed !in recentSearches) {
-            recentSearches = (listOf(trimmed) + recentSearches).take(10)
-        }
+        SearchHistory.add(q)
     }
 
     if (showDatePicker) {
@@ -176,7 +190,7 @@ fun SearchScreen(
                     saveRecent(picked)
                     focusManager.clearFocus()
                 },
-                onClear = { recentSearches = emptyList() }
+                onClear = { SearchHistory.clear() }
             )
             return@Column
         }

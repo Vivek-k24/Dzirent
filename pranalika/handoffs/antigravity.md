@@ -2,6 +2,71 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 3B-2 - 2026-10-31 - remaining screens
+
+Done:
+- Ported all remaining screens into `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/` using Compose Multiplatform:
+  - `ChatScreens.kt`: `InboxScreen` with "Messages" (with unread indicator dot) and "Activity" tabs; `ChatScreen` with live messaging and rental status flow over Supabase Realtime channel, listing preview banner, dates chip, message bubble history, block/report actions, and clean subscription disposal.
+  - `ListingEditorSections.kt`: `MeasurementsSection` (cm/in unit switcher, dynamic rows, inline validation for 1-999 and label limits) and `AvailabilitySection` (inclusive date ranges with format parsing).
+  - `ListingEditor.kt`: Full listing editor for creating and editing listings; details (title 3-80 chars, category, accessory item type, size label, price > 0, price details, description <= 1000 chars, styles); accessory declaration confirmation; calls repository `createListing`/`updateListing`, `saveListingMeasurements`, `saveAvailability`.
+  - `ClosetScreens.kt`: `MyClosetScreen` with "My Listings" (active/paused status switch, sort options, delete confirmation using Edge Function `delete-listing`, edit action) and "My Rentals" tab (active and returned rentals with navigation to chat).
+  - `StudioScreen.kt`: Studio page resolved by handle (`get_studio(handle)`); avatar, name, handle, bio, style tags, pickup area, reply time text, rental count; bookmarking (`saveStudio`/`unsaveStudio`); more menu for report/block by handle; "Message" button opening piece picker sheet; 3-column active pieces grid; guest gated actions.
+  - `MyStudioScreen.kt`: Studio settings and profile editor (studio name, cleaned handle with format validation, bio, up to 5 style tags, pickup area); calls `repository.updateStudio`.
+  - `SavedScreen.kt`: "Pieces" tab backed by `browse_listings(savedOnly = true)` and "Studios" tab backed by `my_saved_studios()`; remove piece via `unsaveListing` and remove studio via `unsaveStudio`.
+  - `SettingsScreen.kt`: Appearance (Theme: System/Light/Dark), Preferences (Distance unit, Measurement unit), Location update, Privacy & Safety (navigation to `measurements` and `blocked`), Search history clearing, About Dzirent, Account (email display, `ChangePasswordDialog`, `DeleteAccountDialog` invoking Edge Function `delete-account`, and Sign out).
+  - `BodyMeasurementsScreen.kt`: Private body measurements form (Chest/Bust, Waist, Hips, Shoulder, Height, Inseam) in cm or inches; fit profile selection; fashion style interests; privacy notes; persists to `private_profiles`.
+  - `Moderation.kt`: `ReportDialog` (handles both handle-based user reporting and entity ID reporting), `BlockUserDialog`, and `BlockedUsersScreen` (loads own blocks and unblocks via `unblockUserById`).
+  - `Guide.kt`: `GuideOverlay` app tour with step dots, skip, next/done, and scrim touch isolation.
+  - `Suggestions.kt`: `rememberSuggestions` and `suggestionItems` for 0-result search/browse states; strictly rule-based (no AI / LLM calls).
+  - `AboutScreen.kt`: Policies, terms & privacy web links, contact email, version info, and `LicensesScreen` providing a pure multiplatform catalog of open-source dependencies and licenses.
+- Android-only code placed in `mobile/shared/src/androidMain/kotlin/com/dzirent/shared/ui/PhotoPermissions.kt`:
+  - `PhotoConsentStore`, `PhotoConsentDialog`, `CameraDeniedDialog` behind Android platform context.
+- Domain & Repository Additions:
+  - `Models.kt`: Added `UiState`, `isValidBodyCm`, `bodyInputToCm`, `cmToBodyInput`, `StyleTags`, `cleanHandleInput`, `isValidHandle`, `suggestHandle`, `replyTimeText`, `sinceText`, `FashionStyles`, `AccessoryDeclaration`, `ClosetSort`, `sortCloset`, `validateMeasurements`, `validateListingForm`, `AppLinks`.
+  - `DzirentRepository.kt`: Added `currentEmail`, `updateStudio`, `getListingDetail`, `getRentedOutListingIds`, `getConversation`, `haveIBlocked`, `unblockUserById`.
+- Navigation Integration:
+  - Updated `MainAppScaffold.kt` to wire all routes (`inbox`, `closet`, `saved`, `studio/{handle}`, `chat/{conversationId}`, `profile`, `settings`, `measurements`, `list`, `edit/{listingId}`, `blocked`, `about`, `licenses`), removing all placeholders.
+  - Added shared `SearchHistory` singleton in `SearchScreen.kt` for synchronized search history clearing.
+- Tests:
+  - Added unit test `mobile/shared/src/commonTest/kotlin/com/dzirent/shared/ListingValidationTest.kt` verifying title (3-80 chars), price (> 0), measurement values (1-999), and measurement labels.
+  - Built `mobile/shared` and ran `:shared:testDebugUnitTest`: all 4 test suites (`ListingValidationTest`, `GuestGateTest`, `ModelTest`, `SmokeTest`) passed with 0 errors.
+
+Files changed:
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/model/Models.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/repository/DzirentRepository.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/AboutScreen.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/AccessoryDeclarationScreen.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/BodyMeasurementsScreen.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/ChatScreens.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/ClosetScreens.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/Guide.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/ListingEditor.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/ListingEditorSections.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/MainAppScaffold.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/Moderation.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/MyStudioScreen.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/SavedScreen.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/SearchScreen.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/SettingsScreen.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/StudioScreen.kt`
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/Suggestions.kt`
+- `mobile/shared/src/androidMain/kotlin/com/dzirent/shared/ui/PhotoPermissions.kt`
+- `mobile/shared/src/commonTest/kotlin/com/dzirent/shared/ListingValidationTest.kt`
+- `pranalika/BOARD.md`
+- `pranalika/handoffs/antigravity.md`
+
+How verified:
+- Executed `.\gradlew.bat :shared:testDebugUnitTest` using JDK 21 on Windows; all 4 test classes passed.
+- Verified listing validation limits match database constraints: title 3-80 chars, price > 0, measurement values 1-999.
+- Verified Edge Function invocations for `delete-listing` and `delete-account`.
+- Verified handle-based moderation (`block_user`, `unblock_user`, `report_user`) and studio retrieval (`get_studio`).
+
+Open issues:
+- None.
+
+Requests:
+- Ready for Step 4 (Android app on shared code).
+
 ## Step 3B-1 - 2026-10-31 - shell and browsing screens
 
 Done:

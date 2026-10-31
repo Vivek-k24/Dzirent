@@ -46,9 +46,9 @@ Planned after Step 1. Environment wiring, guest mode, home, search, listing page
 | 3A `DzirentRepository` rewritten against contract | Done |
 | 3A Phone-only interfaces (`commonMain`) + Android implementations + iOS compiling stubs | Done |
 | 3A Unit & smoke tests passing | Done |
-| Done by: Antigravity (3A, 3B-1) | |
+| Done by: Antigravity (3A, 3B-1, 3B-2) | |
 | 3B-1 Shell, theme, components, welcome and sign-in, guest mode, location, home, search, filters, sidebar, listing page | Done |
-| 3B-2 All remaining screens | To do |
+| 3B-2 All remaining screens | Done |
 
 ## Step 4 - Android on shared code
 
