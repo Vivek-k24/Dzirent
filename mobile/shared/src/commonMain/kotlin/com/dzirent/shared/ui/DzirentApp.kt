@@ -77,6 +77,7 @@ fun DzirentApp(
                             repository = repository,
                             userProfile = state.profile,
                             isGuest = false,
+                            settingsStorage = settingsStorage,
                             onSignOut = {
                                 screenState = AuthScreenState.Guest
                             },
@@ -92,6 +93,7 @@ fun DzirentApp(
                             repository = repository,
                             userProfile = null,
                             isGuest = true,
+                            settingsStorage = settingsStorage,
                             onSignOut = {},
                             onNavigateToAuth = {
                                 authStartDestination = "login"

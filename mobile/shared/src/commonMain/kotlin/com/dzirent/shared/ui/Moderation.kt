@@ -1,6 +1,5 @@
 package com.dzirent.shared.ui
 
-import com.dzirent.shared.util.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,23 +21,19 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.dzirent.shared.model.Block
+import com.dzirent.shared.model.Report
 import com.dzirent.shared.model.ReportReasons
-import com.dzirent.shared.model.UiState
 import com.dzirent.shared.repository.DzirentRepository
 import kotlinx.coroutines.launch
 
-/** What is being reported. [targetHandle] is used for users/studios. */
-data class ReportTarget(
-    val targetType: String, // 'listing' | 'user' | 'message'
-    val targetId: String,
-    val title: String,
-    val targetHandle: String? = null
-)
+/** What is being reported; [targetType] is 'listing' | 'user' | 'message'. */
+data class ReportTarget(val targetType: String, val targetId: String, val title: String)
 
-/** Reason picker with optional details. */
+/** Reason picker with optional details. Inserts into reports, then thanks the user. */
 @Composable
 fun ReportDialog(
     repository: DzirentRepository,
+    reporterId: String,
     target: ReportTarget,
     onDismiss: () -> Unit
 ) {
@@ -101,7 +96,6 @@ fun ReportDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 error?.let {
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -118,20 +112,15 @@ fun ReportDialog(
                         isSending = true
                         error = null
                         try {
-                            if (target.targetHandle != null) {
-                                repository.reportUser(
-                                    handle = target.targetHandle,
-                                    reason = picked,
-                                    details = details.trim().ifBlank { null }
-                                )
-                            } else {
-                                repository.submitReport(
+                            repository.report(
+                                Report(
+                                    reporterId = reporterId,
                                     targetType = target.targetType,
                                     targetId = target.targetId,
                                     reason = picked,
                                     details = details.trim().ifBlank { null }
                                 )
-                            }
+                            )
                             sent = true
                         } catch (e: Exception) {
                             error = e.userMessage("Couldn't send your report. Please try again.")
@@ -148,7 +137,7 @@ fun ReportDialog(
     )
 }
 
-/** Confirmation before blocking someone. */
+/** Confirmation before blocking someone from a chat. */
 @Composable
 fun BlockUserDialog(name: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
@@ -158,7 +147,7 @@ fun BlockUserDialog(name: String, onConfirm: () -> Unit, onDismiss: () -> Unit) 
         text = {
             Text(
                 "You won't be able to message each other, and you won't see each other's listings. " +
-                    "You can unblock them any time from Settings > Blocked users."
+                    "You can unblock them any time from Profile > Blocked users."
             )
         },
         confirmButton = {
@@ -173,6 +162,7 @@ fun BlockUserDialog(name: String, onConfirm: () -> Unit, onDismiss: () -> Unit) 
 @Composable
 fun BlockedUsersScreen(
     repository: DzirentRepository,
+    currentUserId: String,
     onBack: () -> Unit
 ) {
     var uiState by remember { mutableStateOf<UiState<List<Block>>>(UiState.Loading) }
@@ -206,7 +196,7 @@ fun BlockedUsersScreen(
         }
     }
 
-    LaunchedEffect(Unit) { load() }
+    LaunchedEffect(currentUserId) { load() }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -224,7 +214,7 @@ fun BlockedUsersScreen(
                 if (state.data.isEmpty()) {
                     EmptyView(
                         title = "No blocked users",
-                        description = "People you block show up here, and you can unblock them any time.",
+                        description = "People you block from a chat show up here, and you can unblock them any time.",
                         icon = Icons.Default.Block
                     )
                 } else {
@@ -241,8 +231,8 @@ fun BlockedUsersScreen(
                         }
                         items(state.data, key = { it.blockedId }) { block ->
                             ListItem(
-                                headlineContent = { Text("Blocked user") },
-                                supportingContent = { Text("Blocked") },
+                                headlineContent = { Text(block.blocked?.displayName?.ifBlank { null } ?: "Dzirent member") },
+                                supportingContent = block.blocked?.city?.ifBlank { null }?.let { city -> { Text(city) } },
                                 leadingContent = { Icon(Icons.Default.Person, contentDescription = null) },
                                 trailingContent = {
                                     OutlinedButton(
@@ -259,4 +249,3 @@ fun BlockedUsersScreen(
         }
     }
 }
-

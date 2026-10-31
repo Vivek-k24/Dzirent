@@ -1,5 +1,12 @@
 package com.dzirent.shared.ui
 
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.ColorFilter
+import com.dzirent.shared.resources.Res
+import com.dzirent.shared.resources.logo_mark
+import com.dzirent.shared.resources.logo_wordmark
+import com.dzirent.shared.ui.theme.DzirentLogoMark
+import org.jetbrains.compose.resources.painterResource
 import com.dzirent.shared.util.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -170,9 +177,19 @@ fun HomeTopBar(
                 .align(Alignment.Center)
                 .semantics(mergeDescendants = true) { contentDescription = "Dzirent" }
         ) {
-            LogoMark(modifier = Modifier.size(22.dp))
+            Image(
+                painter = painterResource(Res.drawable.logo_mark),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(DzirentLogoMark),
+                modifier = Modifier.size(22.dp)
+            )
             Spacer(modifier = Modifier.width(6.dp))
-            LogoWordmark()
+            Image(
+                painter = painterResource(Res.drawable.logo_wordmark),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
+                modifier = Modifier.height(13.dp).aspectRatio(LOGO_WORDMARK_ASPECT)
+            )
         }
 
         Row(
@@ -377,7 +394,7 @@ fun StudioCard(studio: StudioSummary, onClick: (() -> Unit)?) {
         Text(
             text = listOfNotNull(
                 "${studio.pieceCount} ${if (studio.pieceCount == 1) "piece" else "pieces"}",
-                studio.distance?.let { formatDistance(it) }
+                studio.distance?.let { formatWholeMiles(it, LocalAppSettings.current.distanceUnit) }
             ).joinToString(" · "),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -409,7 +426,7 @@ fun ListingCard(listing: ListingCard, onClick: () -> Unit, modifier: Modifier = 
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = cardSubtitle(listing.price, listing.distance),
+            text = listOfNotNull(listing.price?.let { formatPrice(it) }, listing.distance?.let { formatWholeMiles(it, LocalAppSettings.current.distanceUnit) }).joinToString(" · "),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1
@@ -461,3 +478,7 @@ fun SeeAllScreen(
         }
     }
 }
+
+
+/** The wordmark vector is 563.4 x 100. */
+private const val LOGO_WORDMARK_ASPECT = 5.634f

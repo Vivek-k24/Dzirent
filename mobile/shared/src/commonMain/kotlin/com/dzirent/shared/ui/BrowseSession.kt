@@ -74,11 +74,6 @@ enum class SearchSort(val label: String, val dbSort: String) {
     PRICE_HIGH("Price: High to Low", "price_desc")
 }
 
-sealed class UiState<out T> {
-    object Loading : UiState<Nothing>()
-    data class Error(val message: String) : UiState<Nothing>()
-    data class Success<T>(val data: T) : UiState<T>()
-}
 
 /** One lender on Home's Studios tab, built from their listings that match the filters. */
 data class StudioSummary(

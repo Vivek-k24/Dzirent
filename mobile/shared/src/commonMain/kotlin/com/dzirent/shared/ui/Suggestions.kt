@@ -153,7 +153,7 @@ fun LazyGridScope.suggestionItems(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = cardSubtitle(listing.price, listing.distance),
+                            text = listOfNotNull(listing.price?.let { formatPrice(it) }, listing.distance?.let { formatWholeMiles(it, LocalAppSettings.current.distanceUnit) }).joinToString(" · "),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1

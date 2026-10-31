@@ -15,7 +15,11 @@ import java.util.UUID
 /** Folder for camera captures, shared with FileProvider (res/xml/file_paths.xml). */
 fun cameraDir(context: Context): File = File(context.cacheDir, "camera").apply { mkdirs() }
 
-class AndroidDeviceServices(context: Context, override val appVersion: String) : DeviceServices {
+class AndroidDeviceServices(
+    context: Context,
+    override val appVersion: String,
+    override val appBuild: Long
+) : DeviceServices {
     private val app = context.applicationContext
 
     // Same file as the reference app, so its flags (photo consent, tips, declaration) carry over.

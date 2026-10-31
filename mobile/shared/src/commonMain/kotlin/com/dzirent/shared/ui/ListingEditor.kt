@@ -78,7 +78,7 @@ fun ListingEditorScreen(
         scope.launch {
             loadState = UiState.Loading
             loadState = try {
-                UiState.Success(repository.getListingDetail(listingId) ?: NOT_YOURS)
+                UiState.Success(repository.getMyListing(listingId) ?: NOT_YOURS)
             } catch (e: Exception) {
                 UiState.Error(e.userMessage("Couldn't load this listing. Please try again."))
             }

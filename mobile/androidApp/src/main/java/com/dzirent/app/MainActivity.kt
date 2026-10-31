@@ -16,8 +16,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val settingsStorage = AndroidSettingsStorage(applicationContext)
-        val versionName = packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
-        val device = AndroidDeviceServices(applicationContext, versionName)
+        val packageInfo = packageManager.getPackageInfo(packageName, 0)
+        val device = AndroidDeviceServices(applicationContext, packageInfo.versionName.orEmpty(), packageInfo.longVersionCode)
         setContent {
             // Wait for the saved settings (a few ms) so the app never flashes the other theme.
             val settings by settingsStorage.settings.collectAsState(initial = null)

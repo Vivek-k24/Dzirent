@@ -1,6 +1,6 @@
 package com.dzirent.shared.ui
 
-import com.dzirent.shared.util.*
+import com.dzirent.shared.platform.KeyValueStore
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -25,36 +25,29 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.dzirent.shared.ui.theme.DzirentAccent
 import com.dzirent.shared.ui.theme.OnDzirentAccent
+import com.dzirent.shared.util.SetupItem
+import com.dzirent.shared.util.SetupStatus
 
-enum class SetupItem(val title: String) {
-    LOCATION("Set your location"),
-    MEASUREMENTS("Add your measurements"),
-    STUDIO("Name your studio"),
-    FIRST_PIECE("List your first piece")
-}
+/** First-run flags on this device, per user id (no database change). */
+class OnboardingStore(private val prefs: KeyValueStore, private val userId: String) {
 
-data class SetupStatus(
-    val location: Boolean = false,
-    val measurements: Boolean = false,
-    val studio: Boolean = false,
-    val firstPiece: Boolean = false
-) {
-    fun isDone(item: SetupItem): Boolean = when (item) {
-        SetupItem.LOCATION -> location
-        SetupItem.MEASUREMENTS -> measurements
-        SetupItem.STUDIO -> studio
-        SetupItem.FIRST_PIECE -> firstPiece
+    val welcomeSeen: Boolean get() = prefs.getBoolean("welcome_seen_$userId", false)
+
+    fun markWelcomeSeen() {
+        prefs.putBoolean("welcome_seen_$userId", true)
     }
 
-    val basicsDone: Boolean get() = location && measurements
+    val setupCardDismissed: Boolean get() = prefs.getBoolean("setup_card_dismissed_$userId", false)
+
+    fun dismissSetupCard() {
+        prefs.putBoolean("setup_card_dismissed_$userId", true)
+    }
 }
 
-fun setupItems(canLend: Boolean): List<SetupItem> =
-    if (canLend) listOf(SetupItem.LOCATION, SetupItem.MEASUREMENTS, SetupItem.STUDIO, SetupItem.FIRST_PIECE)
-    else listOf(SetupItem.LOCATION, SetupItem.MEASUREMENTS)
-
 /**
- * "Welcome to Dzirent": onboarding checklist whose rows open the relevant setup screens.
+ * "Welcome to Dzirent": a checklist whose rows open the right screen in one tap, then
+ * "Show me around" (the guide) or "I'll do it later" (same as the X).
+ * [status] is null while the ticks are still loading.
  */
 @Composable
 fun WelcomeDialog(
@@ -65,20 +58,20 @@ fun WelcomeDialog(
     onLater: () -> Unit
 ) {
     Dialog(onDismissRequest = onLater, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        // surfaceBright: white in light mode, a lighter grey than the app in dark mode.
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceBright,
             modifier = Modifier
+                .systemBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 24.dp)
                 .widthIn(max = 420.dp)
                 .fillMaxWidth()
         ) {
+            // Scrolls so nothing is cut off on small phones with the largest font.
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    IconButton(
-                        onClick = onLater,
-                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
-                    ) {
+                    IconButton(onClick = onLater, modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
                     }
                 }
@@ -96,19 +89,12 @@ fun WelcomeDialog(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     items.forEach { item ->
-                        ChecklistRow(
-                            item = item,
-                            done = status?.isDone(item) == true,
-                            onClick = { onItem(item) }
-                        )
+                        ChecklistRow(item = item, done = status?.isDone(item) == true, onClick = { onItem(item) })
                     }
                     Spacer(modifier = Modifier.height(20.dp))
                     Button(
                         onClick = onShowMeAround,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DzirentAccent,
-                            contentColor = OnDzirentAccent
-                        ),
+                        colors = ButtonDefaults.buttonColors(containerColor = DzirentAccent, contentColor = OnDzirentAccent),
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 50.dp)
@@ -130,7 +116,7 @@ fun WelcomeDialog(
 }
 
 @Composable
-fun ChecklistRow(item: SetupItem, done: Boolean, onClick: () -> Unit) {
+private fun ChecklistRow(item: SetupItem, done: Boolean, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -182,4 +168,3 @@ fun FinishSetupCard(onOpen: () -> Unit, onDismiss: () -> Unit) {
         }
     }
 }
-

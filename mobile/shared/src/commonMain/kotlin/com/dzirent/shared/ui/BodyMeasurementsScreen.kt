@@ -1,6 +1,5 @@
 package com.dzirent.shared.ui
 
-import com.dzirent.shared.util.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -14,8 +13,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.dzirent.shared.model.*
+import com.dzirent.shared.model.PrivateProfile
 import com.dzirent.shared.repository.DzirentRepository
+import com.dzirent.shared.util.BodyMeasurement
+import com.dzirent.shared.util.FashionStyles
+import com.dzirent.shared.util.FitProfile
+import com.dzirent.shared.util.bodyInputToCm
+import com.dzirent.shared.util.cmToBodyInput
+import com.dzirent.shared.util.isValidBodyCm
 import kotlinx.coroutines.launch
 
 private const val MEASUREMENTS_PRIVACY_NOTE =
@@ -35,6 +40,7 @@ private const val HOW_TO_MEASURE =
 @Composable
 fun BodyMeasurementsScreen(
     repository: DzirentRepository,
+    userId: String,
     onBack: () -> Unit
 ) {
     var loadState by remember { mutableStateOf<UiState<PrivateProfile>>(UiState.Loading) }
@@ -44,14 +50,14 @@ fun BodyMeasurementsScreen(
         scope.launch {
             loadState = UiState.Loading
             loadState = try {
-                UiState.Success(repository.getPrivateProfile())
+                UiState.Success(repository.getPrivateProfile(userId))
             } catch (e: Exception) {
                 UiState.Error(e.userMessage("Couldn't load your measurements. Please try again."))
             }
         }
     }
 
-    LaunchedEffect(Unit) { load() }
+    LaunchedEffect(userId) { load() }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -67,6 +73,7 @@ fun BodyMeasurementsScreen(
             is UiState.Error -> ErrorView(message = state.message, onRetry = { load() })
             is UiState.Success -> MeasurementsForm(
                 repository = repository,
+                userId = userId,
                 saved = state.data,
                 onSaved = onBack
             )
@@ -78,52 +85,61 @@ fun BodyMeasurementsScreen(
 @Composable
 private fun MeasurementsForm(
     repository: DzirentRepository,
+    userId: String,
     saved: PrivateProfile,
     onSaved: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val settings = LocalAppSettings.current
-    var unit by rememberSaveable { mutableStateOf(settings.measureUnit.key) }
+    // Starts in the unit from Settings > Preferences; values are stored in cm either way.
+    val startUnit = LocalAppSettings.current.measureUnit.key
+    var unit by rememberSaveable { mutableStateOf(startUnit) }
+    // "I'm a": optional, nothing preselected. Only changes the Chest/Bust wording and the fit rule.
     var fit by rememberSaveable { mutableStateOf(saved.fit) }
     var styles by rememberSaveable { mutableStateOf(saved.styleInterests.filter { it in FashionStyles.ALL }) }
     val texts = remember {
         mutableStateMapOf<BodyMeasurement, String>().apply {
-            BodyMeasurement.entries.forEach { m ->
-                put(m, cmToBodyInput(saved.bodyCm(m), unit))
-            }
+            BodyMeasurement.entries.forEach { put(it, cmToBodyInput(saved.bodyCm(it), unit)) }
         }
     }
+    var showErrors by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var saveError by remember { mutableStateOf<String?>(null) }
 
-    fun setUnit(newUnit: String) {
+    fun errorFor(measurement: BodyMeasurement): String? {
+        val text = texts[measurement].orEmpty()
+        if (text.isBlank()) return null
+        val cm = bodyInputToCm(text, unit) ?: return "Enter a number, like 36 or 36.5."
+        return if (isValidBodyCm(cm)) null else "That doesn't look right. Check the number and unit."
+    }
+
+    fun changeUnit(newUnit: String) {
         if (newUnit == unit) return
-        BodyMeasurement.entries.forEach { m ->
-            val cm = bodyInputToCm(texts[m].orEmpty(), unit)
-            texts[m] = cmToBodyInput(cm, newUnit)
+        // Convert what's typed so switching units never changes a measurement.
+        BodyMeasurement.entries.forEach { measurement ->
+            val cm = bodyInputToCm(texts[measurement].orEmpty(), unit)
+            if (cm != null) texts[measurement] = cmToBodyInput(cm, newUnit)
         }
         unit = newUnit
     }
 
     fun save() {
+        if (BodyMeasurement.entries.any { errorFor(it) != null }) {
+            showErrors = true
+            return
+        }
         scope.launch {
             isSaving = true
-            error = null
+            saveError = null
             try {
-                val parsed = BodyMeasurement.entries.associateWith { m ->
-                    val text = texts[m].orEmpty()
-                    if (text.isBlank()) null else bodyInputToCm(text, unit)
-                }
-                val bad = parsed.filterValues { it != null && !isValidBodyCm(it) }
-                if (bad.isNotEmpty()) {
-                    error = "Measurements must be between 1 and 299 cm (up to 118 in)."
-                    isSaving = false
-                    return@launch
-                }
-                repository.saveBodyMeasurements(parsed, fit, styles)
+                repository.saveBodyMeasurements(
+                    userId,
+                    BodyMeasurement.entries.associateWith { bodyInputToCm(texts[it].orEmpty(), unit) },
+                    fit,
+                    styles
+                )
                 onSaved()
             } catch (e: Exception) {
-                error = e.userMessage("Couldn't save your measurements. Please try again.")
+                saveError = e.userMessage("Couldn't save your measurements. Please try again.")
             }
             isSaving = false
         }
@@ -135,119 +151,95 @@ private fun MeasurementsForm(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 8.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Units",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            val units = listOf("in", "cm")
-            SingleChoiceSegmentedButtonRow {
-                units.forEachIndexed { index, option ->
-                    SegmentedButton(
-                        selected = unit == option,
-                        onClick = { setUnit(option) },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = units.size)
-                    ) { Text(if (option == "in") "Inches" else "Centimeters") }
+        Text("I'm a", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(8.dp))
+        val fitOptions = FitProfile.entries
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            fitOptions.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = fit == option,
+                    // Tapping the chosen one again clears it, since the choice is optional.
+                    onClick = { fit = if (fit == option) null else option },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = fitOptions.size)
+                ) {
+                    Text(option.label)
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "I'm a",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(null, FitProfile.WOMAN, FitProfile.MAN).forEach { option ->
-                FilterChip(
-                    selected = fit == option,
-                    onClick = { fit = option },
-                    label = { Text(option?.label ?: "Not specified") }
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Body measurements",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = HOW_TO_MEASURE,
-            style = MaterialTheme.typography.bodySmall,
+            text = MEASUREMENTS_PRIVACY_NOTE,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("How to measure", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = HOW_TO_MEASURE, style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        val units = listOf("in", "cm")
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            units.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = unit == option,
+                    onClick = { changeUnit(option) },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = units.size)
+                ) {
+                    Text(if (option == "in") "Inches" else "Centimeters")
+                }
+            }
+        }
         Spacer(modifier = Modifier.height(12.dp))
 
-        BodyMeasurement.entries.forEach { m ->
+        BodyMeasurement.entries.forEach { measurement ->
+            val error = if (showErrors) errorFor(measurement) else null
             OutlinedTextField(
-                value = texts[m].orEmpty(),
-                onValueChange = { texts[m] = it },
-                label = { Text(m.labelFor(fit)) },
-                supportingText = { Text(m.howTo) },
+                value = texts[measurement].orEmpty(),
+                onValueChange = { input -> texts[measurement] = input.filter { it.isDigit() || it == '.' } },
+                label = { Text(measurement.labelFor(fit)) },
                 suffix = { Text(unit) },
-                singleLine = true,
+                supportingText = { Text(error ?: measurement.howToFor(fit)) },
+                isError = error != null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Styles you're interested in",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("Styles you're interested in (optional)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
         Text(
             text = STYLES_PRIVACY_NOTE,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(8.dp))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FashionStyles.ALL.forEach { style ->
+                val selected = style in styles
                 FilterChip(
-                    selected = style in styles,
-                    onClick = {
-                        styles = if (style in styles) styles - style else styles + style
-                    },
+                    selected = selected,
+                    onClick = { styles = if (selected) styles - style else styles + style },
                     label = { Text(style) }
                 )
             }
         }
+        Spacer(modifier = Modifier.height(12.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = MEASUREMENTS_PRIVACY_NOTE,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        error?.let {
-            Spacer(modifier = Modifier.height(8.dp))
+        saveError?.let {
             Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(8.dp))
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Button(
             onClick = { save() },
             enabled = !isSaving,
-            modifier = Modifier.fillMaxWidth().height(48.dp)
+            modifier = Modifier.fillMaxWidth().height(50.dp)
         ) {
-            Text(if (isSaving) "Saving..." else "Save measurements")
+            Text(if (isSaving) "Saving..." else "Save")
         }
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
-

@@ -53,6 +53,9 @@ interface DeviceServices {
     /** The app's version name ("1.0.0"), recorded with the accessory declaration. */
     val appVersion: String
 
+    /** The build number (versionCode). */
+    val appBuild: Long
+
     fun photoStore(userId: String): PhotoStore
     fun draftStore(userId: String, listingId: String?): DraftStore
 

@@ -1,47 +1,38 @@
 package com.dzirent.shared.ui
 
-import com.dzirent.shared.util.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Checkroom
-import androidx.compose.material.icons.filled.Inbox
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Spa
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.dzirent.shared.config.SupabaseBuildConfig
+import com.dzirent.shared.util.DistanceUnit
+import com.dzirent.shared.util.KM_PER_MILE
 import com.dzirent.shared.repository.DzirentException
 import com.dzirent.shared.ui.theme.DzirentAccent
-import com.dzirent.shared.ui.theme.DzirentLogoMark
 
 /**
- * User-safe error message display.
+ * The text to show on screen for an error. Only DzirentException messages are written
+ * for users; anything else could carry URLs or tokens, so it falls back to [fallback].
  */
 fun Throwable.userMessage(fallback: String = "Something went wrong. Please try again."): String =
     if (this is DzirentException) message ?: fallback else fallback
 
-/** Initials for avatar circle ("JD" for "John Doe", "J" for "John", "?" for blank). */
+/** "AL" for "Ana Lopez", "A" for "Ana", "?" for no name. */
 fun initialsOf(name: String): String {
     val parts = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
     return when {
@@ -51,7 +42,7 @@ fun initialsOf(name: String): String {
     }
 }
 
-/** Round avatar with the person's initials. */
+/** Round avatar with the person's initials (profiles have no photo yet). */
 @Composable
 fun Avatar(name: String, size: Dp, modifier: Modifier = Modifier) {
     Box(
@@ -70,7 +61,7 @@ fun Avatar(name: String, size: Dp, modifier: Modifier = Modifier) {
     }
 }
 
-/** Tab row whose active-tab underline is the accent color. */
+/** Tab row whose active-tab underline is the accent (the only accent on these screens). */
 @Composable
 fun DzirentTabRow(selectedTabIndex: Int, tabs: @Composable () -> Unit) {
     TabRow(
@@ -87,7 +78,7 @@ fun DzirentTabRow(selectedTabIndex: Int, tabs: @Composable () -> Unit) {
     )
 }
 
-/** Small accent dot for unread notifications / inbox activity. */
+/** Small accent dot: unread messages or new activity. */
 @Composable
 fun AccentDot(modifier: Modifier = Modifier) {
     Box(
@@ -99,29 +90,17 @@ fun AccentDot(modifier: Modifier = Modifier) {
 }
 
 /**
- * Builds public storage URL for a listing photo path.
- */
-fun listingPhotoUrl(storagePath: String?): String? {
-    if (storagePath.isNullOrBlank()) return null
-    if (storagePath.startsWith("http://") || storagePath.startsWith("https://")) return storagePath
-    val cleanPath = storagePath.trimStart('/')
-    val baseUrl = SupabaseBuildConfig.SUPABASE_URL.trimEnd('/')
-    return "$baseUrl/storage/v1/object/public/listing-photos/$cleanPath"
-}
-
-/**
- * A listing photo that loads via Coil 3 from a public storage URL.
- * Shows plain gray while loading, on error, or if null.
+ * A listing photo that shows plain gray while it loads, if it fails, or when there is no
+ * photo at all. Crops to fill [modifier]'s size.
  */
 @Composable
 fun ListingPhoto(url: String?, contentDescription: String?, modifier: Modifier = Modifier) {
     val gray = MaterialTheme.colorScheme.surfaceVariant
-    val resolvedUrl = listingPhotoUrl(url)
-    if (resolvedUrl.isNullOrBlank()) {
+    if (url.isNullOrBlank()) {
         Box(modifier = modifier.background(gray))
     } else {
         AsyncImage(
-            model = resolvedUrl,
+            model = listingPhotoUrl(url),
             contentDescription = contentDescription,
             contentScale = ContentScale.Crop,
             placeholder = ColorPainter(gray),
@@ -131,7 +110,7 @@ fun ListingPhoto(url: String?, contentDescription: String?, modifier: Modifier =
     }
 }
 
-/** Shown wherever a listing has no photos. */
+/** Shown wherever a listing has no photos (pilot test listings have none). */
 @Composable
 fun NoPhotoPlaceholder(
     modifier: Modifier = Modifier,
@@ -284,78 +263,23 @@ fun EmptyView(
     }
 }
 
-/** Formats a price in USD: "$25" for whole dollars, "$25.50" otherwise. */
-fun formatPrice(usd: Double): String {
-    val roundedCents = (usd * 100.0 + 0.5).toLong()
-    val dollars = roundedCents / 100
-    val cents = roundedCents % 100
-    return if (cents == 0L) {
-        "$$dollars"
-    } else {
-        "$$dollars.${cents.toString().padStart(2, '0')}"
-    }
+/**
+ * The public URL of a listing photo. The database keeps the object path in the public
+ * listing-photos bucket ("<listing id>/<name>.jpg"); full URLs are used as they are.
+ */
+fun listingPhotoUrl(storagePath: String?): String? {
+    if (storagePath.isNullOrBlank()) return null
+    if (storagePath.startsWith("http://") || storagePath.startsWith("https://")) return storagePath
+    val baseUrl = SupabaseBuildConfig.SUPABASE_URL.trimEnd('/')
+    return "$baseUrl/storage/v1/object/public/listing-photos/${storagePath.trimStart('/')}"
 }
 
 /**
- * Formats a distance in whole miles:
- * Requirement 5: "Distance: show 'under 1 mi' when the distance is 0."
+ * Whole miles from the shop window (it returns distance only, never coordinates), shown in
+ * the chosen unit. 0 shows as "under 1 mi".
  */
-fun formatDistance(miles: Int?): String? {
-    if (miles == null) return null
-    return when {
-        miles <= 0 -> "under 1 mi"
-        miles == 1 -> "1 mi"
-        else -> "$miles mi"
-    }
+fun formatWholeMiles(miles: Int, unit: DistanceUnit): String = when {
+    miles <= 0 -> "under 1 ${unit.short}"
+    unit == DistanceUnit.MILES -> "$miles mi"
+    else -> "${kotlin.math.round(miles * KM_PER_MILE).toLong()} km"
 }
-
-/**
- * Listing card subtitle: "$price · distance". Never "free".
- */
-fun cardSubtitle(price: Double?, distance: Int?): String {
-    val priceStr = price?.takeIf { it > 0 }?.let { formatPrice(it) }
-    val distStr = distance?.let { formatDistance(it) }
-    return when {
-        priceStr != null && distStr != null -> "$priceStr · $distStr"
-        priceStr != null -> priceStr
-        distStr != null -> distStr
-        else -> ""
-    }
-}
-
-/**
- * Dzirent Flower Logo Mark.
- */
-@Composable
-fun LogoMark(
-    modifier: Modifier = Modifier,
-    tint: Color = DzirentLogoMark
-) {
-    Icon(
-        imageVector = Icons.Default.Spa,
-        contentDescription = null,
-        tint = tint,
-        modifier = modifier
-    )
-}
-
-/**
- * Dzirent Wordmark.
- */
-@Composable
-fun LogoWordmark(
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.onBackground
-) {
-    Text(
-        text = "DZIRENT",
-        style = MaterialTheme.typography.titleMedium.copy(
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 2.sp,
-            fontFamily = FontFamily.SansSerif
-        ),
-        color = color,
-        modifier = modifier
-    )
-}
-

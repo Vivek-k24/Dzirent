@@ -1,6 +1,5 @@
 package com.dzirent.shared.ui
 
-import com.dzirent.shared.util.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,9 +9,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.dzirent.shared.model.*
+import com.dzirent.shared.model.Profile
 import com.dzirent.shared.repository.DzirentRepository
+import com.dzirent.shared.util.HANDLE_MIN
+import com.dzirent.shared.util.PICKUP_AREA_MAX
+import com.dzirent.shared.util.STUDIO_BIO_MAX
+import com.dzirent.shared.util.STUDIO_NAME_MAX
+import com.dzirent.shared.util.STYLE_TAGS_MAX
+import com.dzirent.shared.util.StyleTags
+import com.dzirent.shared.util.cleanHandleInput
+import com.dzirent.shared.util.isValidHandle
+import com.dzirent.shared.util.suggestHandle
 import kotlinx.coroutines.launch
 
 /** Profile > My studio (lenders): what the studio page shows. Everything is optional. */
@@ -20,23 +29,22 @@ import kotlinx.coroutines.launch
 @Composable
 fun MyStudioScreen(
     repository: DzirentRepository,
-    profile: Profile?,
+    profile: Profile,
     onBack: () -> Unit,
     onSaved: (Profile) -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var name by rememberSaveable { mutableStateOf(profile?.studioName.orEmpty()) }
+    var name by rememberSaveable { mutableStateOf(profile.studioName.orEmpty()) }
     var handle by rememberSaveable {
-        mutableStateOf(profile?.studioHandle ?: suggestHandle(profile?.studioName ?: profile?.displayName.orEmpty()))
+        mutableStateOf(profile.studioHandle ?: suggestHandle(profile.studioName ?: profile.displayName))
     }
-    var bio by rememberSaveable { mutableStateOf(profile?.studioBio.orEmpty()) }
-    var tags by rememberSaveable { mutableStateOf(profile?.styleTags.orEmpty()) }
-    var pickup by rememberSaveable { mutableStateOf(profile?.pickupArea.orEmpty()) }
+    var bio by rememberSaveable { mutableStateOf(profile.studioBio.orEmpty()) }
+    var tags by rememberSaveable { mutableStateOf(profile.styleTags) }
+    var pickup by rememberSaveable { mutableStateOf(profile.pickupArea.orEmpty()) }
     var isSaving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-
     val handleError = handle.takeIf { it.isNotEmpty() && !isValidHandle(it) }?.let {
-        "Use 3 to 30 letters, numbers, dots or underscores."
+        "Use at least $HANDLE_MIN letters, numbers, dots or underscores."
     }
 
     fun save() {
@@ -45,14 +53,7 @@ fun MyStudioScreen(
             isSaving = true
             error = null
             try {
-                val updated = repository.updateStudio(
-                    name = name.trim().ifBlank { null },
-                    handle = handle.trim().ifBlank { null },
-                    bio = bio.trim().ifBlank { null },
-                    styleTags = tags,
-                    pickupArea = pickup.trim().ifBlank { null }
-                )
-                onSaved(updated)
+                onSaved(repository.updateStudio(profile.id, name.trim(), handle, bio.trim(), tags, pickup.trim()))
             } catch (e: Exception) {
                 error = e.userMessage("Couldn't save your studio. Please try again.")
             }
@@ -79,7 +80,7 @@ fun MyStudioScreen(
                 value = name,
                 onValueChange = { if (it.length <= STUDIO_NAME_MAX) name = it },
                 label = { Text("Studio name") },
-                placeholder = { Text(profile?.displayName.orEmpty().ifBlank { "My Studio" }) },
+                placeholder = { Text(profile.displayName) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -100,53 +101,53 @@ fun MyStudioScreen(
                 onValueChange = { if (it.length <= STUDIO_BIO_MAX) bio = it },
                 label = { Text("Bio") },
                 supportingText = { Text("${bio.length}/$STUDIO_BIO_MAX") },
-                minLines = 2,
-                maxLines = 4,
+                minLines = 3,
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Style tags (up to $STYLE_TAGS_MAX)", style = MaterialTheme.typography.titleSmall)
-            Spacer(modifier = Modifier.height(8.dp))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                StyleTags.ALL.forEach { tag ->
-                    val selected = tag in tags
-                    FilterChip(
-                        selected = selected,
-                        onClick = {
-                            tags = if (selected) tags - tag
-                            else if (tags.size < STYLE_TAGS_MAX) tags + tag
-                            else tags
-                        },
-                        label = { Text(tag) }
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
                 value = pickup,
                 onValueChange = { if (it.length <= PICKUP_AREA_MAX) pickup = it },
                 label = { Text("Pickup area") },
-                placeholder = { Text("e.g. South Congress, Austin") },
+                placeholder = { Text("e.g. East Austin") },
+                supportingText = { Text("A neighborhood, never your address.") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Text("Style tags", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(
+                text = "Pick up to $STYLE_TAGS_MAX.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StyleTags.ALL.forEach { tag ->
+                    val selected = tag in tags
+                    FilterChip(
+                        selected = selected,
+                        onClick = { tags = if (selected) tags - tag else tags + tag },
+                        enabled = selected || tags.size < STYLE_TAGS_MAX,
+                        label = { Text(tag) }
+                    )
+                }
+            }
+
             error?.let {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = { save() },
                 enabled = !isSaving && handleError == null,
-                modifier = Modifier.fillMaxWidth().height(48.dp)
+                modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
-                Text(if (isSaving) "Saving..." else "Save studio")
+                Text(if (isSaving) "Saving..." else "Save")
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
-

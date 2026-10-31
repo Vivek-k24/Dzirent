@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.aboutlibraries)
 }
 
 val isRelease = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
@@ -97,6 +98,11 @@ android {
         // The model is memory-mapped straight from the APK, which needs it stored uncompressed.
         noCompress += "tflite"
     }
+}
+
+// Open-source licenses: also lists files that aren't Gradle dependencies (the TinyCLIP model).
+aboutLibraries {
+    configPath = "config"
 }
 
 dependencies {

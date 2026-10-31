@@ -1,6 +1,7 @@
 package com.dzirent.shared.ui
 
-import com.dzirent.shared.util.*
+import com.dzirent.shared.platform.LocalDevice
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,183 +18,128 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.dzirent.shared.model.ListingCard
-import com.dzirent.shared.model.SavedStudioCard
-import com.dzirent.shared.model.UiState
+import com.dzirent.shared.model.Listing
+import com.dzirent.shared.model.SavedListing
+import com.dzirent.shared.model.SavedStudio
 import com.dzirent.shared.repository.DzirentRepository
+import com.dzirent.shared.util.formatPrice
 import kotlinx.coroutines.launch
 
-private data class SavedData(
-    val pieces: List<ListingCard>,
-    val studios: List<SavedStudioCard>
-)
+private data class SavedData(val pieces: List<SavedListing>, val studios: List<SavedStudio>)
 
 /**
- * Saved: saved Pieces and saved Studios.
+ * Saved: saved Pieces (newest first, each with "Message about dates") and saved Studios.
+ * Remove by swiping left or with the X.
  */
 @Composable
 fun SavedScreen(
     repository: DzirentRepository,
-    lat: Double? = null,
-    lng: Double? = null,
+    currentUserId: String,
     onOpenListing: (String) -> Unit,
     onOpenStudio: (String) -> Unit,
-    onBrowse: () -> Unit
+    onMessageAboutDates: (Listing) -> Unit,
+    onBrowse: () -> Unit,
+    onStudiosChanged: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val device = LocalDevice.current
     var uiState by remember { mutableStateOf<UiState<SavedData>>(UiState.Loading) }
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    var actionError by remember { mutableStateOf<String?>(null) }
+    var studiosTab by rememberSaveable { mutableStateOf(false) }
 
     fun load() {
         scope.launch {
             uiState = UiState.Loading
             uiState = try {
-                val pieces = repository.browseListings(savedOnly = true, lat = lat, lng = lng)
-                val studios = repository.mySavedStudios(lat = lat, lng = lng)
-                UiState.Success(SavedData(pieces, studios))
+                UiState.Success(SavedData(repository.getSavedListings(currentUserId), repository.getSavedStudios(currentUserId)))
             } catch (e: Exception) {
-                UiState.Error(e.userMessage("Couldn't load your saved items. Please try again."))
+                UiState.Error(e.userMessage("Couldn't load your saved pieces. Please try again."))
             }
         }
     }
 
-    fun removePiece(piece: ListingCard) {
-        val current = (uiState as? UiState.Success)?.data ?: return
-        uiState = UiState.Success(current.copy(pieces = current.pieces.filterNot { it.id == piece.id }))
+    /** Removes at once and puts the row back if the server says no. */
+    fun update(transform: (SavedData) -> SavedData, undo: (SavedData) -> SavedData, call: suspend () -> Unit) {
+        val data = (uiState as? UiState.Success)?.data ?: return
+        uiState = UiState.Success(transform(data))
         scope.launch {
             try {
-                repository.unsaveListing(piece.id)
+                call()
             } catch (e: Exception) {
-                actionError = e.userMessage("Couldn't remove saved piece.")
-                load()
+                (uiState as? UiState.Success)?.data?.let { uiState = UiState.Success(undo(it)) }
+                device.toast(e.userMessage("Couldn't remove it. Please try again."))
             }
         }
     }
 
-    fun removeStudio(studio: SavedStudioCard) {
-        val current = (uiState as? UiState.Success)?.data ?: return
-        uiState = UiState.Success(current.copy(studios = current.studios.filterNot { it.studioHandle == studio.studioHandle }))
-        scope.launch {
-            try {
-                repository.unsaveStudio(studio.studioHandle)
-            } catch (e: Exception) {
-                actionError = e.userMessage("Couldn't remove saved studio.")
-                load()
-            }
-        }
-    }
+    fun removePiece(saved: SavedListing) = update(
+        transform = { it.copy(pieces = it.pieces - saved) },
+        undo = { it.copy(pieces = listOf(saved) + it.pieces) },
+        call = { repository.unsaveListing(currentUserId, saved.listingId) }
+    )
 
-    LaunchedEffect(Unit) { load() }
+    fun removeStudio(saved: SavedStudio) = update(
+        transform = { it.copy(studios = it.studios - saved) },
+        undo = { it.copy(studios = listOf(saved) + it.studios) },
+        call = {
+            repository.unsaveStudio(currentUserId, saved.lenderId)
+            onStudiosChanged()
+        }
+    )
+
+    LaunchedEffect(currentUserId) { load() }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Text(
-            text = "Saved",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
-        )
-        DzirentTabRow(selectedTabIndex = selectedTab) {
-            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Pieces") })
-            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Studios") })
+        ScreenTitle("Saved")
+        DzirentTabRow(selectedTabIndex = if (studiosTab) 1 else 0) {
+            Tab(selected = !studiosTab, onClick = { studiosTab = false }, text = { Text("Pieces") })
+            Tab(selected = studiosTab, onClick = { studiosTab = true }, text = { Text("Studios") })
         }
-
-        actionError?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-
         when (val state = uiState) {
-            is UiState.Loading -> LoadingView(message = "Loading saved items...")
+            is UiState.Loading -> LoadingView(message = "Loading your saved pieces...")
             is UiState.Error -> ErrorView(message = state.message, onRetry = { load() })
-            is UiState.Success -> {
-                if (selectedTab == 0) {
-                    if (state.data.pieces.isEmpty()) {
-                        EmptyView(
-                            title = "No saved pieces yet",
-                            description = "When you bookmark pieces you like, they show up here.",
-                            icon = Icons.Default.BookmarkBorder,
-                            onAction = onBrowse,
-                            actionLabel = "Browse Home"
-                        )
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            items(state.data.pieces, key = { it.id }) { piece ->
-                                ListItem(
-                                    headlineContent = {
-                                        Text(piece.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    },
-                                    supportingContent = {
-                                        Text(cardSubtitle(piece.price, piece.distance))
-                                    },
-                                    leadingContent = {
-                                        ListingPhoto(
-                                            url = piece.coverPhotoPath,
-                                            contentDescription = piece.title,
-                                            modifier = Modifier.size(56.dp).clip(RoundedCornerShape(8.dp))
-                                        )
-                                    },
-                                    trailingContent = {
-                                        IconButton(onClick = { removePiece(piece) }) {
-                                            Icon(Icons.Default.Close, contentDescription = "Remove")
-                                        }
-                                    },
-                                    modifier = Modifier.clickable { onOpenListing(piece.id) }
+            is UiState.Success -> if (!studiosTab) {
+                if (state.data.pieces.isEmpty()) {
+                    EmptyView(
+                        title = "No saved pieces",
+                        description = "Pieces you save will show up here.",
+                        icon = Icons.Default.BookmarkBorder,
+                        onAction = onBrowse,
+                        actionLabel = "Browse Home"
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(state.data.pieces, key = { it.listingId }) { saved ->
+                            SwipeToRemove(onRemove = { removePiece(saved) }) {
+                                SavedPieceRow(
+                                    saved = saved,
+                                    onOpen = { saved.listing?.let { onOpenListing(it.id) } },
+                                    onMessage = { saved.listing?.let(onMessageAboutDates) },
+                                    onRemove = { removePiece(saved) }
                                 )
-                                HorizontalDivider()
                             }
                         }
                     }
+                }
+            } else {
+                if (state.data.studios.isEmpty()) {
+                    EmptyView(
+                        title = "No saved studios",
+                        description = "Studios you save will show up here.",
+                        icon = Icons.Default.Storefront,
+                        onAction = onBrowse,
+                        actionLabel = "Browse Home"
+                    )
                 } else {
-                    if (state.data.studios.isEmpty()) {
-                        EmptyView(
-                            title = "No saved studios yet",
-                            description = "When you bookmark studios you like, they show up here.",
-                            icon = Icons.Default.Storefront,
-                            onAction = onBrowse,
-                            actionLabel = "Browse Home"
-                        )
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            items(state.data.studios, key = { it.studioHandle }) { studio ->
-                                ListItem(
-                                    headlineContent = {
-                                        Text(studio.studioName, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    },
-                                    supportingContent = {
-                                        val dist = formatDistance(studio.distance)
-                                        val count = "${studio.pieceCount} ${if (studio.pieceCount == 1) "piece" else "pieces"}"
-                                        val line = listOfNotNull("@${studio.studioHandle}", count, dist).joinToString(" · ")
-                                        Text(line)
-                                    },
-                                    leadingContent = {
-                                        Avatar(name = studio.studioName, size = 48.dp)
-                                    },
-                                    trailingContent = {
-                                        IconButton(onClick = { removeStudio(studio) }) {
-                                            Icon(Icons.Default.Close, contentDescription = "Remove")
-                                        }
-                                    },
-                                    modifier = Modifier.clickable { onOpenStudio(studio.studioHandle) }
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(state.data.studios, key = { it.lenderId }) { saved ->
+                            SwipeToRemove(onRemove = { removeStudio(saved) }) {
+                                SavedStudioRow(
+                                    saved = saved,
+                                    onOpen = { onOpenStudio(saved.lenderId) },
+                                    onRemove = { removeStudio(saved) }
                                 )
-                                HorizontalDivider()
                             }
                         }
                     }
@@ -202,3 +149,104 @@ fun SavedScreen(
     }
 }
 
+/** Swipe a row to the left to remove it. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeToRemove(onRemove: () -> Unit, content: @Composable RowScope.() -> Unit) {
+    val state = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                onRemove()
+                true
+            } else false
+        }
+    )
+    SwipeToDismissBox(
+        state = state,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Box(
+                contentAlignment = Alignment.CenterEnd,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(horizontal = 24.dp)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null)
+            }
+        },
+        content = content
+    )
+}
+
+@Composable
+private fun SavedPieceRow(saved: SavedListing, onOpen: () -> Unit, onMessage: () -> Unit, onRemove: () -> Unit) {
+    val listing = saved.listing
+    Surface(color = MaterialTheme.colorScheme.background) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = listing != null, onClick = onOpen)
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+        ) {
+            ListingPhoto(
+                url = listing?.photos?.minByOrNull { it.position }?.storagePath,
+                contentDescription = listing?.title,
+                modifier = Modifier
+                    .size(width = 72.dp, height = 96.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = listing?.title ?: "No longer available",
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                listing?.priceUsd?.let {
+                    Text(formatPrice(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (listing != null) {
+                    TextButton(onClick = onMessage, contentPadding = PaddingValues(horizontal = 0.dp)) {
+                        Text("Message about dates")
+                    }
+                }
+            }
+            IconButton(onClick = onRemove) {
+                Icon(Icons.Default.Close, contentDescription = "Remove from Saved")
+            }
+        }
+    }
+    HorizontalDivider(thickness = 0.5.dp)
+}
+
+@Composable
+private fun SavedStudioRow(saved: SavedStudio, onOpen: () -> Unit, onRemove: () -> Unit) {
+    val lender = saved.lender
+    val title = lender?.studioTitle ?: "Studio"
+    Surface(color = MaterialTheme.colorScheme.background) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpen)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Avatar(name = title, size = 48.dp)
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val line = listOfNotNull(lender?.studioHandle?.let { "@$it" }, lender?.city?.ifBlank { null }).joinToString(" · ")
+                if (line.isNotEmpty()) {
+                    Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            IconButton(onClick = onRemove) {
+                Icon(Icons.Default.Close, contentDescription = "Remove from Saved")
+            }
+        }
+    }
+    HorizontalDivider(thickness = 0.5.dp)
+}

@@ -97,6 +97,8 @@ kotlin {
                 implementation(libs.androidx.activity.compose)
                 // Item recognition on the phone (TinyCLIP image encoder in assets/ml)
                 implementation(libs.litert)
+                // Open-source licenses screen
+                implementation(libs.aboutlibraries.compose.m3)
             }
         }
         val iosMain by creating {
@@ -114,6 +116,10 @@ kotlin {
             }
         }
     }
+}
+
+compose.resources {
+    packageOfResClass = "com.dzirent.shared.resources"
 }
 
 android {
