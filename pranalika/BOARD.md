@@ -55,12 +55,26 @@ Planned after Step 1. Environment wiring, guest mode, home, search, listing page
 | Item | Status |
 | --- | --- |
 | Done by: Antigravity | |
-| 4.1 Android app module `mobile/androidApp` (`applicationId com.dzirent.app`, compileSdk 36, targetSdk 36, minSdk 26, versionName 2.0.0, hosts shared `DzirentApp()`) | Done |
-| 4.2 Manifest permissions, deep links (`AppLinks`), launcher icons & resources copied from reference | Done |
+| 4.1 Android app module `mobile/androidApp` (`applicationId com.dzirent.app`, compileSdk 36, targetSdk 36, minSdk 26, versionName 2.0.0 (1.0.0 since 4B), hosts shared `DzirentApp()`) | Done |
+| 4.2 Manifest permissions, deep links (`AppLinks`; deep links removed in 4B, the reference has none), launcher icons & resources copied from reference | Done |
 | 4.3 Debug configuration (`applicationIdSuffix ".debug"`, app name "Dzirent Debug") | Done |
 | 4.4 Release signing configuration using environment variables | Done |
 | 4.5 Version code calculation (`GITHUB_RUN_NUMBER + ANDROID_VERSION_CODE_OFFSET`, release failure check) | Done |
 | 4.6 Manual release workflow `.github/workflows/android-release.yml` (`workflow_dispatch`, Play internal testing upload) | Done |
+
+## Step 4B - Android parity with the reference (V1.0)
+
+| Item | Status |
+| --- | --- |
+| Done by: Claude Code | |
+| Versions decision (V1.0 / V1.1 / V2.0), versionName 1.0.0 | Done |
+| a. Listing editor photos (slots, picker, camera, compression, upload, reorder, delete) | Done |
+| b. Listing editor (create/edit flow, declarations, availability) | Done |
+| c. On-device AI (photo checks, TinyCLIP recognition, suggestions, removals) | Done |
+| d. Chat, inbox, activity | Done |
+| e. Closet, rentals, studio, saved, settings, measurements, moderation, guide, about | Done |
+| f. Filter sheet, sidebar, location dialog, theme, browse rules, manifest | Done |
+| f. Home, Search, See all as line-by-line ports | To do |
 
 ## Step 5 - iOS
 
