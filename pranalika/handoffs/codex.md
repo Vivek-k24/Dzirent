@@ -2,6 +2,42 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 4 fix - 2026-10-31 - empty Supabase config
+
+Done:
+- Declared `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` as generator task inputs,
+  so changed values invalidate the generated config.
+- Debug and release now fail before writing config when either value is empty;
+  each error names the missing variable. Removed the legacy anon-key fallback.
+
+Files changed:
+- `mobile/shared/build.gradle.kts` and this handoff.
+
+How verified:
+- Loaded `dzirent-server.env` into environment variables before Gradle commands;
+  deliberately removed the required variables for the negative checks. No values
+  were printed or committed. No emulator or device was used.
+- With JDK 21 and credentials loaded, `clean :androidApp:assembleDebug` passed
+  in 3m 39s. Generated URL is nonempty, starts with `https://`, ends with
+  `.supabase.co`, and matches the environment; the nonempty key also matches.
+- Without credentials and without cleaning existing outputs, `:androidApp:assembleDebug`
+  failed at `:shared:generateSupabaseConfig` with
+  `Missing required environment variable: SUPABASE_URL`.
+- With only the publishable key removed (and the legacy alias present), the same
+  build failed with `Missing required environment variable: SUPABASE_PUBLISHABLE_KEY`.
+  Both failed builds left the valid generated file unchanged.
+
+Debug APK:
+- `H:\DziRent\Dzirent_dev\mobile\androidApp\build\outputs\apk\debug\androidApp-debug.apk`
+  (21,263,819 bytes).
+
+Open issues:
+- None for this fix. Verification used installed JDK 21; an initial attempt with
+  Android Studio's JDK 25 hit a Gradle/Kotlin compatibility error before building.
+
+Requests:
+- None.
+
 ## Step 1A - 2026-10-30 - completion: credentials and approved deployment
 
 Done:

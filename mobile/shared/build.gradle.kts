@@ -13,16 +13,16 @@ val generateSupabaseConfig by tasks.registering {
     outputs.dir(outputDir)
 
     val envUrl = providers.environmentVariable("SUPABASE_URL").orNull?.trim() ?: ""
-    val envKey = (providers.environmentVariable("SUPABASE_PUBLISHABLE_KEY").orNull
-        ?: providers.environmentVariable("SUPABASE_ANON_KEY").orNull)?.trim() ?: ""
-    val isRelease = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+    val envKey = providers.environmentVariable("SUPABASE_PUBLISHABLE_KEY").orNull?.trim() ?: ""
+    inputs.property("SUPABASE_URL", envUrl)
+    inputs.property("SUPABASE_PUBLISHABLE_KEY", envKey)
 
     doLast {
-        if (isRelease && (envUrl.isEmpty() || envKey.isEmpty())) {
-            throw GradleException(
-                "Release build requires SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY environment variables. " +
-                "Refusing to build release with placeholder values."
-            )
+        if (envUrl.isEmpty()) {
+            throw GradleException("Missing required environment variable: SUPABASE_URL")
+        }
+        if (envKey.isEmpty()) {
+            throw GradleException("Missing required environment variable: SUPABASE_PUBLISHABLE_KEY")
         }
         val destDir = outputDir.get().asFile.resolve("com/dzirent/shared/config")
         destDir.mkdirs()
