@@ -2,6 +2,58 @@
 
 Add one entry per session, newest at the top.
 
+## 2026-10-30 - Step 1A completion: credentials and approved deployment
+
+Done:
+- Owner explicitly approved deploying the prepared `delete-listing` Edge Function.
+  Deployed the unchanged committed source only to `dzirent-server`
+  (`pwfzkyjeivadbtkfkdxr`): ACTIVE, version 1. Gateway JWT verification remains
+  disabled as reviewed; the handler verifies the caller through Auth itself.
+- Updated the backend README and resolved the earlier deployment blocker below.
+- Loaded the corrected credentials into environment variables. CLI is linked only
+  to `dzirent-server`. Refreshed the old public schema and only us_cities data with
+  native pg_dump over its session pooler; the explicit source verification
+  transaction reported read-only = on. Exported Storage policies and external
+  Auth/event/Realtime dependencies with a READ ONLY psql script.
+- Downloaded `delete-account` through CLI with explicit old project-ref into an
+  ignored temporary directory; its source matches the existing snapshot. Root
+  CLI link remained the new project. No old db push, db pull, repair, or writes.
+  No connected tools were used to read the old project after the new restriction.
+- No new migrations or data changes were needed. Step 1B was not started.
+
+Files changed:
+- `supabase/README.md`, `supabase/reference/schema.sql`,
+  `supabase/reference/us_cities.sql`, `supabase/reference/snapshot_extras.sql`,
+  and `pranalika/handoffs/codex.md`.
+
+How it was verified:
+- Retrieved the deployed function and confirmed its source exactly matches the
+  approved committed source. Remote metadata: ACTIVE, version 1, verify_jwt false.
+- Live POST with only the publishable key and no bearer token: HTTP 401,
+  handler error `not_signed_in`.
+- Live POST with an invalid bearer token: HTTP 401, handler error `not_signed_in`.
+  No authenticated deletion or user/listing/file creation was performed.
+- Linked `supabase db push --linked --yes`: remote database is up to date.
+  Guest REST checks passed again: HTTP 401 on listings/profiles/us_cities and 11
+  Austin city RPC results. Direct target DB query confirmed 32,363 cities.
+- Parsed native city export and compared complete rowsets with the applied data
+  migration: exactly equal, 32,363 rows. Native schema snapshot contains 20 tables
+  and the Storage policies, Auth/event triggers and Realtime memberships exactly
+  once; schema snapshot contains no row data.
+- Independent local review found no schema drift: all 20 tables, 103 constraints,
+  23 secondary indexes, 19 original function bodies and all source triggers,
+  policies and publication memberships match the previous structural catalog.
+
+Open issues:
+- Both credential issues and the approved deployment are resolved.
+- Live owner/cross-owner Storage deletion remains outside this small test scope;
+  the four local handler checks from Step 1A remain the positive-path verification.
+
+Requests:
+- Coordinator: record the intentional Advisor exceptions listed in the original
+  entry below in `pranalika/security-log.md`. No further owner action is needed
+  for Step 1A.
+
 ## 2026-10-30 - Step 1A: dzirent-server schema
 
 Done:
@@ -52,18 +104,14 @@ How it was verified:
   `git diff --check` passed.
 
 Open issues:
-- CLI `link` is pending: this computer has no Supabase access token. The database
-  password works; explicit target DB URLs were used for both successful pushes.
-  A pending input request asks the owner to run `supabase login` or add
-  `SUPABASE_ACCESS_TOKEN` to the new project's local secrets file. The CLI was
-  never linked to either project during this session.
-- `delete-listing` deployment is pending owner approval. Automatic approval review
-  rejected deployment as a consequential remote deletion endpoint outside the
-  explicit Step 1A request, citing gateway JWT verification being off. The handler
-  verifies the bearer token with `auth.getUser` before any data operation and uses
-  no service-role key. Its complete source and tests are committed for review.
-  Until approved/deployed, callers must remove the listing folder through Storage
-  API before DELETE; raw DELETE with files is safely refused.
+- Resolved in the follow-up: the new access token was loaded from the authorized
+  secrets file, and CLI linking to `dzirent-server` succeeded. Earlier pushes used
+  explicit target DB URLs; the linked push also reports up to date. The repo was
+  never linked to the old project.
+- Resolved in the follow-up above: the owner approved deployment after the initial
+  automatic approval rejection. `delete-listing` is now deployed. It verifies the
+  bearer token with `auth.getUser` and uses no service-role key. Raw DELETE while
+  files remain is safely refused by the database guard.
 - No owner-account Storage test was requested/run. The cleanup handler has local
   mocked checks; live owner/cross-owner CRUD remains for the later test step.
 - Reference `delete-account` is snapshot-only. Future account deletion must clean
@@ -74,8 +122,7 @@ Open issues:
   Existing client cross-owner joins/photo paths need later client work.
 
 Requests:
-- Authenticate the CLI for new-project linking and answer the pending approval
-  request for the prepared `delete-listing` deployment. Do not put tokens in chat.
+- CLI authentication and new-project linking are resolved.
 - Coordinator: copy the following intentional Advisor findings into your owned
   `pranalika/security-log.md`. It was not edited because this session may commit
   only `supabase/` and this handoff.
