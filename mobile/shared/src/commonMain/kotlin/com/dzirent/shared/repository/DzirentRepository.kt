@@ -1,5 +1,6 @@
 package com.dzirent.shared.repository
 
+import com.dzirent.shared.util.*
 import com.dzirent.shared.config.SupabaseBuildConfig
 import com.dzirent.shared.model.*
 import com.dzirent.shared.platform.ImageCompressor
@@ -718,7 +719,7 @@ class DzirentRepository(
                 )
             }
         } catch (e: Exception) {
-            throw fail("load your listings", e)
+            throw fail("load your closet", e)
         }
     }
 
@@ -752,17 +753,90 @@ class DzirentRepository(
                 availability = availability
             )
         } catch (e: Exception) {
-            throw fail("load listing details", e)
+            throw fail("load this listing", e)
         }
     }
 
+    /** Inserts the listing row only. Callers insert it as 'paused' and activate it last. */
     suspend fun createListing(listing: Listing): Listing {
         val uid = requireUserId()
+        val row = listing.copy(lenderId = uid, photos = emptyList(), measurements = emptyList(), availability = emptyList(), lender = null, distanceKm = null)
         return try {
-            postgrest.from("listings").insert(listing.copy(lenderId = uid)) { select() }
-                .decodeSingle<Listing>()
+            postgrest.from("listings").insert(row)
+            row
         } catch (e: Exception) {
-            throw fail("create your listing", e)
+            throw fail("save your listing", e)
+        }
+    }
+
+    /** Updates the fields the lender can edit (location and owner never change here). */
+    suspend fun updateListingDetails(listing: Listing, status: String) {
+        try {
+            postgrest.from("listings").update(
+                buildJsonObject {
+                    put("title", listing.title)
+                    put("category", listing.category)
+                    put("item_type", listing.itemType)
+                    put("size_label", listing.sizeLabel)
+                    put("description", listing.description)
+                    put("price_usd", listing.priceUsd)
+                    put("price_note", listing.priceNote)
+                    put("retail_value", listing.retailValue)
+                    put("deposit_note", listing.depositNote)
+                    put("listing_styles", JsonArray(listing.listingStyles.map { JsonPrimitive(it) }))
+                    put("garment_type", listing.garmentType)
+                    // Only ever set here; a trigger keeps owners from clearing it.
+                    if (listing.aiReviewNeeded) put("ai_review_needed", true)
+                    put("status", status)
+                }
+            ) {
+                filter { eq("id", listing.id) }
+            }
+        } catch (e: Exception) {
+            throw fail("save your listing", e)
+        }
+    }
+
+    /** Replaces all measurements of a listing (safe to repeat on retry). */
+    suspend fun replaceMeasurements(listingId: String, measurements: List<ListingMeasurement>) {
+        try {
+            postgrest.from("listing_measurements").delete { filter { eq("listing_id", listingId) } }
+            if (measurements.isNotEmpty()) postgrest.from("listing_measurements").insert(measurements)
+        } catch (e: Exception) {
+            throw fail("save the measurements", e)
+        }
+    }
+
+    /** Replaces all availability ranges of a listing (safe to repeat on retry). */
+    suspend fun replaceAvailability(listingId: String, ranges: List<Availability>) {
+        try {
+            postgrest.from("availability").delete { filter { eq("listing_id", listingId) } }
+            if (ranges.isNotEmpty()) postgrest.from("availability").insert(ranges)
+        } catch (e: Exception) {
+            throw fail("save the available dates", e)
+        }
+    }
+
+    suspend fun toggleListingStatus(id: String, newStatus: String) {
+        try {
+            postgrest.from("listings").update(buildJsonObject { put("status", newStatus) }) {
+                filter { eq("id", id) }
+            }
+        } catch (e: Exception) {
+            throw fail("update your listing", e)
+        }
+    }
+
+    suspend fun updatePhotoPosition(photoId: String, position: Int, slot: String?) {
+        try {
+            postgrest.from("listing_photos").update(buildJsonObject {
+                put("position", position)
+                put("slot", slot)
+            }) {
+                filter { eq("id", photoId) }
+            }
+        } catch (e: Exception) {
+            throw fail("save the photo order", e)
         }
     }
 
@@ -796,24 +870,25 @@ class DzirentRepository(
     }
 
     // --- Listing Photos ---
+    /**
+     * Uploads one already-compressed photo and adds its row. Photo paths are the listing id and
+     * a fresh random name, never a user id.
+     */
     suspend fun uploadListingPhoto(
         listingId: String,
         imageBytes: ByteArray,
         position: Int,
-        slot: String? = null,
-        compressor: ImageCompressor? = null
+        slot: String?
     ): ListingPhoto {
-        val bytes = compressor?.compressImage(imageBytes) ?: imageBytes
         val photoUuid = generateUuid()
-        val randomHex = generateRandomHex()
-        val path = "$listingId/$randomHex.jpg"
-
+        val path = "$listingId/${generateRandomHex()}.jpg"
         try {
-            storage.from("listing-photos").upload(path, bytes) {
+            // Filenames are fresh; upsert would need an UPDATE policy the bucket doesn't grant.
+            storage.from("listing-photos").upload(path, imageBytes) {
                 upsert = false
             }
         } catch (e: Exception) {
-            throw fail("upload photo file", e)
+            throw fail("upload the photo", e)
         }
 
         val photo = ListingPhoto(
@@ -823,21 +898,22 @@ class DzirentRepository(
             position = position,
             slot = slot
         )
-
         try {
             postgrest.from("listing_photos").insert(photo)
         } catch (e: Exception) {
+            // Don't leave an orphaned file behind if the row couldn't be saved.
             runCatching { storage.from("listing-photos").delete(listOf(path)) }
-            throw fail("save photo record", e)
+            throw fail("upload the photo", e)
         }
         return photo
     }
 
+    /** Deletes the photo row, then its file. A leftover file is ignored. */
     suspend fun deleteListingPhoto(photo: ListingPhoto) {
         try {
             postgrest.from("listing_photos").delete { filter { eq("id", photo.id) } }
         } catch (e: Exception) {
-            throw fail("remove photo record", e)
+            throw fail("remove the photo", e)
         }
         try {
             storage.from("listing-photos").delete(listOf(photo.storagePath))

@@ -1,0 +1,49 @@
+package com.dzirent.shared.util
+
+
+/** Style tags a studio can pick, up to [STYLE_TAGS_MAX]. Same list as profiles_style_tags_check. */
+object StyleTags {
+    val ALL = listOf(
+        "Minimalist", "Classic", "Vintage", "Streetwear", "Boho", "Glam", "Traditional",
+        "Workwear", "Designer", "Plus size", "Petite", "Maternity"
+    )
+}
+
+const val STYLE_TAGS_MAX = 5
+const val STUDIO_NAME_MAX = 40
+const val STUDIO_BIO_MAX = 200
+const val PICKUP_AREA_MAX = 60
+const val HANDLE_MIN = 3
+const val HANDLE_MAX = 30
+
+private val handleRegex = Regex("^[a-z0-9._]{$HANDLE_MIN,$HANDLE_MAX}$")
+
+/** What the handle field keeps as you type: lowercase, no "@", spaces become dots. */
+fun cleanHandleInput(input: String): String =
+    input.lowercase().removePrefix("@").replace(' ', '.').filter { it.isLetterOrDigit() && it.code < 128 || it == '.' || it == '_' }
+        .take(HANDLE_MAX)
+
+/** Matches profiles_studio_handle_format: 3-30 lowercase letters, numbers, dots, underscores. */
+fun isValidHandle(handle: String): Boolean = handleRegex.matches(handle)
+
+/** A starting handle from a name: "Ana López" -> "ana.lopez". Empty if nothing usable. */
+fun suggestHandle(name: String): String {
+    val ascii = stripAccents(name)
+    val base = cleanHandleInput(ascii.trim().replace(Regex("\\s+"), " "))
+        .replace(Regex("\\.{2,}"), ".")
+        .trim('.')
+    return if (base.length >= HANDLE_MIN) base.take(HANDLE_MAX) else ""
+}
+
+/** The studio page's reply line from studio_reply_minutes, or null when unknown. */
+fun replyTimeText(minutes: Int?): String? = when {
+    minutes == null -> null
+    minutes < 60 -> "Usually replies within an hour"
+    minutes < 6 * 60 -> "Usually replies within a few hours"
+    minutes < 24 * 60 -> "Usually replies within a day"
+    else -> "Usually replies within a few days"
+}
+
+/** "Since Oct 2026" from the profile's created_at, or null if it can't be read. */
+fun sinceText(createdAt: String?): String? =
+    parseTimestamp(createdAt)?.let { "Since ${it.local().date.monthYear()}" }

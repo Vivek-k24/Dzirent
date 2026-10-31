@@ -67,3 +67,9 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - The owner assigns each step to one agent. There is no permanent folder ownership; each prompt lists the folders the agent may change.
 - Each agent writes only in its own handoff file, with entries titled by step number.
 - Agents read the root `README.md` (product features and rules) only for feature or screen work.
+
+## Versions (2026-10-31)
+
+- V1.0: the reference app's features exactly, nothing new.
+- V1.1: multiple availability date ranges per listing, notifications.
+- V2.0: one-time ID verification, before the public launch.

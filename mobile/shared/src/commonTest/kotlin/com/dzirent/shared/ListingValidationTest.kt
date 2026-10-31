@@ -1,8 +1,8 @@
 package com.dzirent.shared
 
-import com.dzirent.shared.model.MeasurementInput
+import com.dzirent.shared.util.MeasurementInput
 import com.dzirent.shared.model.validateListingForm
-import com.dzirent.shared.model.validateMeasurements
+import com.dzirent.shared.util.validateMeasurements
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

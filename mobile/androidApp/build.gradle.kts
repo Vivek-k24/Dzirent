@@ -46,7 +46,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = appVersionCode
-        versionName = "2.0.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -91,6 +91,11 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    androidResources {
+        // The model is memory-mapped straight from the APK, which needs it stored uncompressed.
+        noCompress += "tflite"
     }
 }
 

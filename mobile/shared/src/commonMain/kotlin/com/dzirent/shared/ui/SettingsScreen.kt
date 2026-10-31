@@ -1,5 +1,6 @@
 package com.dzirent.shared.ui
 
+import com.dzirent.shared.util.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,9 +20,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.dzirent.shared.model.Profile
-import com.dzirent.shared.platform.DistanceUnit
-import com.dzirent.shared.platform.MeasureUnit
-import com.dzirent.shared.platform.ThemeMode
 import com.dzirent.shared.repository.DzirentRepository
 import kotlinx.coroutines.launch
 

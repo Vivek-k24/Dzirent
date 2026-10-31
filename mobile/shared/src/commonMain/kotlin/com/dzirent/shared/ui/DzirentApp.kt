@@ -1,5 +1,6 @@
 package com.dzirent.shared.ui
 
+import com.dzirent.shared.util.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -11,7 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.dzirent.shared.model.Profile
-import com.dzirent.shared.platform.AppSettings
+import com.dzirent.shared.platform.SettingsStorage
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.ui.theme.DzirentTheme
 
@@ -28,7 +29,8 @@ sealed class AuthScreenState {
 @Composable
 fun DzirentApp(
     repository: DzirentRepository = remember { DzirentRepository() },
-    appSettings: AppSettings = remember { AppSettings() }
+    appSettings: AppSettings = remember { AppSettings() },
+    settingsStorage: SettingsStorage? = null
 ) {
     var screenState by remember { mutableStateOf<AuthScreenState>(AuthScreenState.Loading) }
     var firstVisitSeen by rememberSaveable { mutableStateOf(false) }
@@ -46,7 +48,7 @@ fun DzirentApp(
         }
     }
 
-    DzirentTheme(darkTheme = isSystemInDarkTheme()) {
+    DzirentTheme(darkTheme = appSettings.theme.isDark(isSystemInDarkTheme())) {
         CompositionLocalProvider(LocalAppSettings provides appSettings) {
             Surface(
                 modifier = Modifier.fillMaxSize(),

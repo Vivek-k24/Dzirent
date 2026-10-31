@@ -94,6 +94,9 @@ kotlin {
                 implementation(libs.androidx.datastore.preferences)
                 implementation(libs.play.services.location)
                 implementation(libs.androidx.exifinterface)
+                implementation(libs.androidx.activity.compose)
+                // Item recognition on the phone (TinyCLIP image encoder in assets/ml)
+                implementation(libs.litert)
             }
         }
         val iosMain by creating {

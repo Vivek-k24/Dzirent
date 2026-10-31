@@ -21,6 +21,14 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.exifinterface.media.ExifInterface
+import com.dzirent.shared.util.AppSettings
+import com.dzirent.shared.util.DEFAULT_DISTANCE_STEP
+import com.dzirent.shared.util.DEFAULT_RENTAL_DAYS
+import com.dzirent.shared.util.DISTANCE_STEPS
+import com.dzirent.shared.util.DistanceUnit
+import com.dzirent.shared.util.MeasureUnit
+import com.dzirent.shared.util.RENTAL_LENGTH_OPTIONS
+import com.dzirent.shared.util.ThemeMode
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -141,7 +149,8 @@ class AndroidLocationService(context: Context) : LocationService {
     }
 }
 
-private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "dzirent_settings")
+// Same file name and keys as the reference app, so updating from it keeps the settings.
+private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class AndroidSettingsStorage(context: Context) : SettingsStorage {
     private val store = context.applicationContext.settingsDataStore
@@ -153,8 +162,8 @@ class AndroidSettingsStorage(context: Context) : SettingsStorage {
                 theme = ThemeMode.fromKey(prefs[THEME]),
                 distanceUnit = DistanceUnit.fromKey(prefs[DISTANCE_UNIT]),
                 measureUnit = MeasureUnit.fromKey(prefs[MEASURE_UNIT]),
-                rentalDays = prefs[RENTAL_DAYS] ?: 5,
-                defaultDistanceStep = prefs[DEFAULT_DISTANCE] ?: 25
+                rentalDays = prefs[RENTAL_DAYS]?.takeIf { it in RENTAL_LENGTH_OPTIONS } ?: DEFAULT_RENTAL_DAYS,
+                defaultDistanceStep = prefs[DEFAULT_DISTANCE]?.takeIf { it in DISTANCE_STEPS } ?: DEFAULT_DISTANCE_STEP
             )
         }
 

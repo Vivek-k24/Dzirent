@@ -1,5 +1,9 @@
 package com.dzirent.shared.platform
 
+import com.dzirent.shared.util.AppSettings
+import com.dzirent.shared.util.DistanceUnit
+import com.dzirent.shared.util.MeasureUnit
+import com.dzirent.shared.util.ThemeMode
 import kotlinx.coroutines.flow.Flow
 
 /** Approximate place with rounded coordinates and city label. */
@@ -15,52 +19,6 @@ interface LocationService {
     suspend fun currentPlace(): ApproxPlace?
     suspend fun cityFor(lat: Double, lng: Double): String?
 }
-
-/** Theme mode option. */
-enum class ThemeMode(val key: String, val label: String) {
-    SYSTEM("system", "System"),
-    LIGHT("light", "Light"),
-    DARK("dark", "Dark");
-
-    fun isDark(systemDark: Boolean): Boolean = when (this) {
-        SYSTEM -> systemDark
-        LIGHT -> false
-        DARK -> true
-    }
-
-    companion object {
-        fun fromKey(key: String?): ThemeMode = entries.firstOrNull { it.key == key } ?: SYSTEM
-    }
-}
-
-/** Distance unit preference. */
-enum class DistanceUnit(val key: String, val label: String, val stepOptions: List<Int>) {
-    MILES("miles", "Miles", listOf(5, 10, 25, 50)),
-    KILOMETERS("km", "Kilometers", listOf(5, 10, 25, 50, 100));
-
-    companion object {
-        fun fromKey(key: String?): DistanceUnit = entries.firstOrNull { it.key == key } ?: MILES
-    }
-}
-
-/** Measurement unit preference. */
-enum class MeasureUnit(val key: String, val label: String) {
-    INCHES("in", "Inches"),
-    CENTIMETERS("cm", "Centimeters");
-
-    companion object {
-        fun fromKey(key: String?): MeasureUnit = entries.firstOrNull { it.key == key } ?: INCHES
-    }
-}
-
-/** Settings saved on the device. */
-data class AppSettings(
-    val theme: ThemeMode = ThemeMode.SYSTEM,
-    val distanceUnit: DistanceUnit = DistanceUnit.MILES,
-    val measureUnit: MeasureUnit = MeasureUnit.INCHES,
-    val rentalDays: Int = 5,
-    val defaultDistanceStep: Int = 25
-)
 
 /** Local device settings storage. */
 interface SettingsStorage {

@@ -1,7 +1,7 @@
 package com.dzirent.shared.ui
 
+import com.dzirent.shared.util.*
 import androidx.compose.runtime.staticCompositionLocalOf
-import com.dzirent.shared.platform.AppSettings
 
 /**
  * The device settings (units, defaults), provided once at the top so any screen that

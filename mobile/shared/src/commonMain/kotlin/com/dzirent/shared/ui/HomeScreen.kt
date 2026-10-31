@@ -1,5 +1,6 @@
 package com.dzirent.shared.ui
 
+import com.dzirent.shared.util.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -27,7 +28,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.dzirent.shared.model.DateRange
 import com.dzirent.shared.model.ListingCard
 import com.dzirent.shared.model.Profile
 import com.dzirent.shared.ui.theme.DzirentAccent
@@ -76,6 +76,7 @@ fun HomeScreen(
     if (showDatePicker) {
         DateRangePickerDialog(
             title = "Your dates",
+            allowPast = false,
             initial = session.dates,
             confirmLabel = "Done",
             onDismiss = { showDatePicker = false },
@@ -460,52 +461,3 @@ fun SeeAllScreen(
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DateRangePickerDialog(
-    title: String,
-    initial: DateRange? = null,
-    confirmLabel: String = "Done",
-    onDismiss: () -> Unit,
-    onConfirm: (DateRange) -> Unit
-) {
-    val state = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = initial?.start?.let {
-            Instant.fromEpochMilliseconds(it.toEpochDays() * 86_400_000L).toEpochMilliseconds()
-        },
-        initialSelectedEndDateMillis = initial?.end?.let {
-            Instant.fromEpochMilliseconds(it.toEpochDays() * 86_400_000L).toEpochMilliseconds()
-        }
-    )
-    val startMillis = state.selectedStartDateMillis
-
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val sMillis = startMillis ?: return@TextButton
-                    val eMillis = state.selectedEndDateMillis ?: sMillis
-                    val sDate = Instant.fromEpochMilliseconds(sMillis)
-                        .toLocalDateTime(TimeZone.UTC).date
-                    val eDate = Instant.fromEpochMilliseconds(eMillis)
-                        .toLocalDateTime(TimeZone.UTC).date
-                    onConfirm(DateRange(sDate, maxOf(sDate, eDate)))
-                },
-                enabled = startMillis != null
-            ) { Text(confirmLabel) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
-    ) {
-        DateRangePicker(
-            state = state,
-            title = { Text(title, modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp)) },
-            showModeToggle = false,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-

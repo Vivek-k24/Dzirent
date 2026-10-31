@@ -1,5 +1,6 @@
 package com.dzirent.shared.ui
 
+import com.dzirent.shared.util.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -134,6 +135,7 @@ fun SearchScreen(
     if (showDatePicker) {
         DateRangePickerDialog(
             title = "Your dates",
+            allowPast = false,
             initial = session.dates,
             confirmLabel = "Done",
             onDismiss = { showDatePicker = false },

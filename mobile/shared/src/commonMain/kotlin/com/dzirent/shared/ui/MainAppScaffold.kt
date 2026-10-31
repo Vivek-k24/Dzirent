@@ -1,5 +1,6 @@
 package com.dzirent.shared.ui
 
+import com.dzirent.shared.util.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -358,9 +359,10 @@ fun MainAppScaffold(
                 }
 
                 composable("list") {
+                    val me = profile ?: return@composable
                     ListingEditorScreen(
                         repository = repository,
-                        profile = profile,
+                        profile = me,
                         listingId = null,
                         onSetLocation = { showLocationSetup = true },
                         onBack = { navController.popBackStack() },
@@ -370,9 +372,10 @@ fun MainAppScaffold(
 
                 composable("edit/{listingId}") { entry ->
                     val id = entry.arguments?.getString("listingId")
+                    val me = profile ?: return@composable
                     ListingEditorScreen(
                         repository = repository,
-                        profile = profile,
+                        profile = me,
                         listingId = id,
                         onSetLocation = { showLocationSetup = true },
                         onBack = { navController.popBackStack() },
