@@ -84,7 +84,7 @@ fun SearchScreen(
     var isSearching by remember { mutableStateOf(false) }
     var searchError by remember { mutableStateOf<String?>(null) }
 
-    val radiusMiles = session.filters.distanceStep.toDouble()
+    val radiusMiles = radiusMiles(session.filters.distanceStep, LocalAppSettings.current.distanceUnit)
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()

@@ -26,6 +26,7 @@ class AndroidDeviceServices(
     override val prefs: KeyValueStore = SharedPreferencesStore(app.getSharedPreferences("dzirent_prefs", Context.MODE_PRIVATE))
     override val photoAnalyzer: PhotoAnalyzer by lazy { AndroidPhotoAnalyzer(app) }
     override val imageCompressor: ImageCompressor = AndroidImageCompressor()
+    override val locationService: LocationService by lazy { AndroidLocationService(app) }
 
     override fun photoStore(userId: String): PhotoStore = AndroidPhotoStore(app, userId)
     override fun draftStore(userId: String, listingId: String?): DraftStore = AndroidDraftStore(app, userId, listingId)

@@ -1,6 +1,5 @@
 package com.dzirent.shared.ui
 
-import com.dzirent.shared.util.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -13,21 +12,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.dzirent.shared.model.AccessoryTypes
 import com.dzirent.shared.model.Categories
+import com.dzirent.shared.util.BrowseFilters
+import com.dzirent.shared.util.DISTANCE_STEPS
+import com.dzirent.shared.util.parsePrice
+import com.dzirent.shared.util.priceInputText
 
-val DISTANCE_OPTIONS = listOf(5, 10, 25, 50)
-
-fun parsePrice(text: String): Double? {
-    val cleaned = text.trim().removePrefix("$").trim()
-    if (!Regex("""\d+(\.\d{1,2})?|\.\d{1,2}""").matches(cleaned)) return null
-    val value = cleaned.toDoubleOrNull() ?: return null
-    return value.takeIf { it > 0.0 && it <= 10_000.0 }
-}
-
-fun priceInputText(usd: Double?): String =
-    usd?.let {
-        if (it % 1.0 == 0.0) it.toLong().toString() else it.toString()
-    }.orEmpty()
-
+/**
+ * Category, accessory item type, distance, price range and size. Nothing changes until
+ * Apply; Reset puts everything back to the defaults.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FilterSheet(
@@ -40,6 +33,7 @@ fun FilterSheet(
     var maxText by remember { mutableStateOf(priceInputText(current.maxPrice)) }
     var sizeText by remember { mutableStateOf(current.size.orEmpty()) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val settings = LocalAppSettings.current
 
     val minPrice = parsePrice(minText)
     val maxPrice = parsePrice(maxText)
@@ -55,7 +49,7 @@ fun FilterSheet(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
+                .padding(bottom = 24.dp)
         ) {
             Text("Filter", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 
@@ -95,11 +89,11 @@ fun FilterSheet(
 
             SheetHeading("Distance")
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DISTANCE_OPTIONS.forEach { miles ->
+                DISTANCE_STEPS.forEach { step ->
                     FilterChip(
-                        selected = draft.distanceStep == miles,
-                        onClick = { draft = draft.copy(distanceStep = miles) },
-                        label = { Text("$miles mi") }
+                        selected = draft.distanceStep == step,
+                        onClick = { draft = draft.copy(distanceStep = step) },
+                        label = { Text(settings.distanceUnit.optionLabel(step)) }
                     )
                 }
             }
@@ -110,7 +104,6 @@ fun FilterSheet(
                 PriceField("Max", maxText, { maxText = it }, Modifier.weight(1f))
             }
             priceError?.let {
-                Spacer(modifier = Modifier.height(4.dp))
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
 
@@ -127,7 +120,7 @@ fun FilterSheet(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
                     onClick = {
-                        draft = BrowseFilters(distanceStep = DEFAULT_DISTANCE_STEP)
+                        draft = BrowseFilters(distanceStep = settings.defaultDistanceStep)
                         minText = ""
                         maxText = ""
                         sizeText = ""
@@ -174,4 +167,3 @@ private fun PriceField(label: String, value: String, onValueChange: (String) -> 
         modifier = modifier
     )
 }
-

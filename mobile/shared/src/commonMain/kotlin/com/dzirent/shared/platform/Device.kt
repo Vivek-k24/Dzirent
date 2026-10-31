@@ -49,6 +49,7 @@ interface DeviceServices {
     val prefs: KeyValueStore
     val photoAnalyzer: PhotoAnalyzer
     val imageCompressor: ImageCompressor
+    val locationService: LocationService
 
     /** The app's version name ("1.0.0"), recorded with the accessory declaration. */
     val appVersion: String

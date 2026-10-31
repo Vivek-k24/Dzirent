@@ -1,6 +1,8 @@
 package com.dzirent.shared.ui
 
-import com.dzirent.shared.util.*
+import com.dzirent.shared.platform.LocalDevice
+import com.dzirent.shared.platform.ApproxPlace
+import com.dzirent.shared.util.roundCoord
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
@@ -13,27 +15,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.dzirent.shared.model.Profile
 import com.dzirent.shared.model.UsCity
-import com.dzirent.shared.platform.ApproxPlace
-import com.dzirent.shared.platform.LocationService
 import com.dzirent.shared.repository.DzirentRepository
+import com.dzirent.shared.util.DistanceUnit
 import kotlinx.coroutines.launch
 
 private enum class LocationStep { Reason, Working, PickCity, Confirm }
 
 /**
- * Sets the user's approximate location. Shows the reason first, with an option to use
- * device location (if available) or pick a city from the US cities database.
+ * Sets the user's approximate location. Shows the reason first and asks for the coarse
+ * location permission only when "Use my location" is tapped. The manual option (and the
+ * fallback) is picking a "City, ST" from the city list, which saves that city's location.
  */
 @Composable
 fun LocationSetupDialog(
     repository: DzirentRepository,
+    /** Null for a guest: the place is kept for this visit only ([onGuestLocationSet]). */
     profile: Profile?,
     onDismiss: () -> Unit,
     onSaved: (Profile) -> Unit,
-    onGuestLocationSet: ((city: String, lat: Double, lng: Double) -> Unit)? = null,
-    locationService: LocationService? = null
+    onGuestLocationSet: ((city: String, lat: Double, lng: Double) -> Unit)? = null
 ) {
     val scope = rememberCoroutineScope()
+    val locationService = LocalDevice.current.locationService
+
     var step by remember { mutableStateOf(LocationStep.Reason) }
     var workingText by remember { mutableStateOf("") }
     var message by remember { mutableStateOf<String?>(null) }
@@ -42,15 +46,11 @@ fun LocationSetupDialog(
     var isSaving by remember { mutableStateOf(false) }
 
     fun locate() {
-        if (locationService == null) {
-            step = LocationStep.PickCity
-            return
-        }
         scope.launch {
             message = null
             workingText = "Finding your approximate location..."
             step = LocationStep.Working
-            val place = runCatching { locationService.currentPlace() }.getOrNull()
+            val place = locationService.currentPlace()
             when {
                 place == null -> {
                     message = "Couldn't get your location. Choose your city instead."
@@ -68,22 +68,27 @@ fun LocationSetupDialog(
         }
     }
 
+    /** [city] is "City, ST"; [lat]/[lng] are rounded again by the repository. */
     fun save(lat: Double, lng: Double, city: String) {
         scope.launch {
             isSaving = true
             message = null
-            if (profile != null) {
-                try {
-                    val updated = repository.updateLocation(lat, lng, city)
-                    onSaved(updated)
-                } catch (e: Exception) {
-                    message = e.userMessage("Couldn't save your location. Please try again.")
-                }
-            } else {
-                onGuestLocationSet?.invoke(city, lat, lng)
-                onDismiss()
+            try {
+                if (profile != null) onSaved(repository.updateLocation(profile.id, lat, lng, city))
+                else onGuestLocationSet?.invoke(city, roundCoord(lat), roundCoord(lng))
+            } catch (e: Exception) {
+                message = e.userMessage("Couldn't save your location. Please try again.")
             }
             isSaving = false
+        }
+    }
+
+    val requestPermission = rememberLocationPermissionRequest { granted ->
+        if (granted) {
+            locate()
+        } else {
+            message = "Location permission is off. Choose your city instead."
+            step = LocationStep.PickCity
         }
     }
 
@@ -91,122 +96,95 @@ fun LocationSetupDialog(
         onDismissRequest = { if (!isSaving) onDismiss() },
         properties = DialogProperties(dismissOnClickOutside = !isSaving),
         icon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-        title = {
-            Text(
-                when (step) {
-                    LocationStep.Reason -> "See what's near you"
-                    LocationStep.Working -> "Location"
-                    LocationStep.PickCity -> "Choose your city"
-                    LocationStep.Confirm -> "Confirm location"
-                }
-            )
-        },
+        title = { Text("Set your location") },
         text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                message?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
+            Column {
                 when (step) {
                     LocationStep.Reason -> {
-                        Text(
-                            text = "Dzirent connects people to rent clothing locally. We use your approximate location to show you outfits within driving or pickup distance.",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Text(locationReason(LocalAppSettings.current.distanceUnit))
                     }
                     LocationStep.Working -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(vertical = 16.dp)
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp))
                             Spacer(modifier = Modifier.width(16.dp))
-                            Text(workingText, style = MaterialTheme.typography.bodyMedium)
+                            Text(workingText)
                         }
                     }
                     LocationStep.PickCity -> {
-                        Text(
-                            text = "Search for your city to browse closets nearby:",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Text("We'll save your city's approximate area. Never your exact address.")
                         Spacer(modifier = Modifier.height(12.dp))
                         CityField(
                             repository = repository,
                             selected = pickedCity,
-                            onSelected = { city ->
-                                pickedCity = city
-                                if (city != null) {
-                                    save(city.lat, city.lng, city.label)
-                                }
-                            },
-                            enabled = !isSaving
+                            onSelected = { pickedCity = it; message = null },
+                            label = "Your city",
+                            enabled = !isSaving,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                     LocationStep.Confirm -> {
-                        val place = found
-                        if (place != null) {
-                            Text(
-                                text = "Is this your approximate area?",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = place.city ?: "Nearby",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Text(
+                            text = "Near ${found?.city.orEmpty()}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("We'll save your area, rounded to ${LocalAppSettings.current.distanceUnit.locationPrecision}. Never your exact address.")
                     }
+                }
+                if (isSaving) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+                message?.let {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         },
         confirmButton = {
             when (step) {
-                LocationStep.Reason -> {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Button(onClick = { locate() }) {
-                            Text("Use my approximate location")
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(onClick = { step = LocationStep.PickCity }) {
-                            Text("Choose city manually")
-                        }
-                    }
-                }
-                LocationStep.Working -> Unit
-                LocationStep.PickCity -> {
-                    TextButton(onClick = onDismiss, enabled = !isSaving) {
-                        Text("Cancel")
-                    }
-                }
-                LocationStep.Confirm -> {
-                    val place = found
-                    if (place != null) {
-                        Button(
-                            onClick = { save(place.lat, place.lng, place.city.orEmpty()) },
-                            enabled = !isSaving
-                        ) {
-                            Text("Yes, use this")
-                        }
-                    }
-                }
+                LocationStep.Reason -> TextButton(onClick = {
+                    if (locationService.hasPermission()) locate()
+                    else requestPermission()
+                }) { Text("Use my location") }
+                LocationStep.PickCity -> TextButton(
+                    onClick = { pickedCity?.let { save(it.lat, it.lng, it.label) } },
+                    enabled = pickedCity != null && !isSaving
+                ) { Text("Save") }
+                LocationStep.Confirm -> TextButton(
+                    onClick = { found?.let { place -> place.city?.let { save(place.lat, place.lng, it) } } },
+                    enabled = !isSaving
+                ) { Text("Save") }
+                LocationStep.Working -> {}
             }
         },
         dismissButton = {
-            if (step == LocationStep.Reason) {
-                TextButton(onClick = onDismiss) {
-                    Text("Not now")
+            Row {
+                when (step) {
+                    LocationStep.Reason -> TextButton(onClick = {
+                        message = null
+                        step = LocationStep.PickCity
+                    }) { Text("Choose a city") }
+                    LocationStep.Confirm -> TextButton(onClick = {
+                        message = null
+                        step = LocationStep.PickCity
+                    }, enabled = !isSaving) { Text("Change") }
+                    else -> {}
                 }
-            } else if (step == LocationStep.Confirm) {
-                TextButton(onClick = { step = LocationStep.PickCity }, enabled = !isSaving) {
-                    Text("Choose another city")
-                }
+                TextButton(onClick = onDismiss, enabled = !isSaving) { Text("Not now") }
             }
         }
     )
 }
 
+private fun locationReason(unit: DistanceUnit) =
+    "Dzirent uses your approximate location (${unit.locationPrecision}) to show clothes near you."
+
+/** Asks for the coarse location permission; [onResult] gets whether it was granted. */
+@Composable
+expect fun rememberLocationPermissionRequest(onResult: (Boolean) -> Unit): () -> Unit

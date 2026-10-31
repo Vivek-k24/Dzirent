@@ -28,14 +28,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep links support for https://dzirent.com and custom scheme dzirent:// -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="dzirent.com" />
-                <data android:scheme="dzirent" />
-            </intent-filter>
         </activity>
 
         <!-- Shares a cache file with the camera app for ActivityResultContracts.TakePicture. -->

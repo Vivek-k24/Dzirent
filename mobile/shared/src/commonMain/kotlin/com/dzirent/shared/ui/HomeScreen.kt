@@ -72,7 +72,7 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     var showDatePicker by remember { mutableStateOf(false) }
     var studiosTab by rememberSaveable { mutableStateOf(false) }
-    val radiusMiles = session.filters.distanceStep.toDouble()
+    val radiusMiles = radiusMiles(session.filters.distanceStep, LocalAppSettings.current.distanceUnit)
 
     LaunchedEffect(lat, lng, radiusMiles, session.filters, session.dates) {
         if (lat != null && lng != null) {
@@ -166,7 +166,9 @@ fun HomeTopBar(
     ) {
         IconButton(
             onClick = onAvatar,
-            modifier = Modifier.align(Alignment.CenterStart)
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .guideTarget(GuideTarget.AVATAR)
         ) {
             Avatar(name = if (!isGuest && profile != null) profile.displayName else "?", size = 32.dp)
         }
@@ -226,9 +228,12 @@ fun DateBar(text: String, onClick: () -> Unit) {
                 shape = RoundedCornerShape(50),
                 color = MaterialTheme.colorScheme.surfaceVariant
             ) {
+                // On the visible chip, not the larger touch target around it.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    modifier = Modifier
+                        .guideTarget(GuideTarget.DATE_CHIP)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))

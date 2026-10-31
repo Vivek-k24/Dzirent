@@ -1,6 +1,5 @@
 package com.dzirent.shared.ui
 
-import com.dzirent.shared.util.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -32,7 +31,10 @@ private sealed class CitySearch {
 
 /**
  * City picker that only accepts a city from the us_cities list. After [MIN_QUERY_LENGTH]
- * characters it searches (debounced) and lists matches as "City, ST".
+ * characters it searches (debounced) and lists matches as "City, ST"; cities that share a
+ * name (Springfield) are all listed so the user picks the right state. Typing again clears
+ * the pick, so [selected] is null until a suggestion is tapped. [onTextChange] reports the
+ * typed text, so a form can tell "left empty" from "typed but not picked".
  */
 @Composable
 fun CityField(
@@ -68,7 +70,7 @@ fun CityField(
             return@LaunchedEffect
         }
         search = CitySearch.Loading
-        delay(DEBOUNCE_MS) // debounced
+        delay(DEBOUNCE_MS) // a newer keystroke cancels this effect before the request goes out
         search = try {
             CitySearch.Results(repository.searchCities(trimmed))
         } catch (e: Exception) {
@@ -139,6 +141,7 @@ fun CityField(
                         .fillMaxWidth()
                         .padding(top = 4.dp)
                 ) {
+                    // Bounded height so it can sit inside scrolling screens and dialogs.
                     Column(
                         modifier = Modifier
                             .heightIn(max = 240.dp)
@@ -178,4 +181,3 @@ fun CityField(
         }
     }
 }
-

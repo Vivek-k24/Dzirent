@@ -10,69 +10,28 @@ import com.dzirent.shared.model.SavedStudioCard
 import com.dzirent.shared.repository.DzirentRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 
-const val DEFAULT_DISTANCE_STEP = 25
-const val DEFAULT_RENTAL_DAYS = 5
+/** A Home row is only shown with at least this many listings. */
 const val HOME_ROW_MIN = 3
+
+/** "New near you" covers listings created in the last 7 days. */
+const val NEW_NEAR_YOU_DAYS = 7L
+
+/** The "Under $15" row: pieces priced below this. */
 const val UNDER_PRICE_USD = 15.0
 
-/** Helper to add/subtract whole days from a kotlinx.datetime.LocalDate */
-fun LocalDate.plusDays(days: Int): LocalDate = LocalDate.fromEpochDays(toEpochDays() + days)
-fun LocalDate.minusDays(days: Int): LocalDate = LocalDate.fromEpochDays(toEpochDays() - days)
-
-private fun monthName(monthNumber: Int): String = when (monthNumber) {
-    1 -> "Jan"; 2 -> "Feb"; 3 -> "Mar"; 4 -> "Apr"; 5 -> "May"; 6 -> "Jun"
-    7 -> "Jul"; 8 -> "Aug"; 9 -> "Sep"; 10 -> "Oct"; 11 -> "Nov"; 12 -> "Dec"
-    else -> ""
-}
-
-/**
- * The Home date chip: "Oct 26 - 30" in one month, "Oct 26 - Nov 1" across months.
- */
-fun formatDateChip(range: DateRange): String {
-    val startMonth = monthName(range.start.monthNumber)
-    val startDay = range.start.dayOfMonth
-    val endMonth = monthName(range.end.monthNumber)
-    val endDay = range.end.dayOfMonth
-    return when {
-        range.start == range.end -> "$startMonth $startDay"
-        range.start.year == range.end.year && range.start.monthNumber == range.end.monthNumber ->
-            "$startMonth $startDay - $endDay"
-        else -> "$startMonth $startDay - $endMonth $endDay"
+/** The reference app's Search sort options, as browse_listings' p_sort values. */
+val SearchSort.dbSort: String
+    get() = when (this) {
+        SearchSort.NEAREST -> "nearest"
+        SearchSort.NEWEST -> "newest"
+        SearchSort.PRICE_LOW -> "price_low"
+        SearchSort.PRICE_HIGH -> "price_high"
     }
-}
 
-fun defaultBrowseRange(today: LocalDate, days: Int = DEFAULT_RENTAL_DAYS): DateRange =
-    DateRange(today, today.plusDays(days.coerceAtLeast(1) - 1))
-
-fun datesQuestion(dates: DateRange): String = "Is this available ${formatDateChip(dates)}?"
-
-/**
- * What Home and Search show, set from the sidebar (category) and its filter sheet.
- */
-data class BrowseFilters(
-    val category: String? = null,
-    val itemType: String? = null,
-    val distanceStep: Int = DEFAULT_DISTANCE_STEP,
-    val minPrice: Double? = null,
-    val maxPrice: Double? = null,
-    val size: String? = null
-) {
-    fun withCategory(newCategory: String?): BrowseFilters =
-        copy(category = newCategory, itemType = if (newCategory == "Accessories") itemType else null)
-}
-
-/** Sort options for Search matching backend browse_listings p_sort */
-enum class SearchSort(val label: String, val dbSort: String) {
-    NEAREST("Closest to me", "closest"),
-    NEWEST("Newest", "newest"),
-    PRICE_LOW("Price: Low to High", "price_asc"),
-    PRICE_HIGH("Price: High to Low", "price_desc")
-}
+/** The search radius in miles for the distance filter's step, in the chosen unit. */
+fun radiusMiles(step: Int, unit: DistanceUnit): Double = unit.radiusKm(step) / KM_PER_MILE
 
 
 /** One lender on Home's Studios tab, built from their listings that match the filters. */
@@ -90,6 +49,8 @@ data class HomeSections(
     /** Null when the renter has no measurements or is a guest (Home shows the prompt card). */
     val likelyFit: List<ListingCard>?,
     val newNearYou: List<ListingCard>,
+    /** Pieces in a style I'm interested in; empty when I picked no styles. */
+    val forYourStyle: List<ListingCard>,
     val underPrice: List<ListingCard>,
     val fromSavedStudios: List<ListingCard>,
     val studios: List<StudioSummary>
@@ -99,12 +60,14 @@ data class HomeSections(
 enum class HomeRow(val title: String, val subtitle: String?) {
     FIT("Likely to fit you", "Matched to your measurements"),
     NEW("New near you", null),
+    STYLE("For your style", null),
     UNDER_PRICE("Under \$15", null),
     SAVED_STUDIOS("From studios you saved", null);
 
     fun listings(sections: HomeSections): List<ListingCard> = when (this) {
         FIT -> sections.likelyFit.orEmpty()
         NEW -> sections.newNearYou
+        STYLE -> sections.forYourStyle
         UNDER_PRICE -> sections.underPrice
         SAVED_STUDIOS -> sections.fromSavedStudios
     }
@@ -113,7 +76,9 @@ enum class HomeRow(val title: String, val subtitle: String?) {
 data class BrowseData(
     val listings: List<ListingCard>,
     val fitListings: List<ListingCard>?,
-    val savedStudios: List<SavedStudioCard>
+    val savedStudios: List<SavedStudioCard>,
+    val newNearYou: List<ListingCard> = emptyList(),
+    val forYourStyle: List<ListingCard> = emptyList()
 )
 
 /**
@@ -127,7 +92,7 @@ class BrowseSession(
     defaultDistanceStep: Int = DEFAULT_DISTANCE_STEP,
     rentalDays: Int = DEFAULT_RENTAL_DAYS
 ) {
-    private val today: LocalDate get() = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    private val today: LocalDate get() = today()
 
     var filters by mutableStateOf(BrowseFilters(distanceStep = defaultDistanceStep))
     var dates by mutableStateOf(defaultBrowseRange(today, rentalDays))
@@ -163,18 +128,56 @@ class BrowseSession(
                 endDate = dates.end.toString(),
                 limit = 30
             )
-            val fit = if (!userId.isNullOrBlank()) {
+            val newNear = repository.browseListings(
+                lat = lat,
+                lng = lng,
+                radiusMiles = radiusMiles,
+                category = filters.category,
+                itemType = filters.itemType,
+                size = filters.size,
+                minPrice = filters.minPrice,
+                maxPrice = filters.maxPrice,
+                startDate = dates.start.toString(),
+                endDate = dates.end.toString(),
+                newDays = NEW_NEAR_YOU_DAYS.toInt(),
+                sort = "nearest",
+                limit = 30
+            )
+            // Null without measurements, so Home shows the "Add your measurements" card instead.
+            val body = if (!userId.isNullOrBlank()) runCatching { repository.getPrivateProfile() }.getOrNull() else null
+            val fit = if (body != null && hasFitMeasurements(body)) {
                 runCatching {
-                    repository.fitListings(lat = lat, lng = lng, radiusMiles = radiusMiles, limit = 20)
-                }.getOrNull()?.takeIf { it.isNotEmpty() }
+                    repository.fitListings(lat = lat, lng = lng, radiusMiles = radiusMiles, limit = 30)
+                }.getOrElse { emptyList() }
+                    .filter { filters.category == null || it.category == filters.category }
             } else null
+            val interests = body?.styleInterests.orEmpty()
+            val forStyle = if (interests.isNotEmpty()) {
+                runCatching {
+                    repository.browseListings(
+                        lat = lat,
+                        lng = lng,
+                        radiusMiles = radiusMiles,
+                        category = filters.category,
+                        itemType = filters.itemType,
+                        size = filters.size,
+                        styles = interests,
+                        minPrice = filters.minPrice,
+                        maxPrice = filters.maxPrice,
+                        startDate = dates.start.toString(),
+                        endDate = dates.end.toString(),
+                        sort = "nearest",
+                        limit = 30
+                    )
+                }.getOrElse { emptyList() }
+            } else emptyList()
 
             val saved = if (!userId.isNullOrBlank()) {
                 runCatching { repository.mySavedStudios(limit = 20) }.getOrElse { emptyList() }
             } else emptyList()
 
             loadedKey = key
-            UiState.Success(BrowseData(listings, fit, saved))
+            UiState.Success(BrowseData(listings, fit, saved, newNear, forStyle))
         } catch (e: Exception) {
             UiState.Error(e.userMessage("Couldn't load listings. Please try again."))
         }
@@ -189,7 +192,7 @@ class BrowseSession(
      */
     fun sections(): HomeSections? = (state as? UiState.Success)?.data?.let { data ->
         val visible = data.listings
-        val underPrice = visible.filter { (it.price ?: Double.MAX_VALUE) < UNDER_PRICE_USD }
+        val underPrice = visible.filter { (it.price ?: Double.MAX_VALUE) < UNDER_PRICE_USD }.sortedBy { it.distance ?: Int.MAX_VALUE }
         val savedHandles = data.savedStudios.map { it.studioHandle }.toSet()
         val fromSaved = visible.filter { it.studioHandle != null && it.studioHandle in savedHandles }
 
@@ -210,7 +213,8 @@ class BrowseSession(
         HomeSections(
             visible = visible,
             likelyFit = data.fitListings,
-            newNearYou = visible.take(8), // Newest returned by browse_listings
+            newNearYou = data.newNearYou,
+            forYourStyle = data.forYourStyle,
             underPrice = underPrice,
             fromSavedStudios = fromSaved,
             studios = studios

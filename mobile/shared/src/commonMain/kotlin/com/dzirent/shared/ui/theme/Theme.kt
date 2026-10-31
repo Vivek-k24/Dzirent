@@ -1,9 +1,7 @@
 package com.dzirent.shared.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
@@ -11,7 +9,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 // Design: black, white and greys, plus ONE accent.
-/** The accent in light mode. */
+/** The accent in light mode (placeholder, owner to confirm). */
 private val AccentOnLight = Color(0xFF8E1538)
 
 /**
@@ -22,7 +20,7 @@ private val AccentOnDark = Color(0xFFE8638A)
 
 private val Ink = Color(0xFF111111)
 
-val LocalDarkTheme = staticCompositionLocalOf { false }
+private val LocalDarkTheme = staticCompositionLocalOf { false }
 
 /**
  * The one accent for the current theme. Used only for: the active tab underline, the
@@ -64,7 +62,7 @@ private val Grey900 = Color(0xFF171717)
 private val Night = Color(0xFF0E0E0E)
 
 // Every surface container is set too: Material's defaults are tinted purple.
-val LightColorScheme = lightColorScheme(
+private val LightColorScheme = lightColorScheme(
     primary = Ink,
     onPrimary = Color.White,
     primaryContainer = Grey100,
@@ -96,7 +94,7 @@ val LightColorScheme = lightColorScheme(
     surfaceContainerHighest = Grey200
 )
 
-val DarkColorScheme = darkColorScheme(
+private val DarkColorScheme = darkColorScheme(
     primary = Color.White,
     onPrimary = Ink,
     primaryContainer = Grey800,
@@ -134,11 +132,23 @@ fun DzirentTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+
+    // Android 15+ draws the app behind transparent system bars, so the icons must contrast
+    // with the app background. Older versions keep the theme's dark bars and light icons.
+    SystemBarIcons(darkTheme)
+
     CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
         MaterialTheme(
             colorScheme = colorScheme,
+            typography = Typography(),
             content = content
         )
     }
 }
 
+/**
+ * Android 15+ draws the app behind transparent system bars, so the icons must contrast with
+ * the app background. Older versions keep the theme's dark bars and light icons.
+ */
+@Composable
+expect fun SystemBarIcons(darkTheme: Boolean)
