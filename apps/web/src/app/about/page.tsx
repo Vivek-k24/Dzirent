@@ -1,0 +1,116 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import Image from "next/image";
+import { Icon } from "@/components/icon";
+import { fullPolicy } from "@/lib/workflows";
+export const metadata: Metadata = { title: "A wardrobe worth sharing" };
+export default function About() {
+  return (
+    <div className="about-page page-width">
+      <section className="about-intro">
+        <div>
+          <span className="eyebrow">ABOUT DZIRENT</span>
+          <h1>
+            Great pieces.
+            <br />
+            Better shared.
+          </h1>
+          <p>
+            There’s a whole wardrobe in your neighborhood. We’re here to help
+            you find it.
+          </p>
+        </div>
+        <div className="about-mark">
+          <Image
+            src="/logo-mark.svg"
+            alt="Dzirent flower"
+            width={180}
+            height={180}
+          />
+        </div>
+      </section>
+      <section className="about-story">
+        <h2>
+          For all the things
+          <br />
+          you have planned.
+        </h2>
+        <div>
+          <p>
+            A celebration. An interview. A change of scene. Sometimes the right
+            piece is already in a closet close to you.
+          </p>
+          <p>
+            Dzirent connects people who have clothes they love with people ready
+            to give those pieces another outing. Discover a local studio, find a
+            piece that feels like you, and arrange the details together.
+          </p>
+          <p>One neighborhood. A lot of possibilities.</p>
+        </div>
+      </section>
+      <section id="how-it-works" className="how-section">
+        <span className="eyebrow">KEEP IT SIMPLE</span>
+        <h2>A good look, in three little steps.</h2>
+        <p className="policy-note">{fullPolicy}</p>
+        <div className="how-grid">
+          {[
+            [
+              "01",
+              "Find your piece",
+              "Browse by dates, style, size and distance. See real photos, measurements, and availability.",
+            ],
+            [
+              "02",
+              "Say hello",
+              "Sign in to message the studio. Agree on dates, pickup, payment, and any deposit directly.",
+            ],
+            [
+              "03",
+              "Make it a moment",
+              "Pick up locally, wear it for your occasion, and return it as agreed. Good pieces deserve more stories.",
+            ],
+          ].map(([n, t, d]) => (
+            <article key={n}>
+              <span>{n}</span>
+              <h3>{t}</h3>
+              <p>{d}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section id="rental-guidelines" className="guidelines">
+        <div>
+          <span className="eyebrow">A LITTLE CARE GOES A LONG WAY</span>
+          <h2>
+            Good neighbors.
+            <br />
+            Good arrangements.
+          </h2>
+        </div>
+        <div>
+          <p>
+            Review photos and measurements, agree on condition and dates, and
+            arrange pickup and return together. Exact locations stay out of
+            browsing.
+          </p>
+          <p>
+            For high-value pieces, we recommend that lenders ask for a deposit.
+            Dzirent has no checkout or shipping; rental arrangements are made
+            directly between people.
+          </p>
+          <p>
+            We welcome occasion clothing, professional looks, traditional
+            pieces, outerwear, and selected accessories. Everyday basics,
+            footwear and smartwatches aren’t part of Dzirent.
+          </p>
+        </div>
+      </section>
+      <div className="about-cta">
+        <h2>Your next look is closer than you think.</h2>
+        <Link href="/search" className="button">
+          Explore the neighborhood <Icon name="arrow" />
+        </Link>
+      </div>
+    </div>
+  );
+}

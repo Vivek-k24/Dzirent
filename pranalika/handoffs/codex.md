@@ -1,0 +1,242 @@
+# Codex handoff
+
+Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
+
+## Step 2A - 2026-10-31 - website foundation
+
+Done:
+- Replaced the old static site with Next.js App Router, TypeScript, pinned
+  dependencies and a lockfile. Matched the mobile palette, original vector logos,
+  Roboto typography, home rows, date chip, navigation and simple listing cards.
+- Built responsive Home (Products/Studios), search/filter/sort, complete listing
+  detail and photo gallery, sign-up/sign-in/sign-out, first-visit guest choice,
+  guest gates, signed-in studios, Saved pieces/studios, fit results, About/footer,
+  loading/error/empty states, and the requested Step 2B app panels.
+- All browsing uses contract RPCs; direct table access is limited to the caller's
+  own profile and saved rows. SSR cookie sessions and authenticated server actions
+  use @supabase/ssr and @supabase/supabase-js. No service/admin key in the website.
+- Location defaults to Austin, TX. Browser location and city confirmation use
+  search_cities; date ranges filter results. Cards use price/distance only,
+  under 1 mi for zero, and no save buttons. City labels are City, ST.
+- Configured both NEXT_PUBLIC variables via Vercel CLI for Preview and Production,
+  with values supplied from the loaded environment through stdin.
+- Updated apps/web/vercel.json to nextjs, removed static output/build overrides,
+  and kept the existing git deployment setting. There was no source ignoreCommand,
+  so none was added or changed. Set server functions to Portland (pdx1).
+- With the owner's explicit approval, appended only the production and stable
+  Preview /auth/callback URLs to Supabase Auth's allowlist, preserving existing
+  entries. Signup uses the exact callback path and a safe return-path cookie.
+- Published and verified https://dzirent.vercel.app as a protected Preview.
+  Production traffic was not promoted or redeployed.
+
+Files changed:
+- apps/web/: App Router pages/API routes/actions, proxy, components, data/auth
+  utilities, responsive CSS, local logo/font assets and license, package/lock,
+  TypeScript/ESLint/Next/Vercel config, README and ignored build state rules.
+- Removed the five old static HTML/CSS files.
+- pranalika/handoffs/codex.md only; BOARD.md and decisions.md were not edited.
+
+How verified:
+- npm run lint and npm run build passed on the final source with the environment
+  loaded and no credential values printed. The hosted Next.js build also passed.
+- Started the built site locally. Home and a live listing returned HTTP 200 and
+  contained the same listing title. Verified guest save gating, under 1 mi wording,
+  a reachable public Storage photo and 11 Austin city-picker results.
+- Protected Preview HTTP checks with vercel curl: home, listing and sign-in page
+  returned 200; live listing title was present on home and detail.
+- Existing test-account multipart sign-in persisted an SSR cookie session;
+  authenticated Saved and the Step 2B app panel returned 200. Revoked only the new
+  test session afterward. No user accounts or listing/saved rows changed.
+- Runtime dependency audit: zero advisories. Lint dependency peer graph is valid.
+- Staged whitespace check passed; Gitleaks scanned the staged source with redacted
+  output and found no secrets.
+- First hosted artifact retained old static settings and served 404. Corrected
+  the project defaults and rebuilt with the explicit website config; final
+  protected Preview now serves the real Next.js application.
+
+Open issues:
+- No browser surface was connected for screenshot or desktop/phone visual QA;
+  responsive styling is implemented, and built-site/hosted HTTP checks passed.
+- Email delivery/confirmation was not exercised by creating a new account;
+  required callbacks are verified allowlisted. Existing-account sign-in passed.
+- The compatible development lint toolchain reports moderate audit advisories;
+  runtime dependencies have zero advisories.
+- Existing git.deploymentEnabled=false remains in vercel.json. This Preview was
+  deployed manually; future pushes require manual deployment until that existing
+  workflow setting is changed. The Step 2B features remain intentional app panels.
+
+## Step 4 fix - 2026-10-31 - empty Supabase config
+
+Done:
+- Declared `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` as generator task inputs,
+  so changed values invalidate the generated config.
+- Debug and release now fail before writing config when either value is empty;
+  each error names the missing variable. Removed the legacy anon-key fallback.
+
+Files changed:
+- `mobile/shared/build.gradle.kts` and this handoff.
+
+How verified:
+- Loaded `dzirent-server.env` into environment variables before Gradle commands;
+  deliberately removed the required variables for the negative checks. No values
+  were printed or committed. No emulator or device was used.
+- With JDK 21 and credentials loaded, `clean :androidApp:assembleDebug` passed
+  in 3m 39s. Generated URL is nonempty, starts with `https://`, ends with
+  `.supabase.co`, and matches the environment; the nonempty key also matches.
+- Without credentials and without cleaning existing outputs, `:androidApp:assembleDebug`
+  failed at `:shared:generateSupabaseConfig` with
+  `Missing required environment variable: SUPABASE_URL`.
+- With only the publishable key removed (and the legacy alias present), the same
+  build failed with `Missing required environment variable: SUPABASE_PUBLISHABLE_KEY`.
+  Both failed builds left the valid generated file unchanged.
+
+Debug APK:
+- `H:\DziRent\Dzirent_dev\mobile\androidApp\build\outputs\apk\debug\androidApp-debug.apk`
+  (21,263,819 bytes).
+
+Open issues:
+- None for this fix. Verification used installed JDK 21; an initial attempt with
+  Android Studio's JDK 25 hit a Gradle/Kotlin compatibility error before building.
+
+Requests:
+- None.
+
+## Step 1A - 2026-10-30 - completion: credentials and approved deployment
+
+Done:
+- Owner explicitly approved deploying the prepared `delete-listing` Edge Function.
+  Deployed the unchanged committed source only to `dzirent-server`
+  (`pwfzkyjeivadbtkfkdxr`): ACTIVE, version 1. Gateway JWT verification remains
+  disabled as reviewed; the handler verifies the caller through Auth itself.
+- Updated the backend README and resolved the earlier deployment blocker below.
+- Loaded the corrected credentials into environment variables. CLI is linked only
+  to `dzirent-server`. Refreshed the old public schema and only us_cities data with
+  native pg_dump over its session pooler; the explicit source verification
+  transaction reported read-only = on. Exported Storage policies and external
+  Auth/event/Realtime dependencies with a READ ONLY psql script.
+- Downloaded `delete-account` through CLI with explicit old project-ref into an
+  ignored temporary directory; its source matches the existing snapshot. Root
+  CLI link remained the new project. No old db push, db pull, repair, or writes.
+  No connected tools were used to read the old project after the new restriction.
+- No new migrations or data changes were needed. Step 1B was not started.
+
+Files changed:
+- `supabase/README.md`, `supabase/reference/schema.sql`,
+  `supabase/reference/us_cities.sql`, `supabase/reference/snapshot_extras.sql`,
+  and `pranalika/handoffs/codex.md`.
+
+How it was verified:
+- Retrieved the deployed function and confirmed its source exactly matches the
+  approved committed source. Remote metadata: ACTIVE, version 1, verify_jwt false.
+- Live POST with only the publishable key and no bearer token: HTTP 401,
+  handler error `not_signed_in`.
+- Live POST with an invalid bearer token: HTTP 401, handler error `not_signed_in`.
+  No authenticated deletion or user/listing/file creation was performed.
+- Linked `supabase db push --linked --yes`: remote database is up to date.
+  Guest REST checks passed again: HTTP 401 on listings/profiles/us_cities and 11
+  Austin city RPC results. Direct target DB query confirmed 32,363 cities.
+- Parsed native city export and compared complete rowsets with the applied data
+  migration: exactly equal, 32,363 rows. Native schema snapshot contains 20 tables
+  and the Storage policies, Auth/event triggers and Realtime memberships exactly
+  once; schema snapshot contains no row data.
+- Independent local review found no schema drift: all 20 tables, 103 constraints,
+  23 secondary indexes, 19 original function bodies and all source triggers,
+  policies and publication memberships match the previous structural catalog.
+
+Open issues:
+- Both credential issues and the approved deployment are resolved.
+- Live owner/cross-owner Storage deletion remains outside this small test scope;
+  the four local handler checks from Step 1A remain the positive-path verification.
+
+Requests:
+- Coordinator: record the intentional Advisor exceptions listed in the original
+  entry below in `pranalika/security-log.md`. No further owner action is needed
+  for Step 1A.
+
+## Step 1A - 2026-10-30 - dzirent-server schema
+
+Done:
+- Pulled `Preview` before work. Applied five migration files to `dzirent-server`
+  (`pwfzkyjeivadbtkfkdxr`) using `supabase db push --db-url` and environment-loaded
+  database credentials. All 20 public tables have RLS; no guest raw-table grants.
+- Snapshotted the live old project's full public structure, policies, functions,
+  triggers, indexes, checks, ACLs and Storage policies. Saved unchanged deployed
+  `delete-account` source and only the 32,363 `us_cities` rows. No other application
+  rows were read/exported. Direct old DB authentication failed, so read-only
+  connected catalog/data queries supplied the snapshot. Never linked the CLI to
+  the old project, and never ran old-project push/pull/repair/writes.
+- Ported required workflows and RPCs with empty search paths and qualified names.
+  `is_blocked` is an unexposed `app_private` policy helper. Other helpers/trigger
+  functions have no anon/authenticated EXECUTE. Existing `rls_auto_enable` was
+  preserved, its search path set empty, and client EXECUTE revoked.
+- Owner-only profiles/listings/children; participant access for chats/messages/
+  rentals; immutable declarations and append-only events/reports. A private
+  conversation trigger validates the lender/listing without exposing the row.
+- Created public `listing-photos` bucket with owner-only modifications under
+  `{listing_id}/{random}.{ext}`. Guarded listing DELETE requires Storage API file
+  cleanup first; a parent lock serializes metadata writes with deletion. Prepared
+  an authenticated, caller-RLS `delete-listing` handler with retryable cleanup.
+
+Files changed:
+- `supabase/config.toml`, `supabase/.gitignore`, `supabase/README.md`.
+- Five SQL migrations in `supabase/migrations/`.
+- `supabase/reference/schema.sql`, `catalog.json`, `functions.sql`, `us_cities.sql`,
+  and `reference/functions/delete-account/index.ts`.
+- `supabase/functions/delete-listing/index.ts` and its README.
+- `supabase/tests/guest_rest.py`, `supabase/tests/delete_listing.test.mjs`.
+- This handoff only; unrelated existing web/tool/Claude changes are excluded.
+
+How it was verified:
+- First CLI push applied all five migrations. Second push: remote is up to date,
+  zero pending migrations.
+- Guest REST with only `SUPABASE_PUBLISHABLE_KEY`, no Authorization/user token:
+  listings, profiles and us_cities each returned HTTP 401; `search_cities` with
+  `Austin` returned 11 city results.
+- Catalog query: exactly 32,363 cities, 20 public tables, all 20 RLS-enabled.
+  All 18 public/private functions have empty search paths. Only search_cities
+  allows anon EXECUTE; client EXECUTE is absent from all trigger functions.
+- Four local deletion-handler checks passed: missing auth, foreign owner, 1001
+  photos removed in batches before row deletion, and cleanup failure preserves
+  the listing. No users, passwords, sample listings, devices or emulators created.
+- Security Advisor results and intentional exceptions are recorded below.
+- Gitleaks scanned supabase and this handoff with redacted output: no leaks found.
+  `git diff --check` passed.
+
+Open issues:
+- Resolved in the follow-up: the new access token was loaded from the authorized
+  secrets file, and CLI linking to `dzirent-server` succeeded. Earlier pushes used
+  explicit target DB URLs; the linked push also reports up to date. The repo was
+  never linked to the old project.
+- Resolved in the follow-up above: the owner approved deployment after the initial
+  automatic approval rejection. `delete-listing` is now deployed. It verifies the
+  bearer token with `auth.getUser` and uses no service-role key. Raw DELETE while
+  files remain is safely refused by the database guard.
+- No owner-account Storage test was requested/run. The cleanup handler has local
+  mocked checks; live owner/cross-owner CRUD remains for the later test step.
+- Reference `delete-account` is snapshot-only. Future account deletion must clean
+  listing-ID folders before deleting the auth user; the database guard prevents
+  orphaning files through cascading deletes.
+- Deferred to Step 1B, not installed: `listings_nearby`,
+  `search_listings_similar`, `studio_rental_count`, `studio_reply_minutes`.
+  Existing client cross-owner joins/photo paths need later client work.
+
+Requests:
+- CLI authentication and new-project linking are resolved.
+- Coordinator: copy the following intentional Advisor findings into your owned
+  `pranalika/security-log.md`. It was not edited because this session may commit
+  only `supabase/` and this handoff.
+  - INFO `rls_enabled_no_policy`: us_cities intentionally has no raw-table grants
+    or policies; only the bounded city RPC can read it.
+    [Advisor guidance](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy).
+  - WARN `anon_security_definer_function_executable`: search_cities is the explicit
+    guest exception; it returns only public city reference data with an empty
+    search path and bounded prefix search.
+    [Advisor guidance](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable).
+  - WARN `authenticated_security_definer_function_executable`, five intentional
+    RPCs: search_cities (raw cities denied), my_block_peer_ids (only caller's block
+    relationships, including reverse blocks), record_accessory_declaration and
+    record_listing_declaration (immutable audit inserts, caller ownership checks),
+    set_conversation_dates (renter-only update through the validated RPC, no raw
+    conversation UPDATE grant). Every account RPC rejects null auth.uid().
+    [Advisor guidance](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable).
+- Step 1B was not started.

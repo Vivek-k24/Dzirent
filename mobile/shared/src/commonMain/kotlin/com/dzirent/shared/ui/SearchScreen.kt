@@ -1,0 +1,340 @@
+package com.dzirent.shared.ui
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
+import com.dzirent.shared.model.Profile
+import com.dzirent.shared.platform.SettingsStorage
+import com.dzirent.shared.repository.DzirentRepository
+import com.dzirent.shared.util.*
+import kotlinx.coroutines.launch
+
+/** Recent searches on this device, per user, newest first. */
+class RecentSearchStore(private val storage: SettingsStorage?, private val userId: String) {
+    private val inMemory = mutableListOf<String>()
+
+    fun load(): List<String> = storage?.getRecentSearches(userId) ?: inMemory.toList()
+
+    fun add(query: String): List<String> {
+        return if (storage != null) {
+            storage.addRecentSearch(userId, query)
+        } else {
+            val updated = addRecentSearch(inMemory, query)
+            inMemory.clear()
+            inMemory.addAll(updated)
+            updated
+        }
+    }
+
+    fun clear() {
+        if (storage != null) {
+            storage.clearRecentSearches(userId)
+        } else {
+            inMemory.clear()
+        }
+    }
+}
+
+/**
+ * Text search over titles and descriptions. The field is focused right away; recent
+ * searches show while it's empty. Results respect the date range and the sidebar filters,
+ * shown as removable chips, and changed with "Filter results" (the sidebar's filter sheet) next
+ * to them. Results can be sorted with the icon in the results header.
+ */
+@Composable
+fun SearchScreen(
+    session: BrowseSession,
+    profile: Profile? = null,
+    isGuest: Boolean = false,
+    guestCity: String? = null,
+    guestLat: Double? = null,
+    guestLng: Double? = null,
+    settingsStorage: SettingsStorage? = null,
+    repository: DzirentRepository? = null,
+    onSetLocation: () -> Unit,
+    onOpenListing: (String) -> Unit
+) {
+    val effectiveUserId = if (isGuest) "guest" else profile?.id.orEmpty()
+    val store = remember(effectiveUserId, settingsStorage) { RecentSearchStore(settingsStorage, effectiveUserId) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var recent by remember { mutableStateOf(store.load()) }
+    var sort by rememberSaveable { mutableStateOf(SearchSort.NEAREST) }
+    var sortMenuOpen by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showFilters by remember { mutableStateOf(false) }
+    // Search can drop the date range ("Any dates"); Home always keeps one.
+    var anyDates by rememberSaveable { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    val scope = rememberCoroutineScope()
+    val lat = if (isGuest) guestLat else profile?.approxLat
+    val lng = if (isGuest) guestLng else profile?.approxLng
+
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    val settings = LocalAppSettings.current
+    val radiusKm = settings.distanceUnit.radiusKm(session.filters.distanceStep)
+    LaunchedEffect(lat, lng, radiusKm) {
+        if (lat != null && lng != null) session.load(lat, lng, radiusKm)
+    }
+
+    fun saveRecent(q: String) {
+        recent = store.add(q)
+    }
+
+    if (showDatePicker) {
+        DateRangePickerDialog(
+            title = "Your dates",
+            allowPast = false,
+            initial = session.dates,
+            confirmLabel = "Done",
+            onDismiss = { showDatePicker = false },
+            onConfirm = { range ->
+                session.dates = range
+                anyDates = false
+                showDatePicker = false
+            }
+        )
+    }
+
+    // The sidebar's filter sheet, applied to this search (the results stay on screen).
+    if (showFilters) {
+        FilterSheet(
+            current = session.filters,
+            onApply = { applied ->
+                session.filters = applied
+                showFilters = false
+            },
+            onDismiss = { showFilters = false }
+        )
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { if (it.length <= 80) query = it },
+            placeholder = { Text("Search pieces") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { query = "" }) { Icon(Icons.Default.Clear, contentDescription = "Clear search") }
+                }
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = {
+                saveRecent(query)
+                focusManager.clearFocus()
+            }),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .focusRequester(focusRequester)
+        )
+
+        if (query.isBlank()) {
+            RecentSearches(
+                recent = recent,
+                onPick = { picked ->
+                    query = picked
+                    saveRecent(picked)
+                    focusManager.clearFocus()
+                },
+                onClear = {
+                    store.clear()
+                    recent = emptyList()
+                }
+            )
+            return@Column
+        }
+
+        if (lat == null || lng == null) {
+            EmptyView(
+                title = "Set your location",
+                description = "Search looks at pieces near you. Set your approximate location first.",
+                icon = Icons.Default.LocationOff,
+                onAction = onSetLocation,
+                actionLabel = "Set my location"
+            )
+            return@Column
+        }
+
+        val chips = filterChips(session.filters, settings.distanceUnit, settings.defaultDistanceStep)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            LazyRow(
+                contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                // The dates are a removable chip like the other filters; without them, availability
+                // is ignored and the chip offers to pick dates again.
+                item(key = "dates") {
+                    if (anyDates) {
+                        AssistChip(
+                            onClick = { showDatePicker = true },
+                            label = { Text("Any dates") },
+                            leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        )
+                    } else {
+                        InputChip(
+                            selected = false,
+                            onClick = { anyDates = true },
+                            label = { Text(formatDateChip(session.dates)) },
+                            leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                            trailingIcon = {
+                                Icon(Icons.Default.Close, contentDescription = "Remove dates", modifier = Modifier.size(16.dp))
+                            }
+                        )
+                    }
+                }
+                items(chips, key = { it.label }) { chip ->
+                    InputChip(
+                        selected = false,
+                        onClick = { session.filters = chip.remove(session.filters) },
+                        label = { Text(chip.label) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = "Remove ${chip.label}", modifier = Modifier.size(16.dp)) }
+                    )
+                }
+            }
+            TextButton(
+                onClick = { showFilters = true },
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                modifier = Modifier.padding(end = 4.dp)
+            ) {
+                Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Filter results")
+            }
+        }
+
+        when (val state = session.state) {
+            is UiState.Loading -> LoadingView(message = "Searching...")
+            is UiState.Error -> ErrorView(message = state.message, onRetry = { scope.launch { session.load(lat, lng, radiusKm, force = true) } })
+            is UiState.Success -> {
+                val results = remember(state, session.filters, session.dates, anyDates, query, sort) {
+                    sortSearchResults(session.sections(anyDates)?.visible.orEmpty().filter { it.matchesQuery(query) }, sort)
+                }
+                val suggestions = rememberSuggestions(
+                    session, effectiveUserId, lat, lng, query, session.filters, if (anyDates) null else session.dates,
+                    active = results.isEmpty()
+                )
+                if (results.isEmpty()) {
+                    // Never an empty screen: what's close to the search instead.
+                    SuggestionsGrid(suggestions, query, onOpenListing = { id ->
+                        saveRecent(query)
+                        onOpenListing(id)
+                    })
+                    return@Column
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 16.dp, end = 4.dp)
+                ) {
+                    Text(
+                        text = "${results.size} ${if (results.size == 1) "result" else "results"}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Box {
+                        IconButton(onClick = { sortMenuOpen = true }) {
+                            Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort: ${sort.label}")
+                        }
+                        DropdownMenu(expanded = sortMenuOpen, onDismissRequest = { sortMenuOpen = false }) {
+                            SearchSort.entries.forEach { option ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(option.label, fontWeight = if (option == sort) FontWeight.Bold else FontWeight.Normal)
+                                    },
+                                    onClick = {
+                                        sort = option
+                                        sortMenuOpen = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(results, key = { it.id }) { listing ->
+                        ListingCard(
+                            listing = listing,
+                            onClick = {
+                                saveRecent(query)
+                                onOpenListing(listing.id)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentSearches(recent: List<String>, onPick: (String) -> Unit, onClear: () -> Unit) {
+    if (recent.isEmpty()) {
+        Text(
+            text = "Search titles and descriptions of pieces near you.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        return
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(start = 16.dp, end = 8.dp)
+    ) {
+        Text(
+            text = "Recent searches",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f)
+        )
+        TextButton(onClick = onClear) { Text("Clear") }
+    }
+    recent.forEach { item ->
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onPick(item) }
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Icon(
+                Icons.Default.History,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(item, style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}

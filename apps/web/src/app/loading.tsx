@@ -1,0 +1,1 @@
+export default function Loading(){return <div className="page-width loading-state" role="status" aria-label="Finding pieces"><div className="skeleton skeleton-title"/><div className="piece-grid">{[1,2,3,4].map(n=><div key={n}><div className="skeleton skeleton-card"/><div className="skeleton skeleton-line"/></div>)}</div></div>;}
