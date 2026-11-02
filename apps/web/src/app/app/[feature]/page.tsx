@@ -1,16 +1,50 @@
-import Link from 'next/link';
-import {notFound} from 'next/navigation';
-import {currentUser} from '@/lib/supabase/server';
-import {Gate} from '@/components/cards';
-import {Icon} from '@/components/icon';
-const features:Record<string,{title:string;copy:string;icon:string}>={
-  messages:{title:'Keep the conversation going.',copy:'Message studios, arrange pickup, and make plans for your next piece in the Dzirent app.',icon:'message'},
-  'list-a-piece':{title:'Give a good piece another outing.',copy:'Add photos, garment measurements, and availability. Your studio starts with a piece you love.',icon:'hanger'},
-  closet:{title:'A little room for possibility.',copy:'Manage your pieces, availability, and rentals in your Dzirent closet in the app.',icon:'closet'},
-  settings:{title:'Make it personal.',copy:'Manage your profile and private measurements in the Dzirent app. Your measurements help find pieces likely to fit you.',icon:'user'},
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { currentUser } from "@/lib/supabase/server";
+import {
+  readInbox,
+  readCloset,
+  readSettings,
+  editorData,
+} from "@/lib/workflow-server";
+import { Gate } from "@/components/cards";
+import { Inbox } from "@/components/inbox";
+import { Closet } from "@/components/closet";
+import { Settings } from "@/components/settings";
+import { ListingEditor } from "@/components/listing-editor";
+export const metadata: Metadata = {
+  title: "Your Dzirent",
+  robots: { index: false, follow: false },
 };
-export default async function Feature({params}:{params:Promise<{feature:string}>}){
-  const {feature}=await params;const data=features[feature];if(!data)notFound();
-  if(!await currentUser())return <Gate reason={feature==='messages'?'start a conversation':feature==='list-a-piece'?'list your first piece':'make it personal'} next={'/app/'+feature}/>;
-  return <div className="app-panel"><span className="app-icon"><Icon name={data.icon}/></span><span className="eyebrow">AVAILABLE IN THE APP</span><h1>{data.title}</h1><p>{data.copy}</p><p className="muted">Continue in the Dzirent app on your phone.</p><Link className="button" href="/">Keep exploring <Icon name="arrow"/></Link></div>;
+export default async function Feature({
+  params,
+}: {
+  params: Promise<{ feature: string }>;
+}) {
+  const { feature } = await params;
+  if (!["messages", "list-a-piece", "closet", "settings"].includes(feature))
+    notFound();
+  if (!(await currentUser()))
+    return (
+      <Gate
+        reason={
+          feature === "messages"
+            ? "start a conversation"
+            : feature === "list-a-piece"
+              ? "list your first piece"
+              : "make it personal"
+        }
+        next={"/app/" + feature}
+      />
+    );
+  switch (feature) {
+    case "messages":
+      return <Inbox initial={await readInbox()} />;
+    case "closet":
+      return <Closet initial={await readCloset()} />;
+    case "settings":
+      return <Settings initial={await readSettings()} />;
+    case "list-a-piece":
+      return <ListingEditor {...await editorData()} />;
+  }
 }

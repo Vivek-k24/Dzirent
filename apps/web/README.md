@@ -17,9 +17,10 @@ The app deliberately fails if either required variable is absent.
 ## Data and sessions
 
 Guest reads use the shop-window RPCs in pranalika/contract.md. Personalized pages
-use verified cookie sessions through @supabase/ssr. Only the signed-in owner's
-profile and saved-listing rows are accessed directly. Studio saves, blocking and
-reporting use the handle-based contract RPCs. No service-role key is used.
+use verified cookie sessions through @supabase/ssr. Direct reads and writes are limited to the signed-in owner's or chat participant's
+contract tables. Public browsing and other studios use the shop-window RPCs.
+Every workflow API request verifies the Auth user; mutations check the public
+Origin/host, and Supabase RLS remains authoritative. No service-role key is used.
 
 Images come from the public listing-photos bucket. Listing cards contain only
 photo, title, and price/distance, with under 1 mi for zero distance.
@@ -33,9 +34,39 @@ holds the safe return path. Preview auth routes use the stable
 https://dzirent.vercel.app host so PKCE cookies and confirmation land on the same
 origin. The two website callback URLs are allowlisted in Supabase Auth.
 
-Messaging, listing creation, closet and settings intentionally show the
-Available in the app panel for Step 2A. Measurements can be managed in the app;
-the website's signed-in fit page uses fit_listings.
+## Signed-in workflows
+
+The two-step listing editor follows mobile/shared: Photos and details, then Size,
+price and dates. Photos from a file picker or camera are compressed to JPEG
+(1,600 px maximum side) before upload. Paths are listing UUID/random UUID.jpg.
+The requested web smoke test permits one photo; no AI suggestions or checks run.
+Local IndexedDB drafts are scoped to the account. Publishing keeps the row paused
+until photos, measurements, availability and required declarations finish, and
+retains the stable listing/upload IDs for retry. New listings publish active;
+edits preserve Active/Paused. The V1.0 editor has one availability range and keeps
+existing extra ranges when editing older data. Full deletion calls delete-listing.
+
+Inbox has Messages and Activity tabs, participant chats, requested-date changes,
+read receipts, reports, blocks and rental actions. Realtime messages/rentals wait
+for confirmed Postgres subscription readiness, then reload history to close the
+subscription race; message IDs deduplicate live/history results. Periodic and
+focus refreshes recover missed updates.
+
+Closet contains owner listings/sort/status controls and rental tabs. Profile and
+settings include Rent/Lend/Both, studio fields, private body measurements/styles,
+blocked users, local preferences, password change, sign out and delete-account.
+The last operation requires DELETE and the Edge Function rechecks active rentals.
+Measurements remain private; fit results use fit_listings.
+
+The contract currently documents rental_outcomes as SELECT/INSERT while the app
+uses upsert. This website inserts the caller's first answer without undocumented
+updates; rental status can still be changed. See the Step 2B handoff request.
+
+Verification uses the existing test accounts supplied through environment
+variables. Never create test users, change their passwords, or delete accounts
+as a smoke test. Remove disposable listings through delete-listing, including
+their Storage objects. Test chat messages remain because the contract has no
+client message deletion.
 
 ## Vercel
 
