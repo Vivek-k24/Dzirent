@@ -14,7 +14,7 @@ import { BrowseContext, City, categories, styles } from "@/lib/types";
 import { Icon } from "./icon";
 import { signOut } from "@/app/actions";
 import { useInboxDot, UnreadDot } from "./inbox";
-import { Appearance, ThemeToggle } from "./local-preferences";
+import { Appearance } from "./local-preferences";
 import { DistanceUnit } from "./distance";
 import { dateChip, type Profile } from "@/lib/workflows";
 import { WelcomeChecklistModal, GuideOverlay } from "./onboarding";
@@ -23,14 +23,10 @@ import {
   GatedActionTrigger,
   type GatedActionKey,
 } from "./guest-gate";
-const ShellContext = createContext<{
-  openFilters: () => void;
-  openLocation: () => void;
-  openGuestGate: (action: GatedActionKey) => void;
-}>({
+const ShellContext = createContext({
   openFilters: () => {},
   openLocation: () => {},
-  openGuestGate: () => {},
+  openGuestGate: (_action: GatedActionKey) => {},
 });
 export function UpdateLocation() {
   const { openLocation } = useContext(ShellContext);
@@ -345,6 +341,13 @@ export function Shell({
     );
     setFilters(true);
   }
+  const gated = (path: string, reason: string) =>
+    authenticated
+      ? path
+      : "/auth?mode=signup&reason=" +
+        reason +
+        "&next=" +
+        encodeURIComponent(path);
   const dateLabel = dateChip(ctx.start, ctx.end);
   async function dismissWelcome(path?: string) {
     try {
@@ -357,11 +360,7 @@ export function Shell({
   }
   return (
     <ShellContext.Provider
-      value={{
-        openFilters,
-        openLocation: () => setLocation(true),
-        openGuestGate: (action: GatedActionKey) => setGuestGateAction(action),
-      }}
+      value={{ openFilters, openLocation: () => setLocation(true) }}
     >
       <DistanceUnit unit={ctx.distanceUnit}>
         <Appearance />
@@ -408,7 +407,6 @@ export function Shell({
                 <span>{ctx.city}</span>
                 <span className="location-change">Change</span>
               </button>
-              <ThemeToggle />
               <Link
                 className="icon-button desktop-account"
                 href={authenticated ? "/app/settings" : "/auth"}
@@ -432,20 +430,10 @@ export function Shell({
               >
                 Search
               </Link>
-              <GatedActionTrigger
-                action="save"
-                authenticated={authenticated}
-                href="/saved"
-              >
-                Saved
-              </GatedActionTrigger>
-              <GatedActionTrigger
-                action="message"
-                authenticated={authenticated}
-                href="/app/messages"
-              >
+              <Link href={gated("/saved", "save")}>Saved</Link>
+              <Link href={gated("/app/messages", "message")}>
                 Inbox{unread && <UnreadDot />}
-              </GatedActionTrigger>
+              </Link>
               <Link href="/about">About</Link>
             </nav>
             <button
@@ -458,14 +446,12 @@ export function Shell({
                 {ctx.datesActive ? "Your dates" : "Choose dates"}
               </span>
             </button>
-            <GatedActionTrigger
-              action="list"
-              authenticated={authenticated}
-              href="/app/list-a-piece"
+            <Link
               className="list-link"
+              href={gated("/app/list-a-piece", "list")}
             >
               <Icon name="plus" /> List a piece
-            </GatedActionTrigger>
+            </Link>
           </div>
         </header>
         <main id="main">{children}</main>
@@ -500,52 +486,27 @@ export function Shell({
           </div>
         </footer>
         <nav className="bottom-nav" aria-label="Mobile navigation">
-          <Link
-            href="/"
-            className={pathname === "/" ? "current" : ""}
-            aria-current={pathname === "/" ? "page" : undefined}
-          >
-            <Icon name="home" />
-            <span>Home</span>
-          </Link>
-          <GatedActionTrigger
-            action="message"
-            authenticated={authenticated}
-            href="/app/messages"
-            className={pathname === "/app/messages" ? "current" : ""}
-          >
-            <Icon name="message" />
-            {unread && <UnreadDot />}
-            <span>Inbox</span>
-          </GatedActionTrigger>
-          <Link
-            href="/search"
-            className={
-              "center-search " + (pathname === "/search" ? "current" : "")
-            }
-            aria-current={pathname === "/search" ? "page" : undefined}
-          >
-            <Icon name="search" />
-            <span>Search</span>
-          </Link>
-          <GatedActionTrigger
-            action="list"
-            authenticated={authenticated}
-            href="/app/closet"
-            className={pathname === "/app/closet" ? "current" : ""}
-          >
-            <Icon name="closet" />
-            <span>Closet</span>
-          </GatedActionTrigger>
-          <GatedActionTrigger
-            action="save"
-            authenticated={authenticated}
-            href="/saved"
-            className={pathname === "/saved" ? "current" : ""}
-          >
-            <Icon name="bookmark" />
-            <span>Saved</span>
-          </GatedActionTrigger>
+          {[
+            ["/", "home", "Home"],
+            [gated("/app/messages", "message"), "message", "Inbox"],
+            ["/search", "search", "Search"],
+            [gated("/app/closet", "list"), "closet", "Closet"],
+            [gated("/saved", "save"), "bookmark", "Saved"],
+          ].map(([href, icon, label]) => (
+            <Link
+              key={label}
+              href={href}
+              className={
+                (label === "Search" ? "center-search " : "") +
+                (pathname === href ? "current" : "")
+              }
+              aria-current={pathname === href ? "page" : undefined}
+            >
+              <Icon name={icon} />
+              {label === "Inbox" && unread && <UnreadDot />}
+              <span>{label}</span>
+            </Link>
+          ))}
         </nav>
         {location && <LocationPicker onClose={() => setLocation(false)} />}
         {dates && <DatePicker ctx={ctx} onClose={() => setDates(false)} />}
@@ -582,24 +543,20 @@ export function Shell({
                 {authenticated ? "Profile & settings" : "Sign in / sign up"}
                 <Icon name="chevron" />
               </Link>
-              <GatedActionTrigger
-                action="message"
-                authenticated={authenticated}
-                href="/app/messages"
+              <Link
+                href={gated("/app/messages", "message")}
                 onClick={() => setFilters(false)}
               >
                 Inbox{unread && <UnreadDot />}
                 <Icon name="chevron" />
-              </GatedActionTrigger>
-              <GatedActionTrigger
-                action="list"
-                authenticated={authenticated}
-                href="/app/closet"
+              </Link>
+              <Link
+                href={gated("/app/closet", "list")}
                 onClick={() => setFilters(false)}
               >
                 My closet
                 <Icon name="chevron" />
-              </GatedActionTrigger>
+              </Link>
             </nav>
             <h3 className="filter-heading">
               <Icon name="filter" /> All categories
@@ -789,12 +746,6 @@ export function Shell({
           <GuideOverlay
             canLend={userProfile?.role !== "renter"}
             onClose={() => setGuideOpen(false)}
-          />
-        )}
-        {guestGateAction && (
-          <GuestGateDialog
-            action={guestGateAction}
-            onClose={() => setGuestGateAction(null)}
           />
         )}
       </DistanceUnit>

@@ -138,7 +138,7 @@ export function Closet({ initial }: { initial: ClosetData }) {
                   <div className="closet-card-body">
                     <h2>{l.title}</h2>
                     <p className="muted">
-                      {l.category} ·{l.size_label}
+                      {l.category} · {l.size_label}
                     </p>
                     <strong>{price(l.price_usd)}</strong>
                     {data.inbox.rentals.some(
