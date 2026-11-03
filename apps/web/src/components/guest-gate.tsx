@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { type ReactNode, type CSSProperties } from "react";
+import { type ReactNode, type CSSProperties, useRef, useEffect } from "react";
 import { Icon } from "./icon";
 
 export type GatedActionKey = "save" | "message" | "studio" | "list" | "fit";
@@ -48,6 +48,7 @@ export function GuestGateDialog({
   nextUrl?: string;
   onClose: () => void;
 }) {
+  const ref = useRef<HTMLDialogElement>(null);
   const info = GATED_ACTIONS[action] || GATED_ACTIONS.save;
   const returnUrl =
     nextUrl ||
@@ -55,12 +56,27 @@ export function GuestGateDialog({
       ? window.location.pathname + window.location.search
       : "/");
 
+  useEffect(() => {
+    const dialog = ref.current;
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
+    return () => {
+      if (dialog && dialog.open) {
+        dialog.close();
+      }
+    };
+  }, []);
+
   return (
     <dialog
+      ref={ref}
       className="modal guest-gate-modal"
-      open
       aria-label={info.title}
       onCancel={onClose}
+      onClick={(e) => {
+        if (e.target === ref.current) onClose();
+      }}
     >
       <div className="modal-content">
         <div className="modal-top">
@@ -142,16 +158,7 @@ export function GatedActionTrigger({
     <button
       type="button"
       className={className}
-      style={{
-        ...style,
-        background: "none",
-        border: "none",
-        padding: 0,
-        font: "inherit",
-        color: "inherit",
-        cursor: "pointer",
-        textAlign: "inherit",
-      }}
+      style={style}
       onClick={(e) => {
         if (!authenticated) {
           e.preventDefault();
@@ -165,4 +172,3 @@ export function GatedActionTrigger({
     </button>
   );
 }
-
