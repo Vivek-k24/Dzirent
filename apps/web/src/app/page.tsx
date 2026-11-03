@@ -7,6 +7,7 @@ import { PieceCard, PieceGrid, StudioCards } from "@/components/cards";
 import { Tabs } from "@/components/tabs";
 import { Photo } from "@/components/photo";
 import { Icon } from "@/components/icon";
+import { GatedActionTrigger } from "@/components/guest-gate";
 function Row({
   title,
   subtitle,
@@ -136,11 +137,11 @@ export default async function Home({
           accent
         />
       ) : (
-        <Link
+        <GatedActionTrigger
+          action="fit"
+          authenticated={Boolean(user)}
+          href="/app/settings"
           className="fit-banner"
-          href={
-            user ? "/app/settings" : "/auth?mode=signup&reason=fit&next=%2Ffit"
-          }
         >
           <span className="fit-symbol">
             <Icon name="sparkle" />
@@ -153,7 +154,7 @@ export default async function Home({
           <span className="fit-cta">
             {user ? "Add measurements" : "Find your fit"} <Icon name="arrow" />
           </span>
-        </Link>
+        </GatedActionTrigger>
       )}
       <Row
         title="New near you"
@@ -204,16 +205,14 @@ export default async function Home({
           <h2>Your closet has possibilities, too.</h2>
           <p>Make room for more stories. Share what you already love.</p>
         </div>
-        <Link
+        <GatedActionTrigger
+          action="list"
+          authenticated={Boolean(user)}
+          href="/app/list-a-piece"
           className="button secondary"
-          href={
-            user
-              ? "/app/list-a-piece"
-              : "/auth?mode=signup&reason=list&next=%2Fapp%2Flist-a-piece"
-          }
         >
           List a piece <Icon name="plus" />
-        </Link>
+        </GatedActionTrigger>
       </section>
     </div>
   );

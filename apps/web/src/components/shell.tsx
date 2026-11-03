@@ -18,9 +18,19 @@ import { Appearance } from "./local-preferences";
 import { DistanceUnit } from "./distance";
 import { dateChip, type Profile } from "@/lib/workflows";
 import { WelcomeChecklistModal, GuideOverlay } from "./onboarding";
-const ShellContext = createContext({
+import {
+  GuestGateDialog,
+  GatedActionTrigger,
+  type GatedActionKey,
+} from "./guest-gate";
+const ShellContext = createContext<{
+  openFilters: () => void;
+  openLocation: () => void;
+  openGuestGate: (action: GatedActionKey) => void;
+}>({
   openFilters: () => {},
   openLocation: () => {},
+  openGuestGate: () => {},
 });
 export function UpdateLocation() {
   const { openLocation } = useContext(ShellContext);
@@ -296,6 +306,9 @@ export function Shell({
   const [welcome, setWelcome] = useState(showWelcome);
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [guestGateAction, setGuestGateAction] = useState<GatedActionKey | null>(
+    null,
+  );
   const [defaults, setDefaults] = useState<Record<string, string>>({});
   const unread = useInboxDot(authenticated);
 
@@ -313,11 +326,17 @@ export function Shell({
     }
     const onStartTour = () => setGuideOpen(true);
     const onOpenChecklist = () => setChecklistOpen(true);
+    const onOpenGate = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.action) setGuestGateAction(detail.action);
+    };
     window.addEventListener("dzirent-start-tour", onStartTour);
     window.addEventListener("dzirent-open-checklist", onOpenChecklist);
+    window.addEventListener("dzirent-open-guest-gate", onOpenGate);
     return () => {
       window.removeEventListener("dzirent-start-tour", onStartTour);
       window.removeEventListener("dzirent-open-checklist", onOpenChecklist);
+      window.removeEventListener("dzirent-open-guest-gate", onOpenGate);
     };
   }, [authenticated, userId]);
   function openFilters() {
@@ -326,13 +345,6 @@ export function Shell({
     );
     setFilters(true);
   }
-  const gated = (path: string, reason: string) =>
-    authenticated
-      ? path
-      : "/auth?mode=signup&reason=" +
-        reason +
-        "&next=" +
-        encodeURIComponent(path);
   const dateLabel = dateChip(ctx.start, ctx.end);
   async function dismissWelcome(path?: string) {
     try {
@@ -345,7 +357,11 @@ export function Shell({
   }
   return (
     <ShellContext.Provider
-      value={{ openFilters, openLocation: () => setLocation(true) }}
+      value={{
+        openFilters,
+        openLocation: () => setLocation(true),
+        openGuestGate: (action: GatedActionKey) => setGuestGateAction(action),
+      }}
     >
       <DistanceUnit unit={ctx.distanceUnit}>
         <Appearance />
@@ -415,10 +431,20 @@ export function Shell({
               >
                 Search
               </Link>
-              <Link href={gated("/saved", "save")}>Saved</Link>
-              <Link href={gated("/app/messages", "message")}>
+              <GatedActionTrigger
+                action="save"
+                authenticated={authenticated}
+                href="/saved"
+              >
+                Saved
+              </GatedActionTrigger>
+              <GatedActionTrigger
+                action="message"
+                authenticated={authenticated}
+                href="/app/messages"
+              >
                 Inbox{unread && <UnreadDot />}
-              </Link>
+              </GatedActionTrigger>
               <Link href="/about">About</Link>
             </nav>
             <button
@@ -431,12 +457,14 @@ export function Shell({
                 {ctx.datesActive ? "Your dates" : "Choose dates"}
               </span>
             </button>
-            <Link
+            <GatedActionTrigger
+              action="list"
+              authenticated={authenticated}
+              href="/app/list-a-piece"
               className="list-link"
-              href={gated("/app/list-a-piece", "list")}
             >
               <Icon name="plus" /> List a piece
-            </Link>
+            </GatedActionTrigger>
           </div>
         </header>
         <main id="main">{children}</main>
@@ -471,27 +499,52 @@ export function Shell({
           </div>
         </footer>
         <nav className="bottom-nav" aria-label="Mobile navigation">
-          {[
-            ["/", "home", "Home"],
-            [gated("/app/messages", "message"), "message", "Inbox"],
-            ["/search", "search", "Search"],
-            [gated("/app/closet", "list"), "closet", "Closet"],
-            [gated("/saved", "save"), "bookmark", "Saved"],
-          ].map(([href, icon, label]) => (
-            <Link
-              key={label}
-              href={href}
-              className={
-                (label === "Search" ? "center-search " : "") +
-                (pathname === href ? "current" : "")
-              }
-              aria-current={pathname === href ? "page" : undefined}
-            >
-              <Icon name={icon} />
-              {label === "Inbox" && unread && <UnreadDot />}
-              <span>{label}</span>
-            </Link>
-          ))}
+          <Link
+            href="/"
+            className={pathname === "/" ? "current" : ""}
+            aria-current={pathname === "/" ? "page" : undefined}
+          >
+            <Icon name="home" />
+            <span>Home</span>
+          </Link>
+          <GatedActionTrigger
+            action="message"
+            authenticated={authenticated}
+            href="/app/messages"
+            className={pathname === "/app/messages" ? "current" : ""}
+          >
+            <Icon name="message" />
+            {unread && <UnreadDot />}
+            <span>Inbox</span>
+          </GatedActionTrigger>
+          <Link
+            href="/search"
+            className={
+              "center-search " + (pathname === "/search" ? "current" : "")
+            }
+            aria-current={pathname === "/search" ? "page" : undefined}
+          >
+            <Icon name="search" />
+            <span>Search</span>
+          </Link>
+          <GatedActionTrigger
+            action="list"
+            authenticated={authenticated}
+            href="/app/closet"
+            className={pathname === "/app/closet" ? "current" : ""}
+          >
+            <Icon name="closet" />
+            <span>Closet</span>
+          </GatedActionTrigger>
+          <GatedActionTrigger
+            action="save"
+            authenticated={authenticated}
+            href="/saved"
+            className={pathname === "/saved" ? "current" : ""}
+          >
+            <Icon name="bookmark" />
+            <span>Saved</span>
+          </GatedActionTrigger>
         </nav>
         {location && <LocationPicker onClose={() => setLocation(false)} />}
         {dates && <DatePicker ctx={ctx} onClose={() => setDates(false)} />}
@@ -528,20 +581,24 @@ export function Shell({
                 {authenticated ? "Profile & settings" : "Sign in / sign up"}
                 <Icon name="chevron" />
               </Link>
-              <Link
-                href={gated("/app/messages", "message")}
+              <GatedActionTrigger
+                action="message"
+                authenticated={authenticated}
+                href="/app/messages"
                 onClick={() => setFilters(false)}
               >
                 Inbox{unread && <UnreadDot />}
                 <Icon name="chevron" />
-              </Link>
-              <Link
-                href={gated("/app/closet", "list")}
+              </GatedActionTrigger>
+              <GatedActionTrigger
+                action="list"
+                authenticated={authenticated}
+                href="/app/closet"
                 onClick={() => setFilters(false)}
               >
                 My closet
                 <Icon name="chevron" />
-              </Link>
+              </GatedActionTrigger>
             </nav>
             <h3 className="filter-heading">
               <Icon name="filter" /> All categories
@@ -731,6 +788,12 @@ export function Shell({
           <GuideOverlay
             canLend={userProfile?.role !== "renter"}
             onClose={() => setGuideOpen(false)}
+          />
+        )}
+        {guestGateAction && (
+          <GuestGateDialog
+            action={guestGateAction}
+            onClose={() => setGuestGateAction(null)}
           />
         )}
       </DistanceUnit>

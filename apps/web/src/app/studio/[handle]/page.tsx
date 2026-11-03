@@ -24,8 +24,7 @@ export default async function StudioPage({
     currentUser(),
     searchParams,
   ]);
-  if (!user)
-    return <Gate reason="get to know the studio" next={"/studio/" + handle} />;
+  if (!user) return <Gate action="studio" next={"/studio/" + handle} />;
   const s = await studio(handle, ctx);
   if (!s) notFound();
   return (

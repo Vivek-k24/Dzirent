@@ -16,7 +16,7 @@ export default async function ChatPage({
 }) {
   const { id } = await params;
   if (!(await currentUser()))
-    return <Gate reason="start a conversation" next={"/app/messages/" + id} />;
+    return <Gate action="message" next={"/app/messages/" + id} />;
   let data;
   try {
     data = await readChat(id);

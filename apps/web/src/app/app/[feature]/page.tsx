@@ -27,13 +27,14 @@ export default async function Feature({
   if (!(await currentUser()))
     return (
       <Gate
-        reason={
+        action={
           feature === "messages"
-            ? "start a conversation"
-            : feature === "list-a-piece"
-              ? "list your first piece"
-              : "make it personal"
+            ? "message"
+            : feature === "list-a-piece" || feature === "closet"
+              ? "list"
+              : undefined
         }
+        reason="make it personal"
         next={"/app/" + feature}
       />
     );
