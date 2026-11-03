@@ -47,6 +47,15 @@ button.studio-byline{display:flex;align-items:center;gap:12px;border-top:1px sol
 button.fit-banner{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
 .theme-toggle{cursor:pointer;color:inherit;flex-shrink:0}
 .theme-toggle .icon{width:18px;height:18px}
-html[data-theme=dark] .icon-button:hover{background:#282828}
+/* Dropdowns readability in both themes */
+select{color-scheme:light}
+select option{background-color:#fff;color:#111}
+html[data-theme=dark] select{color-scheme:dark}
+html[data-theme=dark] select option{background-color:#202020;color:#f4f4f4}
+html[data-theme=dark] select option:checked,html[data-theme=dark] select option:hover{background-color:#383838;color:#fff}
+html[data-theme=dark] .chat-menu>div{background:#202020;color:#f4f4f4;border-color:#383838}
+html[data-theme=dark] .chat-menu>div>button{color:#f4f4f4}
+html[data-theme=dark] .chat-menu>div>button:hover{background:#2e2e2e}
+
 
 
