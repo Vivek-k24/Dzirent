@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 export default async function Saved() {
   const user = await currentUser();
-  if (!user) return <Gate reason="save your favorites" next="/saved" />;
+  if (!user) return <Gate action="save" next="/saved" />;
   const ctx = await context();
   const [pieces, studios] = await Promise.all([
     browse(ctx, { saved: "true" }),

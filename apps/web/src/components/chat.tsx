@@ -41,6 +41,7 @@ export function Chat({
   const [notice, setNotice] = useState("");
   const [safety, setSafety] = useState(true);
   const bottom = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDetailsElement>(null);
   const id = initial.conversation.id;
   const renter = data.conversation.renter_id === data.me;
   const other = data.card?.other_name || "Dzirent member";
@@ -195,13 +196,14 @@ export function Chat({
           <h1>{other}</h1>
           <span className="muted">Arrange the details together</span>
         </div>
-        <details className="chat-menu">
+        <details ref={menuRef} className="chat-menu">
           <summary className="icon-button" aria-label="Conversation menu">
             <Icon name="more" />
           </summary>
           <div>
             <button
               onClick={() => {
+                menuRef.current?.removeAttribute("open");
                 setReportId("");
                 setModal("report");
               }}
@@ -211,6 +213,7 @@ export function Chat({
             <button
               disabled={busy}
               onClick={() => {
+                menuRef.current?.removeAttribute("open");
                 if (
                   data.blocked ||
                   window.confirm(

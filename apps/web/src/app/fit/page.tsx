@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 export default async function Fit() {
   if (!(await currentUser()))
-    return <Gate reason="find your fit" next="/fit" />;
+    return <Gate action="fit" next="/fit" />;
   const cards = await fit(await context());
   return (
     <div className="page-width saved-page">

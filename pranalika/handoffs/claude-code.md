@@ -2,6 +2,43 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 2C - 2026-11-02 - website fixes
+
+Done:
+- Onboarding after sign-up: copied the app's first-run flow and setup checklist. Renters get Location and Body Measurements; lenders and "both" also get Studio setup and First piece listing. Added WelcomeChecklistModal, FinishSetupCard on Profile, and 5-step GuideOverlay tour matching the app. Skippable, stored in localStorage per user, lands on the same page.
+- Guest gate: replaced every full-page redirect to the sign-in page with the app's interactive dialog matching `GuestGate.kt` copy and options (Create account, Sign in, Not now to stay on the current page). Applied to Saved, Inbox, Closet/List a piece, Fit matching, Studio cards, Studio byline, and Message lender.
+- Theme: default is now Light for everyone (not System). Added sun/moon switch in top-bar `.top-right` on every page in the exact same spot. Sun/moon switch and Settings Theme control update instantly with no page reload or sign-out and always agree. Choice remembered in localStorage and cookies on the device.
+- Dropdowns: configured `color-scheme` and contrasting background and font colors for all native `<select>` and `<option>` elements and custom dropdowns (`.chat-menu > div`) ensuring open lists are fully legible in both Light and Dark themes.
+- Sweep of 2B WIP: verified messaging, listing editor with photo compression/upload, closet, settings. Fixed conversation menu details dropdown closing on selection and size badge formatting.
+
+Files changed:
+- `apps/web/src/components/onboarding.tsx` (new: checklist, finish setup card, tour)
+- `apps/web/src/components/guest-gate.tsx` (new: dialog, trigger, action mapping)
+- `apps/web/src/components/shell.tsx` (onboarding modals, guest gate integration, top-bar theme toggle, nav triggers)
+- `apps/web/src/components/local-preferences.tsx` (light default, instant theme toggle, settings sync)
+- `apps/web/src/components/icon.tsx` (sun and moon icons)
+- `apps/web/src/components/cards.tsx` (gated studio cards, updated Gate copy/actions)
+- `apps/web/src/app/page.tsx` (fit banner and share banner guest gate triggers)
+- `apps/web/src/app/listing/[id]/page.tsx` (gated studio byline, message lender, save piece, fit link)
+- `apps/web/src/app/studio/[handle]/page.tsx`, `saved/page.tsx`, `fit/page.tsx`, `app/messages/[id]/page.tsx`, `app/list-a-piece/[id]/page.tsx`, `app/[feature]/page.tsx` (gated actions)
+- `apps/web/src/components/settings.tsx` (finish setup card on profile)
+- `apps/web/src/components/closet.tsx` (formatting fix)
+- `apps/web/src/components/chat.tsx` (menu dropdown ref fix)
+- `apps/web/src/app/globals.css` (dropdown theme readability, theme toggle button, guest gate styling)
+- `pranalika/handoffs/claude-code.md` (this handoff entry)
+
+How verified:
+- `npm run lint` in `apps/web` passed with 0 errors and 0 warnings.
+- `npm run build` in `apps/web` compiled production build with Turbopack and static page generation successfully.
+- Local production server verification script ran on `http://localhost:3456`:
+  - `GET /auth` returned 200.
+  - `GET /` returned 200.
+  - As authenticated test user 3 (via Supabase auth token session cookies): `GET /app/messages` returned 200.
+  - As authenticated test user 1 (via Supabase auth token session cookies): `GET /app/closet` returned 200.
+
+Open issues:
+- None.
+
 ## Step 4B - 2026-10-31 - Android parity
 
 Done:

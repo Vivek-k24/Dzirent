@@ -14,7 +14,7 @@ export default async function EditPage({
 }) {
   const { id } = await params;
   if (!(await currentUser()))
-    return <Gate reason="list a piece" next={"/app/list-a-piece/" + id} />;
+    return <Gate action="list" next={"/app/list-a-piece/" + id} />;
   let data;
   try {
     data = await editorData(id);

@@ -4,6 +4,11 @@ import { photoUrl } from "@/lib/supabase/config";
 import { Photo } from "./photo";
 import { Icon } from "./icon";
 import { Distance } from "./distance";
+import {
+  GatedActionTrigger,
+  GATED_ACTIONS,
+  type GatedActionKey,
+} from "./guest-gate";
 export function PieceCard({
   card,
   priority = false,
@@ -54,15 +59,12 @@ export function StudioCards({
   return studios.length ? (
     <div className="studio-grid">
       {studios.map((s) => (
-        <Link
+        <GatedActionTrigger
           key={s.studio_handle}
+          action="studio"
+          authenticated={authenticated}
+          href={"/studio/" + s.studio_handle}
           className="studio-card"
-          href={
-            authenticated
-              ? "/studio/" + s.studio_handle
-              : "/auth?mode=signup&reason=studio&next=" +
-                encodeURIComponent("/studio/" + s.studio_handle)
-          }
         >
           <div className="studio-image">
             <Photo
@@ -78,7 +80,7 @@ export function StudioCards({
           <span className="text-link">
             Visit studio <Icon name="arrow" />
           </span>
-        </Link>
+        </GatedActionTrigger>
       ))}
     </div>
   ) : (
@@ -118,26 +120,31 @@ export function Empty({
 }
 export function Gate({
   reason = "make it yours",
+  action,
   next = "/",
 }: {
   reason?: string;
+  action?: GatedActionKey;
   next?: string;
 }) {
+  const info = action ? GATED_ACTIONS[action] : null;
+  const title = info ? info.title : "Sign up to " + reason + ".";
+  const message = info
+    ? info.message
+    : "Save the pieces you love, get to know local studios, and find a fit that feels like you.";
+
   return (
     <section className="gate-panel">
       <div className="eyebrow">A LITTLE MORE PERSONAL</div>
       <Icon name="bookmark" className="gate-icon" />
-      <h1>Sign up to {reason}.</h1>
-      <p>
-        Save the pieces you love, get to know local studios, and find a fit that
-        feels like you.
-      </p>
+      <h1>{title}</h1>
+      <p>{message}</p>
       <div className="button-row">
         <Link
           className="button"
           href={"/auth?mode=signup&next=" + encodeURIComponent(next)}
         >
-          Create an account <Icon name="arrow" />
+          Create account <Icon name="arrow" />
         </Link>
         <Link
           className="button secondary"
@@ -147,7 +154,7 @@ export function Gate({
         </Link>
       </div>
       <Link className="muted-link" href="/">
-        Keep browsing
+        Not now
       </Link>
     </section>
   );

@@ -11,6 +11,7 @@ import { Query, value, price, cityLabel } from "@/lib/types";
 import { Gallery } from "@/components/photo";
 import { Icon } from "@/components/icon";
 import { savePiece } from "@/app/actions";
+import { GatedActionTrigger } from "@/components/guest-gate";
 export async function generateMetadata({
   params,
 }: {
@@ -79,13 +80,6 @@ export default async function ListingPage({
         ).data,
       )
     : false;
-  const gate = (next: string, reason: string) =>
-    user
-      ? next
-      : "/auth?mode=signup&reason=" +
-        reason +
-        "&next=" +
-        encodeURIComponent(next);
   return (
     <div className="page-width listing-page">
       <nav className="breadcrumbs" aria-label="Breadcrumb">
@@ -122,9 +116,11 @@ export default async function ListingPage({
             {listing.description ||
               "A piece ready for its next occasion. Get to know the studio for more details."}
           </p>
-          <Link
+          <GatedActionTrigger
+            action="studio"
+            authenticated={Boolean(user)}
+            href={"/studio/" + listing.studio_handle}
             className="studio-byline"
-            href={gate("/studio/" + listing.studio_handle, "studio")}
           >
             <span className="avatar">
               {(listing.studio_name || "S").slice(0, 1)}
@@ -134,7 +130,7 @@ export default async function ListingPage({
               <strong>{listing.studio_name || "A local studio"}</strong>
             </span>
             <Icon name="chevron" />
-          </Link>
+          </GatedActionTrigger>
           <p className="policy-note">{listingNotice}</p>
           {own ? (
             <Link className="button full" href={"/app/list-a-piece/" + id}>
@@ -143,10 +139,14 @@ export default async function ListingPage({
           ) : user ? (
             <StartChat listingId={id} start={ctx.start} end={ctx.end} />
           ) : (
-            <Link className="button full" href={gate(path, "message")}>
+            <GatedActionTrigger
+              action="message"
+              authenticated={false}
+              className="button full"
+            >
               <Icon name="message" />
               Message Lender
-            </Link>
+            </GatedActionTrigger>
           )}
           {user ? (
             <form action={savePiece}>
@@ -159,10 +159,14 @@ export default async function ListingPage({
               </button>
             </form>
           ) : (
-            <Link className="button secondary full" href={gate(path, "save")}>
+            <GatedActionTrigger
+              action="save"
+              authenticated={false}
+              className="button secondary full"
+            >
               <Icon name="bookmark" />
               Save this piece
-            </Link>
+            </GatedActionTrigger>
           )}
           {value(q, "notice") === "save-error" && (
             <p className="form-message error" role="status">
@@ -191,9 +195,14 @@ export default async function ListingPage({
           ) : (
             <p>Ask the studio for measurements before making plans.</p>
           )}
-          <Link className="text-link accent" href={gate("/fit", "fit")}>
+          <GatedActionTrigger
+            action="fit"
+            authenticated={Boolean(user)}
+            href="/fit"
+            className="text-link accent"
+          >
             See what’s likely to fit you <Icon name="arrow" />
-          </Link>
+          </GatedActionTrigger>
         </section>
         <section>
           <h2>Make a date</h2>

@@ -16,10 +16,17 @@ import { signOut } from "@/app/actions";
 import { useInboxDot, UnreadDot } from "./inbox";
 import { Appearance } from "./local-preferences";
 import { DistanceUnit } from "./distance";
-import { dateChip } from "@/lib/workflows";
+import { dateChip, type Profile } from "@/lib/workflows";
+import { WelcomeChecklistModal, GuideOverlay } from "./onboarding";
+import {
+  GuestGateDialog,
+  GatedActionTrigger,
+  type GatedActionKey,
+} from "./guest-gate";
 const ShellContext = createContext({
   openFilters: () => {},
   openLocation: () => {},
+  openGuestGate: (_action: GatedActionKey) => {},
 });
 export function UpdateLocation() {
   const { openLocation } = useContext(ShellContext);
@@ -273,12 +280,16 @@ function DatePicker({
 export function Shell({
   ctx,
   authenticated,
+  userId = null,
+  userProfile = null,
   name,
   showWelcome,
   children,
 }: {
   ctx: BrowseContext;
   authenticated: boolean;
+  userId?: string | null;
+  userProfile?: Profile | null;
   name: string;
   showWelcome: boolean;
   children: ReactNode;
@@ -289,8 +300,41 @@ export function Shell({
   const [dates, setDates] = useState(false);
   const [filters, setFilters] = useState(false);
   const [welcome, setWelcome] = useState(showWelcome);
+  const [checklistOpen, setChecklistOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [guestGateAction, setGuestGateAction] = useState<GatedActionKey | null>(
+    null,
+  );
   const [defaults, setDefaults] = useState<Record<string, string>>({});
   const unread = useInboxDot(authenticated);
+
+  useEffect(() => {
+    if (authenticated && userId) {
+      Promise.resolve().then(() => {
+        try {
+          const seen = localStorage.getItem("welcome_seen_" + userId);
+          if (!seen) {
+            localStorage.setItem("welcome_seen_" + userId, "true");
+            setChecklistOpen(true);
+          }
+        } catch {}
+      });
+    }
+    const onStartTour = () => setGuideOpen(true);
+    const onOpenChecklist = () => setChecklistOpen(true);
+    const onOpenGate = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.action) setGuestGateAction(detail.action);
+    };
+    window.addEventListener("dzirent-start-tour", onStartTour);
+    window.addEventListener("dzirent-open-checklist", onOpenChecklist);
+    window.addEventListener("dzirent-open-guest-gate", onOpenGate);
+    return () => {
+      window.removeEventListener("dzirent-start-tour", onStartTour);
+      window.removeEventListener("dzirent-open-checklist", onOpenChecklist);
+      window.removeEventListener("dzirent-open-guest-gate", onOpenGate);
+    };
+  }, [authenticated, userId]);
   function openFilters() {
     setDefaults(
       Object.fromEntries(new URLSearchParams(window.location.search)),
@@ -316,7 +360,7 @@ export function Shell({
   }
   return (
     <ShellContext.Provider
-      value={{ openFilters, openLocation: () => setLocation(true) }}
+      value={{openFilters, openLocation: () => setLocation(true), openGuestGate: setGuestGateAction}}
     >
       <DistanceUnit unit={ctx.distanceUnit}>
         <Appearance />
@@ -689,6 +733,26 @@ export function Shell({
               Browse as guest <Icon name="arrow" />
             </button>
           </Modal>
+        )}
+        {checklistOpen && userProfile && (
+          <WelcomeChecklistModal
+            profile={userProfile}
+            onOpenLocation={() => setLocation(true)}
+            onStartGuide={() => setGuideOpen(true)}
+            onClose={() => setChecklistOpen(false)}
+          />
+        )}
+        {guestGateAction && (
+          <GuestGateDialog
+            action={guestGateAction}
+            onClose={() => setGuestGateAction(null)}
+          />
+        )}
+        {guideOpen && (
+          <GuideOverlay
+            canLend={userProfile?.role !== "renter"}
+            onClose={() => setGuideOpen(false)}
+          />
         )}
       </DistanceUnit>
     </ShellContext.Provider>

@@ -84,6 +84,16 @@ export function LocalPreferences() {
         </select>
       </div>
       <div className="preference-row">
+        <strong>App tour</strong>
+        <button
+          type="button"
+          className="button secondary compact"
+          onClick={() => window.dispatchEvent(new Event("dzirent-start-tour"))}
+        >
+          Take the tour
+        </button>
+      </div>
+      <div className="preference-row">
         <strong>Distance</strong>
         <select
           aria-label="Distance unit"

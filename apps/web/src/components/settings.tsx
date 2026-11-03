@@ -8,6 +8,7 @@ import { signOut } from "@/app/actions";
 import { StudioEditor } from "./studio-editor";
 import { MeasurementsEditor } from "./measurements-editor";
 import { LocalPreferences } from "./local-preferences";
+import { FinishSetupCard } from "./onboarding";
 import { WorkflowModal, Notice } from "./workflow-ui";
 import { Icon } from "./icon";
 import { Empty } from "./cards";
@@ -96,6 +97,14 @@ export function Settings({
         <section className="settings-content">
           {section === "profile" ? (
             <>
+              <FinishSetupCard
+                userId={data.profile.id}
+                profile={data.profile}
+                privateProfile={data.privateProfile}
+                onOpenChecklist={() =>
+                  window.dispatchEvent(new Event("dzirent-open-checklist"))
+                }
+              />
               <h2>{data.profile.display_name}</h2>
               <p className="muted">{cityLabel(data.profile.city)}</p>
               <h3>I want to</h3>
