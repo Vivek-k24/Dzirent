@@ -29,6 +29,9 @@ Any agent may update any file in `pranalika` when it finishes its work.
 9. Locked decisions: existing entries in `decisions.md` are never changed or removed. If you disagree, write it under **Requests** in your handoff.
 10. End of every session: add an entry to your own handoff file (`handoffs/codex.md`, `handoffs/antigravity.md` or `handoffs/claude-code.md`), newest at the top, titled `## Step <number> - <date> - <short title>`. Never write in another agent's handoff file.
 11. This repo is public. No secrets, keys, credentials or personal data anywhere, including this folder.
+12. The owner never runs local commands. Agents handle all git work, including recovery.
+13. Never replace a whole file with an older version. Edit only what the task needs.
+14. A handoff states only what was actually run and verified. Never claim unverified work as done.
 
 ## Environment variable names (values live only in H:\DziRent\secrets\)
 

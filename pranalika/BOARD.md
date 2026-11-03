@@ -34,7 +34,13 @@ Status: `To do` / `Doing` / `Done`. The owner assigns each step to an agent. The
 
 ## Step 2 - Website foundation
 
-Planned after Step 1. Environment wiring, guest mode, home, search, listing page, sign-up gates.
+| Item | Status |
+| --- | --- |
+| Done by: Codex (2A), Claude Code (2B, 2C), Antigravity (2D) | |
+| 2A Environment wiring, guest mode, browse, search, listing detail | Done |
+| 2B Sign-up gates, fit matching, studio pages, onboarding | Done |
+| 2C Website fixes (guest gates, welcome modal, measurements, studio) | Done |
+| 2D Website layout redesign, light default theme, guest gate fixes | Done |
 
 ## Step 3 - Shared mobile code
 

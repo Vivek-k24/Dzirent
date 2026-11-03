@@ -358,24 +358,25 @@ export function GuideOverlay({
       text: "Pick your dates. You'll only see pieces available then.",
     },
     {
-      selector: ".menu-button, .desktop-account",
+      selector: ".menu-button, .top-account-btn, .desktop-account",
       title: "Menu & Profile",
       text: "Tap here for categories, filters, your profile and settings.",
     },
     {
-      selector: 'nav a[href="/search"]',
+      selector: ".search-pill, .search-pill input, nav a[href='/search']",
       title: "Search",
       text: "Search for anything by name.",
     },
     {
-      selector: 'nav a[href*="closet"]',
+      selector: '.top-list-btn, nav a[href*="closet"]',
       title: "Closet",
       text: canLend
         ? "Your listings and rentals live here."
         : "Your rentals live here.",
     },
     {
-      selector: 'nav a[href*="saved"], nav a[href*="messages"]',
+      selector:
+        '.top-saved-btn, .top-inbox-btn, nav a[href*="saved"], nav a[href*="messages"]',
       title: "Saved & Messages",
       text: "Pieces and studios you save show up here. Messages are in Inbox.",
     },

@@ -61,12 +61,19 @@ export function GuestGateDialog({
     if (dialog && !dialog.open) {
       dialog.showModal();
     }
+    const handleClose = () => {
+      onClose();
+    };
+    dialog?.addEventListener("close", handleClose);
+    dialog?.addEventListener("cancel", handleClose);
     return () => {
+      dialog?.removeEventListener("close", handleClose);
+      dialog?.removeEventListener("cancel", handleClose);
       if (dialog && dialog.open) {
         dialog.close();
       }
     };
-  }, []);
+  }, [onClose]);
 
   return (
     <dialog
@@ -74,6 +81,7 @@ export function GuestGateDialog({
       className="modal guest-gate-modal"
       aria-label={info.title}
       onCancel={onClose}
+      onClose={onClose}
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}
@@ -136,6 +144,8 @@ export function GatedActionTrigger({
   children,
   className = "",
   style,
+  title,
+  "aria-label": ariaLabel,
   onClick,
 }: {
   action: GatedActionKey;
@@ -144,11 +154,20 @@ export function GatedActionTrigger({
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
+  title?: string;
+  "aria-label"?: string;
   onClick?: () => void;
 }) {
   if (authenticated && href) {
     return (
-      <Link href={href} className={className} style={style} onClick={onClick}>
+      <Link
+        href={href}
+        className={className}
+        style={style}
+        title={title}
+        aria-label={ariaLabel}
+        onClick={onClick}
+      >
         {children}
       </Link>
     );
@@ -158,7 +177,18 @@ export function GatedActionTrigger({
     <button
       type="button"
       className={className}
-      style={style}
+      title={title}
+      aria-label={ariaLabel}
+      style={{
+        background: "none",
+        border: "none",
+        padding: 0,
+        font: "inherit",
+        color: "inherit",
+        cursor: "pointer",
+        textAlign: "inherit",
+        ...style,
+      }}
       onClick={(e) => {
         if (!authenticated) {
           e.preventDefault();

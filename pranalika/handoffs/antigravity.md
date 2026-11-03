@@ -2,6 +2,72 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 2D - 2026-11-03 - website layout redesign
+
+- Step 0 recovery findings & actions:
+  - Fetched origin: local branch was 3 commits behind `origin/Preview` with staged changes in `apps/web/src/components/local-preferences.tsx` and `shell.tsx`.
+  - Verified with `git diff --cached origin/Preview` that staged files had no changes beyond what already existed on `origin/Preview` (commit `dd6f82e`).
+  - Discarded stale staged files with `git restore --staged --worktree apps/web/src/components/local-preferences.tsx apps/web/src/components/shell.tsx`.
+  - Rebased onto `origin/Preview` (`git pull --rebase origin Preview`), reaching clean working tree at commit `dd6f82e`.
+  - Inspected `git log --oneline origin/Preview..origin/main`: verified all 5 commits were standard PR merges.
+
+- What was done:
+  - Documentation & decisions:
+    - Added 3 rules to `pranalika/README.md` (owner does not run local commands, never replace whole file with older version, handoffs state only what was actually run and verified).
+    - Appended decision in `pranalika/decisions.md` under `## Website UI (2026-11-03)`: "The website and the apps may differ in UI. Features and workflows stay the same."
+    - Updated `pranalika/BOARD.md` marking Step 2D Done.
+  - Top bar redesign (desktop):
+    - Row 1 left: Hamburger button (`openFilters`) and "How Dzirent works" link (`/about#how-it-works`). Removed "Made for your next occasion".
+    - Row 1 center: DZIRENT logo (`/`).
+    - Row 1 right: Icons only, each with hover label (`title`) and accessible name (`aria-label`): List a piece (`+`), Inbox (mail envelope icon with unread dot, slightly larger than others), Saved (`bookmark`), Account (`user`), and ThemeToggle.
+    - Row 2: Pill-shaped search bar centered below the logo with date chip and dynamic `{ctx.city} · Change` button beside it.
+  - Phones / mobile layout:
+    - Top row keeps only hamburger, logo, Inbox (mail icon with unread dot), and Account.
+    - Search pill is 100% full width below.
+    - Saved, List a piece, How Dzirent works, and theme switch moved into the left sidebar.
+    - Entirely removed the tab bar (`.subbar .desktop-nav` and mobile `.bottom-nav`).
+  - Left sidebar (drawer):
+    - Configured `.modal.drawer` to open from the LEFT (`left: 0; right: auto;`).
+    - Added drawer navigation links for Saved pieces, List a piece, My closet, and How Dzirent works, plus Theme switch row and date/location controls.
+    - Filter form submits to `/` and Reset links to `/`.
+  - In-place search & Discover home page:
+    - In `page.tsx`, typing in search pill or applying filters displays search results in place on the home page with result count and `SortDropdown`.
+    - Discover view shows standard rows and explore tabs; Sort appears ONLY when displaying search results.
+    - Removed small text "Pieces with a story. Ready for yours."
+    - Footnote "Local closets. More possibilities." enlarged 4px on desktop (14px) and 2px on phones (9px).
+    - `/search` redirects to `/?...` preserving any search query parameters.
+  - Guest gate fixes:
+    - Restored style reset on `GatedActionTrigger` button (`background: none`, `border: none`, `padding: 0`, `font: inherit`, `color: inherit`, `cursor: pointer`, `textAlign: inherit`) preventing default browser grey box rendering.
+    - Added native `close` and `cancel` listeners on `<dialog>` in `GuestGateDialog` ensuring `onClose()` reliably executes and resets `guestGateAction` to `null` so gated buttons immediately re-open on subsequent clicks.
+  - Added Lucide/Feather `mail` envelope icon in `icon.tsx`.
+  - Updated `onboarding.tsx` guide selectors to match the redesigned top bar.
+
+- Files changed:
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/app/page.tsx`
+  - `apps/web/src/app/search/page.tsx`
+  - `apps/web/src/components/cards.tsx`
+  - `apps/web/src/components/guest-gate.tsx`
+  - `apps/web/src/components/icon.tsx`
+  - `apps/web/src/components/onboarding.tsx`
+  - `apps/web/src/components/shell.tsx`
+  - `apps/web/src/components/sort-dropdown.tsx`
+  - `pranalika/README.md`
+  - `pranalika/decisions.md`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+
+- What was actually run and verified:
+  - `npm run lint` in `apps/web` with Node 22: passed with 0 errors.
+  - `npm run build` in `apps/web` with Node 22: compiled successfully with Turbopack, passed TypeScript checks with 0 errors, generated all static/dynamic routes.
+  - Started local Next.js server with secrets loaded from `H:\DziRent\secrets\dzirent-server.env`:
+    - Verified Discover page (`/`): returns HTTP 200, contains "How Dzirent works", removes "Made for your next occasion", removes "Pieces with a story. Ready for yours.", displays "Local closets. More possibilities.", renders top bar icons (`top-list-btn`, `top-inbox-btn`, `top-saved-btn`, `top-account-btn`, ThemeToggle) with accessible names and hover labels, renders centered `search-pill`, has no `.desktop-nav` or `.bottom-nav`, and does not render `sort-form`.
+    - Verified search results (`/?q=dress`): returns HTTP 200, displays search heading "A little closer to “dress”", renders `sort-form` with newest/nearest/price options, displays filter controls and matching pieces grid.
+    - Verified `/search?q=dress`: correctly redirects to `/?q=dress`.
+
+- Open issues:
+  - None.
+
 ## Sample photos - 2026-11-02
 
 - What was done:

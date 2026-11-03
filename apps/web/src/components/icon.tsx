@@ -7,6 +7,7 @@ const paths:Record<string,string> = {
   arrow:'M4 12h16m-6-6 6 6-6 6', chevron:'m9 5 7 7-7 7',
   bookmark:'M6 3h12v19l-6-4-6 4V3Z',
   home:'m3 10 9-8 9 8v11h-7v-7h-4v7H3V10Z',
+  mail:'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2Zm18 2-10 7L2 6',
   message:'M21 11.5a9 9 0 0 1-9 9 11 11 0 0 1-4-.8L2 22l1.5-6A9 9 0 1 1 21 11.5Z',
   closet:'M3 3h18v18H3V3Zm9 0v18M8 11v2m8-2v2',
   user:'M20 21a8 8 0 0 0-16 0M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
