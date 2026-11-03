@@ -16,7 +16,8 @@ import { signOut } from "@/app/actions";
 import { useInboxDot, UnreadDot } from "./inbox";
 import { Appearance } from "./local-preferences";
 import { DistanceUnit } from "./distance";
-import { dateChip } from "@/lib/workflows";
+import { dateChip, type Profile } from "@/lib/workflows";
+import { WelcomeChecklistModal, GuideOverlay } from "./onboarding";
 const ShellContext = createContext({
   openFilters: () => {},
   openLocation: () => {},
@@ -273,12 +274,16 @@ function DatePicker({
 export function Shell({
   ctx,
   authenticated,
+  userId = null,
+  userProfile = null,
   name,
   showWelcome,
   children,
 }: {
   ctx: BrowseContext;
   authenticated: boolean;
+  userId?: string | null;
+  userProfile?: Profile | null;
   name: string;
   showWelcome: boolean;
   children: ReactNode;
@@ -289,8 +294,32 @@ export function Shell({
   const [dates, setDates] = useState(false);
   const [filters, setFilters] = useState(false);
   const [welcome, setWelcome] = useState(showWelcome);
+  const [checklistOpen, setChecklistOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [defaults, setDefaults] = useState<Record<string, string>>({});
   const unread = useInboxDot(authenticated);
+
+  useEffect(() => {
+    if (authenticated && userId) {
+      Promise.resolve().then(() => {
+        try {
+          const seen = localStorage.getItem("welcome_seen_" + userId);
+          if (!seen) {
+            localStorage.setItem("welcome_seen_" + userId, "true");
+            setChecklistOpen(true);
+          }
+        } catch {}
+      });
+    }
+    const onStartTour = () => setGuideOpen(true);
+    const onOpenChecklist = () => setChecklistOpen(true);
+    window.addEventListener("dzirent-start-tour", onStartTour);
+    window.addEventListener("dzirent-open-checklist", onOpenChecklist);
+    return () => {
+      window.removeEventListener("dzirent-start-tour", onStartTour);
+      window.removeEventListener("dzirent-open-checklist", onOpenChecklist);
+    };
+  }, [authenticated, userId]);
   function openFilters() {
     setDefaults(
       Object.fromEntries(new URLSearchParams(window.location.search)),
@@ -689,6 +718,20 @@ export function Shell({
               Browse as guest <Icon name="arrow" />
             </button>
           </Modal>
+        )}
+        {checklistOpen && userProfile && (
+          <WelcomeChecklistModal
+            profile={userProfile}
+            onOpenLocation={() => setLocation(true)}
+            onStartGuide={() => setGuideOpen(true)}
+            onClose={() => setChecklistOpen(false)}
+          />
+        )}
+        {guideOpen && (
+          <GuideOverlay
+            canLend={userProfile?.role !== "renter"}
+            onClose={() => setGuideOpen(false)}
+          />
         )}
       </DistanceUnit>
     </ShellContext.Provider>

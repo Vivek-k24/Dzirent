@@ -31,15 +31,17 @@ export default async function RootLayout({
     cookies(),
   ]);
   let name = "Your account";
+  let userProfile = null;
   if (user) {
     const { data } = await (
       await serverClient()
     )
       .from("profiles")
-      .select("display_name")
+      .select("*")
       .eq("id", user.id)
       .maybeSingle();
     name = data?.display_name || "Your account";
+    userProfile = data;
   }
   return (
     <html lang="en">
@@ -47,6 +49,8 @@ export default async function RootLayout({
         <Shell
           ctx={ctx}
           authenticated={Boolean(user)}
+          userId={user?.id || null}
+          userProfile={userProfile}
           name={name}
           showWelcome={!user && !jar.get("dzirent-welcome")}
         >
