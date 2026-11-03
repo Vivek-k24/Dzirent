@@ -1,57 +1,149 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-type Preferences = {
+import { Icon } from "./icon";
+
+export type Preferences = {
   theme: string;
   distance: string;
   measurements: string;
   rentalDays: number;
   distanceStep: number;
 };
+
 const defaults: Preferences = {
-  theme: "system",
+  theme: "light",
   distance: "mi",
   measurements: "in",
   rentalDays: 5,
   distanceStep: 2,
 };
-function read() {
+
+export function readPreferences(): Preferences {
   try {
+    const raw = JSON.parse(
+      localStorage.getItem("dzirent-web-settings") || "{}",
+    );
+    const theme = raw.theme === "dark" ? "dark" : "light";
     return {
       ...defaults,
-      ...JSON.parse(localStorage.getItem("dzirent-web-settings") || "{}"),
+      ...raw,
+      theme,
     };
   } catch {
     return defaults;
   }
 }
+
+export function applyTheme(theme: string) {
+  const resolved = theme === "dark" ? "dark" : "light";
+  if (typeof document !== "undefined") {
+    document.documentElement.dataset.theme = resolved;
+  }
+  return resolved;
+}
+
+export function saveTheme(theme: string) {
+  const resolved = theme === "dark" ? "dark" : "light";
+  try {
+    const current = readPreferences();
+    const updated = { ...current, theme: resolved };
+    localStorage.setItem("dzirent-web-settings", JSON.stringify(updated));
+    document.cookie =
+      "dzirent-web-settings=" +
+      encodeURIComponent(JSON.stringify(updated)) +
+      "; Path=/; Max-Age=31536000; SameSite=Lax" +
+      (typeof location !== "undefined" && location.protocol === "https:"
+        ? "; Secure"
+        : "");
+  } catch {}
+  applyTheme(resolved);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("dzirent-theme-changed", { detail: { theme: resolved } }),
+    );
+    window.dispatchEvent(new Event("dzirent-settings-changed"));
+  }
+}
+
 export function Appearance() {
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
     const apply = () => {
-      const prefs = read();
-      document.documentElement.dataset.theme =
-        prefs.theme === "dark" || (prefs.theme === "system" && media.matches)
-          ? "dark"
-          : "light";
+      const prefs = readPreferences();
+      applyTheme(prefs.theme);
     };
     apply();
     window.addEventListener("dzirent-settings-changed", apply);
-    media.addEventListener("change", apply);
+    window.addEventListener("dzirent-theme-changed", apply);
     return () => {
       window.removeEventListener("dzirent-settings-changed", apply);
-      media.removeEventListener("change", apply);
+      window.removeEventListener("dzirent-theme-changed", apply);
     };
   }, []);
   return null;
 }
+
+export function ThemeToggle() {
+  const [theme, setThemeState] = useState<string>("light");
+
+  useEffect(() => {
+    const update = () => {
+      const prefs = readPreferences();
+      setThemeState(prefs.theme === "dark" ? "dark" : "light");
+    };
+    update();
+    window.addEventListener("dzirent-settings-changed", update);
+    window.addEventListener("dzirent-theme-changed", update);
+    return () => {
+      window.removeEventListener("dzirent-settings-changed", update);
+      window.removeEventListener("dzirent-theme-changed", update);
+    };
+  }, []);
+
+  function toggle() {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    saveTheme(nextTheme);
+  }
+
+  const isDark = theme === "dark";
+
+  return (
+    <button
+      type="button"
+      className="icon-button theme-toggle"
+      aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+      title={isDark ? "Switch to light theme" : "Switch to dark theme"}
+      onClick={toggle}
+    >
+      <Icon name={isDark ? "sun" : "moon"} />
+    </button>
+  );
+}
+
 export function LocalPreferences() {
   const router = useRouter();
-  const [prefs, setPrefs] = useState(defaults);
+  const [prefs, setPrefs] = useState<Preferences>(defaults);
+
   useEffect(() => {
-    Promise.resolve().then(() => setPrefs(read()));
+    const update = () => setPrefs(readPreferences());
+    update();
+    window.addEventListener("dzirent-settings-changed", update);
+    window.addEventListener("dzirent-theme-changed", update);
+    return () => {
+      window.removeEventListener("dzirent-settings-changed", update);
+      window.removeEventListener("dzirent-theme-changed", update);
+    };
   }, []);
+
   function change(next: Partial<Preferences>) {
+    if (next.theme !== undefined) {
+      saveTheme(next.theme);
+      setPrefs((prev) => ({
+        ...prev,
+        theme: next.theme === "dark" ? "dark" : "light",
+      }));
+      return;
+    }
     const value = { ...prefs, ...next };
     setPrefs(value);
     try {
@@ -68,6 +160,7 @@ export function LocalPreferences() {
       router.refresh();
     } catch {}
   }
+
   return (
     <>
       <h2>Settings</h2>
@@ -78,7 +171,6 @@ export function LocalPreferences() {
           value={prefs.theme}
           onChange={(e) => change({ theme: e.target.value })}
         >
-          <option value="system">System</option>
           <option value="light">Light</option>
           <option value="dark">Dark</option>
         </select>
