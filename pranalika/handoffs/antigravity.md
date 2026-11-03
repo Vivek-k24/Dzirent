@@ -2,6 +2,32 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Sample photos - 2026-11-02
+
+- What was done:
+  - Listed 12 sample listings on `dzirent-server` through the REST API as Elena Rostova (User 1) and Maya Lin (User 2).
+  - Generated original realistic product photos using the built-in image generator: 3:4 vertical portrait aspect ratio, garments displayed on wooden hangers or clean headless mannequins against plain light studio backgrounds, no people, no faces, no logos, no text. Compressed to JPEG quality 80 (41 KB to 116 KB per photo, well within the 400 KB limit).
+  - Generated and saved photos in `supabase/seed/images/<slug>/`:
+    - `silk-halter-evening-gown`: front.jpg, back.jpg (Elena)
+    - `tailored-charcoal-blazer`: front.jpg, back.jpg (Elena)
+    - `emerald-velvet-cocktail-dress`: front.jpg, back.jpg (Elena)
+    - `cashmere-belted-trench-coat`: front.jpg, back.jpg (Elena)
+    - `pleated-wide-leg-trousers`: front.jpg, back.jpg (Elena)
+    - `linen-summer-sundress`: front.jpg (Elena)
+    - `minimalist-wool-day-coat`: front.jpg, back.jpg (Maya)
+    - `structured-silk-work-shirt`: front.jpg (Maya)
+  - Created `supabase/seed/sample_photos.mjs`: signs in as each listing's owner, removes old placeholder photos from Supabase Storage and `listing_photos` table, uploads new photos to `{listing_id}/{random}.jpg` in bucket `listing-photos`, and inserts `listing_photos` rows with positions and slots (`front` at pos 0, `back` at pos 1).
+  - Executed `sample_photos.mjs`, updating sample listings on `dzirent-server`.
+  - Created and ran `supabase/seed/test_sample_photos.mjs` verifying:
+    1. Guest `rpc/browse_listings`: returns 12 listings, every listing returns a valid `cover_photo_path` that fetches with HTTP 200.
+    2. Signed in as Elena: listings have valid photos in slots `front` (pos 0) and `back` (pos 1) displaying with HTTP 200 (5 pieces with both front & back, 1 with front).
+    3. Signed in as Maya: `minimalist-wool-day-coat` has both front & back (HTTP 200), `structured-silk-work-shirt` has front (HTTP 200), remaining 4 listings retain valid placeholder cover photos (HTTP 200).
+
+- Notes for other agents:
+  - Image generation API hit quota limit on model `gemini-3.1-flash-image` (`429 RESOURCE_EXHAUSTED: You have exhausted your capacity on this model. Quota reset timestamp 2026-11-03T07:56:50Z`, in ~4.8 hours).
+  - 14 images were generated and processed before exhaustion. The remaining 10 images (`linen-summer-sundress` back, `structured-silk-work-shirt` back, and front+back for `embroidered-silk-lehenga-set`, `modern-qipao-midi-dress`, `vintage-denim-jumpsuit`, `satin-backless-maxi-dress`) can be generated once the quota resets at `2026-11-03T07:56:50Z`.
+  - Running `node supabase/seed/sample_photos.mjs` will automatically pick up any newly added photos in `supabase/seed/images/<slug>/` and upload them to `dzirent-server`.
+
 ## Step 4C - 2026-10-31 - Android parity finish
 
 Done:
