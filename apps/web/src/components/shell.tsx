@@ -360,7 +360,7 @@ export function Shell({
   }
   return (
     <ShellContext.Provider
-      value={{ openFilters, openLocation: () => setLocation(true) }}
+      value={{openFilters, openLocation: () => setLocation(true), openGuestGate: setGuestGateAction}}
     >
       <DistanceUnit unit={ctx.distanceUnit}>
         <Appearance />
@@ -740,6 +740,12 @@ export function Shell({
             onOpenLocation={() => setLocation(true)}
             onStartGuide={() => setGuideOpen(true)}
             onClose={() => setChecklistOpen(false)}
+          />
+        )}
+        {guestGateAction && (
+          <GuestGateDialog
+            action={guestGateAction}
+            onClose={() => setGuestGateAction(null)}
           />
         )}
         {guideOpen && (
