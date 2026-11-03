@@ -16,6 +16,8 @@ const paths:Record<string,string> = {
   check:'m5 12 4 4L19 6', plus:'M12 4v16M4 12h16',
   compass:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-6-3-2 5-4 1 2-5 4-1Z',
   more:'M5 12h.01M12 12h.01M19 12h.01',
+  sun:'M12 2v2m0 16v2m8-10h2M2 12h2m13.66-6.66 1.41-1.41M4.93 19.07l1.41-1.41m12.72 1.41-1.41-1.41M6.34 6.34 4.93 4.93M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
+  moon:'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z',
 };
 export function Icon({name,className='',style}:{name:string;className?:string;style?:CSSProperties}) {
   return <svg className={'icon '+className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name] || paths.arrow}/></svg>;

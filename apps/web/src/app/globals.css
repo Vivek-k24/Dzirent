@@ -45,4 +45,8 @@ html[data-theme=dark] .bottom-nav>button.current{color:#f4f4f4}
 button.studio-card{display:block;width:100%;text-align:left;background:none;border:none;padding:0;font:inherit;color:inherit;cursor:pointer}
 button.studio-byline{display:flex;align-items:center;gap:12px;border-top:1px solid #eee;border-bottom:1px solid #eee;padding:18px 0;margin:25px 0;width:100%;text-align:left;background:none;border-left:none;border-right:none;font:inherit;color:inherit;cursor:pointer}
 button.fit-banner{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.theme-toggle{cursor:pointer;color:inherit;flex-shrink:0}
+.theme-toggle .icon{width:18px;height:18px}
+html[data-theme=dark] .icon-button:hover{background:#282828}
+
 

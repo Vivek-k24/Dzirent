@@ -14,7 +14,7 @@ import { BrowseContext, City, categories, styles } from "@/lib/types";
 import { Icon } from "./icon";
 import { signOut } from "@/app/actions";
 import { useInboxDot, UnreadDot } from "./inbox";
-import { Appearance } from "./local-preferences";
+import { Appearance, ThemeToggle } from "./local-preferences";
 import { DistanceUnit } from "./distance";
 import { dateChip, type Profile } from "@/lib/workflows";
 import { WelcomeChecklistModal, GuideOverlay } from "./onboarding";
@@ -408,6 +408,7 @@ export function Shell({
                 <span>{ctx.city}</span>
                 <span className="location-change">Change</span>
               </button>
+              <ThemeToggle />
               <Link
                 className="icon-button desktop-account"
                 href={authenticated ? "/app/settings" : "/auth"}
