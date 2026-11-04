@@ -15,6 +15,9 @@ targets:
     platform: iOS
     sources:
       - path: iosApp
+      # Search suggestions data, the same file Android ships (referenced, not copied).
+      - path: ../shared/src/androidMain/assets/search_related.json
+        buildPhase: resources
     settings:
       base:
         PRODUCT_NAME: Dzirent

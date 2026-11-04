@@ -9,9 +9,11 @@
 /* Begin PBXBuildFile section */
 		22EA1CB33A17DCC6FC82406D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F543015C899423D4B01CEB2E /* Assets.xcassets */; };
 		307C2654CD5972A25FB7FD87 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668CECA83ACC03A83C85A623 /* iOSApp.swift */; };
+		A0E24E848460394173AA527E /* search_related.json in Resources */ = {isa = PBXBuildFile; fileRef = 11FEBED8E7D027CC8F78E611 /* search_related.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		11FEBED8E7D027CC8F78E611 /* search_related.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = search_related.json; sourceTree = "<group>"; };
 		668CECA83ACC03A83C85A623 /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		86038AE1032E284E79B32AD6 /* iosApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C117AD187833E2513BD2F553 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -19,6 +21,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		0B0BC2EE64C92793D2D864EB /* androidMain */ = {
+			isa = PBXGroup;
+			children = (
+				E7D7C1301AA8C31447BF6ACD /* assets */,
+			);
+			path = androidMain;
+			sourceTree = "<group>";
+		};
 		1DB4B685CAEE8BEFEBBAEF94 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
@@ -29,12 +39,30 @@
 			path = iosApp;
 			sourceTree = "<group>";
 		};
+		34FA73F07474697406C5B2BF /* mobile */ = {
+			isa = PBXGroup;
+			children = (
+				D627C5B81D674844CACA240B /* shared */,
+			);
+			name = mobile;
+			path = ..;
+			sourceTree = "<group>";
+		};
 		38B69C3F79CD97858CF7B609 = {
 			isa = PBXGroup;
 			children = (
 				1DB4B685CAEE8BEFEBBAEF94 /* iosApp */,
+				34FA73F07474697406C5B2BF /* mobile */,
 				94C98B8B3A2BFC1966447269 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		7A2D17FDE72A012E9D0766F2 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				0B0BC2EE64C92793D2D864EB /* androidMain */,
+			);
+			path = src;
 			sourceTree = "<group>";
 		};
 		94C98B8B3A2BFC1966447269 /* Products */ = {
@@ -43,6 +71,22 @@
 				86038AE1032E284E79B32AD6 /* iosApp.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D627C5B81D674844CACA240B /* shared */ = {
+			isa = PBXGroup;
+			children = (
+				7A2D17FDE72A012E9D0766F2 /* src */,
+			);
+			path = shared;
+			sourceTree = "<group>";
+		};
+		E7D7C1301AA8C31447BF6ACD /* assets */ = {
+			isa = PBXGroup;
+			children = (
+				11FEBED8E7D027CC8F78E611 /* search_related.json */,
+			);
+			path = assets;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -106,6 +150,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				22EA1CB33A17DCC6FC82406D /* Assets.xcassets in Resources */,
+				A0E24E848460394173AA527E /* search_related.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
