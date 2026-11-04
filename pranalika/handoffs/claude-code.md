@@ -2,6 +2,117 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 5 - 2026-11-04 - iPhone app (Simulator)
+
+Branch: `ios01` only (per the task prompt, overriding the two-branch rule). Nothing pushed to `main` or `Preview`. Done on the owner's Mac (Xcode 27.1, JDK 17, no Android SDK).
+
+Done:
+- Checkpoint 1, shared code builds for iPhone (`70a23a8`):
+  - `mobile/shared/build.gradle.kts`: a static framework, `baseName "shared"`, for `iosArm64` and `iosSimulatorArm64`.
+  - The only commonMain compile error: `ui/Guide.kt` used Android's `BackHandler`. It now uses the existing `PlatformBackHandler`.
+  - `mobile/iosApp/scripts/load-env.sh`: reads `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from the env file (handles CRLF, quotes and spaces around `=`) and never prints them.
+- Checkpoint 2, Xcode app shell in `mobile/iosApp` (`f23f4a3`):
+  - `project.yml` (XcodeGen 2.46.0) and the generated `iosApp.xcodeproj`, both committed.
+  - Settings: app name Dzirent, bundle ID `com.dzirent.app`, iOS 16+, iPhone only, portrait only, version 1.0.0 (1).
+  - Build phase "Build shared Kotlin framework" (`scripts/build-shared.sh`) runs on every build. It reads the env file path from `mobile/iosApp/local.config` (gitignored; `local.config.example` is committed), defaulting to `~/Desktop/Dzirent/secrets/dzirent-server.env`. It finds JDK 17 and runs `./gradlew :shared:embedAndSignAppleFrameworkForXcode`. If the env file or a value is missing, the build stops with an error naming the file and the fix. Xcode links the framework from `shared/build/xcode-frameworks/<config>/<sdk>`, so nothing is copied by hand.
+  - `iosApp/iOSApp.swift`: SwiftUI shows `MainViewController()` edge to edge, like Android. Compose handles the safe areas.
+  - `Info.plist`: location, camera and photo-library texts use the Android wording. It also sets `CADisableMinimumFrameDurationOnPhone`, which Compose needs. Launch screen: the logo mark on white (on #0E0E0E in dark mode).
+  - App icon: the logo mark (#A80038) on white, rendered from `apps/web/public/logo-mark.svg`, with no alpha channel.
+  - `AccessoryDeclaration.NAME_MAX` collided with the C `NAME_MAX` macro in the generated header. Its Objective-C name is now `nameMaxLength` (`@ObjCName`); the Kotlin name is unchanged.
+  - `.gitignore`: added `mobile/iosApp/local.config`.
+- Checkpoint 3, iPhone versions of the phone features (`1925a14`), all in `iosMain`:
+  - Settings storage (`IosSettingsStorage`): NSUserDefaults, using Android's key names (theme, distance_unit, measure_unit, rental_days, default_distance_step, recent_searches_<user>) and fallbacks. Small flags (`KeyValueStore`) also use NSUserDefaults.
+  - Location (`IosLocationService`):
+    - CoreLocation "when in use", accuracy about 1 km, coordinates rounded to 2 decimals, 15 s timeout.
+    - Reverse geocoder with a 10 s timeout: `locality ?: subAdministrativeArea`, then `cityLabel()` for the US ("City, ST"), "City, PR" for Puerto Rico, city only elsewhere.
+    - The permission request goes through `rememberLocationPermissionRequest`. A refusal leads to the existing "choose your city" path.
+  - Photo picker: PHPicker, images only, limited to the editor's `maxPhotos` (same as Android's `PickMultipleVisualMedia(maxPhotos)`). It uses the shared consent dialog first, needs no photo-library permission, and shows "Some photos couldn't be read. Pick different ones." when needed.
+  - Camera:
+    - Shared consent dialog first, then the system camera (UIImagePickerController) behind camera access.
+    - No camera (the Simulator): the same message Android shows when there's no camera app, "No camera app found. Use Gallery instead."
+    - Access refused: the same dialog as Android, worded for iOS, with an "Open Settings" button.
+  - Image compression: the same defaults as Android (long side at most 1600 px, JPEG quality 80), turned upright, never scaled up.
+  - Photo copies live in `Application Support/listing_photos/<user>` and drafts in `Application Support/drafts/<name>.json` (atomic writes), with the same file names as Android.
+  - Other phone services: camera cache cleanup, a toast-style message, opening links, app version and build from Info.plist. `search_related.json` is bundled straight from `shared/src/androidMain/assets` (referenced in `project.yml`, not copied).
+  - On-device AI (`IosPhotoAnalyzer`) works exactly like Android when its TinyCLIP model can't load. The shared photo checks (sharpness, lighting, whole item, colors) still run on the upright photo, but there is no embedding and no scores, so no suggestions appear.
+  - Push (`IosPushService`) stays a stub but no longer throws:
+    - No token and `canNotify()` is false.
+    - `openNotificationSettings()` opens Dzirent's page in the Settings app.
+    - The notification permission request answers "no".
+  - Licenses screen: a plain list of the main libraries and their licenses. Android uses AboutLibraries.
+- Checkpoint 4, running in the Simulator (iPhone 18 Pro, iOS 27.0):
+  - Built with xcodebuild, installed with `xcrun simctl install`, launched with `xcrun simctl launch`.
+  - Guest browsing, the listing page and sign-in all work (details under "What works in the Simulator").
+  - `iosSimulatorArm64Test/.../IosSignInTest.kt` (new) signs in test user 1 through the shared repository on the Simulator. It skips when the variables aren't set (pass `SIMCTL_CHILD_TEST_USER_1_EMAIL` / `_PASSWORD`). It compiles and links, but couldn't run here (see below).
+
+What I ran:
+- `./gradlew :shared:compileKotlinIosSimulatorArm64`:
+  - Failed first on `Guide.kt` (2 errors), then passed.
+  - Passed again after Checkpoint 3, with no warnings in iosMain.
+- `./gradlew :shared:linkDebugFrameworkIosSimulatorArm64`: BUILD SUCCESSFUL.
+- `xcodebuild -project iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,id=<iPhone 18 Pro>' build`:
+  - Failed first on the `NAME_MAX` header clash, then BUILD SUCCEEDED.
+  - BUILD SUCCEEDED again after Checkpoint 3; `search_related.json` is in the app bundle.
+- `scripts/build-shared.sh` with `local.config` pointing at a missing file: exit 1 with the error message (config restored after).
+- Phase 2, clean build: `xcodebuild ... clean build` into a fresh DerivedData: CLEAN SUCCEEDED, BUILD SUCCEEDED. The only warnings come from supabase-kt's generated header (`Auth_ktSSO`/`Auth_ktPhone` names) and App Intents metadata.
+- Phase 2, `./gradlew :shared:iosSimulatorArm64Test`:
+  - Compiling and linking the tests passed. The run failed with `xcrun` exit code 137.
+  - Cause: in this agent environment every `xcrun simctl spawn` process is killed with SIGKILL, even `/bin/echo` (checked). Running the test binary by hand, also after re-signing it, gave the same result.
+  - So the iOS unit tests have not run. This is the environment, not the code: `simctl install` and `launch` work, and the app runs.
+- Phase 2, `./gradlew :androidApp:assembleDebug`: not run. The Android SDK isn't installed on this Mac. Gradle configured the iOS tasks without it, so I installed nothing.
+- Device check through Xcode's device-interaction tools, done by a subagent:
+  - Compose exposes no accessibility tree to them, so taps were placed from screenshots and OCR.
+  - 3 screenshots were viewed and kept, in `~/Desktop/Dzirent/step5-screenshots/` (outside the repo): `1-first-screen.png`, `2-home.png`, `3-listing.png`.
+  - The interaction tool writes a capture file on every call. Sign-in was checked by OCR of those captures (text only, no more images viewed).
+- Crash check: the app process (same pid) stayed up through guest browsing, the listing page, sign-in and Saved. No Dzirent crash report appeared.
+  - Device logs: `log show`/`log stream` return nothing in this environment (blocked like `simctl spawn`), and `GetConsoleOutput` had no launch session. So "no crash" rests on the process and the crash reports, not the log.
+- Tools on this Mac: Homebrew couldn't write (`/opt/homebrew` blocked by the environment), so XcodeGen 2.46.0 ran from its official release zip in a temp folder, outside the repo.
+- Git: this Mac had no git identity. The first commit (`70a23a8`) got an auto-detected `vivekanandakallakuri@Vivekanandas-MacBook-Air.local` author. I then set a repo-local identity (`Vivek-k24`, `vivek.kallakuri@gmail.com`, as in earlier commits). I didn't rewrite the pushed commit.
+
+What works in the Simulator:
+- Launch screen, then the "Welcome to Dzirent" sheet (Sign Up, Log In, Browse as guest).
+- As a guest: the top bar shows "Austin, TX", the date chip "Nov 4 - 8", the measurements banner, and the Products/Studios tabs with sample listings and real photos (for example "Linen Summer Sundress $14 · under 1 mi"). The bottom bar shows Home, Inbox, Search, Closet and Saved.
+- Listing page: photo, title, "Everyday | Size XS", price, studio row, description.
+- Sign-in with test user 1, through the Saved guest gate, then Log In, then "Welcome Back":
+  - No error appeared.
+  - The avatar now shows the user's initials.
+  - The "Finish setting up your account" dialog appeared.
+  - Saved opens without the guest gate.
+  - Home shows that user's nearby listings.
+- The Simulator is left open (iPhone 18 Pro booted) with the app running, signed in as test user 1.
+
+Not verified:
+- Location permission and geocoding, picking photos, the camera dialogs, compression and upload, drafts, toasts, the dark theme.
+- The app surviving a restart while signed in. The app's Preferences folder was still empty right after sign-in, so I couldn't confirm where supabase-kt saves the session.
+- An `iosArm64` (device) build. Real-device signing is out of scope.
+
+Open issues:
+- On-device item recognition on iOS: stub (no TinyCLIP; photo checks run). Needs LiteRT/Core ML for iOS.
+- iOS push: stub. Needs a paid Apple Developer account (APNs key, Firebase iOS app), and `send-push` sends to Android tokens only. Until then, after the first message the "Get notified" prompt appears once, and its button opens Dzirent's Settings page.
+- Listing page on iPhone: an empty band of about 60-130 pt between the status bar and the "Listing Details" bar. It looks like the top inset added twice by nested Scaffolds, made larger by the Dynamic Island status bar. It's shared UI, so I left it unchanged (no redesign); check whether Android shows the same.
+- Status bar icon colour doesn't follow the in-app theme (`SystemBarIcons` is still a no-op on iOS).
+- No iOS back-swipe gesture (`PlatformBackHandler` is a no-op on iOS); on-screen back arrows work.
+- The iOS unit tests (`iosSimulatorArm64Test`, including `IosSignInTest`) need running on a Mac where `simctl spawn` works.
+- Universal links, real-device signing and TestFlight: out of scope (paid account).
+- `test-user.env` has a space after `=` for test user 1. The loaders trim it.
+
+How the owner opens and runs the app in Xcode:
+1. Needs Xcode and JDK 17 (both on this Mac). Optional: copy `mobile/iosApp/local.config.example` to `local.config` and set `DZIRENT_ENV_FILE` if the env file isn't at `~/Desktop/Dzirent/secrets/dzirent-server.env`. That file already exists on this Mac.
+2. Open `mobile/iosApp/iosApp.xcodeproj` in Xcode.
+3. Pick the `iosApp` scheme and an iPhone simulator (for example iPhone 18 Pro).
+4. Press Run (Cmd-R). The first build runs Gradle for a few minutes; later builds are faster.
+5. After changing `project.yml`, regenerate with `xcodegen generate` in `mobile/iosApp`. Code changes in `mobile/shared` need nothing extra; the build phase rebuilds the framework.
+
+Files changed:
+- `mobile/shared/build.gradle.kts`, `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/Guide.kt`, `util/AccessoryDeclaration.kt`
+- `mobile/shared/src/iosMain/kotlin/com/dzirent/shared/MainViewController.kt`, `platform/IosDevice.kt`, `platform/IosPlatformServices.kt`, `platform/IosImages.kt` (new), `data/IosPhotoAnalyzer.kt` (new), `ui/PhotoPermissions.ios.kt`, `ui/LocationPermission.ios.kt`, `ui/NotificationPermission.ios.kt`, `ui/Licenses.ios.kt`
+- `mobile/shared/src/iosSimulatorArm64Test/kotlin/com/dzirent/shared/IosSignInTest.kt` (new)
+- `mobile/iosApp/` (new): `project.yml`, `iosApp.xcodeproj`, `iosApp/` (Swift entry, Info.plist, assets), `scripts/build-shared.sh`, `scripts/load-env.sh`, `local.config.example`
+- `.gitignore`, `pranalika/BOARD.md`, this file
+
+Requests:
+- Owner: merge `ios01` into `Preview` when ready.
+
 ## Step 7A - 2026-11-03 - Android push notifications
 
 Done:
