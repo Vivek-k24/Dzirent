@@ -368,7 +368,7 @@ export function GuideOverlay({
       text: "Search for anything by name.",
     },
     {
-      selector: '.top-list-btn, nav a[href*="closet"]',
+      selector: '.top-closet-btn, .top-list-btn, nav a[href*="closet"]',
       title: "Closet",
       text: canLend
         ? "Your listings and rentals live here."

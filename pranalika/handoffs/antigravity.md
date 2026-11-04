@@ -2,6 +2,48 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 2F - 2026-11-03 - My closet in the top bar
+
+- What was done:
+  - Desktop top bar:
+    - Added "My closet" button (`top-closet-btn`) as the first icon on the right side of the desktop top bar, using the existing `hanger` icon from `components/icon.tsx`.
+    - Configured hover label (`title="My closet"`) and accessible name (`aria-label="My closet"`).
+    - Wrapped with `GatedActionTrigger` (`action="list"`, `href="/app/closet"`), ensuring unauthenticated guests receive the standard sign-up modal like Inbox and Saved.
+    - Added a thin vertical divider (`top-divider`) between "List a piece" and "Inbox", styled with `width: 1px; height: 20px; background: var(--line);` matching the site's border color in both light (`#e6e6e6`) and dark (`#383838`) themes.
+    - Established new right-side top bar order: My closet (`hanger`), List a piece (`+`), vertical divider, Inbox (`mail`), Saved (`bookmark`), Account (`user`), Theme switch (`ThemeToggle`).
+  - Account menu:
+    - Removed "My closet" from both authenticated and guest dropdown views. Retained "Profile & settings" and "Sign out" for authenticated users, and "Sign in / sign up" for guests.
+  - Phones & narrow viewports:
+    - Preserved phone top-bar row layout without change by hiding `.top-closet-btn` and `.top-divider` on screens <= 760px (`display: none !important`).
+    - Verified "My closet" remains in the mobile slide-in drawer (`.modal.drawer`) so it is fully reachable on phones.
+  - Onboarding & documentation:
+    - Updated onboarding tour selector for the Closet step to include `.top-closet-btn`.
+    - Updated `pranalika/BOARD.md` marking Step 2F Done.
+
+- Files changed:
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/components/onboarding.tsx`
+  - `apps/web/src/components/shell.tsx`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+
+- Commands run & verified:
+  - `$env:PATH = "H:\DziRent\Dzirent_dev\.tools\node-v22.23.3-win-x64;" + $env:PATH`
+  - `npm ci` in `apps/web` (Node 22): passed clean.
+  - `npm run lint` in `apps/web`: passed clean (0 errors, 0 warnings).
+  - `npm run build` in `apps/web`: passed clean (all static and dynamic routes compiled).
+  - Started Next.js production server on port 3003 with `H:\DziRent\secrets\dzirent-server.env` variables.
+  - Automated verification script:
+    - Verified top-bar icon sequence: My closet -> List a piece -> Divider -> Inbox -> Saved -> Account -> Theme.
+    - Verified "My closet" hover title and aria-label.
+    - Verified account dropdown does not contain "My closet".
+    - Verified mobile drawer contains "My closet".
+    - Verified CSS divider styling with `var(--line)` and mobile display:none rules.
+    - Verified HTTP 200 response on `/`.
+
+- Open issues:
+  - None.
+
 ## Step 2E - 2026-11-03 - docked filter panel
 
 - What was done:

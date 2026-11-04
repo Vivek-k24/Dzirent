@@ -504,6 +504,16 @@ export function Shell({
               <GatedActionTrigger
                 action="list"
                 authenticated={authenticated}
+                href="/app/closet"
+                className="icon-button top-action-btn top-closet-btn"
+                title="My closet"
+                aria-label="My closet"
+              >
+                <Icon name="hanger" />
+              </GatedActionTrigger>
+              <GatedActionTrigger
+                action="list"
+                authenticated={authenticated}
                 href="/app/list-a-piece"
                 className="icon-button top-action-btn top-list-btn"
                 title="List a piece"
@@ -511,6 +521,7 @@ export function Shell({
               >
                 <Icon name="plus" />
               </GatedActionTrigger>
+              <span className="top-divider" aria-hidden="true" />
               <GatedActionTrigger
                 action="message"
                 authenticated={authenticated}
@@ -560,14 +571,6 @@ export function Shell({
                           <Icon name="user" />
                           <span>Profile & settings</span>
                         </Link>
-                        <Link
-                          href="/app/closet"
-                          className="account-dropdown-item"
-                          onClick={() => setAccountMenuOpen(false)}
-                        >
-                          <Icon name="closet" />
-                          <span>My closet</span>
-                        </Link>
                         <form
                           action={signOut}
                           onSubmit={() => setAccountMenuOpen(false)}
@@ -595,16 +598,6 @@ export function Shell({
                           <Icon name="user" />
                           <span>Sign in / sign up</span>
                         </Link>
-                        <GatedActionTrigger
-                          action="list"
-                          authenticated={false}
-                          href="/app/closet"
-                          className="account-dropdown-item"
-                          onClick={() => setAccountMenuOpen(false)}
-                        >
-                          <Icon name="closet" />
-                          <span>My closet</span>
-                        </GatedActionTrigger>
                       </>
                     )}
                   </div>
