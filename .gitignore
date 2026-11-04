@@ -32,6 +32,8 @@ supabase/.temp/
 supabase/.branches/
 # Firebase app config: builds read it from the path in GOOGLE_SERVICES_JSON
 google-services.json
+# iOS app: path to the local env file (see mobile/iosApp/local.config.example)
+mobile/iosApp/local.config
 
 # system files
 .DS_Store

@@ -36,6 +36,9 @@ object AccessoryDeclaration {
     /** Step 2 of every accessory listing after the first declaration. Required. */
     val LISTING_CHECKBOX = "This item isn't fine jewelry or precious metal and is worth under \$${ItemLabels.ACCESSORY_MAX_VALUE_USD}."
 
+    // NAME_MAX is a C macro (limits.h), so the iOS header needs another name for it.
+    @OptIn(kotlin.experimental.ExperimentalObjCName::class)
+    @kotlin.native.ObjCName("nameMaxLength")
     const val NAME_MAX = 120
 
     /** Null when [name] can be the signature, otherwise why not. */
