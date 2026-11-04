@@ -35,3 +35,16 @@ class IosImageCompressor : ImageCompressor {
         TODO("iOS image compression not implemented yet")
 }
 
+/** iOS push (APNs through Firebase) comes with the iOS app. */
+class IosPushService : PushService {
+    override val platform: String get() = "ios"
+    override val canAskPermission: Boolean get() = TODO("iOS push not implemented yet")
+    override suspend fun token(): String? = TODO("iOS push not implemented yet")
+    override suspend fun deleteToken() = TODO("iOS push not implemented yet")
+    override fun canNotify(): Boolean = TODO("iOS push not implemented yet")
+    override fun openNotificationSettings() = TODO("iOS push not implemented yet")
+    override fun setSignedInUser(userId: String?) = TODO("iOS push not implemented yet")
+    override fun chatShown(conversationId: String) = TODO("iOS push not implemented yet")
+    override fun chatHidden(conversationId: String) = TODO("iOS push not implemented yet")
+}
+

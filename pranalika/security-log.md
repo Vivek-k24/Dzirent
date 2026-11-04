@@ -46,9 +46,30 @@ Found in the `Dzirent_Android` project. Handled by rebuilding cleanly in `dziren
 
 All of these reject callers with no signed-in user (except `search_cities`, `browse_listings`, and `get_listing`).
 
+## dzirent-server Advisor check (Step 7A additions)
+
+Advisor run after the Step 7A migration (2026-11-03): the only new finding is below. `pg_net` is installed in the `extensions` schema; the new tables have RLS and owner policies.
+
+| Finding | Function or table | Why it is intended |
+| --- | --- | --- |
+| WARN: signed-in users can run elevated function | `register_push_token` | Signed-in only (rejects null `auth.uid()`). Checks the token and platform and saves the token for the caller only. It runs with elevated rights because a token the caller's phone already had under another account must move to the caller (the phone changed hands); owner-only RLS can't do that. Returns nothing; nobody can read another user's tokens. |
+
+Internal push functions (`app_private.queue_push`, `push_safe_text`, `push_dates_label` and the three trigger functions) are not callable through the API.
+
 ## Edge Functions
 
 | Function | Check | Status |
 | --- | --- | --- |
 | `delete-listing` | Gateway JWT check off (required with new API keys). Code verifies the user, confirms the caller owns the listing, runs as the caller under RLS, uses no secret key. Reviewed by coordinator. | Deployed (1A) |
 | `delete-account` | Gateway JWT check off. Code verifies caller with Auth (`auth.getUser`), refuses if active rentals exist (409), removes caller's listing photo folders through Storage API, then deletes user via service-role key from function environment only. | Deployed (1B) |
+| `send-push` | Gateway JWT check off: only the database calls it. Code requires the shared secret in `x-send-push-secret` (constant-time compare, 401 otherwise), validates the payload, reads and deletes `device_tokens` with the project's secret key from the function environment, and logs counts only (never tokens or message text). | Deployed (7A) |
+
+## Secrets (Step 7A)
+
+| Secret | Where it lives | Handling |
+| --- | --- | --- |
+| Shared secret (database to `send-push`) | Vault `send_push_secret` (read by the push trigger), Edge Function secret `SEND_PUSH_SECRET` | 32 random bytes generated inside the database by the Step 7A migration, so it is never in the repo. Copied from Vault to the function secret with the CLI through a temporary file in the agent's scratch folder, deleted right after; never printed. To rotate: replace the Vault value and run `supabase secrets set SEND_PUSH_SECRET` with the same value. |
+| Firebase server key (service account `dzirent-17c88-firebase-adminsdk-fbsvc`) | Edge Function secret `FIREBASE_SERVICE_ACCOUNT_BASE64`; the file only in `H:\DziRent\secrets\` | Set with `supabase secrets set` from the file (base64), never printed or committed. Used only by `send-push` to get short-lived FCM access tokens. |
+| `google-services.json` (Firebase app config) | `H:\DziRent\secrets\` (local builds, path in `GOOGLE_SERVICES_JSON`); GitHub secret `GOOGLE_SERVICES_JSON_BASE64` (release workflow) | Not a server secret, but kept out of this public repo: `.gitignore` lists it, and Gradle reads it from the path without copying it into the repo. |
+
+Vault also holds `send_push_url`, the function's address (public, not a secret).

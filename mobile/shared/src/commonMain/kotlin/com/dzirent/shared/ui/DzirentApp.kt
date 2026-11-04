@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.dzirent.shared.model.Profile
+import com.dzirent.shared.platform.LocalDevice
 import com.dzirent.shared.platform.SettingsStorage
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.ui.theme.DzirentTheme
@@ -28,14 +29,18 @@ sealed class AuthScreenState {
  */
 @Composable
 fun DzirentApp(
-    repository: DzirentRepository = remember { DzirentRepository() },
+    repository: DzirentRepository = remember { DzirentRepository.shared },
     appSettings: AppSettings = remember { AppSettings() },
-    settingsStorage: SettingsStorage? = null
+    settingsStorage: SettingsStorage? = null,
+    /** The chat a tapped notification asks for; opened once someone is signed in. */
+    openChatId: String? = null,
+    onOpenChatHandled: () -> Unit = {}
 ) {
     var screenState by remember { mutableStateOf<AuthScreenState>(AuthScreenState.Loading) }
     var firstVisitSeen by rememberSaveable { mutableStateOf(false) }
     var pendingGatedAction by remember { mutableStateOf<GatedAction?>(null) }
     var authStartDestination by rememberSaveable { mutableStateOf("welcome") }
+    val push = LocalDevice.current.push
 
     LaunchedEffect(Unit) {
         repository.awaitAuth()
@@ -45,6 +50,18 @@ fun DzirentApp(
         } else {
             // Guest mode: first time user sees first visit sheet
             screenState = AuthScreenState.Guest
+        }
+    }
+
+    // This phone gets the signed-in account's notifications (each sign-in and app start).
+    val signedInId = (screenState as? AuthScreenState.Authenticated)?.profile?.id
+    LaunchedEffect(signedInId) {
+        if (signedInId != null) registerPush(repository, push, signedInId)
+    }
+    // Chat notifications are for signed-in accounts; a guest just lands on Home.
+    LaunchedEffect(openChatId, screenState) {
+        if (openChatId != null && (screenState is AuthScreenState.Guest || screenState is AuthScreenState.AuthFlow)) {
+            onOpenChatHandled()
         }
     }
 
@@ -85,7 +102,9 @@ fun DzirentApp(
                                 authStartDestination = "login"
                                 screenState = AuthScreenState.AuthFlow
                             },
-                            onGatedAction = {}
+                            onGatedAction = {},
+                            openChatId = openChatId,
+                            onOpenChatHandled = onOpenChatHandled
                         )
                     }
                     is AuthScreenState.Guest -> {

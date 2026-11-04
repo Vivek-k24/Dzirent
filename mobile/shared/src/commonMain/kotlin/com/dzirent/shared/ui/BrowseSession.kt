@@ -49,9 +49,9 @@ class BrowseSession(
         state = try {
             val radiusMiles = radiusKm / KM_PER_MILE
             val listings = repository.browseListings(lat = lat, lng = lng, radiusMiles = radiusMiles, limit = 30)
-                .map { it.toListing() }
+                .map { with(repository) { it.toListing() } }
             val saved = if (userId.isNotBlank()) repository.getSavedStudioIds(userId) else emptySet()
-            val body = if (userId.isNotBlank()) runCatching { repository.getPrivateProfile() }.getOrNull() ?: PrivateProfile() else PrivateProfile()
+            val body = if (userId.isNotBlank()) runCatching { repository.getPrivateProfile() }.getOrNull() ?: PrivateProfile(userId = userId) else PrivateProfile(userId = userId)
             loadedFor = key
             UiState.Success(BrowseData(listings, saved, body))
         } catch (e: Exception) {
@@ -73,14 +73,14 @@ class BrowseSession(
         wider?.takeIf { it.first == key }?.let { return it.second }
         val radiusMiles = radiusKm / KM_PER_MILE
         return repository.browseListings(lat = lat, lng = lng, radiusMiles = radiusMiles, limit = 30)
-            .map { it.toListing() }
+            .map { with(repository) { it.toListing() } }
             .also { wider = key to it }
     }
 
     /** Close text matches for a search that found nothing (typos), with their distance from me. */
     suspend fun similarListings(query: String, lat: Double, lng: Double): List<Listing> =
         repository.browseListings(query = query, lat = lat, lng = lng, limit = 10)
-            .map { it.toListing() }
+            .map { with(repository) { it.toListing() } }
 
     /** The next [load] fetches again, e.g. after saving measurements or a studio. */
     fun invalidate() {

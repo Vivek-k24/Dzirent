@@ -41,6 +41,7 @@ import com.dzirent.shared.util.setupItems
 import com.dzirent.shared.util.today
 import io.ktor.http.encodeURLParameter
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** A bottom-bar destination. Labels are one short word so five tabs fit on narrow phones. */
@@ -69,7 +70,10 @@ fun MainAppScaffold(
     settingsStorage: SettingsStorage?,
     onSignOut: () -> Unit,
     onNavigateToAuth: () -> Unit,
-    onGatedAction: (GatedAction) -> Unit
+    onGatedAction: (GatedAction) -> Unit,
+    /** A chat to open now (a tapped notification); [onOpenChatHandled] once it is opened. */
+    openChatId: String? = null,
+    onOpenChatHandled: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
@@ -202,6 +206,14 @@ fun MainAppScaffold(
 
     fun openChat(conversationId: String, draft: String? = null) =
         navController.navigate("chat/$conversationId" + (draft?.let { "?draft=${it.encodeURLParameter()}" } ?: ""))
+
+    // A tapped notification opens its chat, once the NavHost has its graph.
+    LaunchedEffect(openChatId) {
+        val conversationId = openChatId ?: return@LaunchedEffect
+        snapshotFlow { backStackEntry }.first { it != null }
+        openChat(conversationId)
+        onOpenChatHandled()
+    }
 
     /** Opens the chat about a listing (creating it if needed), optionally with a draft message. */
     fun startChat(listingId: String, lenderId: String, draft: String? = null) {

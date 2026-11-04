@@ -18,6 +18,8 @@ activityCompose = "1.9.3"
 junit = "4.13.2"
 litert = "1.4.2"
 aboutlibraries = "11.2.3"
+# 34.x keeps Kotlin stdlib at 2.0.x, which this project's Kotlin 2.1.0 compiler reads.
+firebaseBom = "34.19.0"
 
 [libraries]
 # Supabase
@@ -61,6 +63,10 @@ litert = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "
 
 # Settings > About > Open-source licenses (the plugin collects them at build time)
 aboutlibraries-compose-m3 = { group = "com.mikepenz", name = "aboutlibraries-compose-m3", version.ref = "aboutlibraries" }
+
+# Push notifications (Firebase Cloud Messaging)
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }

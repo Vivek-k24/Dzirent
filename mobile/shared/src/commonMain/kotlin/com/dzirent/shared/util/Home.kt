@@ -55,9 +55,6 @@ enum class HomeRow(val title: String, val subtitle: String?) {
     }
 }
 
-/** The listing's availability as date ranges (empty = available any time). */
-fun Listing.availabilityWindows(): List<DateRange> = availability.mapNotNull { parseDateRange(it.startDate, it.endDate) }
-
 private fun Listing.distanceOrMax(): Double = distanceKm ?: Double.MAX_VALUE
 
 /**

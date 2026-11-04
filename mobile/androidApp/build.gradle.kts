@@ -38,6 +38,40 @@ val hasReleaseSigning = !releaseKeystorePath.isNullOrBlank() &&
     !releaseKeyPassword.isNullOrBlank() &&
     file(releaseKeystorePath).exists()
 
+// Push notifications: Firebase reads google-services.json from the path in GOOGLE_SERVICES_JSON.
+// The file never goes into the repo. Its values become the string resources the
+// google-services plugin would generate, from the Firebase app registered for each build
+// type's application ID. Release builds require it; a debug build without it has no push.
+val googleServicesPath = providers.environmentVariable("GOOGLE_SERVICES_JSON").orNull?.trim()?.takeIf { it.isNotEmpty() }
+val googleServices: Map<*, *>? = googleServicesPath?.let { path ->
+    val json = file(path)
+    if (!json.isFile) throw GradleException("GOOGLE_SERVICES_JSON points to a file that doesn't exist.")
+    groovy.json.JsonSlurper().parse(json) as Map<*, *>
+}
+if (googleServices == null) {
+    if (isRelease) throw GradleException("Release builds require GOOGLE_SERVICES_JSON (the path to google-services.json).")
+    logger.warn("GOOGLE_SERVICES_JSON is not set: this build has no push notifications.")
+}
+
+/** The string resources Firebase reads at start-up, for the Firebase app of [packageName]. */
+fun firebaseResources(packageName: String): Map<String, String> {
+    val json = googleServices ?: return emptyMap()
+    val project = json["project_info"] as Map<*, *>
+    val client = (json["client"] as List<*>).map { it as Map<*, *> }.firstOrNull { client ->
+        val info = client["client_info"] as Map<*, *>
+        (info["android_client_info"] as Map<*, *>)["package_name"] == packageName
+    } ?: throw GradleException("google-services.json has no Android app for $packageName.")
+    val apiKey = ((client["api_key"] as List<*>).first() as Map<*, *>)["current_key"].toString()
+    return buildMap {
+        put("google_app_id", (client["client_info"] as Map<*, *>)["mobilesdk_app_id"].toString())
+        put("gcm_defaultSenderId", project["project_number"].toString())
+        put("google_api_key", apiKey)
+        put("google_crash_reporting_api_key", apiKey)
+        put("project_id", project["project_id"].toString())
+        project["storage_bucket"]?.let { put("google_storage_bucket", it.toString()) }
+    }
+}
+
 android {
     namespace = "com.dzirent.app"
     compileSdk = 36
@@ -67,6 +101,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             resValue("string", "app_name", "Dzirent Debug")
+            firebaseResources("${defaultConfig.applicationId}.debug").forEach { (name, value) -> resValue("string", name, value) }
         }
         release {
             isMinifyEnabled = false
@@ -75,6 +110,7 @@ android {
                 "proguard-rules.pro"
             )
             resValue("string", "app_name", "Dzirent")
+            firebaseResources("${defaultConfig.applicationId}").forEach { (name, value) -> resValue("string", name, value) }
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -109,5 +145,8 @@ dependencies {
     implementation(project(":shared"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 }
 
