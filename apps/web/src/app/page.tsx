@@ -273,7 +273,6 @@ export default async function Home({
             <span className="eyebrow">THERE’S MORE IN THE NEIGHBORHOOD</span>
             <h2>Find something that feels like you.</h2>
           </div>
-          <span className="result-count">{cards.length} pieces to explore</span>
         </div>
         <Tabs
           labels={["Products", "Studios"]}

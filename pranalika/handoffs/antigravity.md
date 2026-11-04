@@ -2,6 +2,54 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 2E - 2026-11-03 - docked filter panel
+
+- What was done:
+  - Desktop docked filter panel (>= 1280px):
+    - Added `<aside className={"desktop-docked-panel " + (desktopFilterOpen ? "open" : "closed")} aria-label="Filters">` docked inside `<div className={"site-body" + (desktopFilterOpen ? " filter-open" : "")}>` adjacent to `<main id="main">`.
+    - Left panel holds filters only: "All categories" heading, close button, Category, Size, Distance, Min/Max price, Style, Garment, Accessory, "Show pieces" submit, and "Reset" link.
+    - Excluded from the panel all top-bar items: Sign in / sign up, Inbox, Saved pieces, List a piece, How Dzirent works, Theme switch, date chip, location picker.
+    - Not a modal: no backdrop or dimming overlay; the page behind remains scrollable and clickable. Main content dynamically shifts alongside it.
+    - Sticky below the header (`top: 130px`) and self-scrolling (`height: calc(100vh - 145px); overflow-y: auto`).
+    - Hamburger button toggles the docked panel on desktop (>= 1280px). Defaults to open on the Discover page (`/`), and remembers the user's open/closed choice in `localStorage["dzirent-desktop-filter-panel"]`.
+  - Account icon dropdown menu:
+    - Replaced the direct Account icon link with an accessible dropdown menu (`.account-dropdown-menu`) triggered by clicking the Account button (`aria-haspopup="menu"`, `aria-expanded`).
+    - Includes click-outside dismissal and route-change closure.
+    - When authenticated: displays user name with subline, "Profile & settings" (`/app/settings`), "My closet" (`/app/closet`), and "Sign out" (server action button).
+    - When guest: displays "Welcome to Dzirent" greeting, "Sign in / sign up" (`/auth?mode=signin`), and "My closet" (wrapped in `GatedActionTrigger` with `action="list"`).
+  - Mobile & narrow screens (< 1280px):
+    - Preserved existing slide-in drawer (`.modal.drawer`) with all navigation links (Profile/Sign in, Inbox, Saved pieces, List a piece, My closet, How it works, Rental guidelines, Theme toggle, Sign out, and filter form).
+    - Hidden on desktop via `@media(min-width: 1280px) { .modal.drawer { display: none !important; } }`.
+    - Hamburger button opens drawer modal on mobile (< 1280px).
+  - Discover home page:
+    - Removed `<span className="result-count">{cards.length} pieces to explore</span>` from `apps/web/src/app/page.tsx`.
+    - Retained result counts where required: search query results (`isSearching === true`), studio pages, Saved, and My closet.
+  - Board & documentation:
+    - Updated `pranalika/BOARD.md` marking Step 2E Done.
+
+- Files changed:
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/app/page.tsx`
+  - `apps/web/src/components/shell.tsx`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+
+- Commands run & verified:
+  - `$env:PATH = "H:\DziRent\Dzirent_dev\.tools\node-v22.23.3-win-x64;" + $env:PATH`
+  - `npm run lint` in `apps/web`: passed with 0 errors and 0 warnings.
+  - `npm run build` in `apps/web`: passed with 0 errors (all routes generated).
+  - Loaded `H:\DziRent\secrets\dzirent-server.env` and started Next.js production server on port 3002.
+  - HTTP checks via Node script:
+    - Confirmed Discover page (`/`) HTML does not contain "pieces to explore".
+    - Confirmed `.desktop-docked-panel` is present in HTML next to `main#main`.
+    - Confirmed `.account-menu-wrapper` is present in header HTML.
+    - Confirmed `.desktop-docked-panel` contains only filters and none of the top-bar navigation items.
+    - Confirmed search queries (`/?q=linen`) preserve result indicators.
+    - Confirmed HTTP 200 response on `/`.
+
+- Open issues:
+  - None.
+
 ## Step 2D - 2026-11-03 - website layout redesign
 
 - Step 0 recovery findings & actions:
