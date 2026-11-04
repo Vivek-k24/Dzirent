@@ -338,6 +338,13 @@ data class Block(
     val blocked: Profile? = null
 )
 
+/** My notification choices (notification_settings). No row yet means these defaults. */
+@Serializable
+data class NotificationSettings(
+    val messages: Boolean = true,
+    @SerialName("show_message_text") val showMessageText: Boolean = false
+)
+
 @Serializable
 data class Report(
     val id: String? = null,

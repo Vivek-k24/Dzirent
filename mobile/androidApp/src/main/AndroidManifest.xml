@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Chat notifications. Asked for only after the first message sent, with a reason first. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- The camera is optional: devices without one can still list with gallery photos. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -29,6 +31,22 @@
             </intent-filter>
 
         </activity>
+
+        <!-- Push: send-push sends data messages and the app builds each notification itself. -->
+        <service
+            android:name=".push.DzirentMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <!-- Only for messages Firebase itself would show (for example a console test message). -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="messages" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
 
         <!-- Shares a cache file with the camera app for ActivityResultContracts.TakePicture. -->
         <provider

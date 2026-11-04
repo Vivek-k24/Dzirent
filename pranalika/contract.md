@@ -158,6 +158,21 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 - `mark_conversation_read(p_conversation_id)`: Signed-in participant only.
 - `mark_activity_seen()`: Signed-in only.
 
+### Push notifications (Step 7A)
+- `register_push_token(p_token text, p_platform text)`: Signed-in only. Saves this phone's push token for the caller; `p_platform` is `'android'` or `'ios'`. A token saved for another account moves to the caller (the phone changed hands). Call on sign-in, on every app start while signed in, and when Firebase issues a new token. Returns nothing.
+- `unregister_push_token(p_token text)`: Signed-in only. Removes the token if it is the caller's. Call before signing out. Returns nothing.
+- Settings are the caller's own `notification_settings` row (table below). No row means Messages on and message text hidden.
+
+### Push events
+The database (triggers on `messages` and `conversations`) decides; the `send-push` Edge Function delivers. Apps never send pushes.
+- New message: to the other participant. Title "New message from <name>". Body: the message text, only if the recipient turned on "Show message text".
+- New chat on a listing: to the lender. Title "New chat from <name>". Body: listing title and requested dates.
+- Requested dates changed: to the other participant. Title "New dates from <name>". Body: "Nov 5 - 8 · <listing title>".
+- `<name>` is the sender's studio name, else display name.
+- Never between blocked users (either direction), never when the recipient turned Messages off, never to a recipient with no registered phone.
+- Never phone numbers, email or street addresses, map links or coordinates: text that looks like one of these is left out entirely.
+- FCM data message, high priority, all values strings: `kind` (`message`, `new_chat`, `dates`), `conversation_id`, `recipient_id`, `title`, `body` (only when there is one), `tag` (`chat_<conversation_id>`). The app builds the notification: one per chat (the tag), "Messages" channel, nothing while that chat is on screen, a tap opens the chat.
+
 ---
 
 ## 2. Edge Functions
@@ -179,6 +194,13 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   3. Finds all caller listings and deletes their folders from `listing-photos` via Storage API.
   4. Deletes auth user via admin client; foreign keys cascade profile, listings, and child rows.
 - **Returns:** HTTP 200 `{ "ok": true }`.
+
+### `send-push`
+- **Who can call:** The database only (`app_private.queue_push`, through `pg_net`). Never apps.
+- **Auth:** Header `x-send-push-secret` must equal the function secret `SEND_PUSH_SECRET` (the same value is in Vault as `send_push_secret`); compared in constant time. `verify_jwt = false`. Anything else gets HTTP 401.
+- **Payload:** `{ "kind": "message" | "new_chat" | "dates", "conversation_id": "<uuid>", "recipient_id": "<uuid>", "title": "<text>", "body": "<text>" | null }`, already checked and worded by the database.
+- **Behavior:** Gets a Google access token with the Firebase server key (`FIREBASE_SERVICE_ACCOUNT_BASE64`), sends the data message above through the FCM HTTP v1 API to each of the recipient's Android tokens (TTL one day), then deletes the tokens Firebase reports as unregistered or invalid.
+- **Returns:** HTTP 200 `{ "sent", "failed", "removed", "errors" }`: counts and Firebase error codes only, never tokens or text.
 
 ---
 
@@ -207,4 +229,6 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `suggestion_events` | SELECT, INSERT | `user_id = auth.uid()` |
 | `accessory_declarations`| SELECT | `user_id = auth.uid()` |
 | `listing_declarations`  | SELECT | `user_id = auth.uid()` |
+| `device_tokens` | SELECT, DELETE | `user_id = auth.uid()`. Added only through `register_push_token`. Columns `token` (unique), `user_id`, `platform`, `created_at`, `last_seen_at`. Removed with the account. |
+| `notification_settings` | SELECT, INSERT, UPDATE | `user_id = auth.uid()`. Columns `messages` (default true), `show_message_text` (default false), `updated_at`. Removed with the account. |
 | `us_cities` | None | Closed to all direct access; query via `search_cities`. |

@@ -2,6 +2,81 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 7A - 2026-11-03 - Android push notifications
+
+Done:
+- Backend (migration `20261104035948_step7a_push_notifications.sql`, applied with `supabase db push`):
+  - `device_tokens` (token unique, user, platform, created and last-seen times) and `notification_settings` (Messages default on, "Show message text" default off). Owner-only RLS, explicit grants (new tables get no Data API grants by default since 2026-10-30), both removed with the account.
+  - `register_push_token(p_token, p_platform)` (moves a token to whoever signed in on that phone last) and `unregister_push_token(p_token)`.
+  - Triggers on `messages` (new message: the other participant), `conversations` insert (new chat: the lender) and requested-date changes (the other participant) call `app_private.queue_push`. It skips blocked pairs (either direction), recipients with Messages off or no registered phone, and words the push: "New message from <name>" (text only if "Show message text" is on), "New chat from <name>" (listing and dates), "New dates from <name>" ("Nov 5 - 8 · listing"). Text that looks like a phone number, email or street address, map link or coordinates is left out entirely. A push problem never blocks the message or chat itself.
+  - `pg_net` (in `extensions`) posts to `send-push` with the shared secret. The migration generates the secret inside the database (Vault `send_push_secret`) and stores the function address (Vault `send_push_url`).
+- `send-push` Edge Function, deployed: checks `x-send-push-secret` against `SEND_PUSH_SECRET` (constant time), gets a Google access token from the server key (`FIREBASE_SERVICE_ACCOUNT_BASE64`), sends high-priority FCM HTTP v1 data messages (chat ID, per-chat tag `chat_<id>`, TTL one day) to the recipient's Android tokens, and deletes tokens Firebase reports as unregistered or invalid. Logs counts only.
+- Secrets: `SEND_PUSH_SECRET` (copied from Vault) and `FIREBASE_SERVICE_ACCOUNT_BASE64` (from the server key file) set with `supabase secrets set --env-file` through a temporary file in my scratch folder, deleted right after. Nothing printed or committed.
+- Android: Firebase Messaging (BoM 34.19.0) in `androidApp` only. Gradle reads `google-services.json` from the path in `GOOGLE_SERVICES_JSON` and turns it into the string resources the google-services plugin would generate, using the Firebase app of each build type's application ID (`com.dzirent.app`, `com.dzirent.app.debug`). The file is never copied into the repo; `.gitignore` lists it. Release builds fail without it; a debug build without it builds with push off.
+  - Token registered on sign-in and every app start while signed in, and on token refresh (`onNewToken`, using the one shared client `DzirentRepository.shared`). Sign-out and account deletion unregister and delete the token and clear shown notifications.
+  - The app builds each notification from the data message in a "Messages" channel: one per chat (the tag), nothing for another account signed in on the phone, nothing while that chat is on screen (and opening a chat clears its notification). The lock-screen public version has the title only. A tap opens the chat.
+  - Permission: asked only after the user's first message sent on the phone, after "Get notified when they reply". Declining is final; Settings > Notifications turns it on (system question once on Android 13+, then the phone's notification settings).
+  - Settings > Notifications (signed in): Messages and "Show message text", saved to `notification_settings`.
+  - iOS: `PushService` interface in common code with an iOS stub (`TODO`) only. `send-push` sends to Android tokens only.
+- Release workflow writes `google-services.json` from the new GitHub secret `GOOGLE_SERVICES_JSON_BASE64` before building and sets `GOOGLE_SERVICES_JSON`.
+- `decisions.md` (Notifications), `contract.md`, `security-log.md`, `BOARD.md` updated.
+- Fixed while building: the Preview branch did not compile (Step 4C commit `fe61cfb`): `BlockedProfile` didn't exist (now `Profile`), `BrowseSession` called the repository's member extension `toListing()` from outside (now `with(repository)`) and `PrivateProfile()` without its `userId`, and `Home.kt` duplicated `Listing.availabilityWindows()` from `Fit.kt` (copy removed). Minimal edits only.
+- Before starting: the uncommitted changes were one extra trailing blank line in `supabase/seed/list_listings.mjs` and `sample_photos.mjs`; identical to `origin/Preview` ignoring whitespace, so discarded.
+
+Files changed:
+- `supabase/migrations/20261104035948_step7a_push_notifications.sql` (new), `supabase/functions/send-push/index.ts` (new), `supabase/config.toml`, `supabase/tests/step7a_push.mjs` (new)
+- `mobile/gradle/libs.versions.toml`, `mobile/androidApp/build.gradle.kts`, `mobile/androidApp/src/main/AndroidManifest.xml`, `mobile/androidApp/src/main/java/com/dzirent/app/MainActivity.kt`
+- `mobile/androidApp/src/main/java/com/dzirent/app/push/FirebasePush.kt`, `ChatNotifications.kt`, `DzirentMessagingService.kt` (new), `mobile/androidApp/src/main/res/drawable/ic_notification.xml` (new, logo mark in white)
+- `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/platform/Push.kt` (new), `platform/Device.kt`, `ui/Notifications.kt` (new), `ui/DzirentApp.kt`, `ui/MainAppScaffold.kt`, `ui/ChatScreens.kt`, `ui/SettingsScreen.kt`, `repository/DzirentRepository.kt`, `model/Models.kt`
+- `mobile/shared/src/androidMain/kotlin/com/dzirent/shared/platform/AndroidDevice.kt`, `ui/NotificationPermission.android.kt` (new)
+- `mobile/shared/src/iosMain/kotlin/com/dzirent/shared/platform/IosDevice.kt`, `IosPlatformServices.kt`, `ui/NotificationPermission.ios.kt` (new)
+- `mobile/shared/src/commonTest/kotlin/com/dzirent/shared/ChatPushTest.kt` (new)
+- Step 4C compile fixes: `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/BrowseSession.kt`, `util/Home.kt`, `repository/DzirentRepository.kt`
+- `.github/workflows/android-release.yml`, `.gitignore`
+- `pranalika/decisions.md`, `pranalika/contract.md`, `pranalika/security-log.md`, `pranalika/BOARD.md`, this file
+
+What I ran:
+- `google-services.json` lists both `com.dzirent.app` and `com.dzirent.app.debug` (checked package names only).
+- Baseline `:androidApp:assembleDebug` on `dc9ca25`: failed with the Step 4C errors above. After the fixes `:shared:compileDebugKotlinAndroid` passed.
+- `supabase db push --dry-run` (only the new migration pending), then `supabase db push --linked --yes`: applied.
+- Read-only queries (`supabase db query --linked`): both Vault entries exist (secret 64 characters), `pg_net` 0.20.4, the three triggers exist, `device_tokens`/`notification_settings` grants have no `anon`, `push_dates_label` gives "Nov 5 - 8" and "Oct 30 - Nov 2", `push_safe_text` hides "(512) 555-0199" and "123 Main St" and keeps "Is this available Nov 5 - 8?".
+- `supabase secrets set --env-file ...` (temporary file, deleted): 2 secrets set; `supabase secrets list` shows both names.
+- `supabase functions deploy send-push --use-api --no-verify-jwt`: deployed.
+- `node supabase/tests/step7a_push.mjs`: all passed.
+  - `send-push` with a wrong secret: 401.
+  - Test user 1's settings upsert (Messages on, text hidden) through the API.
+  - Fake token registered for test user 1; user 1 reads it, user 3 reads none.
+  - Test user 3 sent a message in their chat with user 1; the fake token was gone within the 60 s wait.
+  - User 1 blocked user 3: user 3's message refused (403); user 3 changed the chat dates (allowed while blocked); after 20 s the second fake token was still there.
+  - Unblocked; `unregister_push_token` removed the second token; no block left.
+- `net._http_response` (read-only) for the test window: exactly one request, the message push: HTTP 200 `{"sent":0,"failed":1,"removed":1,"errors":["INVALID_ARGUMENT"]}`, so `send-push` ran, got a Google access token, reached Firebase, got the invalid-token reply and removed the token. Nothing was sent during the blocked step; the request queue is empty.
+- Security Advisor: the only new finding is `register_push_token` (signed-in users can run an elevated function), logged with the reason.
+- `:androidApp:assembleDebug :shared:testDebugUnitTest --continue` with `GOOGLE_SERVICES_JSON` set (JDK 21): BUILD SUCCESSFUL. Unit tests: 5 classes, 13 tests, 0 failures (`ChatPushTest` 2 new; `SmokeTest` ran live because the test-user variables were loaded).
+- After marking the deprecated Firebase token calls (below), `:androidApp:assembleDebug` again: BUILD SUCCESSFUL, no warnings in the push code.
+- `aapt2` on the debug APK: package `com.dzirent.app.debug`; manifest has `POST_NOTIFICATIONS`, `DzirentMessagingService` with `MESSAGING_EVENT`, and the Firebase default channel and icon; the Firebase string resources are present and `google_app_id` is the debug app's (compared in a script, not printed).
+- No emulator or device used.
+
+Not verified (needs the owner's phone):
+- A real notification arriving, its wording on screen, the lock-screen version, the first-message prompt and system dialog, Settings toggles, tap-to-open, no notification while the chat is open, nothing after sign-out.
+- The release workflow (needs the new secret below) and any iOS build.
+
+Open issues:
+- The owner must add the GitHub secret `GOOGLE_SERVICES_JSON_BASE64` (base64 of `H:\DziRent\secrets\google-services.json`) before the next run of the Android release workflow; without it the workflow stops with an error.
+- firebase-messaging 25.1 deprecated `getToken`, `deleteToken` and `onNewToken` in favour of registering with the Firebase installation ID. Firebase's HTTP v1 send docs still describe only token targeting, which `send-push` uses, so the app keeps the token calls (warnings suppressed with a comment). Move both sides when the installation ID route is documented.
+- Phone test for the owner: sign in on the phone, send a first message (prompt appears once), have another account message you with the app in the background (notification, text hidden), turn on "Show message text" (text appears), open that chat (its notification clears, no new one while open), tap a notification (opens the chat), turn Messages off (nothing arrives), sign out (nothing arrives).
+- Test data left on `dzirent-server`: one message "Step 7A push test" in the chat between test user 3 (renter) and test user 1 (lender). That chat had no requested dates and now shows Dec 14 - 16 from the blocked-step test; dates can't be cleared through the API, so I left them (no one-off SQL).
+- `set_conversation_dates` does not check blocks, so a blocked renter can still change a chat's dates (no push is sent). Not changed here.
+- The text filter is a heuristic: it errs toward hiding text (some ordinary messages with long numbers or street-like words lose their preview), and unusual address formats may not be caught.
+- "New chat" fires when a renter opens a chat from a listing, before they type anything, as the task asked. With the per-chat tag, their first message replaces it.
+- The migration stores the production function address in Vault. A local `supabase start` stack would call production with its own random secret and get 401 (harmless).
+- Step 4C's handoff (Antigravity) says both builds passed, but the committed tree did not compile; fixed above.
+
+Debug APK path:
+- `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+
+New GitHub secret:
+- `GOOGLE_SERVICES_JSON_BASE64`
+
 ## Step 2C - 2026-11-02 - website fixes
 
 Done:

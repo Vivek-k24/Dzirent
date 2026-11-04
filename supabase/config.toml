@@ -10,6 +10,10 @@ verify_jwt = false
 [functions.delete-account]
 verify_jwt = false
 
+# Called only by the database; the handler checks the shared secret (SEND_PUSH_SECRET).
+[functions.send-push]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.

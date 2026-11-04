@@ -121,6 +121,14 @@ fun createDzirentSupabaseClient(
 class DzirentRepository(
     val client: SupabaseClient = createDzirentSupabaseClient()
 ) {
+    companion object {
+        /**
+         * The app's one client per process, shared by the screens and the Android push
+         * service. Two clients would each refresh the saved session and sign each other out.
+         */
+        val shared: DzirentRepository by lazy { DzirentRepository() }
+    }
+
     val auth: Auth get() = client.auth
     val postgrest: Postgrest get() = client.postgrest
     val storage: Storage get() = client.storage
@@ -545,6 +553,57 @@ class DzirentRepository(
             )
         } catch (e: Exception) {
             throw fail("save declaration", e)
+        }
+    }
+
+    // --- Push notifications ---
+    /** This phone's push token now gets my notifications (it moves from whoever had it). */
+    suspend fun registerPushToken(token: String, platform: String) {
+        try {
+            postgrest.rpc(
+                "register_push_token",
+                buildJsonObject {
+                    put("p_token", token)
+                    put("p_platform", platform)
+                }
+            )
+        } catch (e: Exception) {
+            throw fail("turn on notifications", e)
+        }
+    }
+
+    /** This phone stops getting my notifications (before signing out). */
+    suspend fun unregisterPushToken(token: String) {
+        try {
+            postgrest.rpc("unregister_push_token", buildJsonObject { put("p_token", token) })
+        } catch (e: Exception) {
+            throw fail("turn off notifications", e)
+        }
+    }
+
+    suspend fun getNotificationSettings(): NotificationSettings {
+        val uid = requireUserId()
+        return try {
+            postgrest.from("notification_settings")
+                .select { filter { eq("user_id", uid) } }
+                .decodeSingleOrNull<NotificationSettings>() ?: NotificationSettings()
+        } catch (e: Exception) {
+            throw fail("load your notification settings", e)
+        }
+    }
+
+    suspend fun saveNotificationSettings(settings: NotificationSettings) {
+        val uid = requireUserId()
+        try {
+            postgrest.from("notification_settings").upsert(
+                buildJsonObject {
+                    put("user_id", uid)
+                    put("messages", settings.messages)
+                    put("show_message_text", settings.showMessageText)
+                }
+            )
+        } catch (e: Exception) {
+            throw fail("save your notification settings", e)
         }
     }
 
@@ -1102,10 +1161,10 @@ class DzirentRepository(
                 Block(
                     blockerId = uid,
                     blockedId = item.blockedId,
-                    blocked = BlockedProfile(
+                    blocked = Profile(
                         id = item.blockedId,
                         displayName = item.displayName,
-                        city = item.city
+                        city = item.city.orEmpty()
                     )
                 )
             }

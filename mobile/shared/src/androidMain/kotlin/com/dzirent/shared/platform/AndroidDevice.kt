@@ -18,7 +18,9 @@ fun cameraDir(context: Context): File = File(context.cacheDir, "camera").apply {
 class AndroidDeviceServices(
     context: Context,
     override val appVersion: String,
-    override val appBuild: Long
+    override val appBuild: Long,
+    /** Firebase lives in the app module (androidApp), which hands it in. */
+    override val push: PushService
 ) : DeviceServices {
     private val app = context.applicationContext
 

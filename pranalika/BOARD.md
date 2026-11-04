@@ -91,3 +91,12 @@ Planned after Step 4.
 ## Step 6 - Switchover
 
 All three clients build and pass owner testing on `dzirent-server`. Then the `Dzirent_Android` repo and project are retired.
+
+## Step 7 - Notifications (V1.1)
+
+| Item | Status |
+| --- | --- |
+| Done by: Claude Code (7A) | |
+| 7A Android push through Firebase: new messages, new chats, date changes; Settings > Notifications; `send-push` deployed | Done |
+| Owner: GitHub secret `GOOGLE_SERVICES_JSON_BASE64` for the release workflow | To do |
+| Owner: phone test of push (see the 7A handoff) | To do |

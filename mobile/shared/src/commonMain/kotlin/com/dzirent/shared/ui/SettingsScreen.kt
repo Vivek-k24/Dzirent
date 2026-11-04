@@ -4,6 +4,7 @@ import com.dzirent.shared.platform.LocalDevice
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,12 +15,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.dzirent.shared.platform.SettingsStorage
+import com.dzirent.shared.model.NotificationSettings
 import com.dzirent.shared.model.Profile
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.util.DISTANCE_STEPS
@@ -34,7 +38,8 @@ private const val PASSWORD_MIN = 6
 
 /**
  * Sidebar > Settings, as a grouped list: Appearance, Preferences (saved on the device and
- * applied at once), Location, Privacy & safety, Account, About, then Sign out.
+ * applied at once), Notifications (saved to the account), Location, Privacy & safety,
+ * Account, About, then Sign out.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,6 +141,11 @@ fun SettingsScreen(
                 onSelect = { scope.launch { settingsStore?.setDefaultDistanceStep(it) } }
             )
 
+            if (profile != null) {
+                SettingsGroup("Notifications")
+                NotificationSettingsSection(repository)
+            }
+
             SettingsGroup("Location")
             SettingsRow(
                 title = "Update location",
@@ -181,6 +191,8 @@ fun SettingsScreen(
                         isSigningOut = true
                         error = null
                         try {
+                            // Needs the session, so before signing out.
+                            stopPush(repository, device.push)
                             repository.signOut()
                             onSignOut()
                         } catch (e: Exception) {
@@ -270,6 +282,91 @@ private fun <T> ChoiceSetting(
     }
 }
 
+/**
+ * Settings > Notifications, saved to the account. Messages covers new messages, new chats and
+ * date changes. Message text stays out of notifications unless turned on. When the phone
+ * blocks Dzirent's notifications, turning Messages on asks the phone (or opens its settings).
+ */
+@Composable
+private fun NotificationSettingsSection(repository: DzirentRepository) {
+    val scope = rememberCoroutineScope()
+    val device = LocalDevice.current
+    var saved by remember { mutableStateOf<NotificationSettings?>(null) }
+    var loadFailed by remember { mutableStateOf(false) }
+    var phoneAllows by remember { mutableStateOf(device.push.canNotify()) }
+    val turnOn = rememberTurnOnNotifications { phoneAllows = it }
+
+    LaunchedEffect(Unit) {
+        runCatching { repository.getNotificationSettings() }
+            .onSuccess { saved = it }
+            .onFailure { loadFailed = true }
+    }
+    // Back from the phone's settings: show what it allows now.
+    LifecycleResumeEffect(Unit) {
+        phoneAllows = device.push.canNotify()
+        onPauseOrDispose { }
+    }
+
+    fun save(updated: NotificationSettings) {
+        val before = saved ?: return
+        saved = updated
+        scope.launch {
+            try {
+                repository.saveNotificationSettings(updated)
+            } catch (e: Exception) {
+                saved = before
+                device.toast(e.userMessage("Couldn't save your notification settings. Please try again."))
+            }
+        }
+    }
+
+    val current = saved
+    SwitchSetting(
+        title = "Messages",
+        subtitle = when {
+            current == null -> if (loadFailed) "Couldn't load. Open Settings again to retry." else "Loading..."
+            current.messages && !phoneAllows -> "Off in your phone's settings. Tap to turn on."
+            else -> "New messages, new chats and date changes"
+        },
+        checked = current?.messages == true && phoneAllows,
+        enabled = current != null,
+        onCheckedChange = { on ->
+            if (current != null) {
+                if (!on) {
+                    save(current.copy(messages = false))
+                } else {
+                    if (!current.messages) save(current.copy(messages = true))
+                    if (!phoneAllows) turnOn()
+                }
+            }
+        }
+    )
+    SwitchSetting(
+        title = "Show message text",
+        subtitle = "Show what they wrote in notifications, also on the lock screen",
+        checked = current?.showMessageText == true,
+        enabled = current?.messages == true,
+        onCheckedChange = { on -> current?.let { save(it.copy(showMessageText = on)) } }
+    )
+}
+
+/** An on/off setting; tapping anywhere on the row switches it. */
+@Composable
+private fun SwitchSetting(
+    title: String,
+    subtitle: String?,
+    checked: Boolean,
+    enabled: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = subtitle?.let { { Text(it) } },
+        trailingContent = { Switch(checked = checked, onCheckedChange = null, enabled = enabled) },
+        modifier = Modifier.toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange)
+    )
+}
+
 /** Current password plus a new one. Checking the current one proves it's the owner. */
 @Composable
 private fun ChangePasswordDialog(
@@ -349,6 +446,7 @@ private fun DeleteAccountDialog(
     onDeleted: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val device = LocalDevice.current
     var typed by remember { mutableStateOf("") }
     var isDeleting by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -365,6 +463,8 @@ private fun DeleteAccountDialog(
             error = null
             try {
                 repository.deleteAccount()
+                // The account's tokens went with it; this phone also forgets its own.
+                stopPush(repository, device.push)
                 // The server session is gone with the user; this clears the one on the device.
                 runCatching { repository.signOut() }
                 onDeleted()

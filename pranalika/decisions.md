@@ -77,3 +77,9 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 ## Website UI (2026-11-03)
 
 - The website and the apps may differ in UI. Features and workflows stay the same.
+
+## Notifications (2026-11-03)
+
+- All push notifications go through Firebase Cloud Messaging (Firebase project `dzirent-17c88`). The database decides when one is due and the `send-push` Edge Function delivers it. Apps never send pushes.
+- Lock screens show no message text unless the user turns on "Show message text" in Settings > Notifications (off by default).
+- Rental reminders wait for a decision on a "confirm rental" step.

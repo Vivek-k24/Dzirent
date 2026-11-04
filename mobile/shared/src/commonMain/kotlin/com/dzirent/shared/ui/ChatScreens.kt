@@ -23,6 +23,7 @@ import com.dzirent.shared.platform.LocalDevice
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.dzirent.shared.model.*
 import com.dzirent.shared.repository.CANT_MESSAGE_USER
 import com.dzirent.shared.repository.ChatSubscription
@@ -276,6 +277,15 @@ fun ChatScreen(
     val device = LocalDevice.current
     val safetyTips = remember { SafetyTipStore(device.prefs) }
     var showSafetyTip by remember(conversationId) { mutableStateOf(!safetyTips.isDismissed(conversationId)) }
+    val notificationPrompt = remember { NotificationPromptStore(device.prefs) }
+    var showNotificationPrompt by remember { mutableStateOf(false) }
+    val turnOnNotifications = rememberTurnOnNotifications { }
+
+    // While this chat is on screen its notifications don't show; it already updates live.
+    LifecycleResumeEffect(conversationId) {
+        device.push.chatShown(conversationId)
+        onPauseOrDispose { device.push.chatHidden(conversationId) }
+    }
 
     var uiState by remember { mutableStateOf<UiState<Conversation>>(UiState.Loading) }
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
@@ -367,6 +377,11 @@ fun ChatScreen(
                 merge(listOf(repository.sendMessage(conversationId, body)))
                 // Keep anything typed while sending; clear only the text we sent.
                 if (input.trim() == body) input = ""
+                // Right after the first message sent on this phone, offer notifications (once).
+                if (!notificationPrompt.asked) {
+                    notificationPrompt.markAsked()
+                    if (!device.push.canNotify()) showNotificationPrompt = true
+                }
                 // A dates question from the renter saves its dates for both people to see.
                 val conv = conversation
                 val asked = datesAsked(body, myDates)
@@ -449,6 +464,16 @@ fun ChatScreen(
                 showRentedPicker = false
                 updateRental("active", range, outcome = true)
             }
+        )
+    }
+
+    if (showNotificationPrompt) {
+        NotificationPromptDialog(
+            onTurnOn = {
+                showNotificationPrompt = false
+                turnOnNotifications()
+            },
+            onDismiss = { showNotificationPrompt = false }
         )
     }
 

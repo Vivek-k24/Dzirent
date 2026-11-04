@@ -30,6 +30,8 @@ coverage/
 .vercel/
 supabase/.temp/
 supabase/.branches/
+# Firebase app config: builds read it from the path in GOOGLE_SERVICES_JSON
+google-services.json
 
 # system files
 .DS_Store
