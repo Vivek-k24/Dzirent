@@ -310,7 +310,82 @@ export function Shell({
     null,
   );
   const [defaults, setDefaults] = useState<Record<string, string>>({});
+  const [desktopFilterOpen, setDesktopFilterOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const unread = useInboxDot(authenticated);
+
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      try {
+        const saved = localStorage.getItem("dzirent-desktop-filter-panel");
+        if (saved !== null) {
+          setDesktopFilterOpen(saved === "true");
+        } else if (pathname === "/") {
+          setDesktopFilterOpen(true);
+        }
+      } catch {}
+    });
+  }, [pathname]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(e.target as Node)
+      ) {
+        setAccountMenuOpen(false);
+      }
+    }
+    if (accountMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [accountMenuOpen]);
+
+  useEffect(() => {
+    if (searchInputRef.current && typeof window !== "undefined") {
+      const qParam = new URLSearchParams(window.location.search).get("q") || "";
+      if (searchInputRef.current.value !== qParam) {
+        searchInputRef.current.value = qParam;
+      }
+    }
+  }, [pathname]);
+
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (val.trim()) {
+        params.set("q", val.trim());
+      } else {
+        params.delete("q");
+      }
+      params.delete("page");
+      const qs = params.toString();
+      router.replace(qs ? `/?${qs}` : "/", { scroll: false });
+    }, 250);
+  }
+
+  function handleSearchSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    const val = searchInputRef.current?.value || "";
+    const params = new URLSearchParams(window.location.search);
+    if (val.trim()) {
+      params.set("q", val.trim());
+    } else {
+      params.delete("q");
+    }
+    params.delete("page");
+    const qs = params.toString();
+    router.push(qs ? `/?${qs}` : "/");
+  }
 
   useEffect(() => {
     if (authenticated && userId) {
@@ -339,11 +414,34 @@ export function Shell({
       window.removeEventListener("dzirent-open-guest-gate", onOpenGate);
     };
   }, [authenticated, userId]);
+  function handleMenuClick() {
+    setDefaults(
+      Object.fromEntries(new URLSearchParams(window.location.search)),
+    );
+    if (typeof window !== "undefined" && window.innerWidth >= 1280) {
+      setDesktopFilterOpen((prev) => {
+        const next = !prev;
+        try {
+          localStorage.setItem("dzirent-desktop-filter-panel", String(next));
+        } catch {}
+        return next;
+      });
+    } else {
+      setFilters(true);
+    }
+  }
   function openFilters() {
     setDefaults(
       Object.fromEntries(new URLSearchParams(window.location.search)),
     );
-    setFilters(true);
+    if (typeof window !== "undefined" && window.innerWidth >= 1280) {
+      setDesktopFilterOpen(true);
+      try {
+        localStorage.setItem("dzirent-desktop-filter-panel", "true");
+      } catch {}
+    } else {
+      setFilters(true);
+    }
   }
   const dateLabel = dateChip(ctx.start, ctx.end);
   async function dismissWelcome(path?: string) {
@@ -376,12 +474,15 @@ export function Shell({
             <div className="top-left">
               <button
                 className="icon-button menu-button"
-                aria-label="Open menu and filters"
-                onClick={openFilters}
+                aria-label={desktopFilterOpen ? "Close filters" : "Open menu and filters"}
+                title="Menu and filters"
+                onClick={handleMenuClick}
               >
                 <Icon name="menu" />
               </button>
-              <span className="desktop-label">Made for your next occasion</span>
+              <Link href="/about#how-it-works" className="how-works-link">
+                How Dzirent works
+              </Link>
             </div>
             <Link href="/" className="brand" aria-label="Dzirent home">
               <Image
@@ -400,75 +501,322 @@ export function Shell({
               />
             </Link>
             <div className="top-right">
-              <button
-                className="location-button"
-                onClick={() => setLocation(true)}
-              >
-                <Icon name="pin" />
-                <span>{ctx.city}</span>
-                <span className="location-change">Change</span>
-              </button>
-              <ThemeToggle />
-              <Link
-                className="icon-button desktop-account"
-                href={authenticated ? "/app/settings" : "/auth"}
-                aria-label={authenticated ? "Your account" : "Sign in"}
-              >
-                <Icon name="user" />
-              </Link>
-            </div>
-          </div>
-          <div className="subbar">
-            <nav aria-label="Main navigation" className="desktop-nav">
-              <Link
-                href="/"
-                aria-current={pathname === "/" ? "page" : undefined}
-              >
-                Discover
-              </Link>
-              <Link
-                href="/search"
-                aria-current={pathname === "/search" ? "page" : undefined}
-              >
-                Search
-              </Link>
               <GatedActionTrigger
-                action="save"
+                action="list"
                 authenticated={authenticated}
-                href="/saved"
+                href="/app/closet"
+                className="icon-button top-action-btn top-closet-btn"
+                title="My closet"
+                aria-label="My closet"
               >
-                Saved
+                <Icon name="hanger" />
               </GatedActionTrigger>
+              <GatedActionTrigger
+                action="list"
+                authenticated={authenticated}
+                href="/app/list-a-piece"
+                className="icon-button top-action-btn top-list-btn"
+                title="List a piece"
+                aria-label="List a piece"
+              >
+                <Icon name="plus" />
+              </GatedActionTrigger>
+              <span className="top-divider" aria-hidden="true" />
               <GatedActionTrigger
                 action="message"
                 authenticated={authenticated}
                 href="/app/messages"
+                className="icon-button top-action-btn top-inbox-btn"
+                title="Inbox"
+                aria-label="Inbox"
               >
-                Inbox{unread && <UnreadDot />}
+                <Icon name="mail" />
+                {unread && <UnreadDot />}
               </GatedActionTrigger>
-              <Link href="/about">About</Link>
-            </nav>
-            <button
-              className={"date-chip " + (ctx.datesActive ? "active" : "")}
-              onClick={() => setDates(true)}
-            >
-              <Icon name="calendar" />
-              {dateLabel}
-              <span className="date-caption">
-                {ctx.datesActive ? "Your dates" : "Choose dates"}
+              <GatedActionTrigger
+                action="save"
+                authenticated={authenticated}
+                href="/saved"
+                className="icon-button top-action-btn top-saved-btn"
+                title="Saved pieces"
+                aria-label="Saved pieces"
+              >
+                <Icon name="bookmark" />
+              </GatedActionTrigger>
+              <div className="account-menu-wrapper" ref={accountMenuRef}>
+                <button
+                  type="button"
+                  className="icon-button top-action-btn top-account-btn"
+                  title={authenticated ? "Your account" : "Sign in"}
+                  aria-label={authenticated ? "Your account" : "Sign in"}
+                  aria-haspopup="menu"
+                  aria-expanded={accountMenuOpen}
+                  onClick={() => setAccountMenuOpen((prev) => !prev)}
+                >
+                  <Icon name="user" />
+                </button>
+                {accountMenuOpen && (
+                  <div className="account-dropdown-menu" role="menu">
+                    {authenticated ? (
+                      <>
+                        <div className="account-dropdown-header">
+                          <strong>{name}</strong>
+                          <small>Your neighborhood wardrobe</small>
+                        </div>
+                        <Link
+                          href="/app/settings"
+                          className="account-dropdown-item"
+                          onClick={() => setAccountMenuOpen(false)}
+                        >
+                          <Icon name="user" />
+                          <span>Profile & settings</span>
+                        </Link>
+                        <form
+                          action={signOut}
+                          onSubmit={() => setAccountMenuOpen(false)}
+                        >
+                          <button
+                            type="submit"
+                            className="account-dropdown-item account-signout"
+                          >
+                            <Icon name="arrow" />
+                            <span>Sign out</span>
+                          </button>
+                        </form>
+                      </>
+                    ) : (
+                      <>
+                        <div className="account-dropdown-header">
+                          <strong>Welcome to Dzirent</strong>
+                          <small>A little more you, with an account</small>
+                        </div>
+                        <Link
+                          href="/auth?mode=signin"
+                          className="account-dropdown-item"
+                          onClick={() => setAccountMenuOpen(false)}
+                        >
+                          <Icon name="user" />
+                          <span>Sign in / sign up</span>
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              <span className="top-theme-btn">
+                <ThemeToggle />
               </span>
-            </button>
-            <GatedActionTrigger
-              action="list"
-              authenticated={authenticated}
-              href="/app/list-a-piece"
-              className="list-link"
-            >
-              <Icon name="plus" /> List a piece
-            </GatedActionTrigger>
+            </div>
+          </div>
+          <div className="search-bar-row">
+            <div className="search-bar-inner">
+              <form
+                action="/"
+                method="GET"
+                className="search-pill"
+                role="search"
+                onSubmit={handleSearchSubmit}
+              >
+                <Icon name="search" />
+                <input
+                  ref={searchInputRef}
+                  id="search-input"
+                  type="search"
+                  name="q"
+                  placeholder="Search pieces, styles, occasions..."
+                  defaultValue=""
+                  onChange={handleSearchChange}
+                  aria-label="Search pieces, styles, occasions"
+                />
+              </form>
+              <div className="search-bar-actions">
+                <button
+                  type="button"
+                  className={"date-chip " + (ctx.datesActive ? "active" : "")}
+                  onClick={() => setDates(true)}
+                  title="Choose dates"
+                  aria-label="Choose dates"
+                >
+                  <Icon name="calendar" />
+                  <span>{dateLabel}</span>
+                  <span className="date-caption">
+                    {ctx.datesActive ? "Your dates" : "Choose dates"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="location-button"
+                  onClick={() => setLocation(true)}
+                  title="Change location"
+                  aria-label="Change location"
+                >
+                  <Icon name="pin" />
+                  <span>{ctx.city}</span>
+                  <span className="location-change">Change</span>
+                </button>
+              </div>
+            </div>
           </div>
         </header>
-        <main id="main">{children}</main>
+        <div className={"site-body" + (desktopFilterOpen ? " filter-open" : "")}>
+          <aside
+            className={
+              "desktop-docked-panel " + (desktopFilterOpen ? "open" : "closed")
+            }
+            aria-label="Filters"
+          >
+            <div className="docked-panel-inner">
+              <div className="docked-panel-top">
+                <h3 className="filter-heading">
+                  <Icon name="filter" /> All categories
+                </h3>
+                <button
+                  type="button"
+                  className="icon-button panel-close-btn"
+                  title="Close filter panel"
+                  aria-label="Close filter panel"
+                  onClick={() => {
+                    setDesktopFilterOpen(false);
+                    try {
+                      localStorage.setItem(
+                        "dzirent-desktop-filter-panel",
+                        "false",
+                      );
+                    } catch {}
+                  }}
+                >
+                  <Icon name="close" />
+                </button>
+              </div>
+              <form action="/" className="filter-form">
+                <input
+                  type="hidden"
+                  name="q"
+                  value={defaults.q || ""}
+                />
+                <input type="hidden" name="sort" value={defaults.sort || ""} />
+                <label className="field">
+                  <span>Category</span>
+                  <select
+                    name="category"
+                    defaultValue={defaults.category || ""}
+                  >
+                    <option value="">All categories</option>
+                    {categories.map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="form-pair">
+                  <label className="field">
+                    <span>Size</span>
+                    <select name="size" defaultValue={defaults.size || ""}>
+                      <option value="">Any size</option>
+                      {["XS", "S", "M", "L", "XL", "XXL", "One Size"].map(
+                        (s) => (
+                          <option key={s}>{s}</option>
+                        ),
+                      )}
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>Distance</span>
+                    <select
+                      name="radius"
+                      defaultValue={defaults.radius || String(ctx.radiusMiles)}
+                    >
+                      <option value="any">Any distance</option>
+                      {(ctx.distanceUnit === "km"
+                        ? [2, 5, 10, 25, 50, 100]
+                        : [1, 3, 5, 15, 25, 50, 100]
+                      ).map((n) => (
+                        <option
+                          key={n}
+                          value={ctx.distanceUnit === "km" ? n / 1.609344 : n}
+                        >
+                          {n} {ctx.distanceUnit}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <div className="form-pair">
+                  <label className="field">
+                    <span>Min price ($)</span>
+                    <input
+                      name="min"
+                      type="number"
+                      min="0"
+                      defaultValue={defaults.min}
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Max price ($)</span>
+                    <input
+                      name="max"
+                      type="number"
+                      min="0"
+                      defaultValue={defaults.max}
+                    />
+                  </label>
+                </div>
+                <label className="field">
+                  <span>Style</span>
+                  <select name="style" defaultValue={defaults.style || ""}>
+                    <option value="">All styles</option>
+                    {styles.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="field">
+                  <span>Garment</span>
+                  <select name="garment" defaultValue={defaults.garment || ""}>
+                    <option value="">All pieces</option>
+                    {[
+                      "top",
+                      "trousers",
+                      "suit",
+                      "dress",
+                      "skirt",
+                      "saree",
+                      "one_size",
+                    ].map((s) => (
+                      <option key={s} value={s}>
+                        {s.replace("_", " ")}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="field">
+                  <span>Accessory type</span>
+                  <select name="item" defaultValue={defaults.item || ""}>
+                    <option value="">All accessories</option>
+                    {[
+                      "Sunglasses",
+                      "Handbag",
+                      "Tie",
+                      "Watch (non-smart)",
+                      "Belt buckle",
+                      "Costume jewelry",
+                    ].map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="button-row">
+                  <button className="button">
+                    Show pieces <Icon name="arrow" />
+                  </button>
+                  <Link href="/" className="button secondary">
+                    Reset
+                  </Link>
+                </div>
+              </form>
+            </div>
+          </aside>
+          <main id="main">{children}</main>
+        </div>
         <footer>
           <div className="footer-inner">
             <div>
@@ -499,54 +847,6 @@ export function Shell({
             <span>Good pieces. More possibilities.</span>
           </div>
         </footer>
-        <nav className="bottom-nav" aria-label="Mobile navigation">
-          <Link
-            href="/"
-            className={pathname === "/" ? "current" : ""}
-            aria-current={pathname === "/" ? "page" : undefined}
-          >
-            <Icon name="home" />
-            <span>Home</span>
-          </Link>
-          <GatedActionTrigger
-            action="message"
-            authenticated={authenticated}
-            href="/app/messages"
-            className={pathname === "/app/messages" ? "current" : ""}
-          >
-            <Icon name="message" />
-            {unread && <UnreadDot />}
-            <span>Inbox</span>
-          </GatedActionTrigger>
-          <Link
-            href="/search"
-            className={
-              "center-search " + (pathname === "/search" ? "current" : "")
-            }
-            aria-current={pathname === "/search" ? "page" : undefined}
-          >
-            <Icon name="search" />
-            <span>Search</span>
-          </Link>
-          <GatedActionTrigger
-            action="list"
-            authenticated={authenticated}
-            href="/app/closet"
-            className={pathname === "/app/closet" ? "current" : ""}
-          >
-            <Icon name="closet" />
-            <span>Closet</span>
-          </GatedActionTrigger>
-          <GatedActionTrigger
-            action="save"
-            authenticated={authenticated}
-            href="/saved"
-            className={pathname === "/saved" ? "current" : ""}
-          >
-            <Icon name="bookmark" />
-            <span>Saved</span>
-          </GatedActionTrigger>
-        </nav>
         {location && <LocationPicker onClose={() => setLocation(false)} />}
         {dates && <DatePicker ctx={ctx} onClose={() => setDates(false)} />}
         {filters && (
@@ -592,6 +892,24 @@ export function Shell({
                 <Icon name="chevron" />
               </GatedActionTrigger>
               <GatedActionTrigger
+                action="save"
+                authenticated={authenticated}
+                href="/saved"
+                onClick={() => setFilters(false)}
+              >
+                Saved pieces
+                <Icon name="chevron" />
+              </GatedActionTrigger>
+              <GatedActionTrigger
+                action="list"
+                authenticated={authenticated}
+                href="/app/list-a-piece"
+                onClick={() => setFilters(false)}
+              >
+                List a piece
+                <Icon name="chevron" />
+              </GatedActionTrigger>
+              <GatedActionTrigger
                 action="list"
                 authenticated={authenticated}
                 href="/app/closet"
@@ -600,16 +918,56 @@ export function Shell({
                 My closet
                 <Icon name="chevron" />
               </GatedActionTrigger>
+              <Link
+                href="/about#how-it-works"
+                onClick={() => setFilters(false)}
+              >
+                How Dzirent works
+                <Icon name="chevron" />
+              </Link>
             </nav>
+            <div className="drawer-theme-row">
+              <span>Theme</span>
+              <ThemeToggle />
+            </div>
+            <div className="drawer-context-row">
+              <button
+                type="button"
+                className={"date-chip " + (ctx.datesActive ? "active" : "")}
+                onClick={() => {
+                  setFilters(false);
+                  setDates(true);
+                }}
+              >
+                <Icon name="calendar" />
+                <span>{dateLabel}</span>
+              </button>
+              <button
+                type="button"
+                className="location-button"
+                onClick={() => {
+                  setFilters(false);
+                  setLocation(true);
+                }}
+              >
+                <Icon name="pin" />
+                <span>{ctx.city}</span>
+                <span className="location-change">Change</span>
+              </button>
+            </div>
             <h3 className="filter-heading">
               <Icon name="filter" /> All categories
             </h3>
             <form
-              action="/search"
+              action="/"
               onSubmit={() => setFilters(false)}
               className="filter-form"
             >
-              <input type="hidden" name="q" value={defaults.q || ""} />
+              <input
+                type="hidden"
+                name="q"
+                value={defaults.q || ""}
+              />
               <input type="hidden" name="sort" value={defaults.sort || ""} />
               <label className="field">
                 <span>Category</span>
@@ -720,7 +1078,7 @@ export function Shell({
                   Show pieces <Icon name="arrow" />
                 </button>
                 <Link
-                  href="/search"
+                  href="/"
                   className="button secondary"
                   onClick={() => setFilters(false)}
                 >

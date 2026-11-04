@@ -73,3 +73,7 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - V1.0: the reference app's features exactly, nothing new.
 - V1.1: multiple availability date ranges per listing, notifications.
 - V2.0: one-time ID verification, before the public launch.
+
+## Website UI (2026-11-03)
+
+- The website and the apps may differ in UI. Features and workflows stay the same.

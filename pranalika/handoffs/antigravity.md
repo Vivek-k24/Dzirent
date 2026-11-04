@@ -2,6 +2,162 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 2F - 2026-11-03 - My closet in the top bar
+
+- What was done:
+  - Desktop top bar:
+    - Added "My closet" button (`top-closet-btn`) as the first icon on the right side of the desktop top bar, using the existing `hanger` icon from `components/icon.tsx`.
+    - Configured hover label (`title="My closet"`) and accessible name (`aria-label="My closet"`).
+    - Wrapped with `GatedActionTrigger` (`action="list"`, `href="/app/closet"`), ensuring unauthenticated guests receive the standard sign-up modal like Inbox and Saved.
+    - Added a thin vertical divider (`top-divider`) between "List a piece" and "Inbox", styled with `width: 1px; height: 20px; background: var(--line);` matching the site's border color in both light (`#e6e6e6`) and dark (`#383838`) themes.
+    - Established new right-side top bar order: My closet (`hanger`), List a piece (`+`), vertical divider, Inbox (`mail`), Saved (`bookmark`), Account (`user`), Theme switch (`ThemeToggle`).
+  - Account menu:
+    - Removed "My closet" from both authenticated and guest dropdown views. Retained "Profile & settings" and "Sign out" for authenticated users, and "Sign in / sign up" for guests.
+  - Phones & narrow viewports:
+    - Preserved phone top-bar row layout without change by hiding `.top-closet-btn` and `.top-divider` on screens <= 760px (`display: none !important`).
+    - Verified "My closet" remains in the mobile slide-in drawer (`.modal.drawer`) so it is fully reachable on phones.
+  - Onboarding & documentation:
+    - Updated onboarding tour selector for the Closet step to include `.top-closet-btn`.
+    - Updated `pranalika/BOARD.md` marking Step 2F Done.
+
+- Files changed:
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/components/onboarding.tsx`
+  - `apps/web/src/components/shell.tsx`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+
+- Commands run & verified:
+  - `$env:PATH = "H:\DziRent\Dzirent_dev\.tools\node-v22.23.3-win-x64;" + $env:PATH`
+  - `npm ci` in `apps/web` (Node 22): passed clean.
+  - `npm run lint` in `apps/web`: passed clean (0 errors, 0 warnings).
+  - `npm run build` in `apps/web`: passed clean (all static and dynamic routes compiled).
+  - Started Next.js production server on port 3003 with `H:\DziRent\secrets\dzirent-server.env` variables.
+  - Automated verification script:
+    - Verified top-bar icon sequence: My closet -> List a piece -> Divider -> Inbox -> Saved -> Account -> Theme.
+    - Verified "My closet" hover title and aria-label.
+    - Verified account dropdown does not contain "My closet".
+    - Verified mobile drawer contains "My closet".
+    - Verified CSS divider styling with `var(--line)` and mobile display:none rules.
+    - Verified HTTP 200 response on `/`.
+
+- Open issues:
+  - None.
+
+## Step 2E - 2026-11-03 - docked filter panel
+
+- What was done:
+  - Desktop docked filter panel (>= 1280px):
+    - Added `<aside className={"desktop-docked-panel " + (desktopFilterOpen ? "open" : "closed")} aria-label="Filters">` docked inside `<div className={"site-body" + (desktopFilterOpen ? " filter-open" : "")}>` adjacent to `<main id="main">`.
+    - Left panel holds filters only: "All categories" heading, close button, Category, Size, Distance, Min/Max price, Style, Garment, Accessory, "Show pieces" submit, and "Reset" link.
+    - Excluded from the panel all top-bar items: Sign in / sign up, Inbox, Saved pieces, List a piece, How Dzirent works, Theme switch, date chip, location picker.
+    - Not a modal: no backdrop or dimming overlay; the page behind remains scrollable and clickable. Main content dynamically shifts alongside it.
+    - Sticky below the header (`top: 130px`) and self-scrolling (`height: calc(100vh - 145px); overflow-y: auto`).
+    - Hamburger button toggles the docked panel on desktop (>= 1280px). Defaults to open on the Discover page (`/`), and remembers the user's open/closed choice in `localStorage["dzirent-desktop-filter-panel"]`.
+  - Account icon dropdown menu:
+    - Replaced the direct Account icon link with an accessible dropdown menu (`.account-dropdown-menu`) triggered by clicking the Account button (`aria-haspopup="menu"`, `aria-expanded`).
+    - Includes click-outside dismissal and route-change closure.
+    - When authenticated: displays user name with subline, "Profile & settings" (`/app/settings`), "My closet" (`/app/closet`), and "Sign out" (server action button).
+    - When guest: displays "Welcome to Dzirent" greeting, "Sign in / sign up" (`/auth?mode=signin`), and "My closet" (wrapped in `GatedActionTrigger` with `action="list"`).
+  - Mobile & narrow screens (< 1280px):
+    - Preserved existing slide-in drawer (`.modal.drawer`) with all navigation links (Profile/Sign in, Inbox, Saved pieces, List a piece, My closet, How it works, Rental guidelines, Theme toggle, Sign out, and filter form).
+    - Hidden on desktop via `@media(min-width: 1280px) { .modal.drawer { display: none !important; } }`.
+    - Hamburger button opens drawer modal on mobile (< 1280px).
+  - Discover home page:
+    - Removed `<span className="result-count">{cards.length} pieces to explore</span>` from `apps/web/src/app/page.tsx`.
+    - Retained result counts where required: search query results (`isSearching === true`), studio pages, Saved, and My closet.
+  - Board & documentation:
+    - Updated `pranalika/BOARD.md` marking Step 2E Done.
+
+- Files changed:
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/app/page.tsx`
+  - `apps/web/src/components/shell.tsx`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+
+- Commands run & verified:
+  - `$env:PATH = "H:\DziRent\Dzirent_dev\.tools\node-v22.23.3-win-x64;" + $env:PATH`
+  - `npm run lint` in `apps/web`: passed with 0 errors and 0 warnings.
+  - `npm run build` in `apps/web`: passed with 0 errors (all routes generated).
+  - Loaded `H:\DziRent\secrets\dzirent-server.env` and started Next.js production server on port 3002.
+  - HTTP checks via Node script:
+    - Confirmed Discover page (`/`) HTML does not contain "pieces to explore".
+    - Confirmed `.desktop-docked-panel` is present in HTML next to `main#main`.
+    - Confirmed `.account-menu-wrapper` is present in header HTML.
+    - Confirmed `.desktop-docked-panel` contains only filters and none of the top-bar navigation items.
+    - Confirmed search queries (`/?q=linen`) preserve result indicators.
+    - Confirmed HTTP 200 response on `/`.
+
+- Open issues:
+  - None.
+
+## Step 2D - 2026-11-03 - website layout redesign
+
+- Step 0 recovery findings & actions:
+  - Fetched origin: local branch was 3 commits behind `origin/Preview` with staged changes in `apps/web/src/components/local-preferences.tsx` and `shell.tsx`.
+  - Verified with `git diff --cached origin/Preview` that staged files had no changes beyond what already existed on `origin/Preview` (commit `dd6f82e`).
+  - Discarded stale staged files with `git restore --staged --worktree apps/web/src/components/local-preferences.tsx apps/web/src/components/shell.tsx`.
+  - Rebased onto `origin/Preview` (`git pull --rebase origin Preview`), reaching clean working tree at commit `dd6f82e`.
+  - Inspected `git log --oneline origin/Preview..origin/main`: verified all 5 commits were standard PR merges.
+
+- What was done:
+  - Documentation & decisions:
+    - Added 3 rules to `pranalika/README.md` (owner does not run local commands, never replace whole file with older version, handoffs state only what was actually run and verified).
+    - Appended decision in `pranalika/decisions.md` under `## Website UI (2026-11-03)`: "The website and the apps may differ in UI. Features and workflows stay the same."
+    - Updated `pranalika/BOARD.md` marking Step 2D Done.
+  - Top bar redesign (desktop):
+    - Row 1 left: Hamburger button (`openFilters`) and "How Dzirent works" link (`/about#how-it-works`). Removed "Made for your next occasion".
+    - Row 1 center: DZIRENT logo (`/`).
+    - Row 1 right: Icons only, each with hover label (`title`) and accessible name (`aria-label`): List a piece (`+`), Inbox (mail envelope icon with unread dot, slightly larger than others), Saved (`bookmark`), Account (`user`), and ThemeToggle.
+    - Row 2: Pill-shaped search bar centered below the logo with date chip and dynamic `{ctx.city} · Change` button beside it.
+  - Phones / mobile layout:
+    - Top row keeps only hamburger, logo, Inbox (mail icon with unread dot), and Account.
+    - Search pill is 100% full width below.
+    - Saved, List a piece, How Dzirent works, and theme switch moved into the left sidebar.
+    - Entirely removed the tab bar (`.subbar .desktop-nav` and mobile `.bottom-nav`).
+  - Left sidebar (drawer):
+    - Configured `.modal.drawer` to open from the LEFT (`left: 0; right: auto;`).
+    - Added drawer navigation links for Saved pieces, List a piece, My closet, and How Dzirent works, plus Theme switch row and date/location controls.
+    - Filter form submits to `/` and Reset links to `/`.
+  - In-place search & Discover home page:
+    - In `page.tsx`, typing in search pill or applying filters displays search results in place on the home page with result count and `SortDropdown`.
+    - Discover view shows standard rows and explore tabs; Sort appears ONLY when displaying search results.
+    - Removed small text "Pieces with a story. Ready for yours."
+    - Footnote "Local closets. More possibilities." enlarged 4px on desktop (14px) and 2px on phones (9px).
+    - `/search` redirects to `/?...` preserving any search query parameters.
+  - Guest gate fixes:
+    - Restored style reset on `GatedActionTrigger` button (`background: none`, `border: none`, `padding: 0`, `font: inherit`, `color: inherit`, `cursor: pointer`, `textAlign: inherit`) preventing default browser grey box rendering.
+    - Added native `close` and `cancel` listeners on `<dialog>` in `GuestGateDialog` ensuring `onClose()` reliably executes and resets `guestGateAction` to `null` so gated buttons immediately re-open on subsequent clicks.
+  - Added Lucide/Feather `mail` envelope icon in `icon.tsx`.
+  - Updated `onboarding.tsx` guide selectors to match the redesigned top bar.
+
+- Files changed:
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/app/page.tsx`
+  - `apps/web/src/app/search/page.tsx`
+  - `apps/web/src/components/cards.tsx`
+  - `apps/web/src/components/guest-gate.tsx`
+  - `apps/web/src/components/icon.tsx`
+  - `apps/web/src/components/onboarding.tsx`
+  - `apps/web/src/components/shell.tsx`
+  - `apps/web/src/components/sort-dropdown.tsx`
+  - `pranalika/README.md`
+  - `pranalika/decisions.md`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+
+- What was actually run and verified:
+  - `npm run lint` in `apps/web` with Node 22: passed with 0 errors.
+  - `npm run build` in `apps/web` with Node 22: compiled successfully with Turbopack, passed TypeScript checks with 0 errors, generated all static/dynamic routes.
+  - Started local Next.js server with secrets loaded from `H:\DziRent\secrets\dzirent-server.env`:
+    - Verified Discover page (`/`): returns HTTP 200, contains "How Dzirent works", removes "Made for your next occasion", removes "Pieces with a story. Ready for yours.", displays "Local closets. More possibilities.", renders top bar icons (`top-list-btn`, `top-inbox-btn`, `top-saved-btn`, `top-account-btn`, ThemeToggle) with accessible names and hover labels, renders centered `search-pill`, has no `.desktop-nav` or `.bottom-nav`, and does not render `sort-form`.
+    - Verified search results (`/?q=dress`): returns HTTP 200, displays search heading "A little closer to “dress”", renders `sort-form` with newest/nearest/price options, displays filter controls and matching pieces grid.
+    - Verified `/search?q=dress`: correctly redirects to `/?q=dress`.
+
+- Open issues:
+  - None.
+
 ## Sample photos - 2026-11-02
 
 - What was done:

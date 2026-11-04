@@ -44,7 +44,7 @@ export function PieceGrid({ cards }: { cards: Card[] }) {
     <Empty
       title="Nothing here just yet"
       text="Try a different date range or a wider search. Your next favorite piece could be close by."
-      href="/search"
+      href="/"
       label="Explore pieces"
     />
   );
