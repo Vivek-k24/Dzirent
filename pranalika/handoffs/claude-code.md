@@ -2,6 +2,33 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 5D - 2026-11-04 - Android check and top padding
+
+Done:
+- Before starting: working tree clean. Pulled `Preview` (fast-forward to `c754168`, the 5C `ios01` merge).
+- Top padding on Android: `androidMain/ui/BackHandler.android.kt`. `consumeScaffoldInsets(padding)` now returns `consumeWindowInsets(padding)`, the same as iosMain. Before, it returned the modifier unchanged. This is the only code change.
+  - The NavHost already gets `padding(innerPadding)` from the outer Scaffold. Each screen's `TopAppBar` now no longer adds the status bar inset a second time.
+- Nothing else changed. `PlatformNavigationBackHandler` on Android is still a no-op, and no commonMain or iosMain files were touched.
+  - The commonMain `expect` comment in `MainAppScaffold.kt` still says "Android: unchanged (returns this modifier)". It's out of date now, but commonMain was off-limits because the build wasn't broken.
+
+What I ran:
+- `.\gradlew.bat :androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, `GOOGLE_SERVICES_JSON` and the server env loaded), with the fix in place: BUILD SUCCESSFUL. 13 tests in 5 classes, 0 failures, 0 errors, 0 skipped.
+- I didn't build the merge without the fix first. The 5C Android actuals compiled together with the fix in this one build.
+- No emulator, device or screenshots.
+
+Debug APK: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk` (local build, not committed).
+
+Owner phone check:
+- The fix is only visible where the app draws behind the status bar. That is always the case on Android 15+, because targetSdk 36 forces edge to edge. The app has no `enableEdgeToEdge()` call, so on older Android the insets may be zero there and nothing changes.
+- Pages with their own top bar should now have their title right under the status bar, at the same height as the Home title, with no empty band above it: Listing Details, See all, Settings, About, Licenses, Chat, Measurements, My studio, Studio page, Moderation (blocked users), Policy pages, the listing editor and the accessory declaration.
+- Should be unchanged:
+  - Home and the welcome and sign-in pages.
+  - The bottom bar, and the bottom of scrolling pages above the navigation bar or gesture bar. The consumed padding also includes the bottom, so check that nothing is now hidden under the bottom bar, for example on Chat (the message box) and the listing editor's bottom buttons.
+
+Open issues:
+- Not seen on a phone yet (above).
+- The stale `expect` comment in commonMain `MainAppScaffold.kt` (above).
+
 ## Step 5C - 2026-11-04 - iPhone polish
 
 Branch: `ios01` only. Before starting I switched to `ios01` and pulled `Preview` (fast-forward to `95ddbfe`, 5B); the tree was clean. Kotlin and Compose Multiplatform weren't upgraded.
