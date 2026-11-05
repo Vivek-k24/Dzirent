@@ -173,6 +173,7 @@ fun AuthNavHost(
 ) {
     val authNavController = rememberNavController()
 
+    PlatformNavigationBackHandler(authNavController)
     NavHost(
         navController = authNavController,
         startDestination = startDestination

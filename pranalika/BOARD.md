@@ -97,6 +97,9 @@ Status: `To do` / `Doing` / `Done`. The owner assigns each step to an agent. The
 | iOS push (needs a paid Apple Developer account) | To do |
 | Owner: merge `ios01` into `Preview` | Done (PR #94) |
 | 5B Android check after the iOS merge (debug APK builds, shared unit tests pass) and date changes refused between blocked users | Done |
+| 5C iPhone polish (Claude Code, `ios01`): swipe back from the left edge, status bar follows the in-app theme, no gap under the status bar on top-bar pages | Done |
+| Owner: Android build check of the 5C `commonMain` hooks (see the 5C handoff), then merge `ios01` into `Preview` | To do |
+| `iosSimulatorArm64Test` sign-in test fails on Simulator TLS trust in the agent environment (12 of 13 pass) | To do |
 
 ## Step 6 - Switchover
 

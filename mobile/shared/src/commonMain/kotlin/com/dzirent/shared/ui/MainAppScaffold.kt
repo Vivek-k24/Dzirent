@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -344,10 +345,11 @@ fun MainAppScaffold(
                         }
                     }
                 ) { innerPadding ->
+                    PlatformNavigationBackHandler(navController)
                     NavHost(
                         navController = navController,
                         startDestination = TabHome.route,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(innerPadding).consumeScaffoldInsets(innerPadding)
                     ) {
                         composable("home") {
                             HomeScreen(
@@ -651,6 +653,19 @@ private fun RowScope.SearchTabButton(onClick: () -> Unit) {
     }
 }
 
-/** System Back while [enabled] (Android's back gesture; iOS has none). */
+/** System Back while [enabled] (Android's back gesture; iOS's swipe from the left edge). */
 @Composable
 expect fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit)
+
+/**
+ * System Back pops [navController] while it has somewhere to go back to. Android's NavHost does
+ * this itself (no-op there); iOS wires it to the edge swipe.
+ */
+@Composable
+expect fun PlatformNavigationBackHandler(navController: NavHostController)
+
+/**
+ * iOS: the Scaffold's padding counts as used, so a screen's own TopAppBar doesn't add the status
+ * bar inset a second time. Android: unchanged (returns this modifier).
+ */
+expect fun Modifier.consumeScaffoldInsets(padding: PaddingValues): Modifier

@@ -2,6 +2,83 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 5C - 2026-11-04 - iPhone polish
+
+Branch: `ios01` only. Before starting I switched to `ios01` and pulled `Preview` (fast-forward to `95ddbfe`, 5B); the tree was clean. Kotlin and Compose Multiplatform weren't upgraded.
+
+Done:
+- Swipe back (`e70ee50`, final version `0f8e4ec`):
+  - A drag that starts within 24 pt of the left screen edge and moves right goes Back once it reaches 80 pt (or a quick flick past 24 pt). It goes to the same place as the on-screen back arrow, through the same `popBackStack()`.
+  - `iosMain/ui/BackHandler.ios.kt`:
+    - `IosBackDispatcher`: the most recently added enabled handler wins, as on Android.
+    - `PlatformBackHandler` (drawer, guide) registers with the dispatcher.
+    - `PlatformNavigationBackHandler`: Back pops the stack while there's an earlier screen.
+  - The gesture is a Compose modifier (`edgeSwipeBack`) on the app root in `MainViewController`.
+    - It looks at touches before the screens do and takes the drag only once it's clearly a rightward swipe from the edge. Taps, vertical scrolls and drags that start away from the edge pass through.
+    - It does nothing when nothing is enabled (root screens).
+    - Dialogs are separate Compose layers, so it never acts underneath one.
+    - My first two versions used UIKit gesture recognizers on the Compose view (a screen-edge recognizer, then a plain pan restricted to the edge). Neither ever fired in the Simulator, with or without simultaneous recognition, so I moved the gesture into Compose.
+  - Both NavHosts are wired: the main app's and the sign-in flow's.
+- Status bar (`48ec1ca`): `iosMain/ui/theme/Theme.ios.kt` adds `StatusBarFollowsTheme`, called from `MainViewController`.
+  - It sets the window's appearance from the in-app theme: Light to light, Dark to dark, System to unspecified, so System keeps following the phone.
+  - The app sits inside SwiftUI's hosting controller, which ignores a child's status bar style. The window appearance is what the status bar follows, and it updates when the theme changes.
+  - Side effect: system sheets (photo picker, camera, share) also follow the in-app theme.
+  - `SystemBarIcons` stays a no-op on iOS (comment updated).
+- Top gap (`e792c20`):
+  - Cause: the outer `Scaffold` in `MainAppScaffold` padded the `NavHost` for the status bar, and each screen's own `TopAppBar` added the status bar inset again.
+  - This affected every page inside the NavHost that has a `TopAppBar`: Listing Details, See all, Settings, About, Licenses, Chat, Measurements, My studio, Studio, Moderation, Policy, the listing editor and the accessory declaration.
+  - Fix: the NavHost marks the Scaffold padding as used (`consumeWindowInsets`) on iOS, so those top bars sit right under the status bar. Home and pages outside the NavHost (welcome, sign-in) were already right and are unchanged.
+- `IosSignInTest` now calls supabase-kt directly, so a failure reports the real error instead of the app's "Couldn't log in".
+
+commonMain changes (Android behavior identical; please build-check Android on Windows):
+- `ui/MainAppScaffold.kt`:
+  - Calls `PlatformNavigationBackHandler(navController)` just before the `NavHost`.
+  - The `NavHost` modifier is now `Modifier.padding(innerPadding).consumeScaffoldInsets(innerPadding)`.
+  - Two new `expect` declarations next to `PlatformBackHandler`: `PlatformNavigationBackHandler(NavHostController)` and `Modifier.consumeScaffoldInsets(PaddingValues)`.
+- `ui/DzirentApp.kt`: `PlatformNavigationBackHandler(authNavController)` just before the auth `NavHost`.
+- `androidMain/ui/BackHandler.android.kt`: the Android actuals are no-ops. `PlatformNavigationBackHandler` returns `Unit` (NavHost already handles system Back) and `consumeScaffoldInsets` returns the modifier unchanged.
+- Note for Android: the same doubled top inset is probably there too (smaller, since Android's status bar is shorter). I left it unchanged as asked. Making the Android `consumeScaffoldInsets` actual `consumeWindowInsets(padding)` would fix it the same way.
+
+What I ran:
+- `./gradlew :shared:compileKotlinIosSimulatorArm64` after each item and after each fix: BUILD SUCCESSFUL, with no warnings in iosMain at the end.
+- `./gradlew :shared:iosSimulatorArm64Test`, with the test-user variables passed as `SIMCTL_CHILD_*`, run twice:
+  - `simctl spawn` is no longer blocked, and the tests ran. 12 of 13 passed: `ChatPushTest` 2, `GuestGateTest` 2, `ListingValidationTest` 4, `ModelTest` 4.
+  - `IosSignInTest` failed both times on `NSURLErrorDomain -1202` / `errSSLXCertChainInvalid (-9807)`: "The certificate for this server is invalid" for `pwfzkyjeivadbtkfkdxr.supabase.co`.
+  - From the host, the same server presents a valid Google Trust Services (WE1) chain (`openssl s_client`), and inside the app on the same Simulator HTTPS works (listings, photos, sign-in session).
+  - So the bare test binary started by `simctl spawn` can't validate the chain in this environment. I couldn't fix that from here.
+- Clean `xcodebuild ... clean build` for the iPhone 18 Pro simulator: CLEAN SUCCEEDED, BUILD SUCCEEDED, at the start of Phase 2 and again on the final code.
+- Simulator: 3 app launches (of 4). I viewed 2 screenshot images (of 4). All other checks used OCR and pixel probes on the interaction tool's capture files (tools in a temp folder, outside the repo). The 2 screenshots are in `~/Desktop/Dzirent/step5c-screenshots/` (`1-listing.png`, `2-dark.png`).
+- Android: not built here (no Android SDK on this Mac). No emulator or device used.
+
+What I saw in the Simulator:
+- Launch 1 (first build):
+  - Listing Details and Settings titles sit at the same height as the Home title, right under the status bar, with no gap (screenshot 1).
+  - Theme, checked by a status-bar pixel probe:
+
+    | Theme | App | Status bar icons |
+    | --- | --- | --- |
+    | Dark | dark | light |
+    | Light | light | dark |
+    | System, with the Simulator in dark mode | dark | light |
+
+    Screenshot 2 shows light icons on the dark app. The theme is left on Light.
+  - The UIKit edge swipe did nothing.
+- Launch 2 (pan recognizer): the swipe still did nothing.
+- Launch 3 (Compose gesture):
+  - Listing Details → Home in one swipe.
+  - Studio page → Listing Details → Home, one level per swipe.
+  - Settings → Home.
+  - A vertical scroll and a mid-screen horizontal swipe on the listing page didn't navigate.
+  - On Home (root) the swipe does nothing except the sidebar's own existing drag, which is enabled only on Home, the same as Android.
+  - No crash in any launch (same pid throughout each).
+- The app is left running on Home, signed in as test user 1, Light theme.
+
+Open issues:
+- `IosSignInTest` fails on Simulator certificate trust (above). Re-run on a normal Mac session.
+- Some listing photos show as solid black boxes, for example "Satin Backless Maxi Dress", "Modern Qipao Midi Dress" and "Embroidered Silk Lehenga Set". Their storage files are 149-byte stub JPEGs (`ae3b22ace731bd21.jpg`, `cb2a8a3733907033.jpg`, `6877334392c02f0d.jpg`), not real photos. Seed data, not app code; the other photos render. Worth re-seeding those photos.
+- The back swipe has no sliding preview animation; it acts on release, like Android's non-predictive Back.
+- Android build check of the commonMain hooks above (Windows).
+
 ## Step 5B - 2026-11-04 - Android check after iOS merge
 
 Done:
