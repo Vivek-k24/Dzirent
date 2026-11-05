@@ -1,6 +1,5 @@
 package com.dzirent.shared.ui
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -71,7 +70,7 @@ fun GuideOverlay(steps: List<GuideStep>, targets: GuideTargets, onFinish: () -> 
     val step = steps[index.coerceIn(0, steps.lastIndex)]
     val isLast = index >= steps.lastIndex
 
-    BackHandler(onBack = onFinish)
+    PlatformBackHandler(enabled = true, onBack = onFinish)
 
     // Root coordinates of the target, in this overlay's coordinates, with some breathing room.
     val hole = targets.bounds[step.target]?.translate(-origin)?.inflate(with(density) { 6.dp.toPx() })
