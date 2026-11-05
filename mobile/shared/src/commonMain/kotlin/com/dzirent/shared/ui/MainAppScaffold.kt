@@ -349,7 +349,7 @@ fun MainAppScaffold(
                     NavHost(
                         navController = navController,
                         startDestination = TabHome.route,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(innerPadding).consumeScaffoldInsets(innerPadding)
                     ) {
                         composable("home") {
                             HomeScreen(
@@ -663,3 +663,9 @@ expect fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit)
  */
 @Composable
 expect fun PlatformNavigationBackHandler(navController: NavHostController)
+
+/**
+ * iOS: the Scaffold's padding counts as used, so a screen's own TopAppBar doesn't add the status
+ * bar inset a second time. Android: unchanged (returns this modifier).
+ */
+expect fun Modifier.consumeScaffoldInsets(padding: PaddingValues): Modifier

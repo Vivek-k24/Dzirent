@@ -1,11 +1,14 @@
 package com.dzirent.shared.ui
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import kotlinx.cinterop.BetaInteropApi
@@ -108,3 +111,6 @@ private class EdgeSwipeTarget : NSObject(), UIGestureRecognizerDelegateProtocol 
 private const val MIN_DISTANCE = 80.0
 private const val MIN_FLICK_DISTANCE = 24.0
 private const val MIN_FLICK_SPEED = 500.0
+
+/** The Scaffold already padded for the status and home-indicator areas; inner top bars skip them. */
+actual fun Modifier.consumeScaffoldInsets(padding: PaddingValues): Modifier = consumeWindowInsets(padding)
