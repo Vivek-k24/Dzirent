@@ -1,5 +1,7 @@
 package com.dzirent.shared.ui
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.runtime.Composable
@@ -9,20 +11,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import kotlinx.cinterop.BetaInteropApi
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.ObjCAction
-import kotlinx.cinterop.useContents
-import platform.Foundation.NSSelectorFromString
-import platform.UIKit.UIGestureRecognizer
-import platform.UIKit.UIGestureRecognizerDelegateProtocol
-import platform.UIKit.UIGestureRecognizerStateEnded
-import platform.UIKit.UIRectEdgeLeft
-import platform.UIKit.UIScreenEdgePanGestureRecognizer
-import platform.UIKit.UIView
-import platform.darwin.NSObject
+import kotlin.math.abs
 
 /**
  * iOS has no Back button, so a swipe from the left screen edge stands in for Android's Back.
@@ -74,43 +71,50 @@ actual fun PlatformNavigationBackHandler(navController: NavHostController) {
     PlatformBackHandler(enabled = canPop) { navController.popBackStack() }
 }
 
-/** Adds the left-edge swipe to [view]; call the returned function to remove it. */
-@OptIn(ExperimentalForeignApi::class)
-internal fun installEdgeSwipeBack(view: UIView): () -> Unit {
-    val target = EdgeSwipeTarget()
-    val recognizer = UIScreenEdgePanGestureRecognizer(target = target, action = NSSelectorFromString("handleSwipe:"))
-    recognizer.edges = UIRectEdgeLeft
-    recognizer.delegate = target
-    view.addGestureRecognizer(recognizer)
-    return {
-        view.removeGestureRecognizer(recognizer)
-        // Keeps the target (the recognizer holds it weakly) alive until removal.
-        target.hashCode()
-    }
-}
-
-private class EdgeSwipeTarget : NSObject(), UIGestureRecognizerDelegateProtocol {
-    @OptIn(BetaInteropApi::class, ExperimentalForeignApi::class)
-    @ObjCAction
-    fun handleSwipe(recognizer: UIScreenEdgePanGestureRecognizer) {
-        if (recognizer.state != UIGestureRecognizerStateEnded) return
-        val view = recognizer.view ?: return
-        val distance = recognizer.translationInView(view).useContents { x }
-        val speed = recognizer.velocityInView(view).useContents { x }
-        // A deliberate swipe: far enough, or a quick flick to the right.
-        if (distance > MIN_DISTANCE || (distance > MIN_FLICK_DISTANCE && speed > MIN_FLICK_SPEED)) {
-            IosBackDispatcher.goBack()
+/**
+ * The back swipe, on the app's root: a drag that starts within 24 pt of the left edge and moves
+ * right goes Back once it's far enough (or flicked). It looks at touches before the screens do
+ * (the Initial pass) and takes the drag once it's clearly a rightward swipe, so a photo pager
+ * under the finger doesn't move too. Taps and vertical drags are left alone, and nothing happens
+ * where there's nothing to go back to. Dialogs are separate layers, so it never acts under one.
+ */
+internal fun Modifier.edgeSwipeBack(): Modifier = pointerInput(Unit) {
+    val edge = 24.dp.toPx()
+    val minDistance = 80.dp.toPx()
+    val flickDistance = 24.dp.toPx()
+    val flickSpeed = 500.dp.toPx()
+    val slop = viewConfiguration.touchSlop
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        if (down.position.x > edge || !IosBackDispatcher.canGoBack) return@awaitEachGesture
+        val velocity = VelocityTracker()
+        velocity.addPosition(down.uptimeMillis, down.position)
+        var moved = Offset.Zero
+        var claimed = false
+        while (true) {
+            val event = awaitPointerEvent(PointerEventPass.Initial)
+            val change = event.changes.firstOrNull { it.id == down.id } ?: break
+            velocity.addPosition(change.uptimeMillis, change.position)
+            if (!change.pressed) {
+                if (claimed) {
+                    change.consume()
+                    val speed = velocity.calculateVelocity().x
+                    if (moved.x > minDistance || (moved.x > flickDistance && speed > flickSpeed)) {
+                        IosBackDispatcher.goBack()
+                    }
+                }
+                break
+            }
+            moved += change.positionChange()
+            if (!claimed) {
+                // Mostly vertical: a scroll, not a swipe.
+                if (abs(moved.y) > slop && abs(moved.y) >= moved.x) break
+                if (moved.x > slop && moved.x > abs(moved.y)) claimed = true
+            }
+            if (claimed) change.consume()
         }
     }
-
-    override fun gestureRecognizerShouldBegin(gestureRecognizer: UIGestureRecognizer): Boolean =
-        IosBackDispatcher.canGoBack
 }
-
-// Points and points per second (an Objective-C subclass can't have a companion with fields).
-private const val MIN_DISTANCE = 80.0
-private const val MIN_FLICK_DISTANCE = 24.0
-private const val MIN_FLICK_SPEED = 500.0
 
 /** The Scaffold already padded for the status and home-indicator areas; inner top bars skip them. */
 actual fun Modifier.consumeScaffoldInsets(padding: PaddingValues): Modifier = consumeWindowInsets(padding)

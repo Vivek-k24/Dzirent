@@ -2,6 +2,8 @@ package com.dzirent.shared
 
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.repository.createDzirentSupabaseClient
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 import kotlinx.coroutines.runBlocking
@@ -9,6 +11,7 @@ import platform.posix.getenv
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 /**
  * Signs test user 1 in through the shared repository on the iOS Simulator (Darwin networking),
@@ -27,8 +30,17 @@ class IosSignInTest {
             println("IosSignInTest skipped: TEST_USER_1 variables not set")
             return@runBlocking
         }
-        val repository = DzirentRepository(createDzirentSupabaseClient())
-        repository.signIn(email, password)
+        val client = createDzirentSupabaseClient()
+        val repository = DzirentRepository(client)
+        // Straight to supabase-kt, so a failure shows the real error instead of the app's message.
+        try {
+            client.auth.signInWith(Email) {
+                this.email = email
+                this.password = password
+            }
+        } catch (e: Exception) {
+            fail("sign-in failed: ${e::class.simpleName}: ${e.message?.lineSequence()?.firstOrNull()}")
+        }
         val profile = repository.getCurrentProfile()
         assertNotNull(profile, "signed in but no profile")
         assertTrue(profile.id.isNotBlank())
