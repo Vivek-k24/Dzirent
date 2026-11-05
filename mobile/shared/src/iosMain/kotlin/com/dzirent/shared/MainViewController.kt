@@ -11,6 +11,7 @@ import com.dzirent.shared.platform.IosSettingsStorage
 import com.dzirent.shared.platform.LocalDevice
 import com.dzirent.shared.ui.DzirentApp
 import com.dzirent.shared.ui.installEdgeSwipeBack
+import com.dzirent.shared.ui.theme.StatusBarFollowsTheme
 import platform.UIKit.UIViewController
 
 /** The whole iPhone UI: the shared app, with the iOS phone services (as MainActivity does on Android). */
@@ -26,6 +27,7 @@ fun MainViewController(): UIViewController {
             val remove = installEdgeSwipeBack(viewController.view)
             onDispose { remove() }
         }
+        StatusBarFollowsTheme(settings.theme, viewController)
         CompositionLocalProvider(LocalDevice provides device) {
             DzirentApp(appSettings = settings, settingsStorage = settingsStorage)
         }
