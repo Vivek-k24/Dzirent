@@ -2,6 +2,29 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 5B - 2026-11-04 - Android check after iOS merge
+
+Done:
+- Before starting: working tree clean. Pulled `Preview` (fast-forward to `9e222ae`, the `ios01` merge).
+- Android check: the Step 5 shared-code changes (`Guide.kt` using `PlatformBackHandler`, `@ObjCName` on `AccessoryDeclaration.NAME_MAX`) build on Android as they are. No `mobile/` changes needed.
+- Backend: migration `20261104140000_step5b_dates_block.sql` (applied with `supabase db push`). `set_conversation_dates` now refuses with `42501` "You cannot message this user" (the same wording as `start_conversation`) when the renter and lender are blocked in either direction. The renter-only check and its error are unchanged. Grants are unchanged (`create or replace`).
+- `supabase/tests/step5b_dates_block.mjs` (new): the block, refuse, unblock, works-again check.
+- `supabase/tests/step7a_push.mjs`: step 5 used to change dates while blocked to prove no push is sent. It now expects that change to be refused. The token-untouched check is still there.
+- `contract.md` and `security-log.md` (the `set_conversation_dates` entries) and `BOARD.md` updated.
+
+What I ran:
+- `.\gradlew.bat :androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, `GOOGLE_SERVICES_JSON` set): BUILD SUCCESSFUL. 13 tests in 5 classes, 0 failures, 0 errors, 0 skipped.
+- `supabase db push --linked --dry-run` (only the new migration pending), then `supabase db push --linked --yes`: applied.
+- `node supabase/tests/step5b_dates_block.mjs`: passed. User 1 blocked user 3, and user 3's date change was refused (403, `42501`) with the dates unchanged. After the unblock the change worked, and the original dates were put back.
+- `node supabase/tests/step7a_push.mjs` (updated): passed. While blocked, both the message and the date change were refused, and the fake token was untouched after 20 s.
+- No emulator or device used.
+
+Debug APK: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk` (local build, not committed).
+
+Open issues:
+- How the apps handle the refusal (read from the code, not run): on the phone, `ChatScreens.kt` changes dates only after the message itself is sent. A blocked message is refused first, so the date call isn't reached, and `setConversationDates` returns false on any error anyway. The website's dates action shows its own "Could not change your dates.", not the server text.
+- Everything open from Step 5 still stands (iOS push, iOS item recognition, the listing-page top gap, iOS unit tests not run).
+
 ## Step 5 - 2026-11-04 - iPhone app (Simulator)
 
 Branch: `ios01` only (per the task prompt, overriding the two-branch rule). Nothing pushed to `main` or `Preview`. Done on the owner's Mac (Xcode 27.1, JDK 17, no Android SDK).

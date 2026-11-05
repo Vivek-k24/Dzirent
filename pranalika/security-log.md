@@ -42,7 +42,7 @@ Found in the `Dzirent_Android` project. Handled by rebuilding cleanly in `dziren
 | WARN: signed-in users can run elevated function | `my_block_peer_ids` | Returns only the caller's own block relationships. |
 | WARN: signed-in users can run elevated function | `record_accessory_declaration` | Append-only audit record for the caller. |
 | WARN: signed-in users can run elevated function | `record_listing_declaration` | Append-only audit record, caller must own the listing. |
-| WARN: signed-in users can run elevated function | `set_conversation_dates` | Renter-only date update through a validated function, no raw update access. |
+| WARN: signed-in users can run elevated function | `set_conversation_dates` | Renter-only date update through a validated function, no raw update access. Since Step 5B it also refuses blocked pairs (either direction). |
 
 All of these reject callers with no signed-in user (except `search_cities`, `browse_listings`, and `get_listing`).
 

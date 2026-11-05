@@ -154,7 +154,7 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 ### Audit & Utility RPCs
 - `record_accessory_declaration(p_full_legal_name, p_declaration_version, p_app_version)`: Signed-in only.
 - `record_listing_declaration(p_listing_id, p_declaration_version)`: Signed-in owner only.
-- `set_conversation_dates(p_conversation_id, p_start, p_end)`: Signed-in renter only.
+- `set_conversation_dates(p_conversation_id, p_start, p_end)`: Signed-in renter only. Refused (`42501`, "You cannot message this user") when the two people in the chat are blocked in either direction, like sending a message (Step 5B).
 - `mark_conversation_read(p_conversation_id)`: Signed-in participant only.
 - `mark_activity_seen()`: Signed-in only.
 

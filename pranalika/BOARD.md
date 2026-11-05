@@ -88,14 +88,15 @@ Status: `To do` / `Doing` / `Done`. The owner assigns each step to an agent. The
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (branch `ios01`) | |
+| Done by: Claude Code (branch `ios01`; 5B on `Preview`) | |
 | 5.1 Shared code builds for iPhone (static `shared` framework, `iosArm64` + `iosSimulatorArm64`) | Done |
 | 5.2 Xcode app `mobile/iosApp` (XcodeGen `project.yml` + committed `.xcodeproj`, Gradle build phase, icon, launch screen, permission texts) | Done |
 | 5.3 iPhone phone features: settings, location, photo picker, camera, compression, photo storage and drafts | Done |
 | 5.4 Runs in the iOS Simulator: guest home with photos, listing page, sign-in with test user 1 | Done |
 | On-device item recognition (TinyCLIP) on iOS (stub, same as Android without the model) | To do |
 | iOS push (needs a paid Apple Developer account) | To do |
-| Owner: merge `ios01` into `Preview` | To do |
+| Owner: merge `ios01` into `Preview` | Done (PR #94) |
+| 5B Android check after the iOS merge (debug APK builds, shared unit tests pass) and date changes refused between blocked users | Done |
 
 ## Step 6 - Switchover
 

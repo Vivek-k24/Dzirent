@@ -151,14 +151,18 @@ async function run() {
   assert.ok(!blockedMessage.ok, "a blocked user's message must be refused");
   console.log(`   user 3's message refused (${blockedMessage.status})`);
 
-  // Date changes don't check blocks, so this reaches the push decision, which must skip.
+  // Since Step 5B a blocked pair's date change is refused too.
   const before = (await request(u3.token, `conversations?select=requested_start,requested_end&id=eq.${conversationId}`)).data[0];
   const start = new Date(Date.now() + 40 * 86400000).toISOString().slice(0, 10);
   const end = new Date(Date.now() + 42 * 86400000).toISOString().slice(0, 10);
-  await rpc(u3.token, "set_conversation_dates", { p_conversation_id: conversationId, p_start: start, p_end: end });
+  const blockedDates = await request(u3.token, "rpc/set_conversation_dates", {
+    method: "POST",
+    body: { p_conversation_id: conversationId, p_start: start, p_end: end },
+  });
+  assert.ok(!blockedDates.ok, "a blocked user's date change must be refused");
   await sleep(20000);
   assert.ok((await myTokens(u1)).includes(blockedToken), "no push may be attempted for a blocked pair");
-  console.log("   dates changed while blocked; after 20 s the fake token is untouched (no send attempt)");
+  console.log("   message and date change refused; after 20 s the fake token is untouched (no send attempt)");
 
   console.log("\n6. Unblock and clean up...");
   await rpc(u1.token, "unblock_user", { p_handle: prof3.studio_handle });
