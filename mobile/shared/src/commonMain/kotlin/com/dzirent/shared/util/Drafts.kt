@@ -1,5 +1,6 @@
 package com.dzirent.shared.util
 
+import com.dzirent.shared.model.ListingPhoto
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -16,7 +17,9 @@ data class DraftRange(val start: String, val end: String)
  * offered when Create listing opens again ("Continue your draft?"); an edit's draft only brings
  * the form back after the screen was recreated (rotation, or the app stopped behind the camera).
  * Photos are the app's own copies (file URIs), so they're still readable after a restart.
- * Kept and overruled photos are remembered so a restored draft doesn't ask again.
+ * Once the photos step has uploaded them for the photo check, [listingId], [listingCreated]
+ * and [uploaded] say where they went, so a restored draft carries on instead of uploading
+ * them again, and [scanId] is the check to keep watching.
  */
 @Serializable
 data class SavedDraft(
@@ -27,8 +30,15 @@ data class SavedDraft(
     /** [PhotoSlot.key] -> id of a photo already on the listing (editing). */
     val savedPhotos: Map<String, String> = emptyMap(),
     val photosChanged: Boolean = false,
-    val kept: List<String> = emptyList(),
-    val overruled: List<String> = emptyList(),
+    /** The listing's id: a new listing gets it before its draft row is created. */
+    val listingId: String? = null,
+    /** The paused draft row exists on the server. */
+    val listingCreated: Boolean = false,
+    /** New photo URI -> the photo it was uploaded as. */
+    val uploaded: Map<String, ListingPhoto> = emptyMap(),
+    val scanId: String? = null,
+    /** [photoSetKey] of the photos [scanId] was asked for. */
+    val checkedPhotos: String? = null,
     val title: String = "",
     val category: String? = null,
     val itemType: String? = null,
@@ -58,7 +68,8 @@ data class SavedDraft(
     val dateRanges: List<DateRange>? get() = ranges?.mapNotNull { parseDateRange(it.start, it.end) }
 
     companion object {
-        const val VERSION = 1
+        /** 2: three steps and the server photo check (Step 8B). Older drafts aren't offered. */
+        const val VERSION = 2
         private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
         fun encode(draft: SavedDraft): String = json.encodeToString(serializer(), draft)

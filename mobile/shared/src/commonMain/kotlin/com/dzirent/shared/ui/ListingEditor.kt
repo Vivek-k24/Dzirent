@@ -23,31 +23,37 @@ import com.dzirent.shared.data.PublishStepException
 import com.dzirent.shared.model.*
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.util.AccessoryDeclaration
+import com.dzirent.shared.util.CHECKING_PHOTOS
+import com.dzirent.shared.util.CheckPhase
+import com.dzirent.shared.util.DRAFT_CATEGORY
+import com.dzirent.shared.util.DRAFT_TITLE
 import com.dzirent.shared.util.DistanceUnit
-import com.dzirent.shared.util.ItemGuess
 import com.dzirent.shared.util.PhotoSlot
 import com.dzirent.shared.util.SavedDraft
-import com.dzirent.shared.util.TierVerdict
 import com.dzirent.shared.util.declarationNeeded
-import com.dzirent.shared.util.guessItem
-import com.dzirent.shared.util.keepLabel
-import com.dzirent.shared.util.nameColors
+import com.dzirent.shared.util.detailsMissing
+import com.dzirent.shared.util.isDraft
 import com.dzirent.shared.util.parsePrice
-import com.dzirent.shared.util.photosToRemove
-import com.dzirent.shared.util.step1Missing
 import com.dzirent.shared.util.step2Missing
-import com.dzirent.shared.util.tierVerdict
+import com.dzirent.shared.util.suggestionsFrom
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.lastOrNull
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import com.dzirent.shared.platform.LocalDevice
 import com.dzirent.shared.repository.generateUuid
 import com.dzirent.shared.util.PhotoReview
-import com.dzirent.shared.util.ColorVotes
 import com.dzirent.shared.util.today
 
 private const val DEPOSIT_NOTE_MAX = 120
+
+/** How long the editor follows a photo check (a cold start of the vision service takes about a minute). */
+private const val CHECK_TIMEOUT_MS = 180_000L
 
 /** Stands in for a listing the owner-only read didn't return: someone else's, or deleted. */
 private val NOT_YOURS = Listing(id = "", lenderId = "", title = "", category = "", approxLat = 0.0, approxLng = 0.0, status = "")
@@ -131,10 +137,12 @@ private sealed class PublishState {
 }
 
 /**
- * New listing in two steps. Step 1: photos in slots (Front, Back, Close-up required), checked
- * and recognized on the phone, with title, category, description and style filled from them.
- * Step 2: size, measurements, price and dates, then Publish. Editing uses the same steps,
- * prefilled. New listings are saved as a draft on the phone as they change.
+ * A listing in three steps. Step 1: photos in slots (Front, Back, Close-up required), checked on
+ * the phone as they're added. Leaving it uploads them (a new listing is saved as a paused draft
+ * first) and asks the server to check them. Step 2: title, category, description and style,
+ * filled from an allowed check while the lender types. Step 3: size, measurements, price and
+ * dates, then Publish. With vision_required on, publishing waits for the check and the database
+ * decides; otherwise it publishes as before. New listings are also saved as a draft on the phone.
  */
 @OptIn(ExperimentalMaterial3Api::class, FlowPreview::class)
 @Composable
@@ -152,17 +160,21 @@ private fun ListingEditorForm(
     val today = remember { today() }
     val state = remember { ListingEditorState(original, settings.measureUnit.key, today) }
     val isNew = state.isNew
-    val listingId = remember { original?.id ?: generateUuid() }
     val publisher = remember { ListingPublisher(repository, device, original) }
     val analyzer = device.photoAnalyzer
     val photoStore = remember { device.photoStore(profile.id) }
     val drafts = remember { device.draftStore(profile.id, original?.id) }
     val declarationCache = remember { DeclarationCache(device.prefs) }
-    val snackbar = remember { SnackbarHostState() }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var publishState by remember { mutableStateOf<PublishState>(PublishState.Idle) }
     var showWhatCanIList by remember { mutableStateOf(false) }
+
+    // The database's flag: while it's on, a listing goes live only after an allowed photo check.
+    var visionRequired by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visionRequired = runCatching { repository.getAppSettings()["vision_required"] == true }.getOrDefault(false)
+    }
 
     // ---- Accessory declaration (once per user) ----
     var declarationSigned by remember { mutableStateOf(declarationCache.isSigned(profile.id, AccessoryDeclaration.VERSION)) }
@@ -180,7 +192,7 @@ private fun ListingEditorForm(
         }
         declarationChecked = true
     }
-    val declarationPending = declarationNeeded(state.category, state.jewelry, declarationSigned)
+    val declarationPending = declarationNeeded(state.category, state.jewelrySuggested, declarationSigned)
     // Shown by itself the first time it's needed (Accessories picked or suggested, or jewelry
     // found), once the server has said whether it was signed on another phone.
     LaunchedEffect(declarationPending, declarationChecked) {
@@ -188,38 +200,6 @@ private fun ListingEditorForm(
             declarationOffered = true
             showDeclaration = true
         }
-    }
-
-    fun logEvents(vararg events: SuggestionEvent) {
-        scope.launch { repository.logSuggestionEvents(events.toList()) }
-    }
-
-    // ---- Removals: not fashion / not allowed photos come out at once ----
-    fun announceRemoval(removed: RemovedPhoto) {
-        logEvents(SuggestionEvent("tier", removed.verdict.label?.name ?: "not fashion", "removed", original?.id))
-        scope.launch {
-            snackbar.currentSnackbarData?.dismiss()
-            val result = snackbar.showSnackbar(
-                message = removed.verdict.message,
-                actionLabel = keepLabel(removed.verdict.tier),
-                withDismissAction = true,
-                duration = SnackbarDuration.Long
-            )
-            if (result == SnackbarResult.ActionPerformed && state.restore(removed)) {
-                logEvents(SuggestionEvent("tier", removed.verdict.label?.name ?: "not fashion", "kept_override", original?.id))
-            }
-        }
-    }
-
-    /** Takes out every photo the tier check removes; true if any was. */
-    fun removeFlaggedPhotos(): Boolean {
-        val flagged = photosToRemove(state.slotPhotos, state.kept.toSet())
-        flagged.forEach { photo ->
-            val item = state.slots[photo.slot] ?: return@forEach
-            state.removePhoto(photo.slot)
-            announceRemoval(RemovedPhoto(photo.slot, item, photo.verdict as TierVerdict.Remove))
-        }
-        return flagged.isNotEmpty()
     }
 
     // ---- Each new photo is checked once, on the phone, as it's added ----
@@ -232,42 +212,134 @@ private fun ListingEditorForm(
                 val analysis = analyzer.analyze(item.uri)
                 state.analyses[item.key] = analysis
                 state.reviews[item.key] = state.reviewFor(analysis)
-                removeFlaggedPhotos()
             }
         }
     }
 
-    // ---- What it is: Front, Back and Extra together; again whenever they change ----
-    val typedKeys = state.typedAnalyses().map { it.first to state.slots[it.first]?.key }
-    LaunchedEffect(typedKeys) {
-        val combined = state.combinedEmbedding()
-        if (combined == null) {
-            // No front photo (yet): nothing to suggest or ask.
-            state.guess = ItemGuess.Unsure
+    // ---- The server's photo check ----
+
+    /** A new listing's row while only its photos are saved: paused, with placeholder details. */
+    fun draftRow(): Listing? {
+        if (original != null) return original
+        return Listing(
+            id = state.listingId,
+            lenderId = profile.id,
+            title = DRAFT_TITLE,
+            category = DRAFT_CATEGORY,
+            city = profile.city,
+            approxLat = profile.approxLat ?: return null,
+            approxLng = profile.approxLng ?: return null,
+            status = "paused"
+        )
+    }
+
+    fun orderedPhotos(): List<Pair<PhotoSlot, PhotoItem>> = PhotoSlot.entries.mapNotNull { slot -> state.slots[slot]?.let { slot to it } }
+
+    var syncJob by remember { mutableStateOf<Job?>(null) }
+
+    /** Puts the photos on the listing as they are now and asks for their check, in the background. */
+    fun startPhotoCheck() {
+        val row = draftRow() ?: return
+        val key = state.currentPhotoKey()
+        syncJob?.cancel()
+        syncJob = scope.launch {
+            state.checkPhase = CheckPhase.UPLOADING
+            state.uploadError = null
+            state.scan = null
+            state.serverWarnings.clear()
+            try {
+                val ordered = orderedPhotos()
+                publisher.syncPhotos(row, ordered.map { it.second }, ordered.map { it.first.key })
+                state.checkedPhotos = key
+                state.scanId = repository.requestScan(state.listingId)
+                state.checkPhase = CheckPhase.CHECKING
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                state.checkPhase = CheckPhase.UPLOAD_FAILED
+                state.uploadError = (e as? PublishStepException)?.message ?: e.userMessage("Couldn't upload your photos. Please try again.")
+            }
+        }
+    }
+
+    /** Asks again for the check of the photos already on the listing (after a failed or slow one). */
+    fun checkAgain() {
+        if (state.checkPhase == CheckPhase.UPLOAD_FAILED || state.photosNeedCheck) {
+            startPhotoCheck()
+            return
+        }
+        scope.launch {
+            state.checkPhase = CheckPhase.CHECKING
+            state.scan = null
+            runCatching { repository.requestScan(state.listingId) }
+                .onSuccess { state.scanId = it }
+                .onFailure {
+                    state.uploadError = it.userMessage("Couldn't check your photos. Please try again.")
+                    state.checkPhase = CheckPhase.UPLOAD_FAILED
+                }
+        }
+    }
+
+    // Follows the current check to its end, then makes sure it is the check of the photos as
+    // they are now (the server starts a newer one when they changed meanwhile).
+    LaunchedEffect(state.scanId) {
+        val id = state.scanId ?: return@LaunchedEffect
+        state.checkPhase = CheckPhase.CHECKING
+        val last = withTimeoutOrNull(CHECK_TIMEOUT_MS) {
+            repository.watchScan(id).onEach { state.scan = it }.lastOrNull()
+        }
+        if (last == null || !last.finished) {
+            state.checkPhase = CheckPhase.TIMED_OUT
             return@LaunchedEffect
         }
-        val scores = analyzer.scores(combined) ?: return@LaunchedEffect
-        val colors = state.typedAnalyses().fold(ColorVotes.EMPTY) { acc, (_, a) -> acc + a.colors }
-        state.colorVotes = colors
-        val guess = guessItem(scores, nameColors(colors))
-        state.guess = guess
-        // Fabric from the close-up when there is one: that's where the weave shows.
-        val closeUp = state.slots[PhotoSlot.CLOSE_UP]?.let { state.analyses[it.key]?.scores }
-        state.fabricHintScores = (closeUp ?: scores).fabrics
-        if (guess is ItemGuess.Suggest) state.applySuggestion(guess.suggestions)
+        if (last.status == "done") {
+            val current = runCatching { repository.requestScan(state.listingId) }.getOrNull()
+            if (current != null && current != id) {
+                state.scanId = current
+                return@LaunchedEffect
+            }
+        }
+        state.serverWarnings.clear()
+        runCatching { repository.getPhotoScans(id) }.getOrNull()?.forEach { state.serverWarnings[it.photoId] = it.warnings }
+        suggestionsFrom(last)?.let { state.applySuggestion(it) }
+        state.checkPhase = CheckPhase.FINISHED
+    }
+
+    // A draft row reopened from My closet: pick up its check.
+    LaunchedEffect(Unit) {
+        if (state.isDraft && state.scanId == null && state.slots.isNotEmpty()) checkAgain()
     }
 
     // ---- Drafts: restore, and save as things change ----
     var draftOffer by remember { mutableStateOf<SavedDraft?>(null) }
     var draftChecked by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
+
+    /** Restores [saved], and starts a fresh draft row if the saved one was deleted or published meanwhile. */
+    suspend fun restoreDraft(saved: SavedDraft) {
+        state.restore(saved)
+        publisher.restore(saved.listingCreated, saved.uploaded)
+        if (isNew && saved.listingCreated) {
+            val row = try {
+                repository.getMyListing(state.listingId)
+            } catch (e: Exception) {
+                return // Offline: carry on with the saved draft row.
+            }
+            if (row == null || !row.isDraft) {
+                state.listingId = generateUuid()
+                publisher.reset()
+                state.forgetCheck()
+            }
+        }
+    }
+
     // Survives rotation and the app being stopped while the camera is open: then the form comes
     // back without asking. Opening Create listing afresh asks; opening Edit afresh starts clean.
     var sessionStarted by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         val saved = drafts.load()
         when {
-            sessionStarted && saved != null -> state.restore(saved)
+            sessionStarted && saved != null -> restoreDraft(saved)
             !isNew -> drafts.clear()
             saved == null || !saved.hasContent -> photoStore.prune(state.slots.values.map { it.key }.toSet())
             else -> draftOffer = saved
@@ -277,7 +349,7 @@ private fun ListingEditorForm(
     }
     if (draftChecked) {
         LaunchedEffect(Unit) {
-            snapshotFlow { state.toDraft() }
+            snapshotFlow { state.toDraft(publisher.created, publisher.uploadedPhotos) }
                 .drop(1)
                 .debounce(600)
                 .collect { draft -> if (draftOffer == null && !finished) drafts.save(draft) }
@@ -290,8 +362,8 @@ private fun ListingEditorForm(
             text = { Text(saved.title.ifBlank { "You have a listing you didn't finish." }) },
             confirmButton = {
                 TextButton(onClick = {
-                    state.restore(saved)
                     draftOffer = null
+                    scope.launch { restoreDraft(saved) }
                 }) { Text("Continue") }
             },
             dismissButton = {
@@ -300,25 +372,66 @@ private fun ListingEditorForm(
                     scope.launch {
                         drafts.clear()
                         photoStore.clear()
+                        // Its draft row on the server goes too (never a listing that was published since).
+                        val id = saved.listingId
+                        if (saved.listingCreated && id != null) {
+                            runCatching {
+                                if (repository.getMyListing(id)?.isDraft == true) repository.deleteListing(id)
+                            }
+                        }
                     }
                 }) { Text("Start over") }
             }
         )
     }
 
+    // ---- Moving between the steps ----
+    fun next() {
+        when (state.step) {
+            STEP_PHOTOS -> {
+                state.photosGate()?.let { errorMessage = it.message; return }
+                if (isNew && !profile.hasLocation) {
+                    errorMessage = noLocationToPublish(settings.distanceUnit)
+                    return
+                }
+                errorMessage = null
+                // Unchanged photos keep their check; an edit that didn't touch them needs none.
+                if (state.photosNeedCheck && (isNew || state.isDraft || state.photosChanged)) startPhotoCheck()
+                state.step = STEP_DETAILS
+            }
+            STEP_DETAILS -> {
+                val missing = detailsMissing(state.title.text, state.category, state.itemType, declarationPending)
+                if (missing != null) {
+                    errorMessage = missing.message
+                    if (missing.button == "Sign the declaration") showDeclaration = true
+                    return
+                }
+                errorMessage = null
+                state.step = STEP_PRICE
+            }
+        }
+    }
+
+    /** With vision_required on: the check of the photos as they are now, finished, before going live. */
+    suspend fun awaitCheck(onProgress: (String) -> Unit) {
+        if (!visionRequired) return
+        onProgress(CHECKING_PHOTOS)
+        val id = runCatching { repository.requestScan(state.listingId) }.getOrNull() ?: return
+        withTimeoutOrNull(CHECK_TIMEOUT_MS) { repository.watchScan(id).lastOrNull() }
+        // The database's publish gate decides; its words are shown if it says no.
+    }
+
     // ---- Publish ----
     fun publish() {
-        // Backstop: the tier check again on every photo, right before publishing.
-        if (removeFlaggedPhotos()) {
-            errorMessage = "Some photos were removed. Check your photos and try again."
-            state.step = 1
+        state.photosGate()?.let {
+            errorMessage = it.message
+            state.step = STEP_PHOTOS
             return
         }
-        val step1 = step1Missing(state.photosGate(), state.title.text, state.category, state.itemType, declarationPending)
-        if (step1 != null) {
-            errorMessage = step1.message
-            state.step = 1
-            if (declarationPending && state.photosGate() == null) showDeclaration = true
+        detailsMissing(state.title.text, state.category, state.itemType, declarationPending)?.let {
+            errorMessage = it.message
+            state.step = STEP_DETAILS
+            if (declarationPending) showDeclaration = true
             return
         }
         if (isNew && !profile.hasLocation) {
@@ -330,19 +443,9 @@ private fun ListingEditorForm(
             return
         }
         errorMessage = null
+        val base = draftRow() ?: return
         val category = state.category!!
-        val base = original ?: Listing(
-            id = listingId,
-            lenderId = profile.id,
-            title = "",
-            category = category,
-            // Listings take the lender's approximate (already rounded) location.
-            city = profile.city,
-            approxLat = profile.approxLat ?: return,
-            approxLng = profile.approxLng ?: return,
-            status = "paused"
-        )
-        val ordered = PhotoSlot.entries.mapNotNull { slot -> state.slots[slot]?.let { slot to it } }
+        val ordered = orderedPhotos()
         val draft = ListingDraft(
             listing = base.copy(
                 title = state.title.text.trim(),
@@ -357,6 +460,7 @@ private fun ListingEditorForm(
                 priceNote = state.priceNote.trim(),
                 retailValue = state.retailValueText.toDoubleOrNull(),
                 depositNote = state.depositNote.trim().ifBlank { null },
+                autoPausedReason = null,
                 photos = emptyList(),
                 measurements = emptyList(),
                 availability = emptyList(),
@@ -367,7 +471,7 @@ private fun ListingEditorForm(
             measurements = state.usedMeasurementRows.map { row ->
                 ListingMeasurement(
                     id = row.key,
-                    listingId = listingId,
+                    listingId = state.listingId,
                     label = row.label.trim(),
                     value = row.valueText.trim().toDouble(),
                     unit = state.unit
@@ -376,7 +480,7 @@ private fun ListingEditorForm(
             availability = state.ranges.sortedBy { it.start }.map { range ->
                 Availability(
                     id = generateUuid(),
-                    listingId = listingId,
+                    listingId = state.listingId,
                     startDate = range.start.toString(),
                     endDate = range.end.toString()
                 )
@@ -386,9 +490,13 @@ private fun ListingEditorForm(
         scope.launch {
             publishState = PublishState.Running("Starting...")
             try {
-                publisher.publish(draft) { progress -> publishState = PublishState.Running(progress) }
+                // The photo upload for the check finishes first, so photos are never uploaded twice.
+                syncJob?.join()
+                publisher.publish(draft, beforeGoingLive = { progress -> awaitCheck(progress) }) { progress ->
+                    publishState = PublishState.Running(progress)
+                }
                 finished = true
-                repository.logSuggestionEvents(state.outcomeEvents(listingId))
+                repository.logSuggestionEvents(state.outcomeEvents(state.listingId))
                 drafts.clear()
                 // An edit only removes its own copies: a new-listing draft may use the folder too.
                 if (isNew) photoStore.clear() else photoStore.delete(draft.photos.filterIsInstance<PhotoItem.New>().map { it.key })
@@ -409,7 +517,7 @@ private fun ListingEditorForm(
             PublishFailedView(
                 step = ps.step,
                 message = ps.message,
-                isNew = isNew,
+                goesLive = isNew || state.isDraft,
                 onRetry = { publish() },
                 onBackToEdit = { publishState = PublishState.Idle }
             )
@@ -448,7 +556,11 @@ private fun ListingEditorForm(
                 Spacer(modifier = Modifier.height(16.dp))
             }
             Text(
-                text = "Step ${state.step} of 2 · " + if (state.step == 1) "Photos and details" else "Size, price and dates",
+                text = "Step ${state.step} of 3 · " + when (state.step) {
+                    STEP_PHOTOS -> "Photos"
+                    STEP_DETAILS -> "Details"
+                    else -> "Size, price and dates"
+                },
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -476,58 +588,66 @@ private fun ListingEditorForm(
                 }
             }
 
-            if (state.step == 1) {
-                val missing = step1Missing(state.photosGate(), state.title.text, state.category, state.itemType, declarationPending)
-                PhotosAndDetailsStep(
-                    state = state,
-                    photoStore = photoStore,
-                    onMessage = { errorMessage = it },
-                    onChipPicked = { label -> logEvents(SuggestionEvent("type_chip", label.name, "picked", original?.id)) },
-                    onPolicyWrong = { photo ->
-                        state.overruled += photo.key
-                        state.aiReviewNeeded = true
-                        val label = (photo.verdict as? TierVerdict.NotOffered)?.label?.name.orEmpty()
-                        logEvents(SuggestionEvent("tier", label, "kept_override", original?.id))
-                        errorMessage = null
-                    },
-                    onOpenDeclaration = { showDeclaration = true }
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = {
-                        if (missing == null) {
-                            errorMessage = null
-                            state.step = 2
-                        } else {
-                            errorMessage = missing.message
-                            if (missing.button == "Sign the declaration") showDeclaration = true
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(50.dp)
-                ) { Text(missing?.button ?: "Next") }
-            } else {
-                SizePriceDatesStep(
-                    state = state,
-                    repository = repository,
-                    profile = profile,
-                    today = today,
-                    onWhatCanIList = { showWhatCanIList = true }
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                val step1 = step1Missing(state.photosGate(), state.title.text, state.category, state.itemType, declarationPending)
-                val missing = step1 ?: step2Missing(state.step2Input(profile.hasLocation || !isNew))
-                ReadyList(step1Done = step1 == null, input = state.step2Input(profile.hasLocation || !isNew))
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = { publish() },
-                    modifier = Modifier.fillMaxWidth().height(50.dp)
-                ) { Text(missing?.button ?: if (isNew) "Publish listing" else "Save changes") }
-                TextButton(onClick = { errorMessage = null; state.step = 1 }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    Text("Back to photos and details")
+            val photosMissing = state.photosGate()
+            val detailsGap = detailsMissing(state.title.text, state.category, state.itemType, declarationPending)
+            when (state.step) {
+                STEP_PHOTOS -> {
+                    PhotosStep(
+                        state = state,
+                        photoStore = photoStore,
+                        serverWarnings = { slot ->
+                            state.slots[slot]?.let { publisher.photoOf(it) }?.let { state.serverWarnings[it.id] }.orEmpty()
+                        },
+                        onMessage = { errorMessage = it }
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(onClick = { next() }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                        Text(photosMissing?.button ?: "Next")
+                    }
+                }
+                STEP_DETAILS -> {
+                    PhotoCheckBanner(
+                        banner = state.banner,
+                        onRetry = { checkAgain() },
+                        onReplacePhotos = { errorMessage = null; state.step = STEP_PHOTOS }
+                    )
+                    DetailsStep(state = state, onOpenDeclaration = { showDeclaration = true })
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(onClick = { next() }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                        Text(detailsGap?.button ?: "Next")
+                    }
+                    TextButton(onClick = { errorMessage = null; state.step = STEP_PHOTOS }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        Text("Back to photos")
+                    }
+                }
+                else -> {
+                    PhotoCheckBanner(
+                        banner = state.banner,
+                        onRetry = { checkAgain() },
+                        onReplacePhotos = { errorMessage = null; state.step = STEP_PHOTOS }
+                    )
+                    SizePriceDatesStep(
+                        state = state,
+                        repository = repository,
+                        profile = profile,
+                        today = today,
+                        onWhatCanIList = { showWhatCanIList = true }
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    val input = state.step2Input(profile.hasLocation || !isNew)
+                    val missing = photosMissing ?: detailsGap ?: step2Missing(input)
+                    ReadyList(photosDone = photosMissing == null, detailsDone = detailsGap == null, input = input)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { publish() },
+                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                    ) { Text(missing?.button ?: if (isNew || state.isDraft) "Publish listing" else "Save changes") }
+                    TextButton(onClick = { errorMessage = null; state.step = STEP_DETAILS }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        Text("Back to details")
+                    }
                 }
             }
         }
-        SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
     }
 }
 
@@ -535,7 +655,7 @@ private fun ListingEditorForm(
 private fun PublishFailedView(
     step: String,
     message: String,
-    isNew: Boolean,
+    goesLive: Boolean,
     onRetry: () -> Unit,
     onBackToEdit: () -> Unit
 ) {
@@ -562,7 +682,7 @@ private fun PublishFailedView(
         Text(text = message, style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = if (isNew) "Your listing stays hidden until this finishes." else "Your listing is paused until your changes are saved.",
+            text = if (goesLive) "Your listing stays hidden until this finishes." else "Your changes aren't all saved yet.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

@@ -2,7 +2,6 @@ package com.dzirent.shared.platform
 
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.dzirent.shared.data.PhotoAnalysis
-import com.dzirent.shared.util.PhotoScores
 import com.dzirent.shared.util.SavedDraft
 
 /** Small flags kept on the phone (the reference app's "dzirent_prefs" SharedPreferences). */
@@ -36,12 +35,9 @@ interface DraftStore {
     suspend fun clear()
 }
 
-/** Checks photos and runs item recognition on them, on the phone. */
+/** Runs the instant photo checks on the phone as photos are added. */
 interface PhotoAnalyzer {
     suspend fun analyze(uri: String): PhotoAnalysis
-
-    /** The model's scores for an embedding (several photos averaged), or null if the model isn't available. */
-    suspend fun scores(embedding: FloatArray): PhotoScores?
 }
 
 /** What the shared screens need from the phone that Compose doesn't give them. */

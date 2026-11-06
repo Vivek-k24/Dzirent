@@ -2,7 +2,6 @@ package com.dzirent.shared.ui
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,100 +11,108 @@ import com.dzirent.shared.data.PhotoAnalysis
 import com.dzirent.shared.data.PhotoItem
 import com.dzirent.shared.model.Categories
 import com.dzirent.shared.model.Listing
+import com.dzirent.shared.model.ListingPhoto
+import com.dzirent.shared.model.ListingScan
 import com.dzirent.shared.model.SuggestionEvent
 import com.dzirent.shared.repository.generateUuid
-import com.dzirent.shared.util.ColorVotes
-import com.dzirent.shared.util.DateRange
+import com.dzirent.shared.util.CheckPhase
 import com.dzirent.shared.util.DraftMeasurement
 import com.dzirent.shared.util.DraftRange
 import com.dzirent.shared.util.FashionStyles
 import com.dzirent.shared.util.FieldOrigin
 import com.dzirent.shared.util.FieldState
 import com.dzirent.shared.util.GarmentKind
-import com.dzirent.shared.util.ItemGuess
 import com.dzirent.shared.util.ListingSuggestions
 import com.dzirent.shared.util.PhotoReview
 import com.dzirent.shared.util.PhotoSlot
 import com.dzirent.shared.util.PhotoVerdict
 import com.dzirent.shared.util.ReviewState
+import com.dzirent.shared.util.STYLE_SEPARATOR
 import com.dzirent.shared.util.SavedDraft
-import com.dzirent.shared.util.SlotPhoto
 import com.dzirent.shared.util.Step2Input
 import com.dzirent.shared.util.SuggestField
-import com.dzirent.shared.util.TierVerdict
 import com.dzirent.shared.util.Sizes
-import com.dzirent.shared.util.averageEmbedding
+import com.dzirent.shared.util.checkBanner
 import com.dzirent.shared.util.clearedState
 import com.dzirent.shared.util.defaultAvailability
 import com.dzirent.shared.util.editedState
 import com.dzirent.shared.util.fieldsToFill
-import com.dzirent.shared.util.fieldsToFillForChip
 import com.dzirent.shared.util.garmentKindFor
-import com.dzirent.shared.util.jewelryFound
-import com.dzirent.shared.util.looksLikeDifferentItem
+import com.dzirent.shared.util.isDraft
 import com.dzirent.shared.util.measurementLabelsFor
 import com.dzirent.shared.util.parseDateRange
 import com.dzirent.shared.util.photoGate
 import com.dzirent.shared.util.photoMinimumApplies
+import com.dzirent.shared.util.photoSetKey
 import com.dzirent.shared.util.priceInputText
 import com.dzirent.shared.util.suggestedState
 import com.dzirent.shared.util.suggestionOutcome
-import com.dzirent.shared.util.tierVerdict
-import com.dzirent.shared.util.notOfferedWarning
 import com.dzirent.shared.util.validateMeasurements
 import kotlinx.datetime.LocalDate
 
-/** A photo taken out by the tier check, kept so "It's fashion, keep it" can put it back. */
-data class RemovedPhoto(val slot: PhotoSlot, val item: PhotoItem, val verdict: TierVerdict.Remove)
+/** The editor's three steps. */
+const val STEP_PHOTOS = 1
+const val STEP_DETAILS = 2
+const val STEP_PRICE = 3
 
 /**
- * Everything the two-step listing form holds, and the rules that change it. Snapshot state, so
- * the screens recompose; the decisions themselves are the pure functions in util (tested there).
+ * Everything the three-step listing form holds, and the rules that change it. Snapshot state,
+ * so the screens recompose; the decisions themselves are the pure functions in util (tested there).
  */
 class ListingEditorState(val original: Listing?, defaultUnit: String, today: LocalDate) {
     val isNew = original == null
 
-    var step by mutableIntStateOf(1)
+    /** A draft row from an earlier photo check: its title and category are placeholders, not the lender's. */
+    val isDraft = original?.isDraft == true
+
+    /** The listing's id. A new listing gets one now; a restored draft brings back its own. */
+    var listingId by mutableStateOf(original?.id ?: generateUuid())
+
+    var step by mutableIntStateOf(STEP_PHOTOS)
 
     // ---- Photos ----
     val slots = mutableStateMapOf<PhotoSlot, PhotoItem>()
-    /** Checks per photo key, without the same-item flag (that depends on the current front). */
+    /** The phone's instant checks per photo key. */
     val reviews = mutableStateMapOf<String, PhotoReview>()
     val analyses = mutableStateMapOf<String, PhotoAnalysis>()
-    /** Photos the lender kept after a removal ("It's fashion, keep it"). */
-    val kept = mutableStateListOf<String>()
-    /** Photos whose everyday-basics warning was answered "This is wrong". */
-    val overruled = mutableStateListOf<String>()
     var photosChanged by mutableStateOf(false)
 
+    // ---- The server's photo check ----
+    var checkPhase by mutableStateOf(CheckPhase.NONE)
+    var uploadError by mutableStateOf<String?>(null)
+    var scanId by mutableStateOf<String?>(null)
+    var scan by mutableStateOf<ListingScan?>(null)
+    /** [currentPhotoKey] of the photos [scanId] was asked for. */
+    var checkedPhotos by mutableStateOf<String?>(null)
+    /** The server's warnings per saved photo id, once the check is done. */
+    val serverWarnings = mutableStateMapOf<String, List<String>>()
+    /** The check said costume jewelry: the accessory declaration is needed. */
+    var jewelrySuggested by mutableStateOf(false)
+
     // ---- Details ----
-    var title by mutableStateOf(textValue(original?.title.orEmpty()))
-    var category by mutableStateOf(original?.category)
+    var title by mutableStateOf(textValue(if (isDraft) "" else original?.title.orEmpty()))
+    var category by mutableStateOf(if (isDraft) null else original?.category)
     var itemType by mutableStateOf(original?.itemType)
     var description by mutableStateOf(textValue(original?.description.orEmpty()))
     var styles by mutableStateOf(original?.listingStyles.orEmpty().filter { it in FashionStyles.ALL })
     val fields = mutableStateMapOf<SuggestField, FieldState>()
-    var guess by mutableStateOf<ItemGuess>(ItemGuess.Unsure)
-    /** The "Is it a: …?" chips were answered for this front photo key. */
-    var chipsAnsweredFor by mutableStateOf<String?>(null)
+    /** What the photo check suggested; the lender's own pick wins. */
     var recognizedKind by mutableStateOf<GarmentKind?>(null)
     var pickedKind by mutableStateOf(GarmentKind.fromKey(original?.garmentType))
-    var fabricHintScores by mutableStateOf<DoubleArray?>(null)
-    var colorVotes by mutableStateOf(ColorVotes.EMPTY)
 
-    // ---- Step 2 ----
+    // ---- Size, price and dates ----
     var sizeLabel by mutableStateOf(original?.sizeLabel.orEmpty())
     var unit by mutableStateOf(original?.measurements?.firstOrNull()?.unit ?: defaultUnit)
     var measurementRows by mutableStateOf(
         original?.measurements.orEmpty().map { MeasurementRow(it.id ?: generateUuid(), it.label, formatNumber(it.value)) }
     )
-    var sameAsAnswered by mutableStateOf(!isNew)
+    var sameAsAnswered by mutableStateOf(!isNew && !isDraft)
     var priceText by mutableStateOf(priceInputText(original?.priceUsd))
     var priceNote by mutableStateOf(original?.priceNote.orEmpty())
     var retailValueText by mutableStateOf(original?.retailValue?.let { formatNumber(it) }.orEmpty())
     var depositNote by mutableStateOf(original?.depositNote.orEmpty())
     var ranges by mutableStateOf(
-        if (original == null) listOf(defaultAvailability(today))
+        if (original == null || (isDraft && original.availability.isEmpty())) listOf(defaultAvailability(today))
         else original.availability.mapNotNull { parseDateRange(it.startDate, it.endDate) }
     )
     var listingDeclarationChecked by mutableStateOf(false)
@@ -118,50 +125,37 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
                 slots[slot] = PhotoItem.Existing(photo)
             }
             // What was saved counts as the lender's own: suggestions only fill what's still empty.
-            if (listing.title.isNotBlank()) fields[SuggestField.TITLE] = FieldState(FieldOrigin.EDITED)
-            fields[SuggestField.CATEGORY] = FieldState(FieldOrigin.EDITED)
+            // A draft row's placeholders were never the lender's.
+            if (!isDraft) {
+                if (listing.title.isNotBlank()) fields[SuggestField.TITLE] = FieldState(FieldOrigin.EDITED)
+                fields[SuggestField.CATEGORY] = FieldState(FieldOrigin.EDITED)
+            }
             if (listing.description.isNotBlank()) fields[SuggestField.DESCRIPTION] = FieldState(FieldOrigin.EDITED)
             if (listing.listingStyles.isNotEmpty()) fields[SuggestField.STYLE] = FieldState(FieldOrigin.EDITED)
         }
     }
 
     val isAccessory: Boolean get() = category == Categories.ACCESSORIES
-    val front: PhotoItem? get() = slots[PhotoSlot.FRONT]
     val kind: GarmentKind? get() = garmentKindFor(recognizedKind, pickedKind, category)
 
     fun field(f: SuggestField) = fields[f] ?: FieldState()
 
-    // ---- Photo reviews and tiers ----
+    // ---- Photos ----
 
-    /** The review for the photo in [slot], with the same-item check against the front photo. */
+    /** The phone's checks for the photo in [slot] (Close-up and Size tag only count sharpness and light). */
     fun reviewOf(slot: PhotoSlot): PhotoReview? {
         val item = slots[slot] ?: return null
         return when (item) {
             is PhotoItem.Existing -> PhotoReview.Saved
-            is PhotoItem.New -> {
-                val base = reviews[item.key] ?: PhotoReview.Checking
-                val frontEmbedding = front?.let { analyses[it.key]?.embedding }
-                val embedding = analyses[item.key]?.embedding
-                val different = slot != PhotoSlot.FRONT && slot.usedForType && frontEmbedding != null && embedding != null &&
-                    looksLikeDifferentItem(frontEmbedding, embedding)
-                base.copy(differentItem = different, fullChecks = slot.fullChecks)
-            }
+            is PhotoItem.New -> (reviews[item.key] ?: PhotoReview.Checking).copy(fullChecks = slot.fullChecks)
         }
     }
 
     val verdicts: Map<PhotoSlot, PhotoVerdict> get() = slots.keys.associateWith { reviewOf(it)!!.verdict }
 
-    /** Each photo with its tier check, for the removal, warning and jewelry rules. */
-    val slotPhotos: List<SlotPhoto>
-        get() = slots.map { (slot, item) -> SlotPhoto(item.key, slot, analyses[item.key]?.scores?.let(::tierVerdict)) }
-
-    val notOffered: SlotPhoto? get() = notOfferedWarning(slotPhotos, overruled.toSet())
-    val jewelry: Boolean get() = jewelryFound(slotPhotos)
-
     fun photosGate() = photoGate(
         slots.keys.associateWith { reviewOf(it)!! },
-        minimumApplies = photoMinimumApplies(isNew, photosChanged),
-        policyPending = notOffered != null
+        minimumApplies = photoMinimumApplies(isNew || isDraft, photosChanged)
     )
 
     fun reviewFor(analysis: PhotoAnalysis): PhotoReview =
@@ -172,57 +166,19 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
         photosChanged = true
     }
 
-    /** Puts a removed photo back where it was (or in the first free slot). */
-    fun restore(removed: RemovedPhoto): Boolean {
-        val slot = if (removed.slot !in slots) removed.slot else PhotoSlot.FILL_ORDER.firstOrNull { it !in slots } ?: return false
-        slots[slot] = removed.item
-        kept += removed.item.key
-        aiReviewNeeded = true
-        photosChanged = true
-        return true
-    }
+    /** Which photo sits in which slot now. */
+    fun currentPhotoKey(): String = photoSetKey(slots.mapValues { it.value.key })
 
-    // ---- Recognition across the photos ----
+    /** The photos changed since they were last sent for the check (or never were). */
+    val photosNeedCheck: Boolean get() = scanId == null || checkedPhotos != currentPhotoKey()
 
-    /**
-     * The Front, Back and Extra photos that are the same item as the front (and weren't
-     * removed), the ones recognition is run on together. Empty until the front is analyzed.
-     */
-    fun typedAnalyses(): List<Pair<PhotoSlot, PhotoAnalysis>> {
-        val frontItem = front as? PhotoItem.New ?: return emptyList()
-        val frontAnalysis = analyses[frontItem.key]?.takeIf { it.embedding != null } ?: return emptyList()
-        return listOf(PhotoSlot.FRONT to frontAnalysis) + slots.filterKeys { it != PhotoSlot.FRONT && it.usedForType }
-            .mapNotNull { (slot, item) ->
-                val analysis = analyses[item.key]?.takeIf { it.embedding != null } ?: return@mapNotNull null
-                if (looksLikeDifferentItem(frontAnalysis.embedding!!, analysis.embedding!!)) null else slot to analysis
-            }
-    }
+    val banner get() = checkBanner(checkPhase, scan, uploadError)
 
-    fun combinedEmbedding(): FloatArray? = averageEmbedding(typedAnalyses().map { it.second.embedding!! })
+    // ---- Suggestions from the photo check ----
 
-    /** Fills empty, never-touched fields from [s] (suggest once). */
+    /** Fills empty, never-touched fields from [s] (suggest once); never what the lender typed. */
     fun applySuggestion(s: ListingSuggestions) {
-        applyFills(fieldsToFill(fields, currentValues(), s), s)
-        if (pickedKind == null) recognizedKind = s.kind
-    }
-
-    /** "Is it a: …?" picked: fills title, category and style (not over what the lender typed). */
-    fun applyChip(s: ListingSuggestions) {
-        applyFills(fieldsToFillForChip(fields, currentValues(), s), s)
-        recognizedKind = s.kind
-        pickedKind = null
-        chipsAnsweredFor = front?.key
-    }
-
-    private fun currentValues() = mapOf(
-        SuggestField.TITLE to title.text,
-        SuggestField.CATEGORY to category.orEmpty(),
-        SuggestField.DESCRIPTION to description.text,
-        SuggestField.STYLE to styles.joinToString(", ")
-    )
-
-    private fun applyFills(fills: Map<SuggestField, String>, s: ListingSuggestions) {
-        fills.forEach { (field, value) ->
+        fieldsToFill(fields, currentValues(), s).forEach { (field, value) ->
             when (field) {
                 SuggestField.TITLE -> title = textValue(value.take(80))
                 SuggestField.DESCRIPTION -> description = textValue(value)
@@ -230,11 +186,21 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
                     category = value
                     itemType = if (value == Categories.ACCESSORIES) s.itemType else null
                 }
-                SuggestField.STYLE -> styles = listOf(value)
+                SuggestField.STYLE -> styles = value.split(STYLE_SEPARATOR).filter { it in FashionStyles.ALL }
+                    .take(FashionStyles.LISTING_MAX)
             }
             fields[field] = suggestedState(value, s.label)
         }
+        if (pickedKind == null) recognizedKind = s.kind
+        jewelrySuggested = s.isJewelry
     }
+
+    private fun currentValues() = mapOf(
+        SuggestField.TITLE to title.text,
+        SuggestField.CATEGORY to category.orEmpty(),
+        SuggestField.DESCRIPTION to description.text,
+        SuggestField.STYLE to styles.joinToString(STYLE_SEPARATOR)
+    )
 
     // ---- The lender's own edits ----
 
@@ -257,7 +223,7 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
     }
 
     fun editStyles(value: List<String>) {
-        fields[SuggestField.STYLE] = editedState(field(SuggestField.STYLE), value.joinToString(", "))
+        fields[SuggestField.STYLE] = editedState(field(SuggestField.STYLE), value.joinToString(STYLE_SEPARATOR))
         styles = value
     }
 
@@ -274,7 +240,7 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
         }
     }
 
-    // ---- Step 2 ----
+    // ---- Size, price and dates ----
 
     /** Template rows for the kind, when nothing has been typed into the measurements yet. */
     fun refreshMeasurementTemplate() {
@@ -314,7 +280,7 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
             SuggestField.TITLE -> title.text
             SuggestField.CATEGORY -> category.orEmpty()
             SuggestField.DESCRIPTION -> description.text
-            SuggestField.STYLE -> styles.joinToString(", ")
+            SuggestField.STYLE -> styles.joinToString(STYLE_SEPARATOR)
         }
         val action = suggestionOutcome(state, final) ?: return@mapNotNull null
         SuggestionEvent(f.key, state.label.orEmpty(), action, listingId)
@@ -322,13 +288,17 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
 
     // ---- Drafts ----
 
-    fun toDraft() = SavedDraft(
+    /** [listingCreated] and [uploaded] come from the publisher: where the photos already went. */
+    fun toDraft(listingCreated: Boolean, uploaded: Map<String, ListingPhoto>) = SavedDraft(
         step = step,
         photos = slots.filterValues { it is PhotoItem.New }.map { (slot, item) -> slot.key to item.key }.toMap(),
         savedPhotos = slots.mapNotNull { (slot, item) -> (item as? PhotoItem.Existing)?.let { slot.key to it.photo.id } }.toMap(),
         photosChanged = photosChanged,
-        kept = kept.toList(),
-        overruled = overruled.toList(),
+        listingId = listingId,
+        listingCreated = listingCreated,
+        uploaded = uploaded,
+        scanId = scanId,
+        checkedPhotos = checkedPhotos,
         title = title.text,
         category = category,
         itemType = itemType,
@@ -351,8 +321,9 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
     )
 
     /**
-     * Restores a saved draft. Its photos are checked again; nothing already answered is asked
-     * again. A photo added meanwhile (a camera shot arriving after a restart) stays, in a free slot.
+     * Restores a saved draft. Its photos are checked on the phone again; the server check it was
+     * waiting for is picked up again. A photo added meanwhile (a camera shot arriving after a
+     * restart) stays, in a free slot.
      */
     fun restore(draft: SavedDraft) {
         val meanwhile = slots.filterValues { it is PhotoItem.New }
@@ -369,8 +340,9 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
                 if (free != null) slots[free] = item
             }
         }
-        kept.clear(); kept += draft.kept
-        overruled.clear(); overruled += draft.overruled
+        draft.listingId?.let { listingId = it }
+        scanId = draft.scanId
+        checkedPhotos = draft.checkedPhotos
         title = textValue(draft.title)
         category = draft.category
         itemType = draft.itemType
@@ -392,7 +364,16 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
         listingDeclarationChecked = draft.listingDeclarationChecked
         aiReviewNeeded = aiReviewNeeded || draft.aiReviewNeeded
         photosChanged = isNew || draft.photosChanged || meanwhile.isNotEmpty()
-        step = draft.step.coerceIn(1, 2)
+        step = draft.step.coerceIn(STEP_PHOTOS, STEP_PRICE)
+    }
+
+    /** Forgets a check that no longer applies (its draft row is gone). */
+    fun forgetCheck() {
+        scanId = null
+        scan = null
+        checkedPhotos = null
+        checkPhase = CheckPhase.NONE
+        serverWarnings.clear()
     }
 }
 

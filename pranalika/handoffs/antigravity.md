@@ -2,6 +2,34 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Photo fix - 2026-11-04
+
+- Which photos were broken:
+  - Discovered 4 sample listings with 149-byte placeholder files (< 10 KB) in the Supabase Storage bucket `listing-photos`:
+    1. "Satin Backless Maxi Dress" (`32c885a9-a286-4fc4-a77e-2bae9fa0141b`): 149 bytes (`ae3b22ace731bd21.jpg`)
+    2. "Modern Qipao Midi Dress" (`80a55094-9699-4b7f-a55f-f3094c3dc526`): 149 bytes (`cb2a8a3733907033.jpg`)
+    3. "Embroidered Silk Lehenga Set" (`a7417052-55ff-4cb8-b49d-054a69a6e719`): 149 bytes (`6877334392c02f0d.jpg`)
+    4. "Vintage Denim Jumpsuit" (`ed999629-5802-4a8b-abb5-67d35710f02c`): 149 bytes (`728aedb86c077494.jpg`)
+  - All other sample listings on `dzirent-server` already had valid photos (> 41 KB).
+
+- What was replaced:
+  - Generated original realistic commercial fashion catalog product photos (both front and back views) using the built-in image generator:
+    - 3:4 vertical portrait aspect ratio, garments displayed on clean wooden hangers or headless mannequins against plain light studio backgrounds, no people, no faces, no logos, no text, matching each listing's title, style, and color.
+  - Compressed all 8 new images to JPEG quality 80 into `supabase/seed/images/<slug>/`:
+    - `satin-backless-maxi-dress`: `front.jpg` (56,339 bytes), `back.jpg` (63,646 bytes)
+    - `modern-qipao-midi-dress`: `front.jpg` (49,846 bytes), `back.jpg` (54,461 bytes)
+    - `embroidered-silk-lehenga-set`: `front.jpg` (151,007 bytes), `back.jpg` (137,475 bytes)
+    - `vintage-denim-jumpsuit`: `front.jpg` (106,873 bytes), `back.jpg` (102,356 bytes)
+  - Authenticated as Maya Lin (User 2, owner of the 4 listings) and uploaded ONLY the replacement photos through the normal Storage and REST APIs, deleting the old 149-byte files and inserting records for `front` (slot 0) and `back` (slot 1). Left all other working listings untouched.
+
+- What was actually run & verified:
+  - Verified local files in `supabase/seed/images`: all files are between 41 KB and 151 KB (all > 10 KB, well under 400 KB limit).
+  - Verified guest `rpc/browse_listings`: returns 13 listings; every cover photo fetched with HTTP 200 and content-length > 10 KB.
+  - Verified guest `rpc/get_listing`: queried all listings; every photo across all listings fetched with HTTP 200 and content-length > 10 KB.
+
+- Open issues:
+  - None.
+
 ## Step 2F - 2026-11-03 - My closet in the top bar
 
 - What was done:

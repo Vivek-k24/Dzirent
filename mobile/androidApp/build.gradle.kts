@@ -129,16 +129,6 @@ android {
     buildFeatures {
         compose = true
     }
-
-    androidResources {
-        // The model is memory-mapped straight from the APK, which needs it stored uncompressed.
-        noCompress += "tflite"
-    }
-}
-
-// Open-source licenses: also lists files that aren't Gradle dependencies (the TinyCLIP model).
-aboutLibraries {
-    configPath = "config"
 }
 
 dependencies {

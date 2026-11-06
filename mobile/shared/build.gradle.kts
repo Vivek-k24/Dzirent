@@ -46,8 +46,12 @@ kotlin {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
-    iosArm64()
-    iosSimulatorArm64()
+    listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
+        target.binaries.framework {
+            baseName = "shared"
+            isStatic = true
+        }
+    }
 
     sourceSets {
         commonMain {
@@ -95,8 +99,6 @@ kotlin {
                 implementation(libs.play.services.location)
                 implementation(libs.androidx.exifinterface)
                 implementation(libs.androidx.activity.compose)
-                // Item recognition on the phone (TinyCLIP image encoder in assets/ml)
-                implementation(libs.litert)
                 // Open-source licenses screen
                 implementation(libs.aboutlibraries.compose.m3)
             }

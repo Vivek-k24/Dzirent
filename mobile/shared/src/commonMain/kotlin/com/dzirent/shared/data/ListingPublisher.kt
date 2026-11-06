@@ -7,6 +7,8 @@ import com.dzirent.shared.model.ListingPhoto
 import com.dzirent.shared.repository.DzirentException
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.platform.DeviceServices
+import com.dzirent.shared.util.isDraft
+import kotlin.coroutines.cancellation.CancellationException
 
 /** A photo in the editor: one already saved, or a new one picked from the gallery or camera. */
 sealed class PhotoItem {
@@ -41,12 +43,16 @@ class PublishStepException(val step: String, cause: Throwable) :
     Exception(if (cause is DzirentException) cause.message else "Something went wrong. Please try again.", cause)
 
 /**
- * Saves a new or edited listing so it is never left half-built and active:
- * 1. save details with status 'paused', 2. remove deleted photos, 3. upload new photos,
- * 4. save photo order, 5. replace measurements and availability, 6. set the final status.
+ * Saves a new or edited listing in steps that resume after a failure:
+ * - [syncPhotos], right after the photos step, so the server can check them: a new listing's
+ *   paused draft row first (placeholder title), then removed photos, new photos and their order.
+ * - [publish]: the details, any photo changes since, measurements and availability, the
+ *   declaration, then the final status. A new listing (or a draft) ends up 'active' through
+ *   the database's publish gate; an edited listing keeps its status, so a live listing stays
+ *   live while it's edited (the server re-checks changed photos itself).
  *
- * One instance per editor session. Completed steps are remembered, so calling [publish]
- * again after a failure resumes from the step that failed.
+ * One instance per editor session. Completed steps are remembered, and [restore] carries the
+ * uploads of a saved draft across a restart.
  */
 class ListingPublisher(
     private val repository: DzirentRepository,
@@ -60,69 +66,78 @@ class ListingPublisher(
     private val savedPositions = mutableMapOf<String, Pair<Int, String?>>() // photo id -> (position, slot) in DB
     private var declarationRecorded = false
 
+    /** A new listing, or a draft row from an earlier photo check: publishing makes it active. */
+    private val goesLive = original == null || original.isDraft
+
     init {
         original?.photos?.forEach { savedPositions[it.id] = it.position to it.slot }
     }
 
+    /** The listing row exists on the server. */
+    val created: Boolean get() = listingCreated
+
+    /** New photo URIs uploaded so far, with what they were saved as. */
+    val uploadedPhotos: Map<String, ListingPhoto> get() = uploaded.toMap()
+
+    /** The saved photo behind [item]: always for a saved one, once uploaded for a new one. */
+    fun photoOf(item: PhotoItem): ListingPhoto? = when (item) {
+        is PhotoItem.Existing -> item.photo
+        is PhotoItem.New -> uploaded[item.key]
+    }
+
+    /** Picks up a saved draft's uploads, so they aren't uploaded again. */
+    fun restore(created: Boolean, photos: Map<String, ListingPhoto>) {
+        listingCreated = listingCreated || created
+        uploaded.putAll(photos)
+        photos.values.forEach { savedPositions[it.id] = it.position to it.slot }
+    }
+
+    /** Forgets a new listing's draft row and uploads (the row is gone), so the next sync starts afresh. */
+    fun reset() {
+        if (original != null) return
+        listingCreated = false
+        uploaded.clear()
+        savedPositions.clear()
+        deletedPhotoIds.clear()
+    }
+
     /**
-     * New listings end up 'active'. Edited listings return to the status they had, so an
-     * active listing is paused only while its changes are being saved.
+     * Puts the editor's photos on the listing as they are now, for the photo check. A new
+     * listing's row is created first as a paused draft from [draftRow].
      */
-    suspend fun publish(draft: ListingDraft, onProgress: (String) -> Unit) {
+    suspend fun syncPhotos(draftRow: Listing, photos: List<PhotoItem>, slots: List<String?>, onProgress: (String) -> Unit = {}) {
+        if (!listingCreated) {
+            step("Saving your draft", onProgress) {
+                repository.createListing(draftRow.copy(status = "paused"))
+                listingCreated = true
+            }
+        }
+        savePhotos(draftRow.id, photos, slots, onProgress)
+    }
+
+    /**
+     * Saves everything. [beforeGoingLive] runs just before a new listing (or draft) is made
+     * active, so the editor can wait for the photo check while vision_required is on.
+     */
+    suspend fun publish(
+        draft: ListingDraft,
+        beforeGoingLive: suspend ((String) -> Unit) -> Unit = {},
+        onProgress: (String) -> Unit
+    ) {
         val listing = draft.listing
-        val finalStatus = original?.status ?: "active"
+        // An edit saves with the status the listing has, so a live listing isn't taken down.
+        val savedStatus = if (goesLive) "paused" else original!!.status
 
         step("Saving listing details", onProgress) {
             if (!listingCreated) {
                 repository.createListing(listing.copy(status = "paused"))
                 listingCreated = true
             } else {
-                repository.updateListingDetails(listing, status = "paused")
+                repository.updateListingDetails(listing, status = savedStatus)
             }
         }
 
-        // Photos removed in the editor: saved ones, plus any uploaded on an earlier attempt.
-        val keys = draft.photos.map { it.key }.toSet()
-        val keptExistingIds = draft.photos.filterIsInstance<PhotoItem.Existing>().map { it.photo.id }.toSet()
-        val toDelete = original?.photos.orEmpty().filter { it.id !in keptExistingIds && it.id !in deletedPhotoIds } +
-            uploaded.filterKeys { it !in keys }.values
-        if (toDelete.isNotEmpty()) {
-            step("Removing photos", onProgress) {
-                toDelete.forEach { photo ->
-                    repository.deleteListingPhoto(photo)
-                    deletedPhotoIds += photo.id
-                    savedPositions.remove(photo.id)
-                    uploaded.values.remove(photo)
-                }
-            }
-        }
-
-        val newPhotos = draft.photos.withIndex().filter { it.value is PhotoItem.New && it.value.key !in uploaded }
-        newPhotos.forEachIndexed { i, (position, item) ->
-            step("Uploading photo ${i + 1} of ${newPhotos.size}", onProgress) {
-                val bytes = readBytes((item as PhotoItem.New).uri)
-                val slot = draft.slots.getOrNull(position)
-                val compressed = device.imageCompressor.compressImage(bytes)
-                    ?: throw DzirentException("One of the photos couldn't be read. Remove it or pick a different one.")
-                val photo = repository.uploadListingPhoto(listing.id, compressed, position, slot)
-                uploaded[item.key] = photo
-                savedPositions[photo.id] = position to slot
-            }
-        }
-
-        step("Saving photo order", onProgress) {
-            draft.photos.forEachIndexed { position, item ->
-                val photoId = when (item) {
-                    is PhotoItem.Existing -> item.photo.id
-                    is PhotoItem.New -> uploaded.getValue(item.key).id
-                }
-                val place = position to draft.slots.getOrNull(position)
-                if (savedPositions[photoId] != place) {
-                    repository.updatePhotoPosition(photoId, place.first, place.second)
-                    savedPositions[photoId] = place
-                }
-            }
-        }
+        savePhotos(listing.id, draft.photos, draft.slots, onProgress)
 
         step("Saving measurements and dates", onProgress) {
             repository.replaceMeasurements(listing.id, draft.measurements)
@@ -137,17 +152,68 @@ class ListingPublisher(
             }
         }
 
-        step(if (finalStatus == "active") "Publishing" else "Finishing up", onProgress) {
-            repository.toggleListingStatus(listing.id, finalStatus)
+        if (goesLive) {
+            beforeGoingLive(onProgress)
+            step("Publishing", onProgress) {
+                repository.toggleListingStatus(listing.id, "active")
+            }
         }
 
         device.clearCameraCache()
+    }
+
+    /** Removed photos (saved ones, and uploads no longer in the editor), new photos, then the order. */
+    private suspend fun savePhotos(listingId: String, photos: List<PhotoItem>, slots: List<String?>, onProgress: (String) -> Unit) {
+        val keys = photos.map { it.key }.toSet()
+        val keptExistingIds = photos.filterIsInstance<PhotoItem.Existing>().map { it.photo.id }.toSet()
+        val toDelete = original?.photos.orEmpty().filter { it.id !in keptExistingIds && it.id !in deletedPhotoIds } +
+            uploaded.filterKeys { it !in keys }.values
+        if (toDelete.isNotEmpty()) {
+            step("Removing photos", onProgress) {
+                toDelete.forEach { photo ->
+                    repository.deleteListingPhoto(photo)
+                    deletedPhotoIds += photo.id
+                    savedPositions.remove(photo.id)
+                    uploaded.values.remove(photo)
+                }
+            }
+        }
+
+        val newPhotos = photos.withIndex().filter { it.value is PhotoItem.New && it.value.key !in uploaded }
+        newPhotos.forEachIndexed { i, (position, item) ->
+            step("Uploading photo ${i + 1} of ${newPhotos.size}", onProgress) {
+                val bytes = readBytes((item as PhotoItem.New).uri)
+                val slot = slots.getOrNull(position)
+                val compressed = device.imageCompressor.compressImage(bytes)
+                    ?: throw DzirentException("One of the photos couldn't be read. Remove it or pick a different one.")
+                val photo = repository.uploadListingPhoto(listingId, compressed, position, slot)
+                uploaded[item.key] = photo
+                savedPositions[photo.id] = position to slot
+            }
+        }
+
+        step("Saving photo order", onProgress) {
+            photos.forEachIndexed { position, item ->
+                val photoId = when (item) {
+                    is PhotoItem.Existing -> item.photo.id
+                    is PhotoItem.New -> uploaded.getValue(item.key).id
+                }
+                val place = position to slots.getOrNull(position)
+                if (savedPositions[photoId] != place) {
+                    repository.updatePhotoPosition(photoId, place.first, place.second)
+                    savedPositions[photoId] = place
+                    if (item is PhotoItem.New) uploaded[item.key] = uploaded.getValue(item.key).copy(position = place.first, slot = place.second)
+                }
+            }
+        }
     }
 
     private suspend fun step(name: String, onProgress: (String) -> Unit, block: suspend () -> Unit) {
         onProgress("$name...")
         try {
             block()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             throw PublishStepException(name, e)
         }

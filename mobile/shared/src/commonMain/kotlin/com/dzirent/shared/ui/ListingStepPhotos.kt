@@ -28,29 +28,31 @@ import com.dzirent.shared.model.AccessoryTypes
 import com.dzirent.shared.model.Categories
 import com.dzirent.shared.ui.theme.DzirentPass
 import com.dzirent.shared.ui.theme.DzirentWarn
+import com.dzirent.shared.util.CHECKING_PHOTOS
+import com.dzirent.shared.util.CHECK_FAILED_LINE
 import com.dzirent.shared.util.CHOOSE_CATEGORY
+import com.dzirent.shared.util.CheckBanner
+import com.dzirent.shared.util.DESCRIPTION_TIP
 import com.dzirent.shared.util.FashionStyles
 import com.dzirent.shared.util.FieldOrigin
-import com.dzirent.shared.util.ItemGuess
-import com.dzirent.shared.util.ItemLabel
 import com.dzirent.shared.util.MAX_PHOTOS
+import com.dzirent.shared.util.PHOTOS_LOOK_GOOD
 import com.dzirent.shared.util.PHOTO_TIP
 import com.dzirent.shared.util.PhotoReview
 import com.dzirent.shared.util.PhotoSlot
 import com.dzirent.shared.util.PhotoVerdict
+import com.dzirent.shared.util.REPLACE_PHOTOS
+import com.dzirent.shared.util.REVIEW_LINE
 import com.dzirent.shared.util.ReviewState
-import com.dzirent.shared.util.SlotPhoto
 import com.dzirent.shared.util.SuggestField
-import com.dzirent.shared.util.TierVerdict
+import com.dzirent.shared.util.UPLOADING_PHOTOS
 import com.dzirent.shared.util.assignSlots
-import com.dzirent.shared.util.descriptionHint
-import com.dzirent.shared.util.nameColors
+import com.dzirent.shared.util.extraWarnings
 import com.dzirent.shared.util.readyLine
-import com.dzirent.shared.util.suggestionsForChip
 
 /**
- * Step 1: the photo slots, then title, category, description and style, filled from the photos
- * when the phone is confident (each with ✕ to clear).
+ * Step 1: the photo slots, with the phone's instant checks on each photo and, once the server
+ * has checked them, its warnings too ([serverWarnings], by slot).
  *
  * The first time each source is used, a short explanation asks for consent (remembered in
  * [PhotoConsentStore]). The camera then needs the CAMERA runtime permission, since the app
@@ -58,15 +60,12 @@ import com.dzirent.shared.util.suggestionsForChip
  * consent step for the gallery (READ_MEDIA_IMAGES is deliberately not requested). Either way
  * the photo is copied into the app ([PhotoStore]) before anything reads it.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun PhotosAndDetailsStep(
+fun PhotosStep(
     state: ListingEditorState,
     photoStore: PhotoStore,
-    onMessage: (String) -> Unit,
-    onChipPicked: (ItemLabel) -> Unit,
-    onPolicyWrong: (SlotPhoto) -> Unit,
-    onOpenDeclaration: () -> Unit
+    serverWarnings: (PhotoSlot) -> List<String>,
+    onMessage: (String) -> Unit
 ) {
     var targetKey by rememberSaveable { mutableStateOf<String?>(null) }
     var choosingSourceFor by remember { mutableStateOf<PhotoSlot?>(null) }
@@ -113,6 +112,7 @@ fun PhotosAndDetailsStep(
                     slot = slot,
                     item = state.slots[slot],
                     review = state.reviewOf(slot),
+                    serverWarnings = serverWarnings(slot),
                     onAdd = { choosingSourceFor = slot },
                     onRemove = { state.removePhoto(slot) },
                     onUseAnyway = {
@@ -140,22 +140,15 @@ fun PhotosAndDetailsStep(
         }
     }
 
-    // An everyday basic: a friendly warning, the lender decides.
-    state.notOffered?.let { photo ->
-        Spacer(modifier = Modifier.height(8.dp))
-        PolicyWarningCard(
-            message = (photo.verdict as TierVerdict.NotOffered).message,
-            onChooseAnother = {
-                state.removePhoto(photo.slot)
-                targetKey = photo.slot.key
-                start(PhotoSource.Gallery)
-            },
-            onWrong = { onPolicyWrong(photo) }
-        )
-    }
-    Spacer(modifier = Modifier.height(16.dp))
+}
 
-    // ---- Details ----
+/**
+ * Step 2: title, category, description and style. Once the server has checked the photos, an
+ * allowed piece fills the empty fields (each with ✕ to clear); typing is never blocked while
+ * the check runs.
+ */
+@Composable
+fun DetailsStep(state: ListingEditorState, onOpenDeclaration: () -> Unit) {
     val anySuggested = SuggestField.entries.any { state.field(it).origin == FieldOrigin.SUGGESTED }
     Text("Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     if (anySuggested) {
@@ -166,29 +159,6 @@ fun PhotosAndDetailsStep(
         )
     }
     Spacer(modifier = Modifier.height(8.dp))
-
-    // Not sure what it is: the three likeliest, one tap fills title, category and style.
-    val guess = state.guess
-    if (guess is ItemGuess.Choices && state.chipsAnsweredFor != state.front?.key) {
-        Text(
-            text = "Is it a: " + guess.labels.joinToString(" · ") { it.chip } + "?",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium
-        )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            guess.labels.forEach { label ->
-                AssistChip(
-                    onClick = {
-                        state.applyChip(suggestionsForChip(label, nameColors(state.colorVotes)))
-                        onChipPicked(label)
-                    },
-                    label = { Text(label.chip) }
-                )
-            }
-            TextButton(onClick = { state.chipsAnsweredFor = state.front?.key }) { Text("None of these") }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-    }
 
     OutlinedTextField(
         value = state.title,
@@ -211,7 +181,7 @@ fun PhotosAndDetailsStep(
         ItemTypePicker(selected = state.itemType, onSelected = { state.itemType = it })
         Spacer(modifier = Modifier.height(12.dp))
     }
-    if (state.isAccessory || state.jewelry) {
+    if (state.isAccessory || state.jewelrySuggested) {
         DeclarationStatusNote(onOpenDeclaration)
     }
 
@@ -219,8 +189,8 @@ fun PhotosAndDetailsStep(
         value = state.description,
         onValueChange = { state.editDescription(it) },
         label = { Text("Description") },
-        // The tip and any fabric guess are a hint only; they're never part of the description.
-        supportingText = { Text(descriptionHint(state.fabricHintScores), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)) },
+        // The tip is a hint only; it's never part of the description.
+        supportingText = { Text(DESCRIPTION_TIP, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)) },
         minLines = 4,
         trailingIcon = clearIcon("description", state.description.text.isNotEmpty()) { state.clear(SuggestField.DESCRIPTION) },
         modifier = Modifier.fillMaxWidth()
@@ -240,12 +210,16 @@ private fun clearIcon(what: String, visible: Boolean, onClear: () -> Unit): (@Co
         { IconButton(onClick = onClear) { Icon(Icons.Default.Close, contentDescription = "Clear $what") } }
     }
 
-/** One photo slot: "+ Front" when empty, the photo with ✕ and its check result when filled. */
+/**
+ * One photo slot: "+ Front" when empty, the photo with ✕ and its check result when filled, then
+ * any warning the server's check adds.
+ */
 @Composable
 private fun SlotTile(
     slot: PhotoSlot,
     item: PhotoItem?,
     review: PhotoReview?,
+    serverWarnings: List<String>,
     onAdd: () -> Unit,
     onRemove: () -> Unit,
     onUseAnyway: () -> Unit,
@@ -327,21 +301,55 @@ private fun SlotTile(
             }
         }
         review?.let { PhotoCheckResult(it, onUseAnyway) }
+        extraWarnings(review?.messages.orEmpty(), serverWarnings).forEach { warning ->
+            Text(text = warning, style = MaterialTheme.typography.labelSmall, color = DzirentWarn, textAlign = TextAlign.Center)
+        }
     }
 }
 
-/** "This looks like a T-shirt. …" with a way out either way. */
+/**
+ * The server's photo check above the details: uploading, checking (typing goes on), looks good,
+ * can't be listed (with the reason and a way to replace the photos), or someone will check.
+ */
 @Composable
-private fun PolicyWarningCard(message: String, onChooseAnother: () -> Unit, onWrong: () -> Unit) {
+fun PhotoCheckBanner(banner: CheckBanner?, onRetry: () -> Unit, onReplacePhotos: () -> Unit) {
+    banner ?: return
+    val error = banner is CheckBanner.Rejected || banner is CheckBanner.UploadFailed || banner is CheckBanner.Failed
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-        modifier = Modifier.fillMaxWidth()
+        colors = CardDefaults.cardColors(
+            containerColor = if (error) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant
+        ),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
     ) {
-        Column(modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 8.dp, bottom = 4.dp)) {
-            Text(text = message, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(end = 8.dp))
-            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                TextButton(onClick = onWrong) { Text("This is wrong") }
-                TextButton(onClick = onChooseAnother) { Text("Choose another photo") }
+        val text = if (error) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
+        Column(modifier = Modifier.padding(16.dp)) {
+            when (banner) {
+                CheckBanner.Uploading, CheckBanner.Checking -> {
+                    Text(if (banner == CheckBanner.Uploading) UPLOADING_PHOTOS else CHECKING_PHOTOS, color = text)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+                CheckBanner.Allowed -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = DzirentPass, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(PHOTOS_LOOK_GOOD, color = text)
+                }
+                is CheckBanner.Review -> {
+                    Text(REVIEW_LINE, color = text, fontWeight = FontWeight.Medium)
+                    banner.reason?.let { Text(it, color = text, style = MaterialTheme.typography.bodySmall) }
+                }
+                is CheckBanner.Rejected -> {
+                    Text(banner.reason, color = text, fontWeight = FontWeight.Medium)
+                    TextButton(onClick = onReplacePhotos, contentPadding = PaddingValues(horizontal = 0.dp)) { Text(REPLACE_PHOTOS) }
+                }
+                is CheckBanner.UploadFailed -> {
+                    Text(banner.message, color = text)
+                    TextButton(onClick = onRetry, contentPadding = PaddingValues(horizontal = 0.dp)) { Text("Try again") }
+                }
+                CheckBanner.Failed -> {
+                    Text(CHECK_FAILED_LINE, color = text)
+                    TextButton(onClick = onRetry, contentPadding = PaddingValues(horizontal = 0.dp)) { Text("Check again") }
+                }
             }
         }
     }

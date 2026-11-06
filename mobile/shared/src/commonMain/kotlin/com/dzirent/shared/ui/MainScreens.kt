@@ -45,6 +45,7 @@ import com.dzirent.shared.util.formatPrice
 import com.dzirent.shared.util.parseDateRange
 import kotlinx.coroutines.launch
 import com.dzirent.shared.util.isBefore
+import com.dzirent.shared.util.isDraft
 import com.dzirent.shared.util.today
 
 sealed class UiState<out T> {
@@ -547,7 +548,8 @@ private fun MyListingsContent(
             try {
                 val status = if (active) "active" else "paused"
                 repository.toggleListingStatus(listing.id, status)
-                updateListing(listing.id) { it.copy(status = status) }
+                // Republishing clears the server's pause note (the database does the same).
+                updateListing(listing.id) { it.copy(status = status, autoPausedReason = if (active) null else it.autoPausedReason) }
             } catch (e: Exception) {
                 actionError = e.userMessage("Couldn't update your listing. Please try again.")
             }
@@ -675,6 +677,8 @@ private fun ClosetListingCard(
     onDelete: () -> Unit
 ) {
     val isActive = listing.status == "active"
+    // A draft row holds only uploaded photos (placeholder details): Edit carries on with it.
+    val isDraft = listing.isDraft
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -695,28 +699,43 @@ private fun ClosetListingCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = "${listing.typeLabel} · ${listing.sizeLabel}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                if (!isDraft) {
+                    Text(
+                        text = "${listing.typeLabel} · ${listing.sizeLabel}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     StatusBadge(
-                        text = if (isActive) "Active" else "Paused",
+                        text = when {
+                            isDraft -> "Draft"
+                            isActive -> "Active"
+                            else -> "Paused"
+                        },
                         highlighted = isActive
                     )
                     if (rentedOut) StatusBadge(text = "Rented out", highlighted = true, emphasis = true)
                 }
+                // Why the server paused it after a photo check.
+                if (!isActive) {
+                    listing.autoPausedReason?.let { reason ->
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                }
             }
             Column(horizontalAlignment = Alignment.End) {
-                Switch(
-                    checked = isActive,
-                    onCheckedChange = onActiveChange,
-                    enabled = !busy
-                )
+                if (!isDraft) {
+                    Switch(
+                        checked = isActive,
+                        onCheckedChange = onActiveChange,
+                        enabled = !busy
+                    )
+                }
                 Row {
                     IconButton(onClick = onEdit, enabled = !busy) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
