@@ -2,6 +2,73 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P1A part 1 - 2026-11-06 - data inventory
+
+Done:
+- Before starting: working tree clean, `Preview` up to date with `origin/Preview` at `62f50b5` (Step 8B); `git pull --rebase` was a no-op.
+- New `pranalika/compliance.md`:
+  1. data inventory, one row per data item across web, mobile, Supabase, the vision service and push, with a live table-and-column map;
+  2. outside services;
+  3. tracking and ads;
+  4. how 18+ works today;
+  5. security measures in place;
+  6. Google Play Data safety and Apple privacy label drafts, with the items that change at P6A and P6B;
+  7. rules to features, with phases;
+  8. 32 numbered gaps, each with a fix and a phase from the handoff plan.
+- New `pranalika/legal-placeholders.md`: every fill-in the legal pages need, with who fills it (owner, attorney, engineering) and a retention table to decide. All values blank.
+- `BOARD.md`: new section "Handoff plan" with P1A to P8C; P1A part 1 Done.
+- No code, database or settings changed.
+
+What I ran (all read-only):
+1. `supabase db query --linked` on `dzirent-server`:
+   - columns of `public` and `storage`;
+   - foreign-key delete rules (`information_schema` and `pg_constraint`, which also shows the keys into `auth.users`);
+   - the bucket and its object count;
+   - tables in the other schemas, and extensions;
+   - RLS and policy counts, Storage policies, the Realtime publication;
+   - `pg_net.ttl` and the age of its stored replies;
+   - row counts of the tables in the inventory;
+   - the key names (not values) in `auth.users.raw_user_meta_data`, and Vault secret names (not values);
+   - `has_column_privilege` on `profiles` and `listings`.
+2. Supabase Management API `GET /v1/projects/<ref>/config/auth`: printed selected non-secret fields only; SMTP only as set or not set.
+3. Supabase log queries (read only): sources, field names, retention window, user-agent shapes with letters and digits masked. No IP, email or user agent was printed.
+4. `gradlew :androidApp:dependencies --configuration releaseRuntimeClasspath` (JDK 21, env loaded silently): BUILD SUCCESSFUL. The first try stopped at the release guard (the configuration name contains "release"), so I set `ANDROID_VERSION_CODE_OFFSET=0` in that process only; one try through `cmd` couldn't find `gradlew.bat`. No build output was produced.
+5. Read the merged manifest of the last debug build, and the Vercel project (MCP, read only).
+6. `gcloud` (Cloud Logging buckets, sinks, audit config, Cloud Run describe): failed, it needs an interactive `gcloud auth login`. Cloud Logging retention, Cloud Run settings and the billing kill switch are marked unconfirmed.
+7. Phase 2:
+   - Schema: a script compared the live schema with `compliance.md`. All 26 tables were named. Many columns were only described in words, so I added the exact column map to 1.16. On re-run, all 193 columns are named.
+   - EXIF: re-read the upload paths. The website has one upload call (`listing-editor.tsx`, blobs only from `compressPhoto` or the IndexedDB draft of them). The phones have one (`ListingPublisher.syncPhotos` through `compressImage` on Android and iPhone). All three re-encode the photo; none strips on the server.
+   - Tracking: 0 matches in the release dependency tree for 15 analytics, ads and crash SDK names. 0 in `apps/web/package-lock.json` for 11 web analytics names; the 18 `gtag` hits are all inside `tostringtag`. `apps/web/package.json` and `mobile/iosApp/project.yml` have no such dependency.
+   - Fixes made from these checks: support email exists (`support@dzirent.com` in About and the website menu); style interests come from the measurements screen; push tokens are registered on every sign-in and app start, notification permission or not.
+8. No emulator, device or screenshots.
+
+Gap list summary (`compliance.md` section 8):
+- Kept after deletion:
+  - accessory declarations keep legal name, email, IP, user agent and city (gap 1, P3B);
+  - listing declarations keep the IP (gap 2, P3B).
+- Wrong data: website declarations record Vercel's IP and user agent, not the person's (gap 3, P5A).
+- Photo metadata: removed by all three apps, but not on the server (gap 4, P5A). Phones keep the original photos with EXIF in app storage until pruned (gap 5, P3B).
+- Location: the database doesn't round coordinates after sign-up (gap 6, P5A).
+- Age: 18+ is a tick the user can undo through the API (gap 7, P2C).
+- Consent: terms acceptance is not recorded (gap 8, P1B); no consent step before body measurements are saved (gap 9, P1B).
+- Deletion effects: an account deletion removes the other person's chat and rental history (gap 10, disclose in P1A); reports lose their evidence (gap 11, P2B).
+- Missing tools: no review tool (gap 12, P2B); no data download (gap 13, P3A).
+- Retention: history that never expires, including scans, `listing_events` (nothing reads it), stale tokens, sessions and `pg_net` replies (gap 14, P3B); log retention unknown (gap 15, P3B, P5B, P7B).
+- Logs: `send-push` puts the account ID and the push token in URL query strings, which the API logs record (gap 16, P5A).
+- iPhone: no privacy manifest (gap 17, P8B).
+- Android: backup includes the session and drafts (gap 18, P5A).
+- Email: confirmation off, Auth `site_url` is localhost, no custom SMTP (gap 19, P6C, P8C).
+- Security: no bot check, no message or report rate limits, no security headers (gap 20, P5A); clients still say 6-character passwords while the server needs 8 (gap 21, P5A).
+- Content: chat text is unfiltered (gap 22, P2A); photos of people with no nudity check (gap 23, P2A).
+- Disclosures: gaps 24 to 30.
+- Not checked this session: gap 31, P7B.
+- Sample listings in production: gap 32, P3B.
+
+Requests:
+- Owner: run `gcloud auth login` on this PC, so an agent can confirm Cloud Logging retention, the Cloud Run settings and the billing kill switch.
+- Owner and attorney: fill `legal-placeholders.md`, including the retention periods, before P1A part 2 publishes the pages.
+- This entry's title follows the task prompt (`P1A part 1 - ...`), not the `Step <number>` pattern in `README.md` rule 10.
+
 ## Step 8B - 2026-11-05 - photo scanning in the app
 
 Done:

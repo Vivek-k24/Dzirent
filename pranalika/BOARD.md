@@ -134,3 +134,33 @@ All three clients build and pass owner testing on `dzirent-server`. Then the `Dz
 | Mac: iOS build check of the 8B shared-code changes (see the 8B handoff) | To do |
 | Website: run `request_scan` after the photos, show the verdict, reason, photo warnings and suggestions, show `auto_paused_reason`; insert new listings as paused before `vision_required` is turned on | To do |
 | Admin review of `review` verdicts (`admin_decision`) | To do |
+
+## Handoff plan
+
+Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every gap found to one of them.
+
+| Item | Status |
+| --- | --- |
+| Done by: Claude Code (P1A part 1) | |
+| P1A part 1: data inventory and `compliance.md`; legal fill-ins in `legal-placeholders.md` | Done |
+| P1A part 2: website legal pages (privacy policy, terms, community rules and prohibited items, copyright/DMCA, safety tips, delete-account page, support/contact), fill-ins in one config | To do |
+| Owner and attorney: fill `legal-placeholders.md` (company, addresses, DMCA agent, law and disputes, taxes, age wording, retention periods) | To do |
+| Owner: `gcloud auth login` on this PC, so agents can read Cloud Logging retention and the billing kill switch (P1A part 1 couldn't) | To do |
+| P1B FAQ and help center; in-app Help links; terms acceptance recorded with version and date on all three platforms; explicit consent before saving body measurements | To do |
+| P2A Text filter on listings, profiles and chat (database); nudity check and "hooded garment goes to review" (vision service) | To do |
+| P2B Admin dashboard: reports, photo reviews, takedowns, suspend/ban, listings, feature flags, simple metrics; every admin action logged | To do |
+| P2C Age gate: store age signals on Android and iPhone, state list table, 18+ on the website (Texas SB 2420, Utah) | To do |
+| P3A Download my data on all three platforms | To do |
+| P3B Cleanup and retention jobs: abandoned drafts, orphan photos, old scans, log retention; sample listings removed from production | To do |
+| P4A Website accessibility to WCAG 2.1 AA (automated checker in the build plus a manual pass) | To do |
+| P4B App accessibility: screen reader labels, touch targets, large text, contrast in both themes (iPhone part on the Mac) | To do |
+| P5A Security hardening: database rule audit, rate limits, bot check on sign-up, website security headers, input checks on every server function, dependency and secret scanning | To do |
+| P5B Logs and monitoring: error tracking, uptime checks, alerts, backup restore drill, incident plan | To do |
+| P6A ID verification (Didit) on all three platforms; flag off, keys blank | To do |
+| P6B Payments backend: Stripe Connect test mode, deposits, "confirm rental" step, sales tax hook off | To do |
+| P6C Payment screens on all three, rental reminders, email templates; email service key blank | To do |
+| P7A Automated tests on every PR in GitHub Actions; one Mac session for all iPhone checks | To do |
+| P7B Handoff package: architecture, runbooks, account inventory, guide for the business owner | To do |
+| P8A Google Play: organization account, new package, upload key, store forms, first upload, release pipeline | To do |
+| P8B Apple: organization enrollment, App Store Connect, privacy labels, age rating, push key, TestFlight, submission | To do |
+| P8C Go-live: flags on, email confirmation on, monitoring live, launch checklist | To do |
