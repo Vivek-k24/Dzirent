@@ -8,7 +8,7 @@ import kotlinx.datetime.LocalDate
 
 // ---- Suggest once -------------------------------------------------------------------------
 
-/** The fields the photos can fill. [key] is suggestion_events.field. */
+/** The fields the photo check can fill. [key] is suggestion_events.field. */
 enum class SuggestField(val key: String) {
     TITLE("title"),
     CATEGORY("category"),
@@ -23,17 +23,21 @@ enum class FieldOrigin { UNTOUCHED, SUGGESTED, EDITED, CLEARED }
 @Serializable
 data class FieldState(val origin: FieldOrigin = FieldOrigin.UNTOUCHED, val suggested: String? = null, val label: String? = null)
 
+/** How several styles are kept in the one STYLE field value ("Western formal, Western casual"). */
+const val STYLE_SEPARATOR = ", "
+
 /** What a suggestion would put in each field (null: nothing for that field). */
 fun suggestedValues(s: ListingSuggestions): Map<SuggestField, String?> = mapOf(
     SuggestField.TITLE to s.title,
     SuggestField.CATEGORY to s.category,
     SuggestField.DESCRIPTION to s.description,
-    SuggestField.STYLE to s.style
+    SuggestField.STYLE to s.styles.takeIf { it.isNotEmpty() }?.joinToString(STYLE_SEPARATOR)
 )
 
 /**
  * Suggest once: only fields that are empty and were never filled by a suggestion, edited or
- * cleared get the suggestion. Returns what to put in each of them.
+ * cleared get the suggestion. Returns what to put in each of them. Nothing the lender typed is
+ * ever overwritten.
  */
 fun fieldsToFill(states: Map<SuggestField, FieldState>, current: Map<SuggestField, String>, s: ListingSuggestions): Map<SuggestField, String> =
     suggestedValues(s).mapNotNull { (field, value) ->
@@ -41,21 +45,8 @@ fun fieldsToFill(states: Map<SuggestField, FieldState>, current: Map<SuggestFiel
         if (value == null || state.origin != FieldOrigin.UNTOUCHED || current[field].orEmpty().isNotBlank()) null else field to value
     }.toMap()
 
-/**
- * Picking an "Is it a: …?" chip is the lender's own choice, so it fills title, category and
- * style even over an earlier suggestion or a cleared field; only what the lender typed stays.
- * Description still follows suggest-once.
- */
-fun fieldsToFillForChip(states: Map<SuggestField, FieldState>, current: Map<SuggestField, String>, s: ListingSuggestions): Map<SuggestField, String> {
-    val picked = suggestedValues(s).filterKeys { it != SuggestField.DESCRIPTION }.mapNotNull { (field, value) ->
-        val origin = (states[field] ?: FieldState()).origin
-        if (value == null || origin == FieldOrigin.EDITED) null else field to value
-    }.toMap()
-    return picked + fieldsToFill(states, current, s).filterKeys { it == SuggestField.DESCRIPTION }
-}
-
-/** The state after a suggestion filled the field. */
-fun suggestedState(value: String, label: ItemLabel) = FieldState(FieldOrigin.SUGGESTED, value, label.name)
+/** The state after a suggestion filled the field; [label] is the policy item it came from. */
+fun suggestedState(value: String, label: String) = FieldState(FieldOrigin.SUGGESTED, value, label)
 
 /** The state after the lender typed in the field (typing it empty counts as clearing). */
 fun editedState(state: FieldState, newValue: String) =
@@ -77,15 +68,17 @@ fun suggestionOutcome(state: FieldState, finalValue: String): String? {
 /** The category field starts blank; this is its placeholder. Required to publish. */
 const val CHOOSE_CATEGORY = "Choose a category"
 
+/** The tip under Description; never saved. */
+const val DESCRIPTION_TIP = "Add the fabric, fit and any flaws."
+
 // ---- What each step still needs ---------------------------------------------------------------
 
 /**
- * What step 1 (photos and details) still needs, or null: the photos ([photos], from
- * [photoGate]), a 3-80 character title, a category, an item type for accessories, and the
- * accessory declaration when it's needed and not signed yet.
+ * What the details step still needs, or null: a 3-80 character title, a category, an item type
+ * for accessories, and the accessory declaration when it's needed and not signed yet. (The
+ * photos step needs [photoGate] to pass.)
  */
-fun step1Missing(photos: Missing?, title: String, category: String?, itemType: String?, declarationPending: Boolean): Missing? = when {
-    photos != null -> photos
+fun detailsMissing(title: String, category: String?, itemType: String?, declarationPending: Boolean): Missing? = when {
     title.trim().length !in 3..80 -> Missing("Add a title", "Title must be 3 to 80 characters.")
     category == null -> Missing(CHOOSE_CATEGORY, "Choose a category.")
     category == Categories.ACCESSORIES && itemType == null -> Missing("Choose an item type", "Choose an item type for Accessories.")
@@ -93,7 +86,7 @@ fun step1Missing(photos: Missing?, title: String, category: String?, itemType: S
     else -> null
 }
 
-/** Everything step 2 checks, as typed. */
+/** Everything the size, price and dates step checks, as typed. */
 data class Step2Input(
     val sizeLabel: String,
     val priceText: String,
@@ -120,7 +113,7 @@ fun accessoryValueError(isAccessory: Boolean, retailValueText: String): String? 
     return ACCESSORY_VALUE_TOO_HIGH.takeIf { isAccessory && value > ItemLabels.ACCESSORY_MAX_VALUE_USD }
 }
 
-/** What step 2 still needs, or null when the listing can be published. */
+/** What the size, price and dates step still needs, or null when the listing can be published. */
 fun step2Missing(input: Step2Input): Missing? {
     val retail = input.retailValueText
     return when {
@@ -143,9 +136,10 @@ fun step2Missing(input: Step2Input): Missing? {
 /** One line of the short ready list above "Publish listing". */
 data class ReadyItem(val label: String, val done: Boolean)
 
-/** The short ready list: photos and details (step 1), size, price, dates, and the declaration for accessories. */
-fun readyList(step1Done: Boolean, input: Step2Input): List<ReadyItem> = listOfNotNull(
-    ReadyItem("Photos and details", step1Done),
+/** The short ready list: photos, details, size, price, dates, and the declaration for accessories. */
+fun readyList(photosDone: Boolean, detailsDone: Boolean, input: Step2Input): List<ReadyItem> = listOfNotNull(
+    ReadyItem("Photos", photosDone),
+    ReadyItem("Details", detailsDone),
     ReadyItem("Size", input.sizeLabel.isNotBlank()),
     ReadyItem("Price", parsePrice(input.priceText) != null),
     ReadyItem("Dates", input.ranges.isNotEmpty()),
@@ -166,8 +160,8 @@ fun availabilityChipLabel(range: DateRange, today: LocalDate): String =
 // ---- Garment kind, measurements and "Same as your …" -----------------------------------------------
 
 /**
- * The garment kind for the size picker and measurements: what the photos (or a chip) said,
- * else what the lender picked, else Accessories are one size. Null: the lender picks one.
+ * The garment kind for the size picker and measurements: what the lender picked, else what the
+ * photo check suggested, else Accessories are one size. Null: the lender picks one.
  */
 fun garmentKindFor(recognized: GarmentKind?, picked: GarmentKind?, category: String?): GarmentKind? = when {
     picked != null -> picked

@@ -30,7 +30,7 @@
     {"key": "Mexican & Latin American", "prompts": ["mexican or latin american clothing like an embroidered huipil", "traditional mexican folklorico clothing"]},
     {"key": "Country & Western", "prompts": ["country and western clothing like a western shirt with fringe", "cowboy style clothing"]},
     {"key": "Western formal", "prompts": ["western formal wear like a suit, blazer or evening gown", "elegant formal clothing"]},
-    {"key": "Western casual", "prompts": ["western casual wear like a hoodie, chinos or a casual dress", "relaxed everyday casual clothing"]}
+    {"key": "Western casual", "prompts": ["western casual wear like a denim jacket, chinos or a casual dress", "relaxed everyday casual clothing"]}
   ],
   "fabrics": [
     {"key": "silk", "prompts": ["a silk garment", "silk fabric"]},

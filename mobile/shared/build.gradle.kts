@@ -99,8 +99,6 @@ kotlin {
                 implementation(libs.play.services.location)
                 implementation(libs.androidx.exifinterface)
                 implementation(libs.androidx.activity.compose)
-                // Item recognition on the phone (TinyCLIP image encoder in assets/ml)
-                implementation(libs.litert)
                 // Open-source licenses screen
                 implementation(libs.aboutlibraries.compose.m3)
             }

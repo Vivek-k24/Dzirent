@@ -3,7 +3,6 @@ package com.dzirent.shared.data
 import com.dzirent.shared.platform.PhotoAnalyzer
 import com.dzirent.shared.platform.toRgbImage
 import com.dzirent.shared.platform.uprightImage
-import com.dzirent.shared.util.PhotoScores
 import com.dzirent.shared.util.PhotoThresholds
 import com.dzirent.shared.util.analyzeImage
 import kotlinx.coroutines.CancellationException
@@ -15,9 +14,8 @@ import platform.Foundation.NSURL
 import platform.Foundation.dataWithContentsOfFile
 
 /**
- * Photo checks on the iPhone, the same shared checks Android runs. Item recognition (TinyCLIP)
- * isn't on iOS yet, so this behaves exactly like Android when its model can't load: the checks
- * run, there's no embedding and no scores, and the editor shows no suggestions.
+ * Photo checks on the iPhone, the same shared checks Android runs (sharp, light, framing).
+ * What the piece is comes from the server's photo check, shared with Android.
  */
 class IosPhotoAnalyzer : PhotoAnalyzer {
     override suspend fun analyze(uri: String): PhotoAnalysis = withContext(Dispatchers.Default) {
@@ -26,12 +24,8 @@ class IosPhotoAnalyzer : PhotoAnalyzer {
             val data = path?.let { NSData.dataWithContentsOfFile(it) }
             data?.let { uprightImage(it, PhotoThresholds.WORKING_LONG_SIDE) }?.toRgbImage()
         } ?: return@withContext PhotoAnalysis(checks = null)
-        val analysis = guarded { analyzeImage(image) } ?: return@withContext PhotoAnalysis(checks = null)
-        PhotoAnalysis(checks = analysis.checks, embedding = null, scores = null, colors = analysis.colors)
+        PhotoAnalysis(checks = guarded { analyzeImage(image) })
     }
-
-    /** No model on iOS yet. */
-    override suspend fun scores(embedding: FloatArray): PhotoScores? = null
 
     private inline fun <T> guarded(block: () -> T): T? = try {
         block()

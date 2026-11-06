@@ -316,9 +316,9 @@ private fun AvailabilityChips(ranges: List<com.dzirent.shared.util.DateRange>, t
 /** The short ready list above "Publish listing". */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ReadyList(step1Done: Boolean, input: Step2Input) {
+fun ReadyList(photosDone: Boolean, detailsDone: Boolean, input: Step2Input) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        readyList(step1Done, input).forEach { item ->
+        readyList(photosDone, detailsDone, input).forEach { item ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.semantics(mergeDescendants = true) {

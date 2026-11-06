@@ -90,3 +90,11 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - When the check is unsure, the listing goes to review, never allowed.
 - Photo quality never rejects a listing; it only adds warnings to that photo.
 - Feature flags start off: `vision_required`, `verification_required`, `payments_enabled`. They change only through migrations.
+
+## Photo policy (2026-11-05)
+
+- Hoodies and sweatshirts are not allowed (everyday basics).
+- Lingerie, underwear and swimwear stay not allowed.
+- Costume jewelry (necklaces, earrings, bracelets, rings, brooches) is allowed, with the accessory declaration.
+- A copied photo of a banned item stays rejected: a photo matching another listing sends the listing to review, but never turns a rejection into a review.
+- Changed photos are checked again: any change to the photos of an active listing queues a new check on the server, and the listing stays active while it runs. While `vision_required` is on, a result that isn't allowed pauses the listing with a plain reason (`listings.auto_paused_reason`), cleared when the owner republishes. While the flag is off, photos are re-checked only, never paused.

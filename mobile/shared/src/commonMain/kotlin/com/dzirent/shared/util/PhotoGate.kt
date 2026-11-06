@@ -14,17 +14,15 @@ enum class ReviewState {
 enum class PhotoVerdict { CHECKING, PASSED, WARNING, USED_ANYWAY, BLOCKED }
 
 const val UNREADABLE_PHOTO = "Couldn't read this photo: remove it and pick another"
-const val DIFFERENT_ITEM = "This photo looks like a different item"
 
 /**
- * What the editor knows about one photo. [differentItem] is set when the photo doesn't look like
- * the front; [usedAnyway] when the lender accepted the warnings with "Use anyway". With
- * [fullChecks] false (Close-up, Size tag) only sharpness and lighting count.
+ * What the phone knows about one photo. [usedAnyway] is set when the lender accepted the
+ * warnings with "Use anyway". With [fullChecks] false (Close-up, Size tag) only sharpness and
+ * lighting count.
  */
 data class PhotoReview(
     val state: ReviewState,
     val checks: PhotoChecks? = null,
-    val differentItem: Boolean = false,
     val usedAnyway: Boolean = false,
     val fullChecks: Boolean = true
 ) {
@@ -32,7 +30,7 @@ data class PhotoReview(
         get() = checks?.let { c -> listOfNotNull(c.sharp.issue, c.lighting.issue, c.wholeItem.issue.takeIf { fullChecks }) }.orEmpty()
 
     private val blocked get() = state == ReviewState.UNREADABLE || issues.any { it.severity == Severity.BLOCK }
-    private val warned get() = (differentItem && fullChecks) || issues.any { it.severity == Severity.WARN }
+    private val warned get() = issues.any { it.severity == Severity.WARN }
 
     val verdict: PhotoVerdict
         get() = when (state) {
@@ -50,8 +48,7 @@ data class PhotoReview(
     val messages: List<String>
         get() = when (state) {
             ReviewState.UNREADABLE -> listOf(UNREADABLE_PHOTO)
-            ReviewState.CHECKED -> issues.sortedBy { it.severity }.map { it.message } +
-                listOfNotNull(DIFFERENT_ITEM.takeIf { differentItem && fullChecks })
+            ReviewState.CHECKED -> issues.sortedBy { it.severity }.map { it.message }
             else -> emptyList()
         }
 
@@ -60,8 +57,6 @@ data class PhotoReview(
         val Checking = PhotoReview(ReviewState.CHECKING)
     }
 }
-
-const val POLICY_PENDING = "Choose another photo, or tap \"This is wrong\" if we misread the item."
 
 /** Something that holds up a step: [button] is what the Next / Publish button says, [message] the longer line. */
 data class Missing(val button: String, val message: String)
@@ -72,10 +67,10 @@ fun morePhotos(n: Int): String = "Add $n more photo" + if (n == 1) "" else "s"
 /**
  * Why the photos hold up the listing, or null when they don't: with [minimumApplies], at least
  * [MIN_PHOTOS] photos and every required slot filled (otherwise at least one photo); every check
- * finished; a not-offered warning ([policyPending]) answered; nothing blocked; every warning
- * accepted with "Use anyway" (or the photo removed); and at least one photo that passes every check.
+ * finished; nothing blocked; every warning accepted with "Use anyway" (or the photo removed);
+ * and at least one photo that passes every check.
  */
-fun photoGate(reviews: Map<PhotoSlot, PhotoReview>, minimumApplies: Boolean = true, policyPending: Boolean = false): Missing? {
+fun photoGate(reviews: Map<PhotoSlot, PhotoReview>, minimumApplies: Boolean = true): Missing? {
     val verdicts = reviews.values.map { it.verdict }
     val missingRequired = PhotoSlot.REQUIRED.firstOrNull { it !in reviews }
     return when {
@@ -85,7 +80,6 @@ fun photoGate(reviews: Map<PhotoSlot, PhotoReview>, minimumApplies: Boolean = tr
         minimumApplies && missingRequired != null ->
             Missing("Add a ${missingRequired.label.lowercase()} photo", "A ${missingRequired.label.lowercase()} photo is required.")
         PhotoVerdict.CHECKING in verdicts -> Missing("Checking photos…", "Still checking your photos. Try again in a moment.")
-        policyPending -> Missing("Answer the photo note", POLICY_PENDING)
         PhotoVerdict.BLOCKED in verdicts ->
             Missing("Fix the photos in red", "Some photos can't be used. Retake or remove the ones marked in red.")
         PhotoVerdict.WARNING in verdicts ->

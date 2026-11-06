@@ -2,6 +2,110 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 8B - 2026-11-05 - photo scanning in the app
+
+Done:
+- Before starting: working tree clean, `Preview` up to date with `origin/Preview` at `2f65e95` (Step 8A); `git pull --rebase` was a no-op.
+- Policy, in `services/vision/app/policy.json` and `policy_item_types` together (still 114 items):
+  - Hoodies and sweatshirts are not allowed now: group "hoodies and sweatshirts", reason "This looks like a hoodie. Dzirent doesn't list everyday basics like hoodies and sweatshirts." (sweatshirt likewise).
+  - Unchanged, as the owner decided: lingerie, underwear and swimwear not allowed; costume jewelry (necklace, earrings, bracelet, ring, brooch) allowed as "Costume jewelry" with the accessory declaration; a copied photo of a banned item stays rejected.
+  - Sharper sweater and sweatshirt prompts, because on revision 3 two sweatshirt photos read as sweaters and went to review. The Western casual style prompt no longer mentions sweatshirts (`vocab.json`).
+  - `test_policy_sync` compares `policy.json` with the newest migration that seeds the rows.
+- Vision service redeployed twice with the Step 8A settings (`gcloud run deploy --source`): revision `vision-00003-thb` (policy), then `vision-00004-7rb` (sharper prompts), which serves 100%. Checked afterwards:
+  - min instances unset (0), max 1, 2 CPU, 4 GiB, 120 s timeout, concurrency 4, no GPU, runs as `vision-runtime`;
+  - the only IAM binding is `roles/run.invoker` for `vision-invoker`.
+- Database (each migration applied with `supabase db push`):
+  - `20261106040000_step8b_photo_policy.sql`:
+    - the policy rows;
+    - the `verification_required` description: "Renters and lenders verify their ID once, before their first message or first listing.";
+    - `listings.auto_paused_reason` (at most 300 characters);
+    - `listing_scans` in `supabase_realtime`;
+    - `app_private.queue_scan`, shared by `request_scan` and the re-check (it returns the latest check when it is done and covers the current photos);
+    - triggers on `listing_photos` (insert, delete, and changes of `storage_path`, `slot` or `listing_id`) that re-check active listings;
+    - `vision_finish_scan` and `vision_fail_scan` pause an active listing with a reason while `vision_required` is on, or check again if the photos changed during the check;
+    - the publish gate clears `auto_paused_reason` on a successful republish and on every insert by an app.
+  - `20261106050000_step8b_sweater_prompts.sql`: the policy rows again, with the sharper prompts.
+  - `20261106070000_step8b_server_role_helpers.sql`: a fix found by the API test (below). `service_role` needs USAGE on `app_private` and EXECUTE on `vision_pause` and `recheck_active_listing`.
+  - `20261106080000_step8b_test_vision_on.sql`, then `20261106081000_step8b_test_vision_off.sql`: the flag on for API test 4, then off again.
+- Mobile apps (shared code; Android builds it here, iOS shares it):
+  - On-phone recognition removed:
+    - code: `ItemRecognition.kt`, `ItemColor.kt`, `ItemRecognizer.kt`;
+    - assets: the TinyCLIP model (`tinyclip_image.tflite`, 19.6 MB) and `label_embeddings.json`;
+    - the LiteRT dependency and its AboutLibraries entry (`tinyclip.json`).
+    - `ItemLabels.kt` keeps only the policy wording the editor still uses. The on-phone blur and lighting checks stay (`PhotoAnalyzer`, `PhotoGate`, `PhotoThresholds`).
+  - New listing: after the photos step, the editor saves a paused draft row (title "New listing (draft)", a placeholder category), uploads the photos (`ListingPublisher.syncPhotos`) and calls `request_scan`.
+    - "Checking your photos…" shows above the details while the lender types; nothing is blocked.
+    - The scan is watched through Realtime, with a read every 4 s as the fallback (`DzirentRepository.watchScan`). After 3 minutes the editor stops waiting and shows "We couldn't check the photos right now." with a way to try again.
+  - Allowed: the suggestions (category, item type, garment type, styles, title, description) fill only fields that are empty and weren't cleared by the lender, with the same accept and clear controls as before. On publish, kept, edited or cleared is logged to `suggestion_events`. The listing form has no color or pattern field: colors and pattern reach the listing only through the suggested title and description.
+  - Rejected: a banner with the reason and "Replace photos" (back to the photos step). Review: "Someone at Dzirent will check these photos." (or the copied-photo reason). The lender can still finish the details either way.
+  - The server's per-photo warnings show on each slot once the check is done, leaving out ones the phone already shows.
+  - Publish reads `app_settings.vision_required`. When on, it waits for the check of the current photos, then the database gate decides, and its message is shown on refusal. When off, it publishes as before.
+  - Editing a live listing keeps it live while saving; the server re-checks changed photos.
+  - My closet: a draft shows a "Draft" badge and no switch; a paused listing shows its `auto_paused_reason`.
+  - The local draft (`Drafts.kt`, version 2) remembers the server draft, the uploads and the scan. "Start over" deletes a draft row that was never published. Drafts saved by an older app version aren't offered any more.
+- Root `README.md`:
+  - product rules: hoodies and sweatshirts; lingerie, underwear and swimwear; costume jewelry with the declaration; automatic photo checks;
+  - new section "Open-source software and models", built from `libs.versions.toml` and the Gradle files, `apps/web/package.json`, `requirements.txt`, the Dockerfile and the extensions in the migrations.
+    - Licenses were read from the cached POMs, the installed Python package metadata, the npm registry, Hugging Face and GitHub, not from memory. Every link returned HTTP 200.
+    - NOTICE files: PyTorch (link) and Requests (text). The models and the apps' direct dependencies ship none.
+    - Google Play services Location is named separately as not open source.
+- `contract.md`, `security-log.md`, `decisions.md` (appended "Photo policy (2026-11-05)") and `BOARD.md` are updated. The Step 8A entry below now has the measured cold start.
+
+What I ran:
+1. `pytest services/vision/tests` (scratch Python 3.12.10 venv): 40 passed, `test_policy_sync` included.
+2. `run_eval.py` against the deployed service (identity token from gcloud): the 22 sample photos plus 8 openly licensed Commons hoodie and sweatshirt photos, kept in my scratch folder only.
+   - Revision 3: hoodie/1 and sweatshirt/2 rejected; sweatshirt/3 and sweatshirt/4 went to review (read as sweaters). That is why the prompts were sharpened.
+   - Revision 4 (`vision-00004-7rb`):
+     - rejected: hoodie/1 ("This looks like a hoodie. …"), sweatshirt/2, sweatshirt/3 and sweatshirt/4;
+     - review: hoodie/2, hoodie/3 and sweatshirt/1;
+     - allowed: hoodie/4 (see open issues).
+     - All 22 sample photos and all 12 sample listings are still allowed. Single-photo scans: median 1.3 s.
+   - Local run of the final policy over the Step 8A Commons sets (scratch venv): the same as in Step 8A. Reject set: 32 rejected, 10 review, 0 allowed. Accept set: 12 allowed, 2 review, 2 rejected.
+   - `H:\DziRent\vision-test\should-accept` and `should-reject` are still empty.
+3. `gradlew :shared:compileCommonMainKotlinMetadata :androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded silently, `GOOGLE_SERVICES_JSON` set): BUILD SUCCESSFUL.
+   - Shared unit tests, re-run with `--rerun`: 19 passed, 1 skipped (`SmokeTest` needs the test-user env, which I didn't load). 7 of them are new, in `PhotoScanTest`.
+   - Native libraries in the debug APK: `libandroidx.graphics.path.so` and `libdatastore_shared_counter.so`, for arm64-v8a, armeabi-v7a, x86 and x86_64. No TensorFlow Lite library and no model or label file is left.
+4. API test `node supabase/tests/step8b_recheck.mjs <off|on> <photo>`, as test user 1 on "Emerald Velvet Cocktail Dress". The photo is a generated picture of a typed page (my own image, kept in scratch).
+   - Flag off: adding the photo kept the listing active, and the automatic re-check finished in 7 s (review, "The photos seem to show different things, so someone at Dzirent will check them."). The listing stayed active with no reason. Removing the photo: re-checked, allowed (3 s). PASSED.
+   - Flag on (migration `..._test_vision_on`): the re-check gave review (6 s), and the listing was paused with "Paused: the new photos need a check before this listing can go live again." The test removed the photo; `request_scan` gave allowed (4 s); the republish made it active and cleared the reason. PASSED.
+   - Flag off again (migration `..._test_vision_off`). A final query showed `vision_required` off, the listing active with its 2 original photos and no reason, no listing anywhere with a pause reason, and only those 2 photos in its storage folder.
+   - The first run failed: the check stayed `running`, because `service_role` couldn't call the new `app_private` helpers from `vision_finish_scan`. Fixed with the grant migration, then re-run.
+   - The re-run's first attempt timed out too: the script compared scan times with this PC's clock, which runs about a second ahead of the server. It now compares scan IDs.
+5. Security Advisor after all the migrations: no new findings. `has_function_privilege` on the new functions: as designed (`security-log.md`).
+6. `gcloud run services describe` and `get-iam-policy`: the settings above.
+7. No emulator, device or app screenshots. The only image I viewed was a contact sheet of the 8 Commons hoodie and sweatshirt photos.
+
+Vision revision: `vision-00004-7rb`, serving 100%.
+
+Native libraries removed: `libtensorflowlite_jni.so` (LiteRT), with the TinyCLIP model and its label embeddings.
+
+Debug APK: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk` (21.3 MB, "Dzirent Debug").
+
+iOS-facing changes, for a Mac check:
+- `iosMain`: `IosPhotoAnalyzer.kt` no longer has a recognition stub and implements the slimmer `PhotoAnalyzer` (`platform/Device.kt`).
+- `commonMain`:
+  - editor: `ui/ListingEditor.kt`, `ListingEditorState.kt`, `ListingStepPhotos.kt`, `ListingStepDetails.kt`; `data/ListingPublisher.kt`, `data/PhotoAnalysis.kt`;
+  - data: `repository/DzirentRepository.kt` (app settings, `request_scan`, scan reads, a Realtime channel on `listing_scans`), `model/Models.kt` (`ListingScan`, `auto_paused_reason`);
+  - screens: `ui/MainScreens.kt` (closet), `ui/Policy.kt`;
+  - util: `Drafts.kt`, `ItemLabels.kt`, `ListingForm.kt`, `ListingPhotos.kt`, `PhotoGate.kt`, `PhotoThresholds.kt`, new `PhotoScan.kt`; deleted `ItemRecognition.kt` and `ItemColor.kt`.
+- Here only `:shared:compileCommonMainKotlinMetadata` ran (common code against common APIs). `iosMain` was not compiled.
+- On a Mac:
+  - check that the framework or Xcode build compiles;
+  - in the Simulator: new listing, photos, "Checking your photos…", suggestions fill the details;
+  - check whether Realtime connects with the Darwin engine. If it doesn't, the 4 s reads still finish the check.
+
+Open issues:
+- hoodie/4 came back allowed on revisions 3 and 4, as an African print dress. It is Damien Hirst's "Butterfly Hoodie" on a dress form: long and fitted with an all-over print, so it reads like a hooded mini dress. hoodie/3, the same garment from the front, went to review.
+  - Not fixed: stricter prompts would risk turning real printed dresses away.
+  - Owner to decide: accept such misses for now, or have hooded garments go to review.
+- The owner's `vision-test` folders are still empty.
+- A new listing's draft row (title "New listing (draft)", paused) stays on the server if the lender leaves the editor. It shows in My closet as "Draft"; "Start over" or Delete removes it.
+- The website doesn't call `request_scan` yet. Its listings are checked only when photos change while the listing is active (the trigger).
+- While `vision_required` is on, a lender whose active listings' photos change more than 20 times in an hour has that listing paused until the next check.
+- Artifact Registry `cloud-run-source-deploy` now holds images for revisions 1 to 4 (about 0.68 GB each). The older ones can be deleted.
+- Owner: phone test of the new listing flow (photos, the check banner, suggestions, publish, closet reason). Mac: the iOS check above.
+- Test data left: the test's `listing_scans` and `photo_scans` rows on "Emerald Velvet Cocktail Dress" (removed with the listing).
+
 ## Step 8A - 2026-11-05 - vision service backend
 
 Done:
@@ -201,7 +305,7 @@ Totals: sample photos 22 of 22 allowed, sample listings 12 of 12 allowed. Common
 
 Times:
 - Warm: single-photo scans median 1.3 s, max 1.9 s (80 scans, eval round trip). A 2-photo listing through the whole chain (`request_scan` to done, polled every 3 s): 4 s.
-- Cold start: not measured yet at this commit. An end-to-end scan after 20 idle minutes was still waiting to run.
+- Cold start: not measured yet at this commit. Measured right after it (Step 8B session, revision `vision-00002-wgg`): after 20 idle minutes, `request_scan` to done took 54 s end to end (the scan row: created 03:08:59 UTC, finished 03:09:51). The new instance started at 03:09:01, the app was ready 39.4 s after its process started, and the scan itself took 3.7 s.
 - The container's own start-up (Python imports and model load, from `/health`): 27.8 s on revision 1, 31.9 s on revision 2. A cold scan takes at least that plus the warm time.
 
 Model license: Apache 2.0 (the Hugging Face model card and the repo's metadata, `license: apache-2.0`).

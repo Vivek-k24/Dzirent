@@ -6,9 +6,6 @@ import android.graphics.BitmapFactory
 import android.media.ExifInterface
 import android.net.Uri
 import android.util.Log
-import com.dzirent.shared.util.ColorVotes
-import com.dzirent.shared.util.PhotoChecks
-import com.dzirent.shared.util.PhotoScores
 import com.dzirent.shared.util.PhotoThresholds
 import com.dzirent.shared.util.RgbImage
 import com.dzirent.shared.util.analyzeImage
@@ -21,37 +18,23 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * Checks photos as they're added to a listing and runs item recognition on them. Everything
- * runs on the phone, off the main thread; the photo is only read, never sent anywhere.
+ * Checks photos as they're added to a listing (sharp, light, framing). Everything runs on the
+ * phone, off the main thread; the photo is only read here. What the piece is comes from the
+ * server's photo check once the photos are uploaded.
  *
  * Camera and gallery photos take the same path: the file is decoded as stored, turned upright
  * from its EXIF orientation by [applyExifOrientation] (pure Kotlin, so every orientation is
- * handled the same on every Android version), then checked and embedded.
+ * handled the same on every Android version), then checked.
  */
 class AndroidPhotoAnalyzer(context: Context) : PhotoAnalyzer {
     private val appContext = context.applicationContext
-    private val recognizer = ItemRecognizer.get(appContext)
 
     override suspend fun analyze(uri: String): PhotoAnalysis = withContext(Dispatchers.Default) {
         val image = guarded { decodeUpright(appContext, Uri.parse(uri), PhotoThresholds.WORKING_LONG_SIDE) }
             ?: return@withContext PhotoAnalysis(checks = null)
-        // A photo the checks can't handle (odd size, out of memory) is treated like one that
-        // can't be read; recognition failing only means no suggestions.
-        val analysis = guarded { analyzeImage(image) } ?: return@withContext PhotoAnalysis(checks = null)
-        val embedding = guarded {
-            val bitmap = image.toBitmap()
-            try {
-                recognizer.embed(bitmap)
-            } finally {
-                bitmap.recycle()
-            }
-        }
-        val scores = embedding?.let { e -> guarded { recognizer.scores(e) } }
-        PhotoAnalysis(checks = analysis.checks, embedding = embedding, scores = scores, colors = analysis.colors)
+        // A photo the checks can't handle (odd size, out of memory) is treated like one that can't be read.
+        PhotoAnalysis(checks = guarded { analyzeImage(image) })
     }
-
-    /** The model's scores for an embedding (several photos averaged), or null if the model isn't available. */
-    override suspend fun scores(embedding: FloatArray): PhotoScores? = guarded { recognizer.scores(embedding) }
 
     private inline fun <T> guarded(block: () -> T): T? = try {
         block()
@@ -117,7 +100,3 @@ fun Bitmap.toRgbImage(): RgbImage {
     for (i in pixels.indices) pixels[i] = pixels[i] and 0xFFFFFF
     return RgbImage(width, height, pixels)
 }
-
-/** An opaque bitmap of the image, for the model. */
-fun RgbImage.toBitmap(): Bitmap =
-    Bitmap.createBitmap(IntArray(pixels.size) { pixels[it] or 0xFF000000.toInt() }, width, height, Bitmap.Config.ARGB_8888)

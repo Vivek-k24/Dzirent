@@ -2,9 +2,8 @@ package com.dzirent.shared.util
 
 /**
  * The photo slots of a listing, in the order they're shown and saved. Front, Back and Extra
- * get every check (sharp, light, framing, same item, what it is) and are what the item is
- * recognized from. Close-up and Size tag are details, so they only get the sharpness and
- * lighting checks.
+ * get every check on the phone (sharp, light, framing). Close-up and Size tag are details, so
+ * they only get the sharpness and lighting checks. The server's photo check sees all of them.
  */
 enum class PhotoSlot(val key: String, val label: String, val required: Boolean, val fullChecks: Boolean) {
     FRONT("front", "Front", required = true, fullChecks = true),
@@ -13,9 +12,6 @@ enum class PhotoSlot(val key: String, val label: String, val required: Boolean, 
     SIZE_TAG("size_tag", "Size tag", required = false, fullChecks = false),
     EXTRA_1("extra_1", "Extra", required = false, fullChecks = true),
     EXTRA_2("extra_2", "Extra", required = false, fullChecks = true);
-
-    /** Used for the item type, the tier check and the same-item check. */
-    val usedForType: Boolean get() = fullChecks
 
     companion object {
         fun fromKey(key: String?): PhotoSlot? = entries.firstOrNull { it.key == key }
@@ -101,44 +97,8 @@ fun applyExifOrientation(raw: RgbImage, orientation: Int): RgbImage {
     return RgbImage(outW, outH, out)
 }
 
-/** The checks and the color votes for one upright photo; [slot] decides which checks count. */
-class ImageAnalysis(val checks: PhotoChecks, val colors: ColorVotes)
-
 /**
- * Every check on one upright photo, plus color votes measured inside the garment the framing
- * check found. The same function runs for camera and gallery photos alike.
+ * The instant checks on one upright photo, while the lender is shooting. The same function runs
+ * for camera and gallery photos alike; what the piece is comes from the server's photo check.
  */
-fun analyzeImage(image: RgbImage): ImageAnalysis {
-    val gray = image.gray()
-    val lighting = checkLighting(gray, image.width, image.height)
-    var sharp = checkSharpness(gray, image.width, image.height)
-    if (lighting.status == CheckStatus.FAIL && sharp.status == CheckStatus.FAIL) {
-        sharp = CheckResult(CheckStatus.UNSURE, "not_judged_due_to_exposure")
-    }
-    val item = findItem(image)
-    return ImageAnalysis(
-        PhotoChecks(sharp = sharp, lighting = lighting, wholeItem = item.result),
-        colorVotes(image, item.region, item.background)
-    )
-}
-
-// ---- What can be listed, across the photos -----------------------------------------------------
-
-/** One photo in a slot, with its tier check (null until the model has run, or if it can't). */
-data class SlotPhoto(val key: String, val slot: PhotoSlot, val verdict: TierVerdict?)
-
-/**
- * The photos to take out of the listing: Front, Back and Extra photos the tier check says are
- * not fashion or not allowed, unless the lender kept them ([kept], "It's fashion, keep it").
- * The same rule runs as each photo is checked and again at Publish (the backstop). Close-up and
- * Size tag photos aren't used for the type, so they're never removed.
- */
-fun photosToRemove(photos: List<SlotPhoto>, kept: Set<String>): List<SlotPhoto> =
-    photos.filter { it.slot.usedForType && it.verdict is TierVerdict.Remove && it.key !in kept }
-
-/** The first everyday-basics warning still open (answered ones are in [overruled]). */
-fun notOfferedWarning(photos: List<SlotPhoto>, overruled: Set<String>): SlotPhoto? =
-    photos.firstOrNull { it.slot.usedForType && it.verdict is TierVerdict.NotOffered && it.key !in overruled }
-
-/** True when any photo looks like jewelry: the declaration is needed, nothing is removed. */
-fun jewelryFound(photos: List<SlotPhoto>): Boolean = photos.any { it.slot.usedForType && it.verdict is TierVerdict.Jewelry }
+fun analyzeImage(image: RgbImage): PhotoChecks = checkPhoto(image)

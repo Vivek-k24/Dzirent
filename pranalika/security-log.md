@@ -71,6 +71,17 @@ By design, not Advisor findings:
 
 Publish gate (`listings_vision_publish_gate`, BEFORE INSERT or UPDATE OF `status` on `listings`): runs as the caller. With `vision_required` on, a client can make a listing `active` only when its latest scan is `done`, covers the current photo set (`photo_set_hash`) and was `allowed` or admin-`approved`. Server roles and migrations are not stopped (same rule as the accessory declaration trigger). The flag is off, and only a migration can turn it on.
 
+## dzirent-server Advisor check (Step 8B additions)
+
+Migrations `20261106040000_step8b_photo_policy.sql`, `20261106050000_step8b_sweater_prompts.sql` and `20261106070000_step8b_server_role_helpers.sql`, plus two for the API test only: `20261106080000_step8b_test_vision_on.sql` and `20261106081000_step8b_test_vision_off.sql` (2026-11-05). Advisor run after all of them (2026-11-06 04:39 UTC): no new findings. The list is the same as after Step 8A (`request_scan` was already on it, above).
+
+- New helpers in `app_private` (not exposed through the API): `vision_required`, `queue_scan`, `vision_pause`, `recheck_active_listing` and the trigger function `rescan_on_photo_change`. They run with elevated rights and an empty search path. EXECUTE is revoked from `public`, `anon` and `authenticated` (checked with `has_function_privilege`). `request_scan` now goes through `queue_scan`; its checks (signed in, owner only, 20 checks per lender per hour) are unchanged.
+- `service_role` got USAGE on `app_private` and EXECUTE on `vision_pause` and `recheck_active_listing`, nothing else (`..._server_role_helpers`). `vision_finish_scan` and `vision_fail_scan` run as `service_role` (called by `scan-listing`) and call these two for active listings. Without the grant, a check of an active listing could be neither saved nor marked failed, and stayed `running` until the 10-minute timeout. The Step 8B API test found this. `anon` and `authenticated` got nothing new.
+- Triggers `listing_photos_rescan_insert_delete` and `listing_photos_rescan_update` on `listing_photos`: a photo change on an active listing queues a check (same 20-an-hour cost guard; when the guard stops it while `vision_required` is on, the listing is paused, so changed photos never stay live unchecked). Errors in the trigger are caught: a photo change never fails because of the check.
+- `listings.auto_paused_reason`: written only by the server. Apps have no UPDATE right on the column (column-level grants), and the publish gate clears it on every insert by an app, so a lender can't set or hide a pause reason. A successful republish through the gate clears it.
+- Automatic pause happens only while `vision_required` is on. It was on for about two minutes for the Step 8B API test (`..._test_vision_on`, then `..._test_vision_off`; off again at 04:26 UTC) and is off.
+- `listing_scans` is in the `supabase_realtime` publication. Realtime sends a change only to subscribers whose RLS lets them read the row (the listing's owner), the same rule as reading the table.
+
 ## Google Cloud (Step 8A)
 
 Project `dzirent`, region `us-west1`. The $20 billing kill switch (budget, Pub/Sub topic `billing-alerts`, function `stop-billing`) was not touched.
@@ -99,7 +110,7 @@ Vault also holds `scan_listing_url`, the function's address (public, not a secre
 | `delete-listing` | Gateway JWT check off (required with new API keys). Code verifies the user, confirms the caller owns the listing, runs as the caller under RLS, uses no secret key. Reviewed by coordinator. | Deployed (1A) |
 | `delete-account` | Gateway JWT check off. Code verifies caller with Auth (`auth.getUser`), refuses if active rentals exist (409), removes caller's listing photo folders through Storage API, then deletes user via service-role key from function environment only. | Deployed (1B) |
 | `send-push` | Gateway JWT check off: only the database calls it. Code requires the shared secret in `x-send-push-secret` (constant-time compare, 401 otherwise), validates the payload, reads and deletes `device_tokens` with the project's secret key from the function environment, and logs counts only (never tokens or message text). | Deployed (7A) |
-| `scan-listing` | Gateway JWT check off: only the database calls it. Code requires the shared secret in `x-scan-listing-secret` (constant-time compare, 401 otherwise) and a scan ID that is `queued` (else 409). Uses the project's secret key only for the three server-only `vision_*` functions, and the `vision-invoker` key only to get an ID token for the vision service. Sends the vision service public photo URLs only. Any failure marks the scan failed (verdict review). Logs counts, verdicts and error codes only. | Deployed (8A) |
+| `scan-listing` | Gateway JWT check off: only the database calls it. Code requires the shared secret in `x-scan-listing-secret` (constant-time compare, 401 otherwise) and a scan ID that is `queued` (else 409). Uses the project's secret key only for the three server-only `vision_*` functions, and the `vision-invoker` key only to get an ID token for the vision service. Sends the vision service public photo URLs only. Any failure marks the scan failed (verdict review). Logs counts, verdicts and error codes only. Not changed in Step 8B; the automatic re-check calls it the same way. | Deployed (8A) |
 
 ## Secrets (Step 7A)
 

@@ -1,5 +1,5 @@
 {
-  "_comment": "Dzirent's item policy as data. The same rows (without this comment) are in public.policy_item_types, seeded by supabase/migrations/20261105200000_step8a_photo_scanning.sql; tests/test_policy_sync.py keeps the two identical, so a change here needs a new migration. Prompts are the phrasings the model compares each photo with; their text embeddings are built into the container image.",
+  "_comment": "Dzirent's item policy as data. The same rows (without this comment) are in public.policy_item_types, last set by the newest migration that carries $policy$ rows (supabase/migrations); tests/test_policy_sync.py keeps the two identical, so a change here needs a new migration. Prompts are the phrasings the model compares each photo with; their text embeddings are built into the container image.",
   "items": [
     {"key": "blazer", "label": "Blazer", "kind": "garment", "allowed": true, "category": "Career & Professional", "item_type": null, "garment_type": "suit", "style": "Western formal", "policy_group": null, "noun": "blazer", "looks_like": "a blazer", "reason": null,
      "prompts": ["a blazer", "a tailored blazer jacket", "a women's blazer", "a men's sport coat"]},
@@ -38,11 +38,7 @@
     {"key": "western_shirt", "label": "Western shirt", "kind": "garment", "allowed": true, "category": "Everyday", "item_type": null, "garment_type": "top", "style": "Country & Western", "policy_group": null, "noun": "western shirt", "looks_like": "a western shirt", "reason": null,
      "prompts": ["a western shirt", "a cowboy shirt with pearl snaps", "a western snap shirt"]},
     {"key": "sweater", "label": "Sweater", "kind": "garment", "allowed": true, "category": "Everyday", "item_type": null, "garment_type": "top", "style": "Western casual", "policy_group": null, "noun": "sweater", "looks_like": "a sweater", "reason": null,
-     "prompts": ["a sweater", "a knit sweater", "a cardigan", "a wool jumper"]},
-    {"key": "hoodie", "label": "Hoodie", "kind": "garment", "allowed": true, "category": "Everyday", "item_type": null, "garment_type": "top", "style": "Western casual", "policy_group": null, "noun": "hoodie", "looks_like": "a hoodie", "reason": null,
-     "prompts": ["a hoodie", "a hooded sweatshirt", "a zip-up hoodie"]},
-    {"key": "sweatshirt", "label": "Sweatshirt", "kind": "garment", "allowed": true, "category": "Everyday", "item_type": null, "garment_type": "top", "style": "Western casual", "policy_group": null, "noun": "sweatshirt", "looks_like": "a sweatshirt", "reason": null,
-     "prompts": ["a sweatshirt", "a crewneck sweatshirt", "a fleece pullover"]},
+     "prompts": ["a knit sweater", "a chunky cable-knit sweater", "a knitted cardigan with buttons", "a wool jumper"]},
 
     {"key": "denim_jacket", "label": "Denim jacket", "kind": "garment", "allowed": true, "category": "Outerwear", "item_type": null, "garment_type": "top", "style": "Western casual", "policy_group": null, "noun": "denim jacket", "looks_like": "a denim jacket", "reason": null,
      "prompts": ["a denim jacket", "a jean jacket", "a trucker jacket"]},
@@ -143,6 +139,10 @@
      "prompts": ["jean shorts", "denim shorts", "cutoff denim shorts"]},
     {"key": "jeans", "label": "Jeans", "kind": "garment", "allowed": false, "category": null, "item_type": null, "garment_type": null, "style": null, "policy_group": "jeans", "noun": "jeans", "looks_like": "plain jeans", "reason": "This looks like plain jeans. Dzirent doesn't list everyday basics like jeans.",
      "prompts": ["jeans", "blue denim jeans", "a pair of skinny jeans", "straight leg jeans"]},
+    {"key": "hoodie", "label": "Hoodie", "kind": "garment", "allowed": false, "category": null, "item_type": null, "garment_type": null, "style": null, "policy_group": "hoodies and sweatshirts", "noun": "hoodie", "looks_like": "a hoodie", "reason": "This looks like a hoodie. Dzirent doesn't list everyday basics like hoodies and sweatshirts.",
+     "prompts": ["a hoodie", "a hooded sweatshirt", "a zip-up hoodie"]},
+    {"key": "sweatshirt", "label": "Sweatshirt", "kind": "garment", "allowed": false, "category": null, "item_type": null, "garment_type": null, "style": null, "policy_group": "hoodies and sweatshirts", "noun": "sweatshirt", "looks_like": "a sweatshirt", "reason": "This looks like a sweatshirt. Dzirent doesn't list everyday basics like hoodies and sweatshirts.",
+     "prompts": ["a sweatshirt", "a crewneck sweatshirt", "a cotton fleece sweatshirt with ribbed cuffs", "a graphic print sweatshirt"]},
 
     {"key": "sneakers", "label": "Sneakers", "kind": "accessory", "allowed": false, "category": null, "item_type": null, "garment_type": null, "style": null, "policy_group": "shoes", "noun": "sneakers", "looks_like": "sneakers", "reason": "This looks like sneakers. Dzirent doesn't allow shoes.",
      "prompts": ["sneakers", "a pair of sneakers", "running shoes", "athletic shoes"]},

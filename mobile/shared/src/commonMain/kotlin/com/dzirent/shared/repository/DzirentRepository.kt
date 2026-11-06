@@ -15,6 +15,7 @@ import io.github.jan.supabase.auth.SettingsCodeVerifierCache
 import io.github.jan.supabase.auth.SettingsSessionManager
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.Postgrest
@@ -34,8 +35,15 @@ import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.transformWhile
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -47,9 +55,26 @@ class DzirentException(message: String) : Exception(message)
 
 const val CANT_MESSAGE_USER = "You can't message this user."
 
+/** How the database's plain-words refusals start (supabase/migrations); these reach the lender as they are. */
+private val DATABASE_MESSAGES = listOf(
+    "This listing can't be published yet",
+    "Check the photos before publishing",
+    "The photo check is still running",
+    "The photos changed after they were checked",
+    "Too many photo checks",
+    "Add a photo first",
+    "Sign the accessory declaration"
+)
+
+/** How often the editor asks for a scan's state when Realtime hasn't sent it. */
+private const val SCAN_POLL_MS = 4_000L
+
 /** Live chat subscription handle. */
 @Serializable
 private data class ConversationIdRow(@SerialName("conversation_id") val conversationId: String)
+
+@Serializable
+private data class AppSettingRow(val key: String, val enabled: Boolean)
 
 /** Everything Inbox and its dot need: my chats, which are unread, and Activity. */
 data class InboxSnapshot(
@@ -139,6 +164,10 @@ class DzirentRepository(
 
     private fun fail(operation: String, throwable: Throwable): DzirentException {
         if (throwable is DzirentException) return throwable
+        // The database's own plain-words refusals (publish gate, photo checks, declaration) are shown as they are.
+        (throwable as? RestException)?.error?.trim()?.let { said ->
+            if (DATABASE_MESSAGES.any { said.startsWith(it) }) return DzirentException(said)
+        }
         val raw = throwable.message.orEmpty().lowercase()
         val message = when {
             "invalid login credentials" in raw -> "Email or password is incorrect."
@@ -1254,6 +1283,72 @@ class DzirentRepository(
             })
         } catch (_: Exception) {
         }
+    }
+
+    // =========================================================================
+    // PHOTO CHECKS (server side; the listing's owner asks and reads)
+    // =========================================================================
+
+    /** The feature flags (app_settings, readable by everyone); missing flags are off. */
+    suspend fun getAppSettings(): Map<String, Boolean> = try {
+        postgrest.from("app_settings").select(Columns.list("key", "enabled"))
+            .decodeList<AppSettingRow>().associate { it.key to it.enabled }
+    } catch (e: Exception) {
+        throw fail("load the app settings", e)
+    }
+
+    /**
+     * The photo check of the listing's current photos: the one already running, the latest one
+     * if it covers these photos, or a new one (request_scan). Returns its id.
+     */
+    suspend fun requestScan(listingId: String): String = try {
+        postgrest.rpc("request_scan", buildJsonObject { put("p_listing_id", listingId) }).decodeAs<String>()
+    } catch (e: Exception) {
+        throw fail("check your photos", e)
+    }
+
+    suspend fun getListingScan(scanId: String): ListingScan? = try {
+        postgrest.from("listing_scans").select {
+            filter { eq("id", scanId) }
+        }.decodeSingleOrNull<ListingScan>()
+    } catch (e: Exception) {
+        throw fail("load the photo check", e)
+    }
+
+    /** The server's per-photo warnings of a finished check. */
+    suspend fun getPhotoScans(scanId: String): List<PhotoScanRow> = try {
+        postgrest.from("photo_scans").select(Columns.list("photo_id", "warnings", "decision")) {
+            filter { eq("scan_id", scanId) }
+        }.decodeList<PhotoScanRow>()
+    } catch (e: Exception) {
+        throw fail("load the photo check", e)
+    }
+
+    /**
+     * The scan each time it changes, ending with the finished one: live through Realtime, with a
+     * read every few seconds as the fallback (Realtime can be slow to connect or blocked).
+     */
+    fun watchScan(scanId: String): Flow<ListingScan> = channelFlow {
+        val channel = realtime.channel("scan_$scanId")
+        try {
+            val live = channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
+                table = "listing_scans"
+                filter("id", FilterOperator.EQ, scanId)
+            }
+            launch {
+                live.collect { action -> action.decodeRecordOrNull<ListingScan>()?.let { send(it) } }
+            }
+            runCatching { channel.subscribe() }
+            while (true) {
+                runCatching { getListingScan(scanId) }.getOrNull()?.let { send(it) }
+                delay(SCAN_POLL_MS)
+            }
+        } finally {
+            withContext(NonCancellable) { runCatching { realtime.removeChannel(channel) } }
+        }
+    }.distinctUntilChanged().transformWhile { scan ->
+        emit(scan)
+        !scan.finished
     }
 
     // =========================================================================

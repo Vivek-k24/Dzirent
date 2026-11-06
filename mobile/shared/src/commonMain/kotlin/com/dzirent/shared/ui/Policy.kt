@@ -41,9 +41,8 @@ object DzirentPolicy {
     const val PROHIBITED_TITLE = "What can't be listed"
 
     /**
-     * What Dzirent is for, then the "Not allowed" and "Not offered" lists, built from the same
-     * labels the photo checks use (ItemLabels), so the policy, the "What can I list?" sheet and
-     * the automatic removals never drift apart.
+     * What Dzirent is for, then the "Not allowed" and "Not offered" lists (ItemLabels), so the
+     * policy and the "What can I list?" sheet never drift apart.
      */
     val ITEM_RULES: String = ItemLabels.SCOPE + "\n" + ItemLabels.notAllowedText + "\n" + ItemLabels.notOfferedText
 
@@ -57,12 +56,12 @@ object DzirentPolicy {
     /** How jewelry works, from the same constants as the declaration. */
     val JEWELRY_NOTE: String =
         "Costume jewelry is welcome. The first time you list jewelry or an accessory, you sign a short declaration " +
-            "that it isn't ${ItemLabels.JEWELRY_GROUP.text} and is worth less than \$${ItemLabels.ACCESSORY_MAX_VALUE_USD}."
+            "that it isn't ${ItemLabels.FINE_JEWELRY} and is worth less than \$${ItemLabels.ACCESSORY_MAX_VALUE_USD}."
 
-    /** Why a photo can disappear from the listing form. */
-    const val REMOVAL_NOTE =
-        "Photos that look like something Dzirent doesn't list are removed from the form right away. If we got it " +
-            "wrong, tap \"It's fashion, keep it\" and someone from Dzirent will check the listing later."
+    /** How the photo check works. */
+    const val PHOTO_CHECK_NOTE =
+        "Dzirent checks every listing's photos. If they show something Dzirent doesn't list, you'll see why. " +
+            "If we're not sure, someone from Dzirent takes a look."
 
     val PROHIBITED_ITEMS: String =
         ITEM_RULES + "\nUse \"Report listing\" with the reason \"Prohibited item\" if you see one."
@@ -187,7 +186,7 @@ fun WhatCanIListSheet(onDismiss: () -> Unit) {
             Text(DzirentPolicy.JEWELRY_NOTE, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                DzirentPolicy.REMOVAL_NOTE,
+                DzirentPolicy.PHOTO_CHECK_NOTE,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

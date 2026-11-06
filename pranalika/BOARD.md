@@ -93,7 +93,7 @@ Status: `To do` / `Doing` / `Done`. The owner assigns each step to an agent. The
 | 5.2 Xcode app `mobile/iosApp` (XcodeGen `project.yml` + committed `.xcodeproj`, Gradle build phase, icon, launch screen, permission texts) | Done |
 | 5.3 iPhone phone features: settings, location, photo picker, camera, compression, photo storage and drafts | Done |
 | 5.4 Runs in the iOS Simulator: guest home with photos, listing page, sign-in with test user 1 | Done |
-| On-device item recognition (TinyCLIP) on iOS (stub, same as Android without the model) | To do |
+| On-device item recognition (TinyCLIP) on iOS (stub, same as Android without the model) | Not needed: removed in 8B, suggestions come from the server photo check on both phones |
 | iOS push (needs a paid Apple Developer account) | To do |
 | Owner: merge `ios01` into `Preview` | Done (PR #94) |
 | 5B Android check after the iOS merge (debug APK builds, shared unit tests pass) and date changes refused between blocked users | Done |
@@ -120,10 +120,17 @@ All three clients build and pass owner testing on `dzirent-server`. Then the `Dz
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (8A) | |
+| Done by: Claude Code (8A, 8B) | |
 | 8A Vision service `vision` on Cloud Run (Marqo-FashionSigLIP, CPU PyTorch, `us-west1`, min 0 / max 1, no unauthenticated access); service accounts `vision-runtime` (no roles) and `vision-invoker` (invoker on `vision` only) | Done |
 | 8A Database: pgvector, `photo_scans`, `listing_scans`, `policy_item_types`, `app_settings` (all three flags off), `request_scan`, duplicate-photo check, publish gate (blocks only while `vision_required` is on) | Done |
 | 8A `scan-listing` Edge Function deployed with secrets `SCAN_LISTING_SECRET`, `VISION_URL`, `VISION_INVOKER_KEY_BASE64` | Done |
 | Owner: put photos in `H:\DziRent\vision-test\should-accept` and `should-reject` (both were empty), then re-run `services/vision/eval/run_eval.py` | To do |
-| Apps and website: run `request_scan` when photos change; show the verdict, reason, photo warnings and suggestions; insert new listings as paused before `vision_required` is turned on | To do |
+| 8B Policy: hoodies and sweatshirts not allowed; lingerie, underwear and swimwear stay not allowed; costume jewelry allowed with the accessory declaration (`policy_item_types` and `services/vision/app/policy.json` in sync); vision service redeployed (revision `vision-00004-7rb`) | Done |
+| 8B Database: changing the photos of an active listing re-checks it automatically; while `vision_required` is on, a result that isn't allowed pauses the listing with `auto_paused_reason` (cleared on republish); `request_scan` returns the latest check when it covers the current photos; `listing_scans` on Realtime; `verification_required` description fixed | Done |
+| 8B Mobile apps (shared code): new listings start as paused drafts, `request_scan` after the photos step, "Checking your photos…" while the lender types, server suggestions fill empty fields only (kept/cleared logged), rejected and review banners, per-photo server warnings, publish follows the database gate when `vision_required` is on, My closet shows `auto_paused_reason` | Done |
+| 8B On-phone TinyCLIP recognition removed (model, label embeddings, LiteRT and its `libtensorflowlite_jni.so`); on-phone blur and lighting checks kept | Done |
+| 8B Root README: product rules, "Open-source software and models" | Done |
+| Owner: phone test of the 8B listing flow (see the 8B handoff) | To do |
+| Mac: iOS build check of the 8B shared-code changes (see the 8B handoff) | To do |
+| Website: run `request_scan` after the photos, show the verdict, reason, photo warnings and suggestions, show `auto_paused_reason`; insert new listings as paused before `vision_required` is turned on | To do |
 | Admin review of `review` verdicts (`admin_decision`) | To do |

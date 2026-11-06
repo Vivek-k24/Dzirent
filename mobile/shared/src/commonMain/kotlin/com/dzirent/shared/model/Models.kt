@@ -9,6 +9,7 @@ import com.dzirent.shared.util.parseDateRange
 import com.dzirent.shared.util.validateMeasurements
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 /** Columns that can be NULL in the database have defaults here. */
 @Serializable
@@ -225,6 +226,8 @@ data class Listing(
     @SerialName("listing_styles") val listingStyles: List<String> = emptyList(),
     @SerialName("garment_type") val garmentType: String? = null,
     @SerialName("ai_review_needed") val aiReviewNeeded: Boolean = false,
+    /** Why the server paused the listing after a photo check (null otherwise). Server-written only. */
+    @SerialName("auto_paused_reason") val autoPausedReason: String? = null,
     val photos: List<ListingPhoto> = emptyList(),
     val measurements: List<ListingMeasurement> = emptyList(),
     val availability: List<Availability> = emptyList(),
@@ -247,6 +250,33 @@ data class ListingPhoto(
     @SerialName("storage_path") val storagePath: String,
     val position: Int,
     val slot: String? = null
+)
+
+/**
+ * Owner row of public.listing_scans: one photo check. [status] is queued, running, done or
+ * failed; [verdict] (allowed, rejected, review) is set once it's done or failed.
+ */
+@Serializable
+data class ListingScan(
+    val id: String,
+    @SerialName("listing_id") val listingId: String,
+    val status: String,
+    val verdict: String? = null,
+    val reason: String? = null,
+    val suggestions: JsonObject? = null,
+    @SerialName("photo_set_hash") val photoSetHash: String? = null,
+    @SerialName("admin_decision") val adminDecision: String? = null,
+    @SerialName("created_at") val createdAt: String? = null
+) {
+    val finished: Boolean get() = status == "done" || status == "failed"
+}
+
+/** The server's warnings for one photo of a scan (public.photo_scans, owner read). */
+@Serializable
+data class PhotoScanRow(
+    @SerialName("photo_id") val photoId: String,
+    val warnings: List<String> = emptyList(),
+    val decision: String? = null
 )
 
 @Serializable
