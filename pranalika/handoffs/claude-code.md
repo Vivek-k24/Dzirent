@@ -2,6 +2,234 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Step 8A - 2026-11-05 - vision service backend
+
+Done:
+- Before starting: working tree clean. Pulled `Preview` (fast-forward to `a59af89`, "Fix broken sample photos").
+- Vision service, `services/vision/` (new): FastAPI on CPU PyTorch with Marqo-FashionSigLIP through open_clip, pinned to commit `c56244cc94f92419e8369fa71efdaf403b124ce8`.
+  - Every Python package is pinned (`requirements.txt` is the full lock, installed with `--no-deps` and then `pip check`), and so is the base image (by digest).
+  - The Docker build downloads the model and embeds all 446 prompts (`app/build_assets.py`). Only the vision tower's weights (354 MB) stay in the image, so a cold start reads local files only and never builds the text tower.
+  - `POST /scan` and `GET /health`.
+    - Per photo: `blur_score`, `brightness_score`, `framing_score`, `worn_by_person`, a 768-number `fingerprint`, label scores, a decision, and warnings worded as on the phone.
+    - Per listing: verdict, a plain-words reason, suggestions and a quality summary. Suggestions are the category, item type and garment type (the database's own values), colors (from the garment's pixels), pattern, fabric, up to 3 styles from the app's list, a template title ("Maroon embroidered lehenga") and a description.
+  - Quality checks (`app/quality.py`) and color names (`app/colors.py`) are numpy ports of the app's `PhotoQuality.kt` and `ItemColor.kt`, with the same thresholds and wording.
+  - Policy (`app/policy.json`, 114 items): the README's allowed and not-allowed items, plus things that aren't clothing, each with 2 to 5 prompt phrasings and the lender-facing reason.
+  - Verdict rules (`app/verdict.py`):
+    - Allowed: allowed items take at least 0.90 of the probability, and neither not-allowed items nor not-clothing labels take more than 0.08.
+    - Not allowed: one policy group reaches 0.60 while allowed items stay at 0.25 or less. The reason names the item.
+    - Not clothing: both the labels and a separate general check reach 0.60. Reason: "This doesn't look like clothing or an accessory we list."
+    - Everything else is unsure, and unsure or disagreeing photos give review, never allowed.
+    - Size-tag and close-up photos never decide the verdict.
+    - Quality never changes the verdict.
+  - Photos are fetched only from the public `listing-photos` URL prefix (no redirects, 15 MB and 40 MP limits). `data:` image URLs are also accepted; the eval uses them so no test photo is uploaded anywhere.
+  - Tests: `tests/` (color naming, title template, verdict thresholds, and `policy.json` = the migration's seed rows). Eval: `eval/run_eval.py`.
+- Database, migration `20261105200000_step8a_photo_scanning.sql` (applied with `supabase db push`):
+  - `vector` (0.8.2) in `extensions`.
+  - `photo_scans` and `listing_scans`: the owner reads; only the server writes. One scan at a time per listing (partial unique index plus an advisory lock).
+  - `policy_item_types`: the same 114 rows as `policy.json`, readable by everyone.
+  - `app_settings`: `vision_required`, `verification_required` and `payments_enabled`, all off, readable by everyone, writable by no API role.
+  - `request_scan(listing_id)`: owner only. It queues the scan and calls `scan-listing` through `pg_net` with the Vault secret `scan_listing_secret`, like `send-push`. Asking again while a scan runs returns that scan. A stuck scan fails after 10 minutes. Limit: 20 scans per lender per hour.
+  - Server-only `vision_start_scan`, `vision_finish_scan` and `vision_fail_scan` (`service_role` only).
+  - Duplicate check: a fingerprint with cosine similarity of 0.95 or more to a photo of another lender's listing turns allowed or review into review, with "This photo matches another listing."
+  - Publish gate `listings_vision_publish_gate` (insert or status change to `active`, clients only). It acts only while `vision_required` is on.
+- Edge Function `scan-listing` (new, deployed, `verify_jwt = false`):
+  - Checks `x-scan-listing-secret` in constant time and marks the scan running.
+  - Answers 202, then in the background (`EdgeRuntime.waitUntil`) signs a JWT as `vision-invoker`, swaps it for a Google ID token, calls `/scan` with public photo URLs (115 s timeout), computes the photo set hash and saves the result.
+  - Any failure: `failed`, verdict review.
+- Google Cloud (project `dzirent`, `us-west1`):
+  - The four APIs were already enabled; `gcloud services enable` for them was a no-op.
+  - Created `vision-runtime` (no roles) and `vision-invoker`.
+  - Deployed `vision` with `gcloud run deploy --source`: no unauthenticated access, runs as `vision-runtime`, min 0, max 1, 2 CPU, 4 GiB, 120 s timeout, concurrency 4, no GPU.
+  - Granted `vision-invoker` `roles/run.invoker` on the service only.
+  - Created one key for `vision-invoker` (ID `476993fa…`).
+  - Serving revision: `vision-00002-wgg`, URL `https://vision-296325491472.us-west1.run.app`.
+  - Billing, budgets, `billing-alerts` and `stop-billing` were not touched.
+- `contract.md`, `security-log.md`, `decisions.md` (appended "Photo scanning (2026-11-05)") and `BOARD.md` are updated.
+
+What I ran:
+- Locally, in a scratch Python 3.12.10 venv (same pinned versions, Windows wheels; nothing in the repo):
+  - `pytest services/vision/tests`: 40 passed.
+  - The bundled tokenizer gave the same token IDs as `timm/ViT-B-16-SigLIP` for all 446 prompts.
+  - My preprocessing matched open_clip's own transform exactly (max difference 0).
+  - The standalone vision tower gave embeddings identical to the full model's. Load time: 6.4 s instead of 14.4 s.
+- Local calibration, before the first deploy:
+  - Run on the 12 sample listings plus 58 openly licensed Wikimedia Commons photos kept in my scratch folder.
+  - First thresholds (allowed at 0.70 / contrary at most 0.15): 3 of 42 should-reject Commons photos came back allowed (a uniform illustration, a shop mannequin, a man in a flight jacket filed under "Smartwatches"). They had allowed mass 0.85 to 0.89 and contrary mass 0.09 to 0.11. Genuine positives were at least 0.958.
+  - Tightened to 0.90 / 0.08 and merged near-synonym groups (tank tops with T-shirts; track pants with sweatpants and joggers). Result: 0 allowed.
+  - The general check had been vetoing clear accessories (sunglasses at 0.998 were sent to review), so it now applies only to not-clothing rejections, with fashion prompts that cover accessories.
+- Duplicate threshold, measured locally:
+  - Different garments: at most 0.80.
+  - Front and back of one garment (same lender, not compared): 0.92 to 0.974.
+  - Edited copies of one photo (JPEG q60, half size, 8% crop, +15% brightness, mirrored): at least 0.97.
+  - So 0.95.
+- Migration:
+  - First run in a transaction that a final block always aborted (`DRYRUN_OK policy_rows=114 allowed=58 flags=3 flags_on=0 vector=0.8.2 triggers=1`). A follow-up query showed nothing persisted.
+  - Then `supabase db push --linked --dry-run` (only this file) and `supabase db push --linked --yes`.
+  - `has_table_privilege` / `has_function_privilege` for `anon`, `authenticated` and `service_role` on every new table and function: as designed.
+- Secrets: `supabase secrets set` twice, through temporary files in my scratch folder, deleted right after; nothing printed. `supabase functions deploy scan-listing --use-api --no-verify-jwt`.
+- Security Advisor after the migration: the only new finding is `request_scan` (logged). Performance Advisor: the only new item is `photo_scans_photo_id_idx` "not used yet". It is there for the photo-delete cascade.
+- Phase 2:
+  1. Unit tests: 40 passed (Python 3.12.10).
+  2. Without sign-in, `GET /health` and `POST /scan` returned 403, and a made-up token got 401. `/health` with `gcloud auth print-identity-token` returned 200 (model, revision, Apache-2.0, 114 policy items).
+  3. Eval: `run_eval.py` against the deployed service, twice (revisions 1 and 2), with identical results. The table is below.
+     - `H:\DziRent\vision-test\should-accept` and `should-reject` were empty both times (0 files), so the owner's sets were not evaluated.
+     - I added my scratch Commons sets as `commons-reject` and `commons-accept`. Their category labels are noisy: `boots/1` is footprints in snow, `hat/1` a car interior, `jeans/1` a building, `jumpsuit/1` a typed letter, `saree/2` a dog lying on saris.
+     - No should-reject photo was allowed, so no change was needed after deploying.
+  4. End to end: `node supabase/tests/step8a_scan.mjs` passed (warm).
+     - Guests read 114 policy rows and three flags, all off. Guests got 401 for scans and `request_scan`.
+     - Test user 1's `request_scan` on "Emerald Velvet Cocktail Dress" returned the same scan when asked twice. Test user 3 was refused (403).
+     - The scan was done after 4 s: allowed, "This looks like a cocktail dress. You can list it." Suggestions: "Black velvet cocktail dress", Occasion & Party / dress, Western formal.
+     - Both photos have `photo_scans` rows with 768-number fingerprints. User 3 reads none of it.
+     - `scan-listing` with a wrong secret: 401.
+  5. Gate: `supabase db query --linked -f supabase/tests/step8a_gate.sql`, one block that always ends by raising its results, so everything rolls back. With `vision_required` on, as the owner (role `authenticated` with their JWT claims):
+     1. The real allowed scan let the listing publish. This also proves `scan-listing`'s hash matches the SQL `photo_set_hash`.
+     2. A rejected latest scan: refused ("This listing can't be published yet: This looks like a T-shirt. …").
+     3. Admin-approved: published.
+     4. A photo moved slot: refused ("The photos changed after they were checked. …").
+     5. A new listing inserted as active: refused ("Check the photos before publishing this listing.").
+     6. Flag off: published.
+     7. Another lender's photo with the same fingerprint: review, "This photo matches another listing."
+     8. `vision_fail_scan`: failed / review.
+     - Afterwards a separate query showed `vision_required = false`, no test rows, the listing still active and its photos unchanged.
+  6. `gcloud run services describe` and `get-iam-policy`: min instances unset (0), max 1, CPU 2, memory 4Gi, no GPU, CPU only during requests, timeout 120 s, concurrency 4, runs as `vision-runtime`. The only IAM binding is `roles/run.invoker` for `vision-invoker`; there is no `allUsers` or `allAuthenticatedUsers`.
+- Fixed after the first deploy:
+  - `httpx` logged every photo URL at INFO (public URLs, but the logs are meant to hold counts only). `app/main.py` now sets `httpx` and `httpcore` to WARNING.
+  - Redeployed: revision `vision-00002-wgg` has 0 log lines with URLs.
+- No emulator, device or app screenshots. The only images I viewed were two contact sheets of the Commons test photos.
+
+Eval, final run (revision `vision-00002-wgg`):
+
+| Set | Photo | Expected | Verdict | Looks like | Reason | Warnings | Pass |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| sample | silk-halter-evening-gown/front | allowed or review | allowed | gown | This looks like a gown. You can list it. | Left side of the item is cut off | yes |
+| sample | silk-halter-evening-gown/back | allowed or review | allowed | gown | This looks like a gown. You can list it. | Left side of the item is cut off | yes |
+| sample | tailored-charcoal-blazer/front | allowed or review | allowed | suit | This looks like a suit. You can list it. |  | yes |
+| sample | tailored-charcoal-blazer/back | allowed or review | allowed | suit | This looks like a suit. You can list it. |  | yes |
+| sample | emerald-velvet-cocktail-dress/front | allowed or review | allowed | cocktail_dress | This looks like a cocktail dress. You can list it. |  | yes |
+| sample | emerald-velvet-cocktail-dress/back | allowed or review | allowed | cocktail_dress | This looks like a cocktail dress. You can list it. |  | yes |
+| sample | cashmere-belted-trench-coat/front | allowed or review | allowed | trench_coat | This looks like a trench coat. You can list it. |  | yes |
+| sample | cashmere-belted-trench-coat/back | allowed or review | allowed | trench_coat | This looks like a trench coat. You can list it. |  | yes |
+| sample | pleated-wide-leg-trousers/front | allowed or review | allowed | trousers | This looks like trousers. You can list it. |  | yes |
+| sample | pleated-wide-leg-trousers/back | allowed or review | allowed | trousers | This looks like trousers. You can list it. |  | yes |
+| sample | linen-summer-sundress/front | allowed or review | allowed | day_dress | This looks like a dress. You can list it. |  | yes |
+| sample | embroidered-silk-lehenga-set/front | allowed or review | allowed | lehenga | This looks like a lehenga. You can list it. |  | yes |
+| sample | embroidered-silk-lehenga-set/back | allowed or review | allowed | lehenga | This looks like a lehenga. You can list it. |  | yes |
+| sample | modern-qipao-midi-dress/front | allowed or review | allowed | qipao | This looks like a qipao. You can list it. |  | yes |
+| sample | modern-qipao-midi-dress/back | allowed or review | allowed | qipao | This looks like a qipao. You can list it. |  | yes |
+| sample | minimalist-wool-day-coat/front | allowed or review | allowed | coat | This looks like a coat. You can list it. |  | yes |
+| sample | minimalist-wool-day-coat/back | allowed or review | allowed | coat | This looks like a coat. You can list it. |  | yes |
+| sample | structured-silk-work-shirt/front | allowed or review | allowed | dress_shirt | This looks like a dress shirt. You can list it. |  | yes |
+| sample | vintage-denim-jumpsuit/front | allowed or review | allowed | jumpsuit | This looks like a jumpsuit. You can list it. |  | yes |
+| sample | vintage-denim-jumpsuit/back | allowed or review | allowed | jumpsuit | This looks like a jumpsuit. You can list it. |  | yes |
+| sample | satin-backless-maxi-dress/front | allowed or review | allowed | slip_dress | This looks like a slip dress. You can list it. |  | yes |
+| sample | satin-backless-maxi-dress/back | allowed or review | allowed | slip_dress | This looks like a slip dress. You can list it. |  | yes |
+| commons-reject | baseball_cap/1 | rejected | rejected | cap | This looks like a cap. Dzirent doesn't allow caps or hats. |  | yes |
+| commons-reject | baseball_cap/2 | rejected | rejected | cap | This looks like a cap. Dzirent doesn't allow caps or hats. |  | yes |
+| commons-reject | baseball_cap/3 | rejected | rejected | cap | This looks like a cap. Dzirent doesn't allow caps or hats. |  | yes |
+| commons-reject | boots/1 (footprints in snow) | rejected | rejected | dog | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | boots/2 | rejected | rejected | boots | This looks like boots. Dzirent doesn't allow shoes or boots. | Too dark: try daylight | yes |
+| commons-reject | boots/3 | rejected | rejected | boots | This looks like boots. Dzirent doesn't allow shoes or boots. |  | yes |
+| commons-reject | dog/1 | rejected | rejected | dog | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | dog/2 | rejected | rejected | dog | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | dog/3 | rejected | rejected | dog | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | hat/1 (car interior) | rejected | rejected | sofa | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | hat/2 | rejected | rejected | cowboy_hat | This looks like a cowboy hat. Dzirent doesn't allow hats or caps. |  | yes |
+| commons-reject | hat/3 | rejected | rejected | cowboy_hat | This looks like a cowboy hat. Dzirent doesn't allow hats or caps. |  | yes |
+| commons-reject | jeans/1 (a building) | rejected | rejected | household_object | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | jeans/2 | rejected | rejected | jean_shorts | This looks like jean shorts. Dzirent doesn't list everyday basics like jean shorts. |  | yes |
+| commons-reject | jeans/3 | rejected | rejected | jeans | This looks like plain jeans. Dzirent doesn't list everyday basics like jeans. |  | yes |
+| commons-reject | laptop/1 | rejected | rejected | laptop | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | laptop/2 | rejected | rejected | laptop | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | laptop/3 | rejected | rejected | laptop | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | sandals/1 | rejected | rejected | dog | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | sandals/2 | rejected | rejected | sandals | This looks like sandals. Dzirent doesn't allow shoes. |  | yes |
+| commons-reject | sandals/3 | rejected | rejected | sandals | This looks like sandals. Dzirent doesn't allow shoes. |  | yes |
+| commons-reject | shorts/1 | rejected | rejected | shorts | This looks like shorts. Dzirent doesn't list everyday basics like shorts. |  | yes |
+| commons-reject | shorts/2 | rejected | review | suit | We're not sure what this piece is, so someone at Dzirent will check the photos. | Too bright: avoid direct sun and flash | yes |
+| commons-reject | shorts/3 | rejected | review | crossbody_bag | We're not sure what this piece is, so someone at Dzirent will check the photos. |  | yes |
+| commons-reject | smartphone/1 | rejected | rejected | phone | This doesn't look like clothing or an accessory we list. | Strong glare: move out of direct light; Right side of the item is cut off | yes |
+| commons-reject | smartphone/2 | rejected | rejected | phone | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | smartphone/3 | rejected | rejected | drink | This doesn't look like clothing or an accessory we list. |  | yes |
+| commons-reject | smartwatch/1 | rejected | review | shirt | We're not sure what this piece is, so someone at Dzirent will check the photos. |  | yes |
+| commons-reject | smartwatch/2 | rejected | review | bomber_jacket | We're not sure what this piece is, so someone at Dzirent will check the photos. |  | yes |
+| commons-reject | smartwatch/3 | rejected | review | bomber_jacket | We're not sure what this piece is, so someone at Dzirent will check the photos. |  | yes |
+| commons-reject | socks/1 | rejected | review | potli_bag | We're not sure what this piece is, so someone at Dzirent will check the photos. |  | yes |
+| commons-reject | socks/2 | rejected | rejected | socks | This looks like socks. Dzirent doesn't allow socks. |  | yes |
+| commons-reject | socks/3 | rejected | rejected | socks | This looks like socks. Dzirent doesn't allow socks. | Too bright: avoid direct sun and flash | yes |
+| commons-reject | sweatpants/1 | rejected | rejected | sweatpants | This looks like sweatpants. Dzirent doesn't list everyday basics like sweatpants. |  | yes |
+| commons-reject | sweatpants/2 | rejected | review | chinos | We're not sure what this piece is, so someone at Dzirent will check the photos. |  | yes |
+| commons-reject | sweatpants/3 | rejected | rejected | joggers | This looks like joggers. Dzirent doesn't list everyday basics like joggers. |  | yes |
+| commons-reject | tank_top/1 | rejected | rejected | tank_top | This looks like a tank top. Dzirent doesn't list everyday basics like tank tops. |  | yes |
+| commons-reject | tank_top/2 | rejected | review | folklorico_dress | We're not sure what this piece is, so someone at Dzirent will check the photos. | Strong glare: move out of direct light | yes |
+| commons-reject | tank_top/3 | rejected | rejected | cap | This looks like a cap. Dzirent doesn't allow caps or hats. | Strong glare: move out of direct light | yes |
+| commons-reject | tshirt/1 | rejected | rejected | tshirt | This looks like a T-shirt. Dzirent doesn't list everyday basics like T-shirts. |  | yes |
+| commons-reject | tshirt/2 | rejected | review | sweatshirt | We're not sure what this piece is, so someone at Dzirent will check the photos. |  | yes |
+| commons-reject | tshirt/3 | rejected | review | shirt | We're not sure what this piece is, so someone at Dzirent will check the photos. |  | yes |
+| commons-accept | blazer/1 | allowed or review | allowed | tie | This looks like a tie. You can list it. | Bottom of the item is cut off | yes |
+| commons-accept | blazer/2 | allowed or review | allowed | blazer | This looks like a blazer. You can list it. |  | yes |
+| commons-accept | handbag/1 | allowed or review | allowed | clutch | This looks like a clutch. You can list it. |  | yes |
+| commons-accept | handbag/2 | allowed or review | allowed | clutch | This looks like a clutch. You can list it. |  | yes |
+| commons-accept | jumpsuit/1 (a typed letter) | allowed or review | rejected | document | This doesn't look like clothing or an accessory we list. |  | no |
+| commons-accept | jumpsuit/2 | allowed or review | allowed | bomber_jacket | This looks like a bomber jacket. You can list it. | Top of the item is cut off | yes |
+| commons-accept | kimono/1 | allowed or review | allowed | kimono | This looks like a kimono. You can list it. |  | yes |
+| commons-accept | kimono/2 | allowed or review | allowed | kimono | This looks like a kimono. You can list it. |  | yes |
+| commons-accept | necktie/1 | allowed or review | allowed | tie | This looks like a tie. You can list it. |  | yes |
+| commons-accept | necktie/2 (a drawing) | allowed or review | review | tie | We're not sure what this piece is, so someone at Dzirent will check the photos. |  | yes |
+| commons-accept | saree/1 | allowed or review | allowed | saree | This looks like a saree. You can list it. |  | yes |
+| commons-accept | saree/2 (a dog lying on saris) | allowed or review | rejected | dog | This doesn't look like clothing or an accessory we list. |  | no |
+| commons-accept | sunglasses/1 | allowed or review | allowed | sunglasses | This looks like sunglasses. You can list it. |  | yes |
+| commons-accept | sunglasses/2 | allowed or review | allowed | sunglasses | This looks like sunglasses. You can list it. |  | yes |
+| commons-accept | wristwatch/1 (an LED DIY watch) | allowed or review | review | watch | We're not sure what this piece is, so someone at Dzirent will check the photos. |  | yes |
+| commons-accept | wristwatch/2 | allowed or review | allowed | watch | This looks like a watch. You can list it. |  | yes |
+
+| Sample listing (all photos together) | Photos | Verdict | Suggested title | Category / garment type | Colors | Styles | Quality |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| silk-halter-evening-gown | 2 | allowed | Navy satin gown | Occasion & Party / dress | Navy, Grey | Western formal | 2 of 2 photos could be better. |
+| tailored-charcoal-blazer | 2 | allowed | Black wool suit | Career & Professional / suit | Black | Western formal | All photos look good. |
+| emerald-velvet-cocktail-dress | 2 | allowed | Black velvet cocktail dress | Occasion & Party / dress | Black | Western formal | All photos look good. |
+| cashmere-belted-trench-coat | 2 | allowed | Brown wool trench coat | Outerwear / top | Brown |  | All photos look good. |
+| pleated-wide-leg-trousers | 2 | allowed | White trousers | Career & Professional / trousers | White | Western formal, Western casual | All photos look good. |
+| linen-summer-sundress | 1 | allowed | Orange linen dress | Everyday / dress | Orange, Maroon | Western casual | All photos look good. |
+| embroidered-silk-lehenga-set | 2 | allowed | Maroon embroidered lehenga | Cultural & Traditional / saree | Maroon | South Asian | All photos look good. |
+| modern-qipao-midi-dress | 2 | allowed | Emerald silk qipao | Cultural & Traditional / dress | Emerald, Black | East Asian | All photos look good. |
+| minimalist-wool-day-coat | 2 | allowed | Grey wool coat | Outerwear / top | Grey | Western casual | All photos look good. |
+| structured-silk-work-shirt | 1 | allowed | Beige shirt | Career & Professional / top | Beige | Western formal | All photos look good. |
+| vintage-denim-jumpsuit | 2 | allowed | Grey denim jumpsuit | Occasion & Party / dress | Grey, Blue | Western casual | All photos look good. |
+| satin-backless-maxi-dress | 2 | allowed | Beige satin slip dress | Occasion & Party / dress | Beige, Grey |  | All photos look good. |
+
+Totals: sample photos 22 of 22 allowed, sample listings 12 of 12 allowed. Commons reject set: 32 rejected, 10 review, 0 allowed. Commons accept set: 12 allowed, 2 review, 2 rejected (the letter and the dog photo).
+
+Times:
+- Warm: single-photo scans median 1.3 s, max 1.9 s (80 scans, eval round trip). A 2-photo listing through the whole chain (`request_scan` to done, polled every 3 s): 4 s.
+- Cold start: not measured yet at this commit. An end-to-end scan after 20 idle minutes was still waiting to run.
+- The container's own start-up (Python imports and model load, from `/health`): 27.8 s on revision 1, 31.9 s on revision 2. A cold scan takes at least that plus the warm time.
+
+Model license: Apache 2.0 (the Hugging Face model card and the repo's metadata, `license: apache-2.0`).
+
+New secrets (names only):
+- Supabase Edge Function secrets: `SCAN_LISTING_SECRET`, `VISION_URL`, `VISION_INVOKER_KEY_BASE64`.
+- Vault: `scan_listing_secret` (and `scan_listing_url`, the function's address, not a secret).
+- Local file: `H:\DziRent\secrets\vision-invoker-key.json` (the `vision-invoker` key).
+
+Open issues:
+- The owner's test folders `H:\DziRent\vision-test\should-accept` and `should-reject` were empty, so the thresholds were set on the sample listings and 58 Commons photos only. Fill the folders and re-run: `python services/vision/eval/run_eval.py --url https://vision-296325491472.us-west1.run.app --out results.json`. It exits 1 if a should-reject photo comes back allowed.
+- The apps and the website don't call `request_scan` or show anything yet (backend only, as asked). Before `vision_required` is turned on, the clients must insert new listings as `paused`, upload photos, run `request_scan`, then publish. An insert straight to `active` is refused while the flag is on.
+- The gate checks only the change to `active`. Photos changed on a listing that is already active aren't checked again. Owner to decide: re-scan or pause on photo change.
+- There is no admin tool yet for `admin_decision` (review verdicts wait for one).
+- Colors are pixel heuristics, as on the phone. The dark "Emerald" velvet dress reads as Black, and the light-wash denim jumpsuit as Grey and Blue.
+- The framing check warns "Left side of the item is cut off" on both gown photos. That is not verified by eye; quality never changes the verdict.
+- A scan with more than 8 photos fails and goes to review (the app has 6 slots).
+- The duplicate check compares against every stored fingerprint (exact, no index). Fine at today's size; add an index or a limit when `photo_scans` grows into the tens of thousands.
+- Artifact Registry `cloud-run-source-deploy` holds 2 images of 0.68 GB each. The older one (`20baf90e…`) belongs only to retired revision `vision-00001-h2z`; I left it in place, and it can be deleted.
+- Test data left: the end-to-end `listing_scans` and `photo_scans` rows of test user 1's "Emerald Velvet Cocktail Dress" (removed with the listing).
+
+Requests (owner to confirm):
+- The policy table goes beyond the README's lists:
+  - Lingerie, underwear and swimwear are not allowed (from the app's `ItemLabels.kt` policy).
+  - Necklaces, earrings, bracelets, rings and brooches are allowed as "Costume jewelry" (the app's jewelry tier, with the accessory declaration).
+  - Hoodies and sweatshirts are allowed, as in the app.
+- The duplicate check keeps a rejected verdict rejected and turns only allowed or review into review. The prompt says "becomes review", but a banned item shouldn't move to review just because its photo was copied.
+
 ## Step 5D - 2026-11-04 - Android check and top padding
 
 Done:

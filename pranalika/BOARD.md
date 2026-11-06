@@ -115,3 +115,15 @@ All three clients build and pass owner testing on `dzirent-server`. Then the `Dz
 | 7A Android push through Firebase: new messages, new chats, date changes; Settings > Notifications; `send-push` deployed | Done |
 | Owner: GitHub secret `GOOGLE_SERVICES_JSON_BASE64` for the release workflow | To do |
 | Owner: phone test of push (see the 7A handoff) | To do |
+
+## Step 8 - Photo scanning
+
+| Item | Status |
+| --- | --- |
+| Done by: Claude Code (8A) | |
+| 8A Vision service `vision` on Cloud Run (Marqo-FashionSigLIP, CPU PyTorch, `us-west1`, min 0 / max 1, no unauthenticated access); service accounts `vision-runtime` (no roles) and `vision-invoker` (invoker on `vision` only) | Done |
+| 8A Database: pgvector, `photo_scans`, `listing_scans`, `policy_item_types`, `app_settings` (all three flags off), `request_scan`, duplicate-photo check, publish gate (blocks only while `vision_required` is on) | Done |
+| 8A `scan-listing` Edge Function deployed with secrets `SCAN_LISTING_SECRET`, `VISION_URL`, `VISION_INVOKER_KEY_BASE64` | Done |
+| Owner: put photos in `H:\DziRent\vision-test\should-accept` and `should-reject` (both were empty), then re-run `services/vision/eval/run_eval.py` | To do |
+| Apps and website: run `request_scan` when photos change; show the verdict, reason, photo warnings and suggestions; insert new listings as paused before `vision_required` is turned on | To do |
+| Admin review of `review` verdicts (`admin_decision`) | To do |

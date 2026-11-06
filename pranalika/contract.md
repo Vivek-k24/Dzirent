@@ -163,6 +163,14 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 - `unregister_push_token(p_token text)`: Signed-in only. Removes the token if it is the caller's. Call before signing out. Returns nothing.
 - Settings are the caller's own `notification_settings` row (table below). No row means Messages on and message text hidden.
 
+### Photo checks (Step 8A)
+- `request_scan(p_listing_id uuid)`: Signed-in listing owner only. Queues a photo check of the listing's current photos and returns the scan's `uuid` (a `listing_scans` row). The check runs on the server and usually finishes within a minute (longer when the vision service starts cold); poll `listing_scans` by that ID until `status` is `done` or `failed`.
+  - One scan at a time per listing: asking again while one is `queued` or `running` returns that scan's ID. A scan that hasn't finished after 10 minutes is marked `failed` and a new one can start.
+  - Refused: `42501` "Not signed in" / "Not your listing"; `22023` "Add a photo first"; `P0001` "Too many photo checks. Try again in an hour." (20 per lender per hour).
+- `policy_item_types` (table below): what can be listed, readable by everyone, guests included. Allowed rows give the listing's own `category`, `item_type` (accessories), `garment_type` and `style`; the others give the `reason` shown to the lender.
+- `app_settings` (table below): feature flags, readable by everyone, changed only by migrations. `vision_required`, `verification_required` and `payments_enabled` are all off.
+- Publish gate: while `vision_required` is on, a listing can become `active` (insert or update) only if its latest scan is `done`, covers its current photos (`photo_set_hash`) and was `allowed` or approved by an admin (`admin_decision = 'approved'`; `rejected` blocks). Otherwise the update is refused with `P0001` and plain words, for example "Check the photos before publishing this listing." or "This listing can't be published yet: <reason>". So when the flag is turned on, apps must insert new listings as `paused`, upload photos, run `request_scan`, then publish. While the flag is off nothing is blocked.
+
 ### Push events
 The database (triggers on `messages` and `conversations`) decides; the `send-push` Edge Function delivers. Apps never send pushes.
 - New message: to the other participant. Title "New message from <name>". Body: the message text, only if the recipient turned on "Show message text".
@@ -202,6 +210,16 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 - **Behavior:** Gets a Google access token with the Firebase server key (`FIREBASE_SERVICE_ACCOUNT_BASE64`), sends the data message above through the FCM HTTP v1 API to each of the recipient's Android tokens (TTL one day), then deletes the tokens Firebase reports as unregistered or invalid.
 - **Returns:** HTTP 200 `{ "sent", "failed", "removed", "errors" }`: counts and Firebase error codes only, never tokens or text.
 
+### `scan-listing` (Step 8A)
+- **Who can call:** The database only (`request_scan`, through `pg_net`). Never apps.
+- **Auth:** Header `x-scan-listing-secret` must equal the function secret `SCAN_LISTING_SECRET` (the same value is in Vault as `scan_listing_secret`); compared in constant time. `verify_jwt = false`. Anything else gets HTTP 401.
+- **Payload:** `{ "scan_id": "<uuid>" }`.
+- **Behavior:** `vision_start_scan` marks the scan `running` and returns the listing's current photos; the function answers HTTP 202 at once and works in the background. It signs in to Google as the `vision-invoker` service account (`VISION_INVOKER_KEY_BASE64`), sends the photos' public URLs to the vision service (`VISION_URL`, `POST /scan`, 115 s timeout), computes the photo set hash and saves the result with `vision_finish_scan`. Any failure calls `vision_fail_scan`: status `failed`, verdict `review`.
+- `vision_start_scan`, `vision_finish_scan` and `vision_fail_scan` are callable only with the project's secret key (`service_role`).
+
+### Vision service (Cloud Run, server only)
+- Service `vision` in Google Cloud project `dzirent`, `us-west1`. Callable only by signed-in Google accounts with `roles/run.invoker` on it (`vision-invoker`, and the owner for the eval). Holds no keys and never calls Supabase. Fetches photos only from the public `listing-photos` bucket. Details: `services/vision/README.md`.
+
 ---
 
 ## 3. Raw Database Tables & RLS Rules
@@ -232,3 +250,7 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `device_tokens` | SELECT, DELETE | `user_id = auth.uid()`. Added only through `register_push_token`. Columns `token` (unique), `user_id`, `platform`, `created_at`, `last_seen_at`. Removed with the account. |
 | `notification_settings` | SELECT, INSERT, UPDATE | `user_id = auth.uid()`. Columns `messages` (default true), `show_message_text` (default false), `updated_at`. Removed with the account. |
 | `us_cities` | None | Closed to all direct access; query via `search_cities`. |
+| `listing_scans` | SELECT | Owned listing only (`l.lender_id = auth.uid()`). Written only by `request_scan` and the server. Columns `id`, `listing_id`, `status` (`queued`, `running`, `done`, `failed`), `verdict` (`allowed`, `rejected`, `review`; set when done or failed), `reason` (plain words for the lender), `suggestions` (JSON: `item_key`, `item_label`, `category`, `item_type`, `garment_type`, `colors`, `pattern`, `fabric`, `styles`, `title`, `description`, `alternatives`, `confidence` when there is a confident allowed item, plus always `quality` `{ summary, photos, photos_with_warnings, warnings }`, `duplicate`, `model`), `photo_set_hash`, `admin_decision` (`approved`, `rejected` or null), `error` (short code), `created_at`, `started_at`, `finished_at`, `admin_decided_at`. Removed with the listing. |
+| `photo_scans` | SELECT | Owned listing only. Written only by the server. One row per scanned photo: `scan_id`, `listing_id`, `photo_id`, `storage_path`, `slot`, `blur_score` (0 sharp to 1 blurry), `brightness_score` (0 black to 1 white), `framing_score` (0 = whole piece in frame; higher = more of its outline on the edge), `worn_probability`, `fingerprint` (`vector(768)`), `labels` (JSON label scores), `warnings` (text[], worded as on the phone), `decision` (`allowed`, `not_allowed`, `not_clothing`, `detail`, `unsure`), `scanned_at`. Removed with the photo or listing. |
+| `policy_item_types` | SELECT | Everyone, guests included (`using (true)`); no writes through the API. Columns `key`, `label`, `kind` (`garment`, `accessory`, `other`), `allowed`, `category`, `item_type`, `garment_type`, `style`, `policy_group`, `noun`, `looks_like`, `reason`, `prompts`, `position`. |
+| `app_settings` | SELECT | Everyone, guests included; changed only by migrations. Columns `key`, `enabled`, `description`, `updated_at`. |

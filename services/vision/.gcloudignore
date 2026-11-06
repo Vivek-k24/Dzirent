@@ -1,0 +1,8 @@
+# Only what the Docker build needs is uploaded to Cloud Build.
+.gcloudignore
+tests/
+eval/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+README.md

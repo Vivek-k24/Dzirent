@@ -83,3 +83,10 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - All push notifications go through Firebase Cloud Messaging (Firebase project `dzirent-17c88`). The database decides when one is due and the `send-push` Edge Function delivers it. Apps never send pushes.
 - Lock screens show no message text unless the user turns on "Show message text" in Settings > Notifications (off by default).
 - Rental reminders wait for a decision on a "confirm rental" step.
+
+## Photo scanning (2026-11-05)
+
+- Photo checks run on the server: the open-source model Marqo-FashionSigLIP (Apache 2.0) on Cloud Run (CPU only), called only by the `scan-listing` Edge Function. Apps never call the model.
+- When the check is unsure, the listing goes to review, never allowed.
+- Photo quality never rejects a listing; it only adds warnings to that photo.
+- Feature flags start off: `vision_required`, `verification_required`, `payments_enabled`. They change only through migrations.

@@ -1,0 +1,47 @@
+{
+  "_comment": "Recognition vocabulary that is not policy. Patterns and fabrics are the app's lists (mobile/shared ItemLabels.kt), styles are the listing styles the database allows. Each entry's prompts are averaged into one text embedding.",
+  "general": [
+    {"key": "fashion", "prompts": ["a photo of clothing", "a garment", "an outfit", "a fashion accessory like a handbag, sunglasses, a watch, jewelry or a tie"]},
+    {"key": "not_fashion", "prompts": ["a photo of something that is not clothing", "a household object", "an electronic device", "a photo of a place"]}
+  ],
+  "worn": [
+    {"key": "worn", "prompts": ["a person wearing the clothes", "a model wearing an outfit", "a woman wearing a dress", "a man wearing a suit"]},
+    {"key": "not_worn", "prompts": ["clothing on a hanger", "a garment laid flat on a surface", "clothing on a mannequin", "a product photo of clothing with no person"]}
+  ],
+  "details": [
+    {"key": "label", "prompts": ["a clothing size tag", "a garment care label", "a brand label sewn into clothing"]},
+    {"key": "closeup", "prompts": ["a close-up of fabric texture", "a close-up of embroidery detail", "a close-up of a garment's stitching and buttons"]}
+  ],
+  "patterns": [
+    {"key": "solid", "adjective": null, "prompts": ["a solid color garment", "a plain fabric with no pattern"]},
+    {"key": "striped", "adjective": "striped", "prompts": ["a striped garment", "fabric with stripes"]},
+    {"key": "polka dot", "adjective": "polka-dot", "prompts": ["a polka dot garment", "fabric with polka dots"]},
+    {"key": "floral", "adjective": "floral", "prompts": ["a floral print garment", "fabric with a flower print"]},
+    {"key": "plaid", "adjective": "plaid", "prompts": ["a plaid garment", "a checked tartan fabric"]},
+    {"key": "embroidered", "adjective": "embroidered", "prompts": ["an embroidered garment", "fabric with embroidery"]},
+    {"key": "sequined", "adjective": "sequined", "prompts": ["a sequined garment", "fabric covered in sequins"]}
+  ],
+  "styles": [
+    {"key": "South Asian", "prompts": ["south asian clothing like a saree, lehenga or kurta", "traditional indian or pakistani clothing"]},
+    {"key": "East Asian", "prompts": ["east asian clothing like a qipao, kimono or hanbok", "traditional chinese, japanese or korean clothing"]},
+    {"key": "Southeast Asian", "prompts": ["southeast asian clothing like an ao dai or kebaya", "traditional vietnamese, thai, malay or filipino clothing"]},
+    {"key": "Middle Eastern", "prompts": ["middle eastern clothing like a kaftan or abaya", "traditional arabic or persian clothing"]},
+    {"key": "African", "prompts": ["african clothing in an ankara or kente print", "traditional west african clothing"]},
+    {"key": "Mexican & Latin American", "prompts": ["mexican or latin american clothing like an embroidered huipil", "traditional mexican folklorico clothing"]},
+    {"key": "Country & Western", "prompts": ["country and western clothing like a western shirt with fringe", "cowboy style clothing"]},
+    {"key": "Western formal", "prompts": ["western formal wear like a suit, blazer or evening gown", "elegant formal clothing"]},
+    {"key": "Western casual", "prompts": ["western casual wear like a hoodie, chinos or a casual dress", "relaxed everyday casual clothing"]}
+  ],
+  "fabrics": [
+    {"key": "silk", "prompts": ["a silk garment", "silk fabric"]},
+    {"key": "satin", "prompts": ["a satin garment", "shiny satin fabric"]},
+    {"key": "cotton", "prompts": ["a cotton garment", "cotton fabric"]},
+    {"key": "linen", "prompts": ["a linen garment", "linen fabric"]},
+    {"key": "wool", "prompts": ["a wool garment", "wool fabric"]},
+    {"key": "denim", "prompts": ["a denim garment", "denim fabric"]},
+    {"key": "velvet", "prompts": ["a velvet garment", "velvet fabric"]},
+    {"key": "chiffon", "prompts": ["a chiffon garment", "sheer chiffon fabric"]},
+    {"key": "leather", "prompts": ["a leather item", "leather"]},
+    {"key": "lace", "prompts": ["a lace garment", "lace fabric"]}
+  ]
+}

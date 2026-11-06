@@ -14,6 +14,10 @@ verify_jwt = false
 [functions.send-push]
 verify_jwt = false
 
+# Called only by the database; the handler checks the shared secret (SCAN_LISTING_SECRET).
+[functions.scan-listing]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.
