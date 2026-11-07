@@ -836,10 +836,14 @@ export function Shell({
               <p>Your next look is closer than you think.</p>
             </div>
             <nav aria-label="Footer">
-              <Link href="/about">About Dzirent</Link>
-              <Link href="/about#how-it-works">How it works</Link>
-              <Link href="/about#rental-guidelines">Rental guidelines</Link>
-              <a href="mailto:support@dzirent.com">Get in touch</a>
+              <Link href="/privacy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
+              <Link href="/community-guidelines">Community guidelines</Link>
+              <Link href="/copyright">Copyright</Link>
+              <Link href="/safety">Safety</Link>
+              <Link href="/delete-account">Delete account</Link>
+              <Link href="/support">Support</Link>
+              <Link href="/about">About</Link>
             </nav>
           </div>
           <div className="footer-bottom">

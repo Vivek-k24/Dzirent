@@ -2,6 +2,57 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P1A part 2 - 2026-11-06 - website legal pages
+
+- What was done:
+  - Centralized legal configuration (`apps/web/src/content/legal/config.ts`):
+    - Encapsulates every fill-in key from `pranalika/legal-placeholders.md` (company name, registered address, DMCA agent details, dispute resolution, governing law, taxes, response times, versions).
+    - Sets `legalDraft: true`, `TERMS_VERSION: "1.0.0"`, and `PRIVACY_VERSION: "1.0.0"`.
+    - Every missing placeholder renders in the UI as a highlighted `[To be completed: <label>]` badge with a tooltip, avoiding invented legal claims.
+  - Reusable layout & components (`apps/web/src/components/legal-layout.tsx`):
+    - `LegalDraftBanner`: Renders `"Draft. These terms are being finalized."` across all legal pages while `legalDraft` is active.
+    - Breadcrumbs: `Home > Legal & Help > <Page Title>`.
+    - Jump-link Table of Contents sticky sidebar on desktop, clean top navigation on mobile.
+    - Responsive 2-column legal grid, readable typography, dark/light theme support.
+  - Seven public legal and help pages created:
+    1. `/privacy` (written from `pranalika/compliance.md` sections 1–6): Data inventory, 2-decimal location rounding to ~1 km, photo EXIF stripping and 768-vector image fingerprints, private body measurements, first-party cookie table, outside services disclosure, no ads/tracking/selling, retention, cascade deletion on account removal, display name fallback, user privacy rights, 18+ policy, RLS database security.
+    2. `/terms`: Marketplace discovery role, age eligibility (18+), listing rules, content licensing, zero tolerance abuse policy, in-person meetings, deposits for high-value pieces, lender tax obligations, copyright, disclaimers, liability cap, governing law/venue/disputes placeholders, termination, and contact.
+    3. `/community-guidelines`: Allowed categories (Career, Occasion, Cultural, Everyday Special, Outerwear, Approved Accessories), prohibited items (Everyday basics, intimates, footwear, headwear, smartwatches, fakes, soiled garments), photo standards (clean light background, hanger/mannequin, no faces, no watermarks), photo scanning workflow (Marqo-FashionSigLIP, outcomes: Allowed, Not allowed, Under review), in-person etiquette, reporting & enforcement.
+    4. `/copyright`: DMCA takedown notice requirements (1–6), designated DMCA agent block with placeholders, counter-notice procedure and 10–14 business day statutory waiting period, repeat infringer policy.
+    5. `/safety`: In-person meetup tips (public, daylight, tell a friend), joint garment inspection checklist, keeping communication in-app, deposit recommendations for high-value items, stain/damage direct settlement, reporting & blocking, emergency 911 guidance.
+    6. `/delete-account`: Public Google Play requirement, step-by-step app & web deletion instructions, support contact for locked accounts, immediate deletion vs retained records (signed declarations, 30-day logs), active rental prerequisite, and shared chat cascade warning.
+    7. `/support`: Contact directory (`support@`, `privacy@`, `security@`, `copyright@`), response time placeholder, quick links to all legal pages, FAQ, accessibility inquiry contact.
+  - Footer on every page updated in `apps/web/src/components/shell.tsx`:
+    - Exactly 8 links: Privacy, Terms, Community guidelines, Copyright, Safety, Delete account, Support, About.
+  - Sitemap created at `apps/web/src/app/sitemap.ts`:
+    - Covers `/`, `/about`, `/privacy`, `/terms`, `/community-guidelines`, `/copyright`, `/safety`, `/delete-account`, `/support`, `/studios`.
+- Files changed:
+  - `apps/web/src/content/legal/config.ts`
+  - `apps/web/src/components/legal-layout.tsx`
+  - `apps/web/src/app/privacy/page.tsx`
+  - `apps/web/src/app/terms/page.tsx`
+  - `apps/web/src/app/community-guidelines/page.tsx`
+  - `apps/web/src/app/copyright/page.tsx`
+  - `apps/web/src/app/safety/page.tsx`
+  - `apps/web/src/app/delete-account/page.tsx`
+  - `apps/web/src/app/support/page.tsx`
+  - `apps/web/src/app/sitemap.ts`
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/components/shell.tsx`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+- Commands run & verified:
+  - `npm run lint` (ESLint 9 / next lint): passed clean (0 errors, 0 warnings).
+  - `npm run build` (Next.js 16.4.3 Turbopack): passed clean, all 21 static/dynamic pages compiled.
+  - `npx next start -p 3004`: verified all 7 legal routes returned HTTP 200, draft banner rendered, TOC rendered, all footer links rendered.
+  - Verified `sitemap.xml` returned HTTP 200 with all 8 public footer routes.
+- Placeholders still open:
+  - The business legal details in `apps/web/src/content/legal/config.ts` (and `pranalika/legal-placeholders.md`) to be filled by Owner/Attorney: `COMPANY_LEGAL_NAME`, `COMPANY_ENTITY_TYPE`, `COMPANY_STATE_OF_FORMATION`, `REGISTERED_ADDRESS`, `GOVERNING_LAW_STATE`, `VENUE`, `DISPUTE_PROCESS`, `LIABILITY_CAP`, `DMCA_AGENT_*`, `LENDER_TAX_STATEMENT`, `SALES_TAX_STATEMENT`, etc. Once provided, filling them in `config.ts` automatically updates all legal pages without changing page copy.
+- Open issues:
+  - None.
+- Requests:
+  - None.
+
 ## Photo fix - 2026-11-04
 
 - Which photos were broken:
