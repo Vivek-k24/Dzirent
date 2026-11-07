@@ -20,15 +20,27 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
 };
+/** The "Preview only" header label (app_settings flag preview_label, readable by guests). Shown if the flag can't be read. */
+async function previewLabelOn(): Promise<boolean> {
+  const client = await serverClient();
+  const { data, error } = await client
+    .from("app_settings")
+    .select("enabled")
+    .eq("key", "preview_label")
+    .maybeSingle();
+  if (error || !data) return true;
+  return Boolean(data.enabled);
+}
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [ctx, user, jar] = await Promise.all([
+  const [ctx, user, jar, previewLabel] = await Promise.all([
     context(),
     currentUser(),
     cookies(),
+    previewLabelOn(),
   ]);
   let name = "Your account";
   let userProfile = null;
@@ -68,6 +80,7 @@ export default async function RootLayout({
           showWelcome={!user && !jar.get("dzirent-welcome")}
           needsLegal={needsLegal}
           isAdmin={isAdmin}
+          previewLabel={previewLabel}
         >
           {children}
         </Shell>

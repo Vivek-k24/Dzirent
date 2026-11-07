@@ -27,6 +27,11 @@ const FLAG_EXPLANATIONS: Record<string, { title: string; enforcement: string }> 
     enforcement:
       "Enforces integrated payment processing for rental transactions across Dzirent.",
   },
+  preview_label: {
+    title: "\"Preview only\" Label",
+    enforcement:
+      "Shows \"Preview only\" in red in the website header, on every page, for every visitor.",
+  },
 };
 
 export function FlagsView({ initialFlags }: { initialFlags: FeatureFlag[] }) {
@@ -35,10 +40,7 @@ export function FlagsView({ initialFlags }: { initialFlags: FeatureFlag[] }) {
   const [targetState, setTargetState] = useState<boolean>(false);
   const [updating, setUpdating] = useState(false);
 
-  async function handleConfirm(_reason?: string) {
-
-
-
+  async function handleConfirm() {
     if (!pendingFlag) return;
     setUpdating(true);
     try {
@@ -141,7 +143,9 @@ export function FlagsView({ initialFlags }: { initialFlags: FeatureFlag[] }) {
           description={
             targetState
               ? `${FLAG_EXPLANATIONS[pendingFlag.key]?.enforcement || ""} Are you sure you want to turn this flag ON?`
-              : `This will disable enforcement of this feature across the marketplace. Are you sure you want to turn this flag OFF?`
+              : pendingFlag.key === "preview_label"
+                ? `The "Preview only" label will disappear from the website header for everyone. Are you sure you want to turn this flag OFF?`
+                : `This will disable enforcement of this feature across the marketplace. Are you sure you want to turn this flag OFF?`
           }
           actionLabel={targetState ? "Turn ON" : "Turn OFF"}
           requireReason={false}

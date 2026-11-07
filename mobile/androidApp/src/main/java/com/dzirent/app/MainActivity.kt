@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.dzirent.app.age.PlayAgeSignals
 import com.dzirent.app.push.ChatNotifications
 import com.dzirent.app.push.FirebasePush
 import com.dzirent.shared.platform.AndroidDeviceServices
@@ -33,7 +34,8 @@ class MainActivity : ComponentActivity() {
             applicationContext,
             packageInfo.versionName.orEmpty(),
             packageInfo.longVersionCode,
-            FirebasePush(applicationContext)
+            FirebasePush(applicationContext),
+            PlayAgeSignals(applicationContext)
         )
         setContent {
             // Wait for the saved settings (a few ms) so the app never flashes the other theme.

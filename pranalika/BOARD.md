@@ -142,7 +142,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
+| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages, P2C), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
 
 | P1A part 1: data inventory and `compliance.md`; legal fill-ins in `legal-placeholders.md` | Done |
 | P1A part 2: website legal pages (privacy policy, terms, community rules and prohibited items, copyright/DMCA, safety tips, delete-account page, support/contact), fill-ins in one config | Done |
@@ -170,7 +170,10 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Owner: phone test of P2B part 1 (see the P2B part 1 handoff) | To do |
 | Mac: iOS build check of the P2B part 1 shared-code changes | To do |
 | Attorney: report and evidence retention period (placeholder 730 days in `app_private.settings`) | To do |
-| P2C Age gate: store age signals on Android and iPhone, state list table, 18+ on the website (Texas SB 2420, Utah) | To do |
+| P2C Age gate: store age signals on Android and iPhone, state list table, 18+ on the website (Texas SB 2420, Utah) | Done on Android and website (Claude Code); iPhone: Mac session |
+| P2C (Claude Code): `age_checks` and `record_age_check` (no birthdate), a store "minor" blocks every write by the account and pauses its listings, admins see the age check in user lookup; Android asks Google Play Age Signals 0.0.4 on sign-in and daily, blocked screen (Delete my account, Sign out); website records the 18+ tick; public pages name no service provider, new password and age wording; `preview_label` flag and the red "Preview only" header label; overlay dialogs for Block, Report and the sign-in page | Done |
+| Mac: wire Apple's Declared Age Range into the `IosAgeSignals` stub (see the P2C handoff), and build-check the P2C shared-code changes | To do |
+| Owner: phone test of P2C on Android (see the P2C handoff); check the "Preview only" label and the new dialogs on the website in both themes and on a phone | To do |
 | P3A Download my data on all three platforms | To do |
 | P3B Cleanup and retention jobs: abandoned drafts, orphan photos, old scans, log retention; sample listings removed from production | To do |
 | P4A Website accessibility to WCAG 2.1 AA (automated checker in the build plus a manual pass) | To do |

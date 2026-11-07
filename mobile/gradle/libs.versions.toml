@@ -19,6 +19,8 @@ junit = "4.13.2"
 aboutlibraries = "11.2.3"
 # 34.x keeps Kotlin stdlib at 2.0.x, which this project's Kotlin 2.1.0 compiler reads.
 firebaseBom = "34.19.0"
+# Google Play Age Signals (P2C age gate). 0.0.4 was published 2026-07-20.
+ageSignals = "0.0.4"
 
 [libraries]
 # Supabase
@@ -63,6 +65,9 @@ aboutlibraries-compose-m3 = { group = "com.mikepenz", name = "aboutlibraries-com
 # Push notifications (Firebase Cloud Messaging)
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
+
+# Age gate (Texas SB 2420, Utah): the app store's age range, never a birthdate
+play-age-signals = { group = "com.google.android.play", name = "age-signals", version.ref = "ageSignals" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }

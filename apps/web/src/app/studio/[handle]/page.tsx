@@ -107,7 +107,7 @@ export default async function StudioPage({
             <input type="hidden" name="action" value="report" />
             <label className="field">
               <span>Reason</span>
-              <select name="reason" required>
+              <select name="reason" required data-required-message="Choose a reason for the report.">
                 <option value="">Choose a reason</option>
                 <option>Inappropriate content</option>
                 <option>Misleading listing</option>
@@ -119,7 +119,11 @@ export default async function StudioPage({
               <span>Details (optional)</span>
               <textarea name="details" maxLength={500} rows={3} />
             </label>
-            <button className="button secondary">Submit report</button>
+            <ConfirmSubmit
+              label="Submit report"
+              title="Report this studio?"
+              message="Someone at Dzirent will review this studio. The studio isn't told who reported it."
+            />
           </form>
           <form action={studioAction}>
             <h3>Block this studio</h3>
@@ -131,7 +135,8 @@ export default async function StudioPage({
             <input type="hidden" name="action" value="block" />
             <ConfirmSubmit
               label="Block studio"
-              message="Block this studio? Their pieces will disappear from your browsing, and yours from theirs."
+              title="Block this studio?"
+              message="Their pieces will disappear from your browsing, and yours from theirs."
             />
           </form>
         </div>

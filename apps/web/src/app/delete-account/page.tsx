@@ -27,7 +27,7 @@ export default function DeleteAccountPage() {
       subtitle="Complete instructions on permanently deleting your Dzirent account and personal data across our mobile apps and website."
       version="1.0.0"
       effectiveDate="November 6, 2026"
-      lastUpdated="November 6, 2026"
+      lastUpdated="November 7, 2026"
       toc={TOC}
     >
       <section id="overview">
@@ -98,8 +98,8 @@ export default function DeleteAccountPage() {
         <p>When you confirm account deletion, the following is permanently deleted:</p>
         <ul>
           <li>
-            <strong>Sign-in details:</strong> Your email address and your password (which we only
-            ever hold in a scrambled form that can&apos;t be read back).
+            <strong>Sign-in details:</strong> Your email address and your password. Your password
+            is protected with one-way encryption, so no one, including us, can read it.
           </li>
           <li>
             <strong>Profile:</strong> Your display name, studio name and handle, bio, pickup area,
@@ -121,7 +121,7 @@ export default function DeleteAccountPage() {
           </li>
           <li>
             <strong>Saved pieces and studios</strong>, your notification registration and settings,
-            your record of agreeing to the terms, and any warnings on your account.
+            your record of agreeing to the terms, your age checks, and any warnings on your account.
           </li>
           <li>
             <strong>Messages and rental records</strong>, for both you and the other person (see

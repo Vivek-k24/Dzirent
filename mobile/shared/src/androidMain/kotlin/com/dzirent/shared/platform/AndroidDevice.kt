@@ -20,7 +20,9 @@ class AndroidDeviceServices(
     override val appVersion: String,
     override val appBuild: Long,
     /** Firebase lives in the app module (androidApp), which hands it in. */
-    override val push: PushService
+    override val push: PushService,
+    /** Google Play Age Signals also lives in the app module. */
+    override val ageSignals: AgeSignalsService
 ) : DeviceServices {
     private val app = context.applicationContext
 

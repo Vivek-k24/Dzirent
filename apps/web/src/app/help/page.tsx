@@ -25,7 +25,7 @@ export default function HelpPage() {
       subtitle="Answers to common questions about finding pieces, listing your wardrobe, local handoffs, and privacy."
       version="1.0.0"
       effectiveDate="November 6, 2026"
-      lastUpdated="November 6, 2026"
+      lastUpdated="November 7, 2026"
       toc={TOC}
     >
       <section id="getting-started" className="faq-section">
@@ -92,6 +92,12 @@ export default function HelpPage() {
                 Dzirent rentals involve in-person physical exchanges, peer-to-peer rental agreements,
                 and financial transactions for security deposits and fees. For safety, compliance,
                 and contract enforceability, all account holders must be at least 18 years old.
+              </p>
+              <p>
+                In some states, we use your app store&apos;s age check to confirm you are 18 or
+                older. We never ask for or store your birthdate. If your app store says you are
+                under 18, the account can no longer be used, except to see your own information and
+                delete the account.
               </p>
             </div>
           </details>

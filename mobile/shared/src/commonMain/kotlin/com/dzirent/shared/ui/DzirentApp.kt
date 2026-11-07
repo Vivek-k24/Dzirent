@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.dzirent.shared.model.Profile
+import com.dzirent.shared.platform.DeviceServices
 import com.dzirent.shared.platform.LocalDevice
 import com.dzirent.shared.platform.SettingsStorage
 import com.dzirent.shared.repository.DzirentRepository
@@ -24,19 +25,26 @@ sealed class AuthScreenState {
     data class Authenticated(val profile: Profile) : AuthScreenState()
     /** Signed in, but the current Terms of Use or Privacy Policy isn't accepted yet. */
     data class NeedsTerms(val profile: Profile) : AuthScreenState()
+    /** Signed in, but the age gate blocked the account (Dzirent is 18+). */
+    data class AgeBlocked(val profile: Profile) : AuthScreenState()
     object Guest : AuthScreenState()
 }
 
 /**
- * Where a signed-in account goes: the terms step first while the current versions aren't
- * accepted. If the check can't run (no connection), the app opens and asks again next time.
+ * Where a signed-in account goes: the age gate first (the app store's age signal, on sign-in and
+ * once a day), then the terms step while the current versions aren't accepted. If the terms
+ * check can't run (no connection), the app opens and asks again next time.
  */
-private suspend fun signedInState(repository: DzirentRepository, profile: Profile): AuthScreenState =
-    if (runCatching { repository.needsLegalAcceptance() }.getOrDefault(false)) {
-        AuthScreenState.NeedsTerms(profile)
-    } else {
-        AuthScreenState.Authenticated(profile)
-    }
+private suspend fun signedInState(
+    repository: DzirentRepository,
+    device: DeviceServices,
+    profile: Profile,
+    onSignIn: Boolean
+): AuthScreenState = when {
+    AgeGate.check(repository, device, profile.id, onSignIn) -> AuthScreenState.AgeBlocked(profile)
+    runCatching { repository.needsLegalAcceptance() }.getOrDefault(false) -> AuthScreenState.NeedsTerms(profile)
+    else -> AuthScreenState.Authenticated(profile)
+}
 
 /**
  * Main Dzirent Composable entry point.
@@ -54,14 +62,15 @@ fun DzirentApp(
     var firstVisitSeen by rememberSaveable { mutableStateOf(false) }
     var pendingGatedAction by remember { mutableStateOf<GatedAction?>(null) }
     var authStartDestination by rememberSaveable { mutableStateOf("welcome") }
-    val push = LocalDevice.current.push
+    val device = LocalDevice.current
+    val push = device.push
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         repository.awaitAuth()
         val profile = runCatching { repository.getCurrentProfile() }.getOrNull()
         if (profile != null) {
-            screenState = signedInState(repository, profile)
+            screenState = signedInState(repository, device, profile, onSignIn = false)
         } else {
             // Guest mode: first time user sees first visit sheet
             screenState = AuthScreenState.Guest
@@ -97,12 +106,18 @@ fun DzirentApp(
                             onLoginSuccess = { profile ->
                                 firstVisitSeen = true
                                 screenState = AuthScreenState.Loading
-                                scope.launch { screenState = signedInState(repository, profile) }
+                                scope.launch { screenState = signedInState(repository, device, profile, onSignIn = true) }
                             },
                             onBrowseAsGuest = {
                                 firstVisitSeen = true
                                 screenState = AuthScreenState.Guest
                             }
+                        )
+                    }
+                    is AuthScreenState.AgeBlocked -> {
+                        AgeBlockedScreen(
+                            repository = repository,
+                            onSignedOut = { screenState = AuthScreenState.Guest }
                         )
                     }
                     is AuthScreenState.NeedsTerms -> {

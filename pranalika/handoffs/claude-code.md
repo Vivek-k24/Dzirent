@@ -2,6 +2,74 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P2C - 2026-11-07 - age gate and public text
+
+Done:
+- Before starting: working tree clean, `Preview` already up to date with `origin/Preview` (`5bff289`).
+- **Backend** (`supabase/migrations/20261107120000_p2c_age_gate.sql`, pushed):
+  - `public.age_checks`: user, source (`store_signal` / `self_declared`), result (`adult` / `minor` / `unknown`), platform, time. No birthdate field anywhere. Owner reads their own; written only by `record_age_check`. Removed with the account.
+  - `record_age_check(p_source, p_result, p_platform)` returns true when the account is blocked. A self-declared `adult` from a profile without the 18+ confirmation is stored as `unknown`. The same answer within an hour adds no row.
+  - **Blocked** = the latest decisive check is `minor`. Only a later store `adult` lifts it. A self-declared `adult` never does (so signing in on the website can't undo a Play "under 18"), and `unknown` changes nothing.
+  - **The block:** a trigger `age_gate` on 22 tables refuses every insert and update by the blocked user with "Dzirent is only for people 18 and older." It is named to fire before the other triggers, so a blocked user sees this message, not a text-filter one. Reading, deleting rows, read receipts, `mark_activity_seen` (inbox) and account deletion still work. Admins and server jobs are not stopped.
+  - When the block starts, the account's active listings are paused ("Paused: Dzirent is only for people 18 and older."), so nobody can start a chat with a minor. They stay paused after the block ends until the owner republishes.
+  - `admin_find_user` also returns `age_check` (latest row) and `age_blocked`.
+  - `20261107121000_p2c_preview_label.sql`: `app_settings.preview_label`, on.
+- **Android:**
+  - Google Play Age Signals `com.google.android.play:age-signals` **0.0.4** (the latest on Google Maven, published 2026-07-20). `androidApp/.../age/PlayAgeSignals.kt` calls `checkAgeSignals` and maps `ageLower` / `ageUpper`: a range ending under 18 is a minor, one starting at 18 or above is an adult, anything else (no range, an error, a 10-second timeout) is no signal.
+  - 0.0.4 no longer has `userStatus`, and adds a Play prompt (`requestAgeSignalsAccess`) that I don't call: the app only reads what Play already shares.
+  - Shared `util/AgeGate.kt` runs on every sign-in and once a day when the app opens (the day and the last answer are kept per account in the phone's prefs). It records adult or minor as `store_signal`, and no signal as `self_declared` / `adult`.
+  - If the server can't be reached, the last answer stands (a store "minor" blocks anyway) and the check runs again next time.
+  - The new `AgeBlocked` screen comes before the terms step: "Dzirent is only for people 18 and older.", with Delete my account (with a confirmation), Sign out, and Contact support.
+  - The 18+ refusal reaches screens word for word (`DATABASE_MESSAGES`).
+- **iOS:** `shared/src/iosMain/.../platform/IosAgeSignals.kt` is a clear stub returning "no applicable signal" (the iPhone records `self_declared`).
+- **Website:**
+  - Sign-up records `record_age_check('self_declared', 'adult', 'web')` after `accept_legal`.
+  - Admin user lookup shows an "Under 18: blocked" badge and an "Age Check" cell.
+  - Flags page: `preview_label` has a title and confirmation text. Switching it also refreshes the site-wide header.
+  - "Preview only" sits in the header right after "How Dzirent works", on every page: red (`#c62828`; `#ff6b6b` in dark), 14px. On phones (760px and below) "How Dzirent works" is hidden, and the label sits next to the menu button on the logo row. It may wrap to two lines, and the side cells can shrink (`minmax(0, 1fr)`), so nothing is pushed off screen. The flag is read on every request; if it can't be read, the label shows.
+  - **Overlay dialogs:**
+    - `ConfirmSubmit` now confirms in the site's overlay (`WorkflowModal`) instead of `window.confirm`. Block uses it, and Report now does too (it had no confirmation).
+    - If a required field is empty (the report reason, or anything on the sign-in page), the same overlay lists what's missing in plain words instead of the browser's bubble.
+    - The only browser-drawn box on the sign-in page was that "please tick this box" bubble on the 18+ and terms ticks, so I took that to be the confirmation the task meant.
+  - **Public text:**
+    - Privacy: the provider list is now the one paragraph from the task; "Google Firebase delivers them" is now "our notification provider delivers them".
+    - Passwords (privacy twice, delete-account once): "Your password is protected with one-way encryption, so no one, including us, can read it."
+    - Age: privacy (what we collect, and the age section) and help ("Why is Dzirent 18+ only?") say that in some states we use your app store's age check, and that we never ask for or store your birthdate. Privacy and delete-account list age checks among what deletion removes.
+    - "Last updated" is November 7 on privacy, help and delete-account. "Planned: Didit / Stripe" is gone from the config comments.
+    - Google Play and Apple App Store stay on the delete-account page: they are app stores, not service providers.
+  - Fixed the one lint warning (an unused `_reason` in `components/admin/flags-view.tsx`). The plain-language entry below wrongly named `action-dialog.tsx` as its file.
+- **Docs:** `decisions.md` "Age gate (2026-11-07)", `contract.md` (Age gate, `age_checks`, `app_settings` now switched by `set_flag`), `security-log.md` (Age gate, Advisor), `compliance.md` (inventory row, section 4, the SB 2420 / Utah row handled on Android and web with iPhone pending, gap 7), `BOARD.md`.
+
+What I ran:
+1. `supabase db push --linked` (dry run first): both migrations applied. Checked: 22 `age_gate` triggers, `preview_label` = true.
+2. `node supabase/tests/p2c_age_gate.mjs` (new): **PASSED on the first run**.
+   - Guests read `preview_label` = true.
+   - Bad source, result and platform are refused (`22023`), and so are guests (401).
+   - Test user 3 with a store "minor": creating a listing, sending a message and editing the profile are all refused with `P0001` "Dzirent is only for people 18 and older.". Reading their own profile and age checks, and `mark_activity_seen`, still work. A self-declared adult afterwards keeps the block.
+   - Store "adult": a test listing is created and published, and a message is sent. Clean-up deleted the listing and left test user 3 as adult. One test message stays in that chat.
+3. `node supabase/tests/p2b_admin.mjs` (regression, with a new assertion): **PASSED**. Admin lookup at `aal2` returns test user 3's `age_check` (store_signal / adult / android) and `age_blocked = false`. Its clean-up reported "flags on: 1": that is `preview_label`, which is meant to stay on.
+4. Supabase Security Advisor: one new finding (`record_age_check` callable by signed-in users, intended), logged in `security-log.md`.
+5. `:androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, `GOOGLE_SERVICES_JSON` set): BUILD SUCCESSFUL. 25 tests, 0 failures, including the new `AgeGateTest` (4 tests).
+6. `apps/web`: `npm run lint` and `npm run build` pass (Node 22.23.4 from my scratch folder, as in the previous entry). Run once, then again after the lint-warning fix; the second lint run reports no warnings.
+7. Final read-back: `preview_label` true; test user 3 latest check `store_signal/adult`, not blocked. A scan of every public page and the legal config finds no provider name.
+8. No emulator, device or screenshots.
+
+Debug APK: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk` (built 2026-11-07 12:08 local time).
+
+iOS work left for the Mac:
+- Replace the `IosAgeSignals` stub with Apple's Declared Age Range: the entitlement, a small Swift call asking for the range with an age gate of 18, then `AgeSignal.fromRange(lower, upper)`. The notes in the stub weren't verified on a Mac; check Apple's current API names and the minimum iOS version.
+- Build-check the shared changes: `DeviceServices.ageSignals`, `IosDeviceServices`, and the new screen and state in `DzirentApp.kt`.
+
+Open issues:
+- **The signal is client-reported.** Play has no server-side check, so someone calling the API directly could send a store "adult" and lift their own block (security-log.md). Closing that needs ID verification (P6A) or a verified signal.
+- **Play may return nothing for most users.** Ranges come only for users in covered states. A sideloaded debug build gets `APP_NOT_OWNED`, so the owner's phone test will most likely record `self_declared`. Seeing a real "minor" needs Play's test tools (`FakeAgeSignalsManager`) or a covered account. I didn't add a debug switch.
+- **The website has no blocked screen.** A blocked account's writes are refused with the 18+ message wherever the site shows database errors, but nothing explains it up front. Android has the full screen.
+- **Gap 7 remains open:** `adult_confirmed` is still writable by the user and not required. A self-declared adult without it is stored as `unknown`.
+- **Minors can re-register.** Age checks are deleted with the account, so a blocked person can delete it and sign up again; on Android the next sign-in asks Play again.
+- **Attorney:** whether Texas SB 2420 and Utah's law apply to Dzirent and in what form, and whether `self_declared` is enough outside covered states.
+- **Policy version:** the privacy text changed (age checks), but `PRIVACY_VERSION` is still 1.0.0, so nobody is asked to accept again. The owner should decide whether that counts as a material change.
+- **Owner checks after the commit:** the label in both themes and on a narrow phone (under about 340px it can touch the logo), and the new Block, Report and sign-in dialogs.
+
 ## Plain-language legal pages - 2026-11-07
 
 Done:

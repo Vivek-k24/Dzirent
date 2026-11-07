@@ -291,6 +291,7 @@ export function Shell({
   showWelcome,
   needsLegal = false,
   isAdmin = false,
+  previewLabel = false,
   children,
 }: {
   ctx: BrowseContext;
@@ -301,6 +302,8 @@ export function Shell({
   showWelcome: boolean;
   needsLegal?: boolean;
   isAdmin?: boolean;
+  /** Shows "Preview only" in the header (the preview_label flag). */
+  previewLabel?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -493,6 +496,7 @@ export function Shell({
               <Link href="/about#how-it-works" className="how-works-link">
                 How Dzirent works
               </Link>
+              {previewLabel && <span className="preview-label">Preview only</span>}
             </div>
             <Link href="/" className="brand" aria-label="Dzirent home">
               <Image

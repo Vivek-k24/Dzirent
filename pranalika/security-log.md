@@ -150,6 +150,22 @@ By design, not Advisor findings:
 - **Revoked from `public`, `anon` and `authenticated`:** every other new `app_private` function (`require_admin`, `log_admin_action`, `hold_listing`, `release_listing`, `report_snapshot`, `purge_expired_reports`, `close_report`, `set_suspension`, the trigger functions).
 - **`set_flag` replaces "flags change only through migrations"** (decisions.md "Admin"). Each switch is logged with before and after.
 
+## Age gate (P2C)
+
+Migrations `20261107120000_p2c_age_gate.sql` and `20261107121000_p2c_preview_label.sql` (2026-11-07).
+
+- **No birthdate anywhere:** `age_checks` holds only source, result, platform and time. The owner can read their own rows; nobody can write them except `record_age_check` (no table grants beyond SELECT).
+- **The block:** a trigger named `age_gate` on 22 app-writable tables refuses inserts and updates while `app_private.age_blocked(auth.uid())` is true. It keys on the caller (`auth.uid()`), not the row owner, so admins acting on the account, server jobs (no user) and account deletion through the Auth admin API are not stopped. Deletes are not blocked.
+- **The skip setting:** `dzirent.age_gate_skip` is set, transaction-local, only inside `mark_activity_seen` (so a blocked account can still read its inbox) and inside `record_age_check` (to pause the account's listings). Clients can't set Postgres settings through PostgREST, and `set_config` isn't in an exposed schema.
+- **Known limit: the signal is client-reported.** Google Play Age Signals has no server-side verification, so `record_age_check` trusts what the app sends. A person calling the API directly could send a store `adult` to lift their own block. The apps never do this; closing it needs a verified signal, or ID verification (P6A). A self-declared `adult` never lifts a block.
+- **Elevated helpers:** `app_private.age_blocked` and `app_private.refuse_minor_account` have EXECUTE revoked from `public`, `anon` and `authenticated`. The trigger function is elevated, so it doesn't need the helper granted to app roles.
+
+Advisor run after the migrations (2026-11-07 18:06 UTC): one new finding; the earlier findings are unchanged.
+
+| Finding | Function or table | Why it is intended |
+| --- | --- | --- |
+| WARN: signed-in users can run elevated function | `record_age_check` | Apps record the caller's own age check. It writes only the caller's row (`auth.uid()`), validates every input against a fixed list, and returns only true or false. It needs elevated rights because `age_checks` has no insert grant. Not callable by guests (EXECUTE revoked from `public` and `anon`). |
+
 ## Google Cloud (Step 8A)
 
 Project `dzirent`, region `us-west1`. The $20 billing kill switch (budget, Pub/Sub topic `billing-alerts`, function `stop-billing`) was not touched.

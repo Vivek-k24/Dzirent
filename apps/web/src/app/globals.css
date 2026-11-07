@@ -276,6 +276,32 @@ html[data-theme=dark] .legal-placeholder{background:#3d3314;color:#ffd666;border
   }
 }
 
+/* "Preview only" in the header while the preview_label flag is on (P2C). */
+.preview-label {
+  color: #c62828;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+html[data-theme=dark] .preview-label {
+  color: #ff6b6b;
+}
+@media (max-width: 760px) {
+  /* Next to the menu button on the logo row; the side cells may shrink, so nothing is pushed off screen. */
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+  .top-left {
+    min-width: 0;
+  }
+  .preview-label {
+    min-width: 0;
+    margin-left: 6px;
+    white-space: normal;
+  }
+}
+
 
 
 
