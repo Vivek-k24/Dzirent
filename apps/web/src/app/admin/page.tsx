@@ -22,12 +22,46 @@ type Queues = {
   id_verification_reviews: number;
 };
 
+/** One cleanup job (P3B): its switch and its last run. */
+type CleanupJob = {
+  job: string;
+  description: string | null;
+  deletes: boolean;
+  last_run: {
+    mode: "count" | "delete";
+    counts: Record<string, number> | null;
+    error: string | null;
+    finished_at: string;
+  } | null;
+};
+
+const JOB_NAMES: Record<string, string> = {
+  abandoned_drafts: "Abandoned drafts",
+  orphan_photos: "Orphan photos",
+  old_photo_checks: "Old photo checks",
+  expired_reports: "Expired reports",
+  old_data_exports: "Download records",
+  old_age_checks: "Old age checks",
+  old_suggestion_choices: "Suggestion choices",
+  old_declarations: "Old declarations",
+  stale_device_tokens: "Stale device tokens",
+};
+
+function countsText(counts: Record<string, number> | null) {
+  if (!counts) return "No counts";
+  return Object.entries(counts)
+    .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`)
+    .join(", ");
+}
+
 export default async function AdminOverviewPage() {
   const client = await serverClient();
-  const [{ data: metricsRaw }, { data: queuesRaw }] = await Promise.all([
+  const [{ data: metricsRaw }, { data: queuesRaw }, { data: cleanupRaw }] = await Promise.all([
     client.rpc("admin_metrics"),
     client.rpc("admin_queues"),
+    client.rpc("admin_cleanup_status"),
   ]);
+  const cleanup = (cleanupRaw || []) as CleanupJob[];
 
   const metrics = (metricsRaw || {}) as Metrics;
   const queues = (queuesRaw || {}) as Queues;
@@ -126,6 +160,53 @@ export default async function AdminOverviewPage() {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="admin-card" style={{ marginTop: "24px", padding: "20px", border: "1px solid var(--line)", borderRadius: "8px", background: "var(--paper)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "12px", flexWrap: "wrap" }}>
+            <h3 style={{ fontSize: "16px", margin: "0 0 4px" }}>Cleanup jobs</h3>
+            <Link href="/admin/flags" className="muted" style={{ fontSize: "13px" }}>
+              Switch a job to deleting on the Flags page
+            </Link>
+          </div>
+          <p className="muted" style={{ fontSize: "13px", margin: "0 0 14px" }}>
+            Nightly. A job that only counts reports what it would delete and deletes nothing.
+          </p>
+          {cleanup.length === 0 ? (
+            <p className="muted" style={{ margin: 0 }}>Cleanup status couldn&apos;t be loaded.</p>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "12px" }}>
+              {cleanup.map((j) => (
+                <div key={j.job} style={{ border: "1px solid var(--line)", borderRadius: "6px", padding: "12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", alignItems: "center" }}>
+                    <strong style={{ fontSize: "14px" }}>{JOB_NAMES[j.job] || j.job}</strong>
+                    <span
+                      className="badge"
+                      style={{ background: j.deletes ? "#c0392b" : "#7f8c8d", color: "#fff" }}
+                    >
+                      {j.deletes ? "Deletes" : "Counts only"}
+                    </span>
+                  </div>
+                  {j.last_run ? (
+                    <>
+                      <div className="muted" style={{ fontSize: "12px", marginTop: "6px" }}>
+                        Last run {new Date(j.last_run.finished_at).toLocaleString()} (
+                        {j.last_run.mode === "delete" ? "deleted" : "counted"})
+                      </div>
+                      <div style={{ fontSize: "13px", marginTop: "4px" }}>{countsText(j.last_run.counts)}</div>
+                      {j.last_run.error && (
+                        <div style={{ fontSize: "12px", marginTop: "4px", color: "#c0392b" }}>
+                          Error: {j.last_run.error}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="muted" style={{ fontSize: "12px", marginTop: "6px" }}>Not run yet</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

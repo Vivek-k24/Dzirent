@@ -32,6 +32,7 @@ Any agent may update any file in `pranalika` when it finishes its work.
 12. The owner never runs local commands. Agents handle all git work, including recovery.
 13. Never replace a whole file with an older version. Edit only what the task needs.
 14. A handoff states only what was actually run and verified. Never claim unverified work as done.
+15. After any build that produces a new Android debug APK, COPY it (never move or cut) to C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\ , overwriting the older copy there. The original stays where the build put it. Confirm both copies exist.
 
 ## Environment variable names (values live only in H:\DziRent\secrets\)
 

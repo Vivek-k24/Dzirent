@@ -2,6 +2,93 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P3B - 2026-11-07 - cleanup and retention
+
+Done:
+- **Before starting:** working tree clean, `Preview` already up to date with `origin/Preview` (`138343b`).
+- **`pranalika/README.md`:** rule 15, copy every new Android debug APK to the OneDrive `Dzirent-apk` folder (copy, never move; confirm both). This task built no APK, so there was nothing to copy.
+- **Backend:** `supabase/migrations/20261107140000_p3b_cleanup_jobs.sql`, pushed.
+  - It installs `pg_cron`.
+  - **Retention settings** in `app_private.settings`, each noting who decides:
+
+    | Setting | Default | Decides |
+    | --- | --- | --- |
+    | `draft_retention_days` | 60 | Owner |
+    | `orphan_photo_days` | 1 | Owner |
+    | `photo_check_retention_days` | 90 | Owner |
+    | `report_retention_days` | 730 | Attorney |
+    | `data_export_retention_days` | 30 | Owner |
+    | `age_checks_keep` | "latest" | Owner |
+    | `suggestion_retention_days` | 365 | Owner |
+    | `declaration_retention_years` | 7 | Attorney |
+    | `device_token_stale_days` | 90 | Owner |
+
+  - **Listings** get server-written `updated_at` (touched by any change to the listing, its photos, measurements or dates) and `published_at` (first time `active`). The 13 existing listings, all active, count as published.
+  - **`app_private.job_runs`** is closed: one row per job run with job, mode, counts, error, start and finish.
+  - **Seven database jobs:** `old_photo_checks`, `expired_reports`, `old_data_exports`, `old_age_checks`, `old_suggestion_choices`, `old_declarations`, `stale_device_tokens`. `app_private.run_cleanup_jobs()` runs them, each on its own, so one failure doesn't stop the rest.
+  - **Age checks** keep the latest row per account and the latest decisive one, which the age gate reads. A strict "latest only" could have deleted the store "minor" that blocks an account.
+  - **Two file jobs:** `abandoned_drafts` and `orphan_photos`. `public.cleanup_file_plan()` and `cleanup_record_run()` are callable with the server key only. `app_private.request_file_cleanup()` calls the function through `pg_net` with the Vault secret `cleanup_files_secret`.
+  - **pg_cron:** `dzirent-cleanup-database` at 09:15 UTC, `dzirent-cleanup-files` at 09:30 UTC, nightly.
+  - **Switches:** nine `app_settings` flags `cleanup_<job>`, all off (count only). They show on the admin Flags page with the existing confirmation, and `set_flag` logs each switch in the admin log.
+  - `public.admin_cleanup_status()` (admin + two-step, logged) feeds the overview card.
+  - The admin log and takedown records are never purged.
+- **Edge Function `cleanup-files`** (deployed, `verify_jwt = false`):
+  - It checks the shared secret in constant time, reads the plan, and in delete mode empties each abandoned draft's folder through the Storage API, then deletes the listing (as delete-listing does). It removes orphan files through the Storage API, and records both runs.
+  - `CLEANUP_FILES_SECRET` was copied from Vault through a temporary file in my scratch folder, deleted at once. Never printed.
+- **Website:**
+  - The admin overview has a "Cleanup jobs" card: each job's mode badge, last run, counts and any error, with a link to the Flags page.
+  - The privacy page's retention section has "Automatic Clean-ups" in plain words. The declaration and report periods stay visible placeholders. It also says the clean-ups are being switched on one at a time and are kept as the rest of the policy says until then, which is true while they only count.
+- **`supabase/seed/remove_sample_data.mjs`:** signs in as test users 1 and 2 and calls `delete-listing` for each of their listings with one of the 12 sample titles. Without `--yes` it only lists them. **Not run, not even the dry run.** contract.md says to run it only when the owner says so.
+- **Docs:** `contract.md` (jobs table, switches, `cleanup-files`, `admin_cleanup_status`, Sample data), `security-log.md` ("Cleanup and retention jobs (P3B)", Advisor), `compliance.md` (gaps 1-2, 5, 11, 14, 15, 24, 32, the admin log and takedown rows, TDPSA row, column map), `BOARD.md`.
+
+What I ran:
+1. `supabase db push --linked` (dry run first). Checked: both cron jobs active, 9 switches all off, 9 settings, 2 Vault entries, 0 unpublished listings, 0 job runs.
+2. `supabase functions deploy cleanup-files --no-verify-jwt`; `supabase secrets set --env-file` (temporary file, deleted). `secrets list` shows `CLEANUP_FILES_SECRET`.
+3. `node supabase/tests/p3b_cleanup.mjs` (new): **PASSED on the first run**. It runs `run_cleanup_jobs()` and `request_file_cleanup()`, the same calls pg_cron makes. `cleanup-files` answered 200 through pg_net.
+4. Supabase Security Advisor: two new findings (`job_runs` closed, `admin_cleanup_status` admin-only), logged.
+5. `apps/web`: `npm run lint` and `npm run build` pass, with no warnings (Node 22.23.4 from my scratch folder).
+6. No emulator, device or screenshots. No Android build (no app code changed), so no APK to copy.
+
+Count-only results (one run per job, all mode "count", no errors):
+
+| Job | Would delete |
+| --- | --- |
+| `abandoned_drafts` | 0 listings, 0 photos |
+| `orphan_photos` | 0 files |
+| `old_photo_checks` | 0 photo checks, 0 photo results |
+| `expired_reports` | 0 reports, 0 evidence |
+| `old_data_exports` | 0 records |
+| `old_age_checks` | 4 age checks |
+| `old_suggestion_choices` | 0 |
+| `old_declarations` | 0 accessory, 0 listing |
+| `stale_device_tokens` | 0 tokens |
+
+Nothing was deleted. The before and after snapshots matched exactly:
+
+| Table or store | Rows |
+| --- | --- |
+| Listings | 13 |
+| Photo rows | 25 |
+| Photo files | 25 |
+| Photo checks | 10 |
+| Photo results | 18 |
+| Reports | 6 |
+| Evidence | 6 |
+| Download records | 2 |
+| Age checks | 6 |
+| Suggestion choices | 13 |
+| Declarations | 0 |
+| Device tokens | 2 |
+
+`job_runs` has exactly 9 rows, one per job. The 12 sample listings are untouched: same ids, still active, with the same 22 photo rows and 22 files.
+
+Open issues:
+- **The delete paths have not run.** By design, every job only counted. Before switching a job on, run it once in count mode (it runs nightly anyway), read the card, then switch. The first real run of `abandoned_drafts` should be watched.
+- **The Flags page's generic wording.** The cleanup switches show their key as the title and my description. When turning one off, the page says "This will disable enforcement…". Fixing that wording means editing `components/admin/flags-view.tsx`, which was outside this task's folders.
+- **Not covered:** `listing_events` (not in the job list; owner to decide), `auth.sessions` (a Supabase Auth setting), `pg_net` replies (its TTL), provider log retention (provider accounts, P5B/P7B), and the phones' original photos (needs an app change). All are in compliance.md.
+- **Sample listings** are still there, waiting for the owner's go-ahead.
+- **Attorney:** the declaration (7 years) and report (730 days) periods.
+
 ## P3A - 2026-11-07 - download my data
 
 Done:

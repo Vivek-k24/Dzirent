@@ -25,6 +25,9 @@ verify_jwt = false
 [functions.export-my-data]
 verify_jwt = false
 
+[functions.cleanup-files]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.

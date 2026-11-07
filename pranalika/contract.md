@@ -257,6 +257,35 @@ Reports (P2B changes):
 - **Parts:** `account` (email, created, last sign-in), `profile`, `private_profile`, `listings` (each with `measurements`, `availability`, `photos`, `photo_checks` with per-photo results), `saved_pieces`, `saved_studios`, `chats` (with `messages`), `rentals`, `blocked_people`, `reports_filed`, `warnings`, `accessory_declarations`, `listing_declarations`, `legal_acceptances`, `age_checks`, `notification_settings`, `devices` (platform and dates, never tokens), `suggestion_choices`, `listing_activity`, `earlier_exports`.
 - **Other people** appear only as `{ name, handle }` (studio name, else display name; studio handle). Messages say `from: "you"` or `"other person"`. Never another user's account id, email, location, measurements or private fields. Reports about the caller, report evidence, outcomes and admin notes are not included.
 
+### Cleanup and retention jobs (P3B)
+- **Nine jobs, nightly** (pg_cron, UTC): the seven database jobs at 09:15 (`app_private.run_cleanup_jobs()`), the two file jobs at 09:30 (`app_private.request_file_cleanup()` → Edge Function `cleanup-files`).
+- **Each job counts only until its switch is on.** The switch is the `app_settings` flag `cleanup_<job>`: off (default) = count only, on = delete. Admins switch it on the admin Flags page (`set_flag`, logged). Every run, in either mode, adds a row to `app_private.job_runs` (job, mode, counts, error, start and finish).
+- **Retention settings** in `app_private.settings` (key → default, who decides):
+
+| Job | What it removes | Setting (default) | Decides |
+| --- | --- | --- | --- |
+| `abandoned_drafts` | Listings never published (`published_at` null), paused, not held, not edited for N days, with their photo files | `draft_retention_days` (60) | Owner |
+| `orphan_photos` | Files in `listing-photos` with no `listing_photos` row, older than N days | `orphan_photo_days` (1) | Owner |
+| `old_photo_checks` | Finished photo checks older than N days except the latest per listing, with their per-photo results | `photo_check_retention_days` (90) | Owner |
+| `expired_reports` | Closed reports past the period, with their evidence | `report_retention_days` (730, placeholder) | Attorney |
+| `old_data_exports` | `data_exports` rows older than N days | `data_export_retention_days` (30) | Owner |
+| `old_age_checks` | Every age check except the latest per account and the latest decisive one (what the age gate reads) | `age_checks_keep` ("latest") | Owner |
+| `old_suggestion_choices` | `suggestion_events` older than N days | `suggestion_retention_days` (365) | Owner |
+| `old_declarations` | Accessory and listing declarations older than N years | `declaration_retention_years` (7, placeholder) | Attorney |
+| `stale_device_tokens` | `device_tokens` not seen for N days | `device_token_stale_days` (90) | Owner |
+
+- **Never purged:** the admin log and takedown records.
+- **Listings** have two new server-written columns: `updated_at` (any change to the listing, its photos, measurements or dates) and `published_at` (the first time it became `active`). Apps can't set them. Existing listings were all counted as published.
+- `cleanup-files` (`POST /functions/v1/cleanup-files`, `verify_jwt = false`):
+  - Called only by the database, with the header `x-cleanup-secret` = function secret `CLEANUP_FILES_SECRET` (Vault `cleanup_files_secret`); anything else gets 401.
+  - It reads `cleanup_file_plan()` (service role only). In delete mode it empties each abandoned draft's folder through the Storage API and then deletes the listing, and removes orphan files through the Storage API. It records both runs with `cleanup_record_run()` (service role only).
+  - It returns `{ ok, abandoned_drafts: {...}, orphan_photos: {...} }` with counts.
+- `admin_cleanup_status()` → `jsonb` (admin + two-step sign-in, logged): each job's `deletes` switch, description and `last_run` (`mode`, `counts`, `error`, `started_at`, `finished_at`). The admin overview's "Cleanup jobs" card shows it.
+
+### Sample data
+- `supabase/seed/remove_sample_data.mjs` removes the 12 sample listings from `sample_data.mjs`, with their photos. It signs in as their owners (test users 1 and 2) and calls `delete-listing` for each owner's listing with one of the sample titles. Without `--yes` it only lists them.
+- **Run only when the owner says so.**
+
 ### Photo checks (Step 8A, Step 8B)
 - `request_scan(p_listing_id uuid)`: Signed-in listing owner only. Returns the `uuid` of the photo check (a `listing_scans` row) for the listing's current photos. The check runs on the server and usually finishes within a minute (longer when the vision service starts cold). Watch the row until `status` is `done` or `failed`: Realtime `UPDATE` events on `listing_scans` filtered by `id`, with polling by ID as the fallback (Step 8B).
   - One scan at a time per listing: asking again while one is `queued` or `running` returns that scan's ID. Since Step 8B, when the latest check is `done` and covers the current photos (`photo_set_hash`), that check's ID comes back instead of a new one. A scan that hasn't finished after 10 minutes is marked `failed` and a new one can start.
@@ -266,7 +295,7 @@ Reports (P2B changes):
 - Content safety (P2A), in the vision service: any photo (size tags and close-ups included) that the safety model reads as clear nudity or sexual content makes the verdict `rejected` with "This photo isn't allowed on Dzirent."; an uncertain one makes it `review` ("Someone at Dzirent will check these photos before this listing can go live.") unless it is already rejected; a photo read as a hooded garment turns `allowed` into `review` ("This piece has a hood, so someone at Dzirent will check it."). A piece being worn never changes the verdict and never adds a warning. Each photo's `labels` (in `photo_scans`) now also carry `hooded` and `safety.nsfw`.
 - `listings.auto_paused_reason` (text, at most 300 characters, Step 8B): why the server paused the listing; apps show it on paused listings. Written only by the server: apps can't update it, and a listing inserted by an app always starts without one. A successful republish (`status` set to `active`, flag on or off) clears it.
 - `policy_item_types` (table below): what can be listed, readable by everyone, guests included. Allowed rows give the listing's own `category`, `item_type` (accessories), `garment_type` and `style`; the others give the `reason` shown to the lender.
-- `app_settings` (table below): feature flags, readable by everyone, changed by admins through `set_flag` (P2B). `vision_required`, `verification_required` and `payments_enabled` are all off. `preview_label` (P2C) is on: the website header shows "Preview only" in red while it is.
+- `app_settings` (table below): feature flags, readable by everyone, changed by admins through `set_flag` (P2B). Since P3B also the nine `cleanup_<job>` switches (all off = count only). `vision_required`, `verification_required` and `payments_enabled` are all off. `preview_label` (P2C) is on: the website header shows "Preview only" in red while it is.
 - Publish gate: while `vision_required` is on, a listing can become `active` (insert or update) only if its latest scan is `done`, covers its current photos (`photo_set_hash`) and was `allowed` or approved by an admin (`admin_decision = 'approved'`; `rejected` blocks). Otherwise the update is refused with `P0001` and plain words, for example "Check the photos before publishing this listing." or "This listing can't be published yet: <reason>". So when the flag is turned on, apps must insert new listings as `paused`, upload photos, run `request_scan`, then publish (the mobile apps always work this way since Step 8B). While the flag is off nothing is blocked.
 
 ### Push events

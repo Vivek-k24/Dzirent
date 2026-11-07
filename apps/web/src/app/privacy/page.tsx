@@ -441,6 +441,62 @@ export default function PrivacyPage() {
             .
           </li>
         </ul>
+
+        <h3>Automatic Clean-ups</h3>
+        <p>
+          Every night, automatic clean-ups remove information we no longer
+          need:
+        </p>
+        <ul>
+          <li>
+            <strong>Unfinished listings:</strong> a listing you started but
+            never published is deleted, with its photos, once you haven&apos;t
+            changed it for 60 days.
+          </li>
+          <li>
+            <strong>Stray photos:</strong> a photo file that isn&apos;t part of
+            any listing is deleted after a day.
+          </li>
+          <li>
+            <strong>Photo checks:</strong> we keep the latest check of each
+            listing. Older checks are deleted after 90 days.
+          </li>
+          <li>
+            <strong>Data downloads:</strong> the record of when you downloaded
+            your data is kept for 30 days.
+          </li>
+          <li>
+            <strong>Age checks:</strong> we keep only your latest age check, and
+            the one that decides whether the account can be used.
+          </li>
+          <li>
+            <strong>Suggestion choices:</strong> whether you kept or changed the
+            suggestions filled in from your photos is kept for one year.
+          </li>
+          <li>
+            <strong>Notifications:</strong> a phone&apos;s notification
+            registration is removed when that phone hasn&apos;t opened the app
+            for 90 days.
+          </li>
+          <li>
+            <strong>Accessory and listing declarations:</strong> kept for{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="declaration retention period (currently 7 years, pending attorney review)"
+            />
+            , then deleted.
+          </li>
+          <li>
+            <strong>Reports:</strong> deleted when the report retention period
+            above ends.
+          </li>
+        </ul>
+        <p>
+          We are switching these clean-ups on one at a time. Until a clean-up is
+          on, that information is kept as the rest of this policy describes.
+          Records of what our staff did, and copyright takedown requests, are
+          kept and not cleaned up.
+        </p>
       </section>
 
       <section id="deletion">

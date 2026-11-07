@@ -142,7 +142,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages, P2C, P3A), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
+| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages, P2C, P3A, P3B), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
 
 | P1A part 1: data inventory and `compliance.md`; legal fill-ins in `legal-placeholders.md` | Done |
 | P1A part 2: website legal pages (privacy policy, terms, community rules and prohibited items, copyright/DMCA, safety tips, delete-account page, support/contact), fill-ins in one config | Done |
@@ -181,7 +181,11 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | P3A (Claude Code): `export-my-data` Edge Function and `export_my_data()` (one JSON file of everything Dzirent holds about the caller, other people only by name and handle, once a day, `data_exports`); website Settings > Privacy & safety > Download my data; Android Settings row with the system save picker; iPhone row opens the website; privacy and help text; welcome popups never open on policy and help pages; page titles "<Page> \| Dzirent"; website blocked page for age-blocked accounts (`age_blocked()`) | Done |
 | Mac: native "Download my data" save on iPhone (`IosDataExport`, see the P3A handoff), and build-check the P3A shared-code changes | To do |
 | Owner: phone test of P3A on Android (see the P3A handoff); check the website's Download my data, the blocked page and the page titles | To do |
-| P3B Cleanup and retention jobs: abandoned drafts, orphan photos, old scans, log retention; sample listings removed from production | To do |
+| P3B Cleanup and retention jobs: abandoned drafts, orphan photos, old scans, log retention; sample listings removed from production | Jobs done, all counting only (Claude Code); log retention and sample removal still open (below) |
+| P3B (Claude Code): nine nightly cleanup jobs (pg_cron; files through `cleanup-files` and the Storage API), retention settings in `app_private.settings`, `job_runs`, one Flags-page switch per job (all count-only), "Cleanup jobs" card on the admin overview, privacy retention section; `remove_sample_data.mjs` written, not run; README rule 15 (copy each new debug APK to OneDrive) | Done |
+| Owner: decide when to switch each cleanup job to deleting (admin Flags page, `cleanup_<job>`); check the admin overview's Cleanup jobs card after the first nightly runs | To do |
+| Owner: say when to remove the 12 sample listings (`node supabase/seed/remove_sample_data.mjs --yes`, run by an agent) | To do |
+| Attorney: declaration retention period (placeholder 7 years) and report retention (placeholder 730 days) | To do |
 | P4A Website accessibility to WCAG 2.1 AA (automated checker in the build plus a manual pass) | To do |
 | P4B App accessibility: screen reader labels, touch targets, large text, contrast in both themes (iPhone part on the Mac) | To do |
 | P5A Security hardening: database rule audit, rate limits, bot check on sign-up, website security headers, input checks on every server function, dependency and secret scanning | To do |

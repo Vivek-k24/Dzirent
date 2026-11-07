@@ -192,6 +192,27 @@ Advisor run after the migration (2026-11-07 18:59 UTC): two new findings; the ea
 
 `app_private.export_person` has EXECUTE revoked from `public`, `anon` and `authenticated`.
 
+## Cleanup and retention jobs (P3B)
+
+Migration `20261107140000_p3b_cleanup_jobs.sql` and the Edge Function `cleanup-files` (2026-11-07).
+
+- **Everything starts in count-only mode.** A job deletes only when its `app_settings` switch `cleanup_<job>` is on. Only admins change switches (`set_flag`: admin + two-step sign-in, logged in the admin log).
+- **Nightly schedule (pg_cron, installed by this migration):** `dzirent-cleanup-database` at 09:15 UTC runs `app_private.run_cleanup_jobs()`. `dzirent-cleanup-files` at 09:30 UTC runs `app_private.request_file_cleanup()`.
+- **File deletions** go through `cleanup-files` and the Storage API with the server key, never by deleting storage rows. An abandoned draft's folder is emptied first and the listing row deleted after. The existing trigger refuses to delete a listing whose folder still has files, so a half-failed run can't leave a listing pointing at deleted photos.
+- **`cleanup-files` auth:** the header `x-cleanup-secret` must match the function secret `CLEANUP_FILES_SECRET`, compared in constant time; gateway JWT check off. Anything else gets 401. The value was generated inside the database (Vault `cleanup_files_secret`; `cleanup_files_url` is the address). I copied it into the function secret through a temporary file in my scratch folder, deleted right after. Never printed or committed.
+- **What the function may delete** comes only from `public.cleanup_file_plan()`, callable only with the server key (`service_role`). It can't be asked to delete arbitrary files. `public.cleanup_record_run()` is also `service_role` only, and accepts only the two file jobs.
+- **Age checks:** the cleanup always keeps the latest decisive check (a store minor or adult), so it can never lift an age-gate block.
+- **Never purged:** the admin log (`app_private.admin_actions`, still append-only) and takedown records (`app_private.takedown_requests`).
+- **Revoked from `public`, `anon` and `authenticated`:** every new `app_private` function, and `cleanup_file_plan` / `cleanup_record_run` (granted to `service_role` only).
+- **Listings `updated_at` and `published_at`** are written by triggers. Apps can't set them: they aren't in the column grants, and the trigger overwrites them.
+
+Advisor run after the migration (2026-11-07 19:41 UTC): two new findings; the earlier findings are unchanged.
+
+| Finding | Function or table | Why it is intended |
+| --- | --- | --- |
+| INFO: RLS on, no policies | `app_private.job_runs` | Closed to every API role (no grants, not in an exposed schema). Written by the job functions, read by admins through `admin_cleanup_status`. |
+| WARN: signed-in users can run elevated function | `admin_cleanup_status` | The admin overview's cleanup card. Its first statement is `require_admin()` (admin + `aal2`), and it writes the admin log. Not callable by guests. |
+
 ## Google Cloud (Step 8A)
 
 Project `dzirent`, region `us-west1`. The $20 billing kill switch (budget, Pub/Sub topic `billing-alerts`, function `stop-billing`) was not touched.
