@@ -2,6 +2,76 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Mac iOS session - 2026-11-07
+
+Branch: `ios01` only. Before starting: `git fetch`, `git switch ios01`, `git pull origin Preview` fast-forwarded `8c51207` to `9bdfd2c` (P2C, which had landed); the tree was clean. Kotlin (2.1.0) and Compose Multiplatform (1.7.3) weren't upgraded. No Android emulator or device.
+
+Checkpoint 1 - it builds:
+- `./gradlew :shared:compileKotlinIosSimulatorArm64` (env loaded without printing): BUILD SUCCESSFUL on the first try, no warnings in `iosMain` or `commonMain`.
+- `xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration Debug -destination <iPhone 18 Pro, iOS 27.0> clean build`: CLEAN SUCCEEDED, BUILD SUCCEEDED.
+- **No iOS compile fixes were needed** for 8B, P1B, P2A, P2B or P2C. Nothing to commit for this checkpoint; I pushed the fast-forwarded branch.
+
+Checkpoint 2 - App Store requirements (`8f8972f`):
+- New `mobile/iosApp/iosApp/PrivacyInfo.xcprivacy`, added to the app target's resources in `project.pbxproj` (`project.yml` picks it up from the `iosApp` folder). I checked that it is in the built `Dzirent.app`. `plutil -lint` passes.
+- How I checked the APIs: the shared framework is static, so I ran `nm -u` on the built app and on each member of `shared.framework`, and `strings` for the Objective-C selectors. No `.xcprivacy` exists anywhere in the Gradle or Kotlin/Native caches, so no library ships its own manifest.
+- **Declared:**
+  - `NSPrivacyTracking` false, `NSPrivacyTrackingDomains` empty.
+  - User defaults, `CA92.1`: `NSUserDefaults.standardUserDefaults` (settings, theme, drafts, age-check day; the session through multiplatform-settings). No app group.
+  - File timestamp, `C617.1`: `stat`/`fstat`/`lstat` (Skia, ICU, the Kotlin/Native POSIX layer under okio/Coil) and `attributesOfItemAtPath` (photo size in `IosDevice.kt`). Files in the app container only.
+  - System boot time, `35F9.1`: `CACurrentMediaTime` and `clock_gettime` (Compose frames, timeouts). Neither is on Apple's list by name, but both read the boot-relative clock, so I declared it to be safe.
+  - Not declared, because nothing uses them: disk space and active keyboards. `sysctlbyname` is only used for CPU feature flags (`hw.optional.*`).
+  - Collected data types, matching compliance.md 6.2: name, email, coarse location, in-app messages, photos, other user content, user ID, product interaction, other data. All linked to the user, none used for tracking. Device ID is left out while iPhone push is off.
+- `NSPhotoLibraryUsageDescription` is removed from `Info.plist`. The app uses only `PHPickerViewController`, and camera shots are never saved to the library. The camera and location texts stay.
+- `compliance.md`: new section 6.3, and gap 17 closed.
+
+Checkpoint 4 - Apple's age check (P2C had landed; `bdd8184`, done before the Simulator run so it was exercised there):
+- `IosAgeSignals.kt` now asks a Swift provider. `IosAgeRange.provider` is set in `iOSApp.init()`. `IosAgeRangeProvider` and `AgeRangeReply` are the bridge; -1 stands for an open bound. A 60 s timeout or no provider counts as no signal.
+- New `iosApp/AgeRange.swift` (`DeclaredAgeRangeProvider`):
+  - It runs only on **iOS 26.2+**, because `isEligibleForAgeFeatures` needs 26.2; the compiler refused 26.0.
+  - It asks only when `AgeRangeService.shared.isEligibleForAgeFeatures` is true, then calls `requestAgeRange(ageGates: 18, in: <top view controller>)`.
+  - `.sharing(range)` passes `lowerBound`/`upperBound` to `AgeSignal.fromRange`. An upper bound under 18 is a minor (recorded as `minor`, and the shared gate shows the blocked screen). A lower bound of 18 or more is an adult (`adult`).
+  - `.declinedSharing`, any error, not covered, or older iOS: no signal, recorded as `self_declared`, which relies on the 18+ confirmation.
+  - Like Android, users outside covered regions are never prompted. No birthdate is asked for or stored.
+- `DeclaredAgeRange` is weak-linked (`-weak_framework`, confirmed `weak` in `otool -L`), so iOS 16-25 still launch.
+- Entitlement: `iosApp/iosApp.entitlements` has `com.apple.developer.declared-age-range`. It is applied through `CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]` only, and the Simulator build's `.xcent` contains it. The project has no development team, and I couldn't confirm that a free personal team can sign this capability for a device. Device builds therefore don't carry it and behave as "no applicable signal" (the call fails or isn't eligible). Mirrored in `project.yml`.
+
+Checkpoint 3 - Simulator (iPhone 18 Pro, iOS 27.0):
+- **Launches: 2 of 4.**
+  - Launch 1: my `simctl install` and `launch`.
+  - Launch 2: a relaunch by the interaction subagent. It wrongly read the app as not running, so this one probably wasn't needed.
+- **Screenshots viewed: 1 of 4**, saved at `~/Desktop/Dzirent/mac-ios-screenshots/01-after-relaunch-start.png`. The Compose UI exposes no accessibility elements, so the other screens were read by text recognition on the interaction tool's capture files (temp script, deleted).
+- After the relaunch the app showed "Welcome to Dzirent", and test user 1 was signed in again.
+- What was seen:
+  1. **Terms:** "We've updated our terms" did not appear, as expected: test user 1 had accepted terms and privacy 1.0.0 on android in P1B's API test, and `needs_legal_acceptance()` is false (read through the API afterwards). **Agree was therefore not exercised on iPhone.** No 18+ blocked screen appeared.
+  2. **Listing editor:**
+     - Closet → "+ List an item", three photos (the seed denim jumpsuit front and back, plus a crop) → "Uploading your photos..." → "Checking your photos..." (about 30-50 s) → "Your photos look good." and "Filled from your photos."
+     - Suggestions filled in: Title "Grey denim jumpsuit", Description "Grey denim jumpsuit with blue accents.", Category "Occasion & Party".
+     - I added "Call me at 555-123-4567" to the Description and tapped Publish. It went back to Step 2 Details with "Please remove contact details from your listing; people can message you in Dzirent." under Description (and in a top banner). The text was kept.
+     - "Start over" removed the server draft; the API shows no "New listing (draft)" left.
+  3. **Measurements:** Chest 38 in → Save showed "Your measurements are private. We use them only to suggest pieces likely to fit you. They are never shown to anyone." with Not now / Agree. I tapped Not now and nothing was saved.
+  4. **Settings > Help & legal:** Terms of Use and Privacy Policy each opened Safari at dzirent.com ("Terms of Use | Dzirent - Dzirent", "Privacy Policy | Dzirent - Dzirent").
+- **Age check, end to end:** after the iPhone sign-in, `age_checks` for test user 1 holds `self_declared / adult / ios` at 18:27:44 UTC. The Simulator isn't in a covered region, so this is the no-signal path. The minor and adult paths could not be produced here.
+- No crash: one pid from the relaunch to the end.
+- `./gradlew :shared:iosSimulatorArm64Test` (with `SIMCTL_CHILD_*` test-user variables) **did not run**. The test task fails with `xcrun` exit code 137. `xcrun simctl spawn <device> /bin/echo hi` also exits 137, inside and outside the command sandbox. So every `simctl spawn` is killed on this Mac and Simulator, before any test code runs. The certificate error from Step 5C couldn't be checked either way; the XML results in `build/test-results` are still the 2026-11-05 ones.
+
+Phase 2 - final builds on the final code: `:shared:compileKotlinIosSimulatorArm64 --rerun-tasks` BUILD SUCCESSFUL (task executed); `xcodebuild ... clean build` CLEAN SUCCEEDED, BUILD SUCCEEDED. No re-run was needed.
+
+Android: not built here (no Android SDK on this Mac). Only `iosMain` and `iosApp` changed, so Android code is untouched.
+
+Open issues:
+- **`simctl spawn` exits 137** for any process, so the iOS unit tests can't run on this Mac right now. Try a reboot, or a different simulator runtime.
+- **The terms "Agree" step is unverified on iPhone.** Test user 1 had already accepted. Test with test user 2 or 3, or after a new terms version.
+- **Under-18 and adult Declared Age Range answers are untested.** They need a device on iOS 26.2+ in a covered region (or Apple's sandbox testing) with the paid account's entitlement.
+- **The iOS UI has no accessibility elements in the hierarchy:** VoiceOver is likely broken. This belongs to P4B.
+- The website's "Welcome to Dzirent" popup covers the Terms and Privacy pages when they're opened from the app, and page titles read "| Dzirent - Dzirent" (website, not changed here).
+- The photo check suggested "Occasion & Party" for a denim jumpsuit.
+- The Simulator photo library now holds the seed jumpsuit photos and a crop.
+- **Secrets handling slip:** my first attempt to load the env files sourced them as shell. Their `KEY = value` format made zsh print the values in its error output, inside my local tool output only. Nothing was written to the repo, a file or a commit. The owner may want to rotate the test-user passwords and the DB password.
+
+Needs the paid Apple Developer account:
+- Enable the **Declared Age Range** capability on the `com.dzirent.app` App ID, set the team, and remove the `[sdk=iphonesimulator*]` condition from `CODE_SIGN_ENTITLEMENTS` (both `project.pbxproj` and `project.yml`).
+- iPhone push (then add Device ID to the privacy manifest), TestFlight, App Store Connect privacy labels (from compliance.md 6.2 and 6.3), the age rating, and submission (P8B).
+
 ## P2C - 2026-11-07 - age gate and public text
 
 Done:

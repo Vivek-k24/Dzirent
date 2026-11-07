@@ -132,7 +132,7 @@ All three clients build and pass owner testing on `dzirent-server`. Then the `Dz
 | 8B On-phone TinyCLIP recognition removed (model, label embeddings, LiteRT and its `libtensorflowlite_jni.so`); on-phone blur and lighting checks kept | Done |
 | 8B Root README: product rules, "Open-source software and models" | Done |
 | Owner: phone test of the 8B listing flow (see the 8B handoff) | To do |
-| Mac: iOS build check of the 8B shared-code changes (see the 8B handoff) | To do |
+| Mac: iOS build check of the 8B shared-code changes (see the 8B handoff) | Done (Claude Code, Mac iOS session 2026-11-07, `ios01`) |
 | Website: run `request_scan` after the photos, show the verdict, reason, photo warnings and suggestions, show `auto_paused_reason`; insert new listings as paused before `vision_required` is turned on | Done (Antigravity) |
 | Admin review of `review` verdicts (`admin_decision`) | To do |
 
@@ -153,12 +153,12 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | P1B part 1 (backend and apps): `legal_documents`, `legal_acceptances`, `accept_legal`, `needs_legal_acceptance`; measurements consent (`give_`/`withdraw_measurements_consent`, refused without it; test users' measurements cleared); sign-up terms tick with links; "We've updated our terms" step; consent dialog and Settings control; 8-character passwords; Settings > Help & legal | Done |
 | Website (P1B part 2): record terms acceptance at sign-up (`accept_legal('web')`) and check `needs_legal_acceptance`; measurements consent step and withdrawal; 8-character passwords; `/help` page and footer/sitemap | Done |
 | Owner: phone test of P1B part 1 (see the P1B part 1 handoff) | To do |
-| Mac: iOS build check of the P1B part 1 shared-code changes | To do |
+| Mac: iOS build check of the P1B part 1 shared-code changes | Done (Claude Code, Mac iOS session 2026-11-07, `ios01`) |
 | P2A Text filter on listings, profiles and chat (database); nudity check and "hooded garment goes to review" (vision service) | Done (Claude Code) |
 | P2A text filter: LDNOOBW English list (CC BY 4.0) and allowlist in `app_private`, whole-word matching after normalizing; language refused in listings, profiles, chat and reports; contact details refused in listings and profiles only; `check_text` for sign-up; apps and website show refusals under the field or chat box | Done |
 | P2A photos: `Marqo/nsfw-image-detection-384` (Apache 2.0) in the vision service (nudity rejected, uncertain to review), hooded garments to review, worn never penalized; revision `vision-00005-9cg` | Done |
 | Owner: phone test of P2A (see the P2A handoff) | To do |
-| Mac: iOS build check of the P2A shared-code changes | To do |
+| Mac: iOS build check of the P2A shared-code changes | Done (Claude Code, Mac iOS session 2026-11-07, `ios01`) |
 | Owner: decide on list words left blocked that are also fashion or Spanish words ("lolita", "negro"), and whether report details should allow quoting abuse (see the P2A handoff) | Report details: decided in P2B (unfiltered). The two words: to do |
 | P2B Admin dashboard: reports, photo reviews, takedowns, suspend/ban, listings, feature flags, simple metrics; every admin action logged | Done |
 | P2B part 1 (backend, Claude Code): admins with two-step sign-in (`admin_users`, `is_admin`, `require_admin`), append-only admin log, report evidence snapshots kept after account deletion, report details unfiltered, suspensions and listing holds, 23 admin functions, `admin-actions` Edge Function (ban, unban, photo files), `set_flag`, seed script; apps: review banner shows the check's reason, suspension notice | Done |
@@ -168,11 +168,14 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Owner: the website build needs Node 22 (`package.json` engines); this PC has Node 18 with npm 6, which can't read the lockfile. Install Node 22 LTS or keep a portable copy for agents | To do |
 
 | Owner: phone test of P2B part 1 (see the P2B part 1 handoff) | To do |
-| Mac: iOS build check of the P2B part 1 shared-code changes | To do |
+| Mac: iOS build check of the P2B part 1 shared-code changes | Done (Claude Code, Mac iOS session 2026-11-07, `ios01`) |
 | Attorney: report and evidence retention period (placeholder 730 days in `app_private.settings`) | To do |
-| P2C Age gate: store age signals on Android and iPhone, state list table, 18+ on the website (Texas SB 2420, Utah) | Done on Android and website (Claude Code); iPhone: Mac session |
+| P2C Age gate: store age signals on Android and iPhone, state list table, 18+ on the website (Texas SB 2420, Utah) | Done on Android and website (Claude Code); iPhone done in the Mac iOS session (Claude Code, `ios01`), real minor/adult signals untested until the paid Apple account |
 | P2C (Claude Code): `age_checks` and `record_age_check` (no birthdate), a store "minor" blocks every write by the account and pauses its listings, admins see the age check in user lookup; Android asks Google Play Age Signals 0.0.4 on sign-in and daily, blocked screen (Delete my account, Sign out); website records the 18+ tick; public pages name no service provider, new password and age wording; `preview_label` flag and the red "Preview only" header label; overlay dialogs for Block, Report and the sign-in page | Done |
-| Mac: wire Apple's Declared Age Range into the `IosAgeSignals` stub (see the P2C handoff), and build-check the P2C shared-code changes | To do |
+| Mac: wire Apple's Declared Age Range into the `IosAgeSignals` stub (see the P2C handoff), and build-check the P2C shared-code changes | Done (Claude Code, Mac iOS session 2026-11-07, `ios01`) |
+| Mac iOS session (Claude Code, `ios01`, 2026-11-07): iOS build of 8B, P1B, P2A, P2B, P2C (no fixes needed); `PrivacyInfo.xcprivacy`; photo library text removed; Simulator check of terms, photo check, text filter, measurements consent, Help & legal; Declared Age Range (iOS 26.2+) | Done; owner merges `ios01` into `Preview` |
+| Mac: `:shared:iosSimulatorArm64Test` couldn't run (`simctl spawn` of any process exits 137 on this Mac) | To do |
+| Paid Apple account: Declared Age Range capability on the App ID, then drop the simulator-only condition on `CODE_SIGN_ENTITLEMENTS` (see the Mac iOS session handoff) | To do |
 | Owner: phone test of P2C on Android (see the P2C handoff); check the "Preview only" label and the new dialogs on the website in both themes and on a phone | To do |
 | P3A Download my data on all three platforms | To do |
 | P3B Cleanup and retention jobs: abandoned drafts, orphan photos, old scans, log retention; sample listings removed from production | To do |
