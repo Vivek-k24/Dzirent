@@ -69,11 +69,10 @@ export default function DeleteAccountPage() {
         </div>
 
         <div className="legal-callout note" style={{ marginTop: "16px" }}>
-          <div className="callout-title">Instant Execution</div>
+          <div className="callout-title">It Happens Right Away</div>
           <p>
-            When you confirm deletion in the app or website, our backend triggers an immediate database
-            cascade deletion. Your session is terminated and your public profile is immediately
-            removed.
+            When you confirm deletion in the app or on the website, your account and its data are
+            deleted immediately. You are signed out and your public profile disappears.
           </p>
         </div>
       </section>
@@ -96,36 +95,37 @@ export default function DeleteAccountPage() {
 
       <section id="what-is-deleted">
         <h2>4. What Data Is Permanently Deleted</h2>
-        <p>Upon confirming account deletion, the following data is permanently purged from our primary database:</p>
+        <p>When you confirm account deletion, the following is permanently deleted:</p>
         <ul>
           <li>
-            <strong>Authentication credentials:</strong> Your Supabase Auth login, email address, phone
-            number, and password hashes.
+            <strong>Sign-in details:</strong> Your email address and your password (which we only
+            ever hold in a scrambled form that can&apos;t be read back).
           </li>
           <li>
-            <strong>Public profile:</strong> Your username, display name, avatar, bio, and location
-            data.
+            <strong>Profile:</strong> Your display name, studio name and handle, bio, pickup area,
+            city, and approximate location.
           </li>
           <li>
-            <strong>Wardrobe listings &amp; photos:</strong> All items in your closet, including their
-            listing photos and visual search embeddings, are permanently removed from storage (deleted photos
-            may stay in a content delivery cache for a short time after deletion; exact time:{" "}
+            <strong>Listings &amp; photos:</strong> Every piece in your closet, with its photos,
+            garment measurements, dates, and photo-check results. A deleted photo may stay reachable
+            at its old link for a short time afterwards (how long:{" "}
             <LegalPlaceholder
               name="DATA_RETENTION"
-              label="content delivery cache retention duration"
+              label="how long a deleted photo can stay reachable"
             />
             ).
           </li>
           <li>
-            <strong>Private measurements:</strong> All recorded body measurements, sizing preferences,
-            and personal notes are deleted.
+            <strong>Private measurements:</strong> Your body measurements, fit preference, and style
+            interests.
           </li>
           <li>
-            <strong>Saved items &amp; preferences:</strong> Your favorites, saved searches, and local
-            theme preferences.
+            <strong>Saved pieces and studios</strong>, your notification registration and settings,
+            your record of agreeing to the terms, and any warnings on your account.
           </li>
           <li>
-            <strong>Reviews &amp; ratings:</strong> Any reviews you wrote or received.
+            <strong>Messages and rental records</strong>, for both you and the other person (see
+            section 6).
           </li>
         </ul>
       </section>
@@ -133,23 +133,36 @@ export default function DeleteAccountPage() {
       <section id="what-is-retained">
         <h2>5. What Records May Be Retained</h2>
         <p>
-          In accordance with applicable law and platform security requirements, certain limited records
-          cannot be purged immediately:
+          A few records stay after deletion:
         </p>
         <ul>
           <li>
-            <strong>Signed legal declarations:</strong> Signed rental agreements or declarations
-            executed prior to deletion are retained in an immutable, restricted-access audit log for the
-            duration required by applicable legal statutes of limitation.
-          </li>
-          <li>
-            <strong>Server logs:</strong> Technical access logs (which record IP addresses and request
-            endpoints) are retained for operational troubleshooting and security auditing for a limited period{" "}
+            <strong>Accessory declarations:</strong> If you signed an accessory declaration before
+            listing accessories, that record (your legal name, email, city, IP address, and the time)
+            is kept to deter counterfeits and for legal purposes, no longer linked to an account, for{" "}
             <LegalPlaceholder
               name="DATA_RETENTION"
-              label="server log retention period (Supabase keeps logs for at least 7 days; other providers unconfirmed)"
+              label="declaration retention period"
             />
-            , after which they expire automatically.
+            .
+          </li>
+          <li>
+            <strong>Reports:</strong> Reports you made, and reports about you, are kept with the copy
+            of what was reported for{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="report retention period (currently 2 years, pending attorney review)"
+            />{" "}
+            after they are closed. Your name is removed from them. Only Dzirent staff can see them.
+          </li>
+          <li>
+            <strong>Server logs:</strong> Access logs (which record IP addresses and what was
+            requested) are kept for security and troubleshooting for a limited period{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="server log retention period"
+            />
+            , then expire automatically.
           </li>
         </ul>
         <p>
@@ -166,8 +179,8 @@ export default function DeleteAccountPage() {
         <div className="legal-callout danger">
           <div className="callout-title">Important Notice on Shared Conversations</div>
           <p>
-            Because Dzirent prioritizes complete deletion over orphan records, deleting your account
-            removes your message history and rental booking records from our database.
+            Deleting your account also deletes your chats and rental records, because they belong to
+            two people and we don&apos;t keep half a conversation.
           </p>
           <p style={{ marginTop: "8px" }}>
             This means that past conversation threads with you will also disappear from the message

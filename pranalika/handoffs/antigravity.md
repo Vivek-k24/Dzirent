@@ -2,9 +2,115 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P2B part 2 - 2026-11-07 - admin website
+
+- What was done:
+  - Admin Area & Security Guard:
+    - Route protection on `/admin` and all sub-routes via Next.js middleware (`apps/web/src/proxy.ts`) and server layout guard (`apps/web/src/app/admin/layout.tsx`). Non-admins and guests receive an immediate plain 404 (`/_not-found`), not 403 or "forbidden".
+    - Two-step verification gate (`<AdminMfaGate />`):
+      - If an admin account has not enrolled an authenticator yet, displays QR code (`totp.qr_code`), copyable setup secret key (`totp.secret`), and a 6-digit verification code input to complete enrollment.
+      - On subsequent sign-ins, requires 6-digit challenge code to elevate the session from `aal1` to `aal2` before accessing any admin console view. Clear error message for incorrect codes; no custom lockout beyond Supabase Auth limits.
+    - Public surface isolation:
+      - "Admin" item in the account dropdown menu and phone navigation drawer renders ONLY for admin users.
+      - All admin routes excluded from `sitemap.ts` and marked with `robots: { index: false, follow: false }`.
+    - Native `<ActionDialog>` overlays (`apps/web/src/components/admin/action-dialog.tsx`): every administrative action and flag toggle uses accessible native HTML `<dialog>` overlays requiring a written explanation (minimum 3 characters), never using `window.confirm` or `alert`.
+    - Security boundaries: The web application never holds or uses the Supabase service role key. Ban, unban, and file deletions execute through the `POST /functions/v1/admin-actions` Edge Function using the admin's own Bearer token.
+  - Admin Console Views (desktop-first, phone responsive, full light and dark mode):
+    - **Overview (`/admin`):** Live marketplace metrics from `admin_metrics()` (registered users, new users in 7 days, active listings, weekly messages, suspended users, scans breakdown) and queue cards from `admin_queues()` linking to moderation sections with live badge counts.
+    - **Reports (`/admin/reports`):** Tabbed open/closed queue (`admin_list_reports`). Detailed evidence snapshot panel displaying message logs (with up to 5 messages before/after and sender details), listing photos and details, or profile snapshots. Action buttons with modal dialogs: Dismiss report (`dismissReportAction`), Warn user (`warnUserAction`), Remove content (`removeReportedContentAction`), Suspend user (`suspendUserAction` with custom days), Ban user (`banUserAction` via Edge Function), Unsuspend, and Unban.
+    - **Photo reviews (`/admin/photo-reviews`):** Queue of finished scans flagged for manual review (`admin_list_scan_reviews`). Displays photo cards with zoom, labels, safety/nudity flags, hooded garments, and warnings. Quick action dialogs to approve or reject with written reason shown to the lender.
+    - **Marketplace listings (`/admin/listings`):** Listing catalog search by title, lender handle, or UUID. Displays current status, auto-pause reason, and administrative hold status. Actions to apply administrative hold (`hideListingAction`) or lift hold (`unhideListingAction`).
+    - **User management (`/admin/users`):** Search by exact email, studio handle (`@handle` or bare), or account UUID (`admin_find_user`). Displays user profile, city, role, registration and last sign-in dates, admin status, warnings count, report counts (made/against/open), and listing counts (total/active/held). Action dialogs to Warn, Suspend (1-3650 days), Unsuspend, Ban, and Unban.
+    - **Copyright & takedowns (`/admin/takedowns`):** Manages DMCA claims (`admin_list_takedowns`). Filter by status (`open`, `all`, `actioned`, `rejected`, `restored`). "+ Log takedown request" modal dialog to record claimant name, contact email/phone, description of copyrighted work, URLs, and listing UUIDs. Per-takedown actions to remove listing (`takedownRemoveListingAction`), remove photo files via Edge Function (`removePhotosAction`), record counter-notice (`recordCounterNoticeAction`), and update status (`setTakedownStatusAction`).
+    - **Feature flags (`/admin/flags`):** View and toggle flags stored in `app_settings` (`vision_required`, `verification_required`, `payments_enabled`) via `set_flag`. Toggling ON/OFF opens an action dialog explaining exact enforcement impacts before executing.
+    - **ID verification (`/admin/id-verification`):** Clean placeholder page explaining identity review queues will activate with P6A (Didit integration).
+    - **Audit log (`/admin/audit-log`):** Read-only append-only feed (`admin_audit_log`) displaying timestamp, admin handle/name, action name, target type and ID, written reason, and collapsible JSON before/after state diffs.
+  - Lender-Facing Messages & Suspensions:
+    - Implemented `suspensionNotice(until, reason, now)` in `apps/web/src/lib/suspension.ts` matching `Suspension.kt`.
+    - In `apps/web/src/components/listing-editor.tsx`:
+      - Shows banner with suspension notice if lender is suspended; blocks publishing.
+      - Displays `auto_paused_reason` banner when a listing is held by admin or paused by automated scan.
+      - Displays `admin_reason` on rejected scans and specific review reason on reviews.
+    - In `apps/web/src/components/chat.tsx`:
+      - Replaces message composer with error banner if the user's account is suspended.
+      - Replaces report form with suspension notice if suspended.
+
+- Files changed:
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/app/layout.tsx`
+  - `apps/web/src/app/sitemap.ts`
+  - `apps/web/src/proxy.ts`
+  - `apps/web/src/components/chat.tsx`
+  - `apps/web/src/components/listing-editor.tsx`
+  - `apps/web/src/components/shell.tsx`
+  - `apps/web/src/lib/workflow-server.ts`
+  - `apps/web/src/lib/workflows.ts`
+  - `apps/web/src/lib/suspension.ts`
+  - `apps/web/src/lib/admin-actions.ts`
+  - `apps/web/src/components/admin/action-dialog.tsx`
+  - `apps/web/src/components/admin/admin-nav.tsx`
+  - `apps/web/src/components/admin/mfa-gate.tsx`
+  - `apps/web/src/components/admin/reports-view.tsx`
+  - `apps/web/src/components/admin/photo-reviews-view.tsx`
+  - `apps/web/src/components/admin/listings-view.tsx`
+  - `apps/web/src/components/admin/users-view.tsx`
+  - `apps/web/src/components/admin/takedowns-view.tsx`
+  - `apps/web/src/components/admin/flags-view.tsx`
+  - `apps/web/src/components/admin/audit-log-view.tsx`
+  - `apps/web/src/app/admin/layout.tsx`
+  - `apps/web/src/app/admin/page.tsx`
+  - `apps/web/src/app/admin/reports/page.tsx`
+  - `apps/web/src/app/admin/photo-reviews/page.tsx`
+  - `apps/web/src/app/admin/listings/page.tsx`
+  - `apps/web/src/app/admin/users/page.tsx`
+  - `apps/web/src/app/admin/takedowns/page.tsx`
+  - `apps/web/src/app/admin/flags/page.tsx`
+  - `apps/web/src/app/admin/id-verification/page.tsx`
+  - `apps/web/src/app/admin/audit-log/page.tsx`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+
+- What was actually run:
+  1. `node supabase/seed/admins.mjs`:
+     - Executed against linked Supabase project `pwfzkyjeivadbtkfkdxr`.
+     - Output counts: `Listed: 1, accounts found: 1, added: 1, removed: 0, logged: 1`. (Owner account in `ADMIN_EMAILS` was found and seeded into `admin_users`).
+  2. `npm run lint` in `apps/web`: 0 errors, 0 warnings.
+  3. `next build` in `apps/web`: Compiled all 22 static and dynamic routes with 0 errors, TypeScript passed cleanly.
+  4. Security & access control integration test suite against production server:
+     - Guest `GET /admin` -> HTTP 404 (rendered 404 page).
+     - Guest `GET /admin/reports` -> HTTP 404.
+     - Guest `GET /admin/users` -> HTTP 404.
+     - Sitemap check -> `GET /sitemap.xml` verified containing 0 occurrences of `/admin`.
+     - Guest Home Page -> verified no "Admin" link in account dropdown or DOM.
+     - Test User 3 (regular non-admin member) signed in:
+       - Test User 3 `GET /admin` -> HTTP 404.
+       - Test User 3 Home Page -> verified no "Admin" link in account dropdown or DOM.
+
+- Owner test steps on Preview:
+  1. **Enroll Authenticator:**
+     - Sign in to the Preview website with your admin email (listed in `ADMIN_EMAILS`).
+     - Open the account menu in the top bar. You will now see the "Admin" link. Click it (or navigate directly to `/admin`).
+     - Because your account has not yet enrolled an authenticator, the 2-step verification enrollment screen will appear showing a QR code and setup secret key.
+     - Scan the QR code in Google Authenticator (or your preferred TOTP authenticator app) and enter the 6-digit code.
+     - Upon successful verification, you will be elevated to `aal2` and redirected to the live Operations Overview page (`/admin`).
+  2. **Subsequent Sign-Ins:**
+     - On future sessions, visiting `/admin` will prompt for your 6-digit authenticator code before allowing access to any admin route.
+  3. **Queue Moderation & Actions:**
+     - **Reports (`/admin/reports`):** Review open reports, examine chat/listing/profile evidence, test Dismiss, Warn, or Suspend actions. Each action prompts for a written confirmation note (min 3 chars).
+     - **Photo reviews (`/admin/photo-reviews`):** Check any flagged listing photos and test Approve/Reject actions.
+     - **Listings (`/admin/listings`):** Search piece titles or lender handles, test applying and lifting administrative holds.
+     - **Users (`/admin/users`):** Search by handle (e.g. `@testuser`), view warnings and report history, test suspension.
+     - **Takedowns (`/admin/takedowns`):** Click "+ Log takedown request" to record a sample DMCA email; test removing a listing or logging a counter-notice.
+     - **Flags (`/admin/flags`):** Check feature flag toggles (`vision_required`, `verification_required`, `payments_enabled`). Toggling opens a dialog explaining enforcement before switching.
+     - **Audit log (`/admin/audit-log`):** View the append-only record of every action performed above, including timestamps and before/after state diffs.
+  4. **Public & Non-Admin Verification:**
+     - Open an Incognito window (or sign in as Test User 3) and navigate to `/admin`. Verify that a plain 404 page is returned, and no "Admin" link appears in the navigation menu.
+
+- Open issues / Requests:
+  - None.
+
 ## Website fixes - 2026-11-07 - overlays, header, footer, settings
 
-- Root causes of the 5 issues:
   1. Modals: The `WelcomeChecklistModal` rendered with the static HTML `open` attribute rather than triggering `dialog.showModal()`, leaving the dialog in standard document flow below the footer instead of the browser's top layer. Global dialog centering, backdrop styling, containment, and background scroll locking (`html:has(dialog[open]), body:has(dialog[open]) { overflow: hidden !important; }`) were missing. Additionally, `window.confirm` was used for block user and deal cancellation instead of structured overlay dialogs.
   2. Header bleed-through: `.site-header` used semi-transparent background colors (`rgba(255, 255, 255, 0.98)` in light mode, `#181818f5` in dark mode) which allowed underlying page cards, text, and docked filter panel borders to bleed through during scrolling.
   3. Dark mode footer: Footer lacked dark mode rules, displaying a light background (`#fcfcfc`) with dark text, low-contrast links, and an un-inverted dark wordmark logo.

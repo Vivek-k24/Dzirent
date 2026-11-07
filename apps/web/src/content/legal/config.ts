@@ -121,7 +121,7 @@ export const LEGAL_CONFIG: LegalConfig = {
   MARKETPLACE_ROLE: "", // To be filled by Attorney
   DAMAGE_AND_LOSS: "", // To be filled by Owner + attorney
   DEPOSIT_RECOMMENDATION: "", // To be filled by Owner
-  SERVICE_AREA: "United States (US cities available in the platform city selection)",
+  SERVICE_AREA: "United States",
 
   // 4. Age
   MINIMUM_AGE: "18",

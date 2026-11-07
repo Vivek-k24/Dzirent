@@ -231,9 +231,8 @@ export default function CommunityGuidelinesPage() {
       <section id="photo-scanning">
         <h2>5. How Photo Scanning Works</h2>
         <p>
-          To help lenders list accurately and maintain catalog standards, Dzirent uses an
-          automated visual analysis service (powered by the open-source Marqo-FashionSigLIP model)
-          that checks listing photos on the server:
+          To help lenders list accurately and keep the catalog to our rules, Dzirent checks every
+          listing photo automatically, using open-source image models:
         </p>
         <ul>
           <li>
@@ -252,13 +251,12 @@ export default function CommunityGuidelinesPage() {
             warnings to that photo.
           </li>
           <li>
-            <strong>Worn detection:</strong> It checks whether someone is wearing the garment (worn photos
-            are completely allowed).
+            <strong>Photo safety:</strong> Nudity or sexual content is not allowed and is rejected.
+            A photo of someone wearing the piece is fine and is never penalized.
           </li>
           <li>
-            <strong>Duplicate check:</strong> It generates a 768-number image fingerprint compared on
-            the server against other listings to check whether the photo matches another listing and
-            prevent copied imagery.
+            <strong>Duplicate check:</strong> It compares a numerical summary of each photo with other
+            listings, to catch copied photos.
           </li>
         </ul>
 
@@ -275,17 +273,17 @@ export default function CommunityGuidelinesPage() {
             clear explanation of why the item cannot be listed.
           </li>
           <li>
-            <strong>Under review:</strong> When the automated check is uncertain, or if a photo matches
-            another listing, the listing is held for manual review by a person at Dzirent before appearing
-            in search.
+            <strong>Under review:</strong> When the automated check is uncertain, when a photo matches
+            another listing, or when the piece has a hood, a person at Dzirent looks at the photos. You
+            see the reason in the app.
           </li>
         </ol>
 
         <div className="legal-callout note">
           <div className="callout-title">Changed Photos Are Re-Checked</div>
           <p>
-            Whenever you change or replace photos on an active listing, the server automatically checks
-            the new photos to ensure continued compliance.
+            Whenever you change or replace photos on an active listing, the new photos are checked
+            again automatically.
           </p>
         </div>
       </section>

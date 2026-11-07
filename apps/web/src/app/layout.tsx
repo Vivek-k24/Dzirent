@@ -33,15 +33,28 @@ export default async function RootLayout({
   let name = "Your account";
   let userProfile = null;
   let needsLegal = false;
+  let isAdmin = false;
   if (user) {
     const client = await serverClient();
-    const [{ data }, { data: needs }] = await Promise.all([
+    const [{ data }, { data: needs }, { data: adminAal2 }] = await Promise.all([
       client.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       client.rpc("needs_legal_acceptance"),
+      client.rpc("is_admin"),
     ]);
     name = data?.display_name || "Your account";
     userProfile = data;
     needsLegal = Boolean(needs);
+    if (adminAal2) {
+      isAdmin = true;
+    } else {
+      const { error: adminErr } = await client.rpc("admin_queues");
+      if (
+        adminErr?.message ===
+        "Sign in with two-step verification to use admin tools"
+      ) {
+        isAdmin = true;
+      }
+    }
   }
   return (
     <html lang="en">
@@ -54,6 +67,7 @@ export default async function RootLayout({
           name={name}
           showWelcome={!user && !jar.get("dzirent-welcome")}
           needsLegal={needsLegal}
+          isAdmin={isAdmin}
         >
           {children}
         </Shell>

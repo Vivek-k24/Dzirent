@@ -1,5 +1,6 @@
 import "server-only";
 import { currentUser, serverClient } from "./supabase/server";
+import { suspensionNotice } from "./suspension";
 import type {
   ChatData,
   Conversation,
@@ -122,7 +123,7 @@ export async function readInbox(): Promise<InboxData> {
 export async function readChat(id: string): Promise<ChatData> {
   const { user, client, c } = await conversation(id);
   const peer = c.renter_id === user.id ? c.lender_id : c.renter_id;
-  const [cards, messages, rental, outcome, block] = await Promise.all([
+  const [cards, messages, rental, outcome, block, myProf] = await Promise.all([
     client.rpc("my_conversations", {
       p_conversation_id: id,
       p_limit: 1,
@@ -147,6 +148,11 @@ export async function readChat(id: string): Promise<ChatData> {
       .eq("blocker_id", user.id)
       .eq("blocked_id", peer)
       .maybeSingle(),
+    client
+      .from("profiles")
+      .select("suspended_until,suspension_reason")
+      .eq("id", user.id)
+      .maybeSingle(),
   ]);
   return {
     now: Date.now(),
@@ -157,6 +163,10 @@ export async function readChat(id: string): Promise<ChatData> {
     rental: must(rental) as Rental | null,
     outcome: must(outcome) as Outcome | null,
     blocked: Boolean(must(block)),
+    mySuspension: suspensionNotice(
+      myProf.data?.suspended_until,
+      myProf.data?.suspension_reason,
+    ),
   };
 }
 export async function ownListing(id: string): Promise<OwnListing> {
