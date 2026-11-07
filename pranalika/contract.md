@@ -183,6 +183,61 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - "Please remove contact details from your profile; people can message you in Dzirent."
 - `check_text(p_text text, p_where text)`: Guest and signed-in. `p_where` is `'listing'`, `'profile'`, `'message'` or `'report'` (else `22023`); text up to 5000 characters. Returns the refusal message, or null when the text is fine. Saving runs the same check; this is for asking first, mainly sign-up's display name (the Auth API hides the database's message when the profile insert at sign-up is refused).
 
+### Admin (P2B part 1)
+Admins are the accounts in `app_private.admin_users` (closed to every API role). Every admin function below is callable by `authenticated` but starts with `app_private.require_admin()`: it refuses with `42501` "Admins only" unless the caller is in `admin_users`, and "Sign in with two-step verification to use admin tools" unless the JWT is `aal2` (Supabase MFA, TOTP). Every call, reads included, writes one row to the append-only admin log. Functions return `jsonb` unless noted.
+
+- **Adding or removing an admin:** list the admin emails in `ADMIN_EMAILS` (comma-separated) in `H:\DziRent\secrets\providers.env`, then an agent runs `node supabase/seed/admins.mjs` from the repo root. It makes `admin_users` match the list exactly: listed accounts are added, unlisted admins removed, each change logged as `admin_added` / `admin_removed`. An empty list is refused. An email with no Dzirent account is skipped (sign up first, then run it again). The admin then enrolls a TOTP factor (Supabase MFA) and signs in with it.
+- `is_admin()` → `boolean`: true only for an admin at `aal2`. Any signed-in user may call it.
+- **Queues:**
+  - `admin_queues()`: counts `open_reports`, `scans_in_review` (latest scan `done` + `review`, no admin decision), `open_takedowns` (`received` or `countered`), `id_verification_reviews` (always 0 until P6A).
+  - `admin_list_reports(p_status text default 'open', p_limit int default 30, p_offset int default 0)`: reports (`p_status` null = all) with reporter and target names and handles, outcome, and the evidence snapshot (`evidence`).
+  - `admin_list_scan_reviews(p_limit, p_offset)`: scans waiting for a person, with the listing title, lender handle and each photo's storage path, slot, decision, warnings, `looks_like`, `nsfw` and `hooded`.
+  - `admin_list_takedowns(p_status text default null, p_limit, p_offset)`: takedown requests; null = the open ones.
+  - `admin_list_id_reviews()`: `[]` until ID verification (P6A).
+- **Reports** (each closes an open report when given one; a closed report can't be closed again):
+  - `admin_dismiss_report(p_report_id, p_reason)`: outcome `dismissed`.
+  - `admin_warn_user(p_user_id, p_note, p_report_id default null)`: adds a `user_warnings` row (the user can read their own); outcome `warned`.
+  - `admin_remove_reported_content(p_report_id, p_reason)`: a message is deleted, a listing is hidden (hold), a profile loses its studio name, bio and pickup area; outcome `content_removed`. The evidence keeps the original.
+  - `admin_suspend_user(p_user_id, p_days 1-3650, p_reason, p_report_id default null)`: sets `profiles.suspended_until` / `suspension_reason` and holds the user's active listings; outcome `suspended`. An admin can't suspend themselves.
+  - `admin_unsuspend_user(p_user_id, p_reason)`: clears the suspension and restores the held listings.
+  - Ban / unban: through the `admin-actions` Edge Function (below), which calls `admin_record_ban(p_user_id, p_banned, p_reason, p_report_id default null)` after the Auth step. That function makes a ban an open-ended suspension (`suspended_until = 'infinity'`, listings held), with outcome `banned`; unban clears it.
+- **Photo checks:** `admin_decide_scan(p_scan_id, p_decision 'approved'|'rejected', p_reason)`: sets `admin_decision`, `admin_decided_at` and `admin_reason` (shown to the lender) on a finished scan. Under the vision gate an approved scan of the current photos makes the listing publishable; rejected blocks it.
+- **Listings:** `admin_hide_listing(p_listing_id, p_reason)` / `admin_unhide_listing(p_listing_id, p_reason)`: the hold below.
+- **Takedowns** (`app_private.takedown_requests`: claimant, contact, work, URLs, listing ids, received date, status `received` / `actioned` / `rejected` / `countered` / `restored`, notes, counter-notice):
+  - `admin_create_takedown(p_claimant_name, p_claimant_contact, p_work, p_urls text[] default '{}', p_listing_ids uuid[] default '{}', p_received_at default now, p_note default null)` → `uuid`.
+  - `admin_takedown_remove_listing(p_takedown_id, p_listing_id, p_reason)`: hides the listing; status `actioned`.
+  - Removing photos: through the `admin-actions` Edge Function (`remove_photos`), which calls `admin_remove_photos(p_listing_id, p_photo_ids uuid[], p_reason, p_takedown_id default null)` (deletes the photo rows, returns their `storage_paths`), then deletes the files. Called directly, the rows go but the files stay in the bucket.
+  - `admin_record_counter_notice(p_takedown_id, p_notice, p_received_at default now)`: status `countered`.
+  - `admin_set_takedown_status(p_takedown_id, p_status, p_note)`: for `rejected`, `restored` and corrections. Restoring a listing is `admin_unhide_listing`.
+- **Feature flags:** `set_flag(p_key, p_enabled)`: switches an `app_settings` flag (`vision_required`, `verification_required`, `payments_enabled`). This replaces switching flags with migrations.
+- **Metrics:** `admin_metrics()`: `users`, `new_users_week`, `active_listings`, `scans_week` (count by verdict, or status while unfinished), `open_reports`, `messages_week`, `suspended_users`.
+- **Lookup:** `admin_find_user(p_query)`: by exact email, studio handle (with or without `@`) or account id, up to 10 matches. Returns profile fields, email, last sign-in, `banned_until`, suspension, `is_admin`, reports made, against and open against, warnings, and listings total, active and held.
+- **The log:** `admin_audit_log(p_limit default 50 (max 200), p_offset)`: newest first, with the admin's handle.
+
+`admin-actions` Edge Function (`POST /functions/v1/admin-actions`, `verify_jwt = false`):
+- **Checks:** validates the caller's token (`auth.getUser`), then calls `is_admin()` with the caller's own token. Anything else gets HTTP 403. A reason of at least 3 characters is required.
+- `{ "action": "ban" | "unban", "user_id", "reason", "report_id"? }`: Supabase Auth ban (`ban_duration` about 100 years, or `none`) with the server key from the function's environment, then `admin_record_ban` as the caller. A banned account can't sign in or refresh. An admin can't ban themselves.
+- `{ "action": "remove_photos", "listing_id", "photo_ids": [...], "reason", "takedown_id"? }`: `admin_remove_photos` as the caller, then deletes the files from `listing-photos` with the server key.
+- Returns `{ ok, action, ... }`. An Auth failure is HTTP 502 (nothing recorded). If the record step fails after the Auth change, it is HTTP 500 with `auth_changed: true`.
+
+Suspension and holds (any client):
+- **Suspended accounts:** messages, new chats and reports by a suspended account are refused with `P0001`: "Your account is suspended until Nov 8, 2026. Reason: …." For a ban: "Your account is suspended. Reason: …." Reading one's own data still works. Apps can't change `suspended_until` or `suspension_reason` (a trigger keeps them).
+- **Holds** (`listings.hold` `'hidden'` | `'suspended'`, `hold_reason`, `hold_restores`; written only by admin functions):
+  - A held listing is `paused`, so it is hidden from the shop window, and `auto_paused_reason` says "Hidden by Dzirent: …." or "Paused while your account is suspended.".
+  - Apps can't set a hold and can't make a held listing active. That is refused with "This listing is hidden by Dzirent: …. Contact support if you think this is a mistake.", or with the suspension message.
+  - A suspended owner can't publish any listing.
+  - Lifting the hold restores `active` if the listing was active before. An admin hide stays when a suspension ends.
+
+Reports (P2B changes):
+- **New columns:** `target_user_id` (who the report is about, set by the server), `status` (`open` / `closed`), `outcome`, `outcome_note`, `closed_at`, `closed_by`. Apps always insert `open`.
+- **Message reports:** a reporter can only report messages in their own chats ("You can only report messages in your own chats.").
+- **Evidence:** at insert, the server saves a snapshot in `app_private.report_evidence`, which never changes and is readable only through `admin_list_reports`:
+  - a message with up to 5 messages before and after it in that chat, each with sender id, name, handle and time;
+  - a listing's title, description, notes, category, status and photo paths;
+  - a profile's public fields.
+- **Text filter:** `details` is no longer filtered, so people can quote what was said; `reason` still is.
+- **Retention:** reports and evidence survive either account's deletion (`reporter_id` becomes null). They are kept for `report_retention_days` after closing (`app_private.settings`, 730 = a placeholder until the attorney decides); `app_private.purge_expired_reports()` deletes the older ones (scheduling: P3B).
+
 ### Photo checks (Step 8A, Step 8B)
 - `request_scan(p_listing_id uuid)`: Signed-in listing owner only. Returns the `uuid` of the photo check (a `listing_scans` row) for the listing's current photos. The check runs on the server and usually finishes within a minute (longer when the vision service starts cold). Watch the row until `status` is `done` or `failed`: Realtime `UPDATE` events on `listing_scans` filtered by `id`, with polling by ID as the fallback (Step 8B).
   - One scan at a time per listing: asking again while one is `queued` or `running` returns that scan's ID. Since Step 8B, when the latest check is `done` and covers the current photos (`photo_set_hash`), that check's ID comes back instead of a new one. A scan that hasn't finished after 10 minutes is marked `failed` and a new one can start.
@@ -253,9 +308,9 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 
 | Table | Operations | RLS Rule |
 | --- | --- | --- |
-| `profiles` | SELECT, UPDATE | `id = auth.uid()` |
+| `profiles` | SELECT, UPDATE | `id = auth.uid()`. `suspended_until` and `suspension_reason` (P2B) are readable by the owner and written only by admin functions. |
 | `private_profiles` | ALL | `user_id = auth.uid()`. `measurements_consent_at` (P1B) is written only by `give_measurements_consent` / `withdraw_measurements_consent`; body measurements need it (see "Terms acceptance and measurements consent"). |
-| `listings` | SELECT, INSERT, UPDATE, DELETE | `lender_id = auth.uid()`. INSERT requires lender/both role. UPDATE restricted to safe columns. DELETE requires empty Storage folder. `auto_paused_reason` (Step 8B) is read-only for apps. |
+| `listings` | SELECT, INSERT, UPDATE, DELETE | `lender_id = auth.uid()`. INSERT requires lender/both role. UPDATE restricted to safe columns. DELETE requires empty Storage folder. `auto_paused_reason` (Step 8B) is read-only for apps. `hold`, `hold_reason`, `hold_restores` (P2B) are server-only (see "Admin"). |
 | `listing_photos` | ALL | Owned listing only (`l.lender_id = auth.uid()`). |
 | `listing_measurements` | ALL | Owned listing only (`l.lender_id = auth.uid()`). |
 | `availability` | ALL | Owned listing only (`l.lender_id = auth.uid()`). |
@@ -267,7 +322,8 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `saved_listings` | ALL | `user_id = auth.uid()` |
 | `saved_studios` | ALL | `user_id = auth.uid()` |
 | `blocks` | ALL | `blocker_id = auth.uid()` |
-| `reports` | SELECT, INSERT | `reporter_id = auth.uid()` |
+| `reports` | SELECT, INSERT | `reporter_id = auth.uid()`. Since P2B: server-set `target_user_id`, `status`, `outcome`, `outcome_note`, `closed_at`, `closed_by`; evidence in `app_private.report_evidence` (admins only); kept after either account is deleted. |
+| `user_warnings` | SELECT | `user_id = auth.uid()` (P2B). Written only by `admin_warn_user`. Columns `id`, `user_id`, `note`, `report_id`, `created_by`, `created_at`. Removed with the account. |
 | `listing_events` | SELECT, INSERT | `user_id = auth.uid()` |
 | `suggestion_events` | SELECT, INSERT | `user_id = auth.uid()` |
 | `accessory_declarations`| SELECT | `user_id = auth.uid()` |

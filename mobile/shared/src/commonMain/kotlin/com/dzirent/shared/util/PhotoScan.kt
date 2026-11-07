@@ -83,7 +83,7 @@ sealed class CheckBanner {
     object Checking : CheckBanner()
     object Allowed : CheckBanner()
     data class Rejected(val reason: String) : CheckBanner()
-    /** Someone at Dzirent will look; [reason] says why when it's more than "not sure" (a copied photo). */
+    /** Someone at Dzirent will look; [reason] is the check's own reason (a hood, photo safety, a copied photo), if any. */
     data class Review(val reason: String?) : CheckBanner()
     /** The check itself failed or took too long: the lender can ask again. */
     object Failed : CheckBanner()
@@ -99,11 +99,12 @@ fun checkBanner(phase: CheckPhase, scan: ListingScan?, uploadError: String? = nu
     CheckPhase.FINISHED -> when {
         scan == null -> null
         scan.adminDecision == "approved" -> CheckBanner.Allowed
-        scan.adminDecision == "rejected" -> CheckBanner.Rejected(scan.reason ?: "These photos can't be listed.")
+        scan.adminDecision == "rejected" ->
+            CheckBanner.Rejected(scan.adminReason?.ifBlank { null } ?: scan.reason ?: "These photos can't be listed.")
         scan.status == "failed" -> CheckBanner.Failed
         scan.verdict == "allowed" -> CheckBanner.Allowed
         scan.verdict == "rejected" -> CheckBanner.Rejected(scan.reason ?: "These photos can't be listed.")
-        else -> CheckBanner.Review(scan.reason?.takeIf { it == COPIED_PHOTO })
+        else -> CheckBanner.Review(scan.reason?.trim()?.ifBlank { null })
     }
 }
 

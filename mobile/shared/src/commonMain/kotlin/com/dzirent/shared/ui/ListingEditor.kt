@@ -580,6 +580,10 @@ private fun ListingEditorForm(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
+            rememberSuspensionNotice(repository)?.let { notice ->
+                SuspensionNotice(notice, modifier = Modifier.padding(bottom = 16.dp))
+            }
+
             if (isNew && !profile.hasLocation) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),

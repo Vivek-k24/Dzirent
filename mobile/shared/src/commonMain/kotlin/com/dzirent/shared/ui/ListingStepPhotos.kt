@@ -342,8 +342,8 @@ fun PhotoCheckBanner(banner: CheckBanner?, onRetry: () -> Unit, onReplacePhotos:
                     Text(PHOTOS_LOOK_GOOD, color = text)
                 }
                 is CheckBanner.Review -> {
-                    Text(REVIEW_LINE, color = text, fontWeight = FontWeight.Medium)
-                    banner.reason?.let { Text(it, color = text, style = MaterialTheme.typography.bodySmall) }
+                    // The check's own reason (a hood, photo safety, a copied photo) when it gives one.
+                    Text(banner.reason ?: REVIEW_LINE, color = text, fontWeight = FontWeight.Medium)
                 }
                 is CheckBanner.Rejected -> {
                     Text(banner.reason, color = text, fontWeight = FontWeight.Medium)

@@ -298,6 +298,7 @@ fun ChatScreen(
     var isSending by remember { mutableStateOf(false) }
     var sendError by remember { mutableStateOf<String?>(null) }
     var sendRefused by remember { mutableStateOf(false) }
+    val suspended = rememberSuspensionNotice(repository)
     var actionError by remember { mutableStateOf<String?>(null) }
     var isSavingRental by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -692,7 +693,10 @@ fun ChatScreen(
                     }
                 }
 
-                Row(
+                // Suspended: the notice instead of the message box (the database refuses sending anyway).
+                if (suspended != null) {
+                    SuspensionNotice(suspended, modifier = Modifier.padding(8.dp))
+                } else Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp),

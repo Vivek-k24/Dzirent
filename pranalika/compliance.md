@@ -129,7 +129,13 @@ EXIF and GPS, checked on each platform's upload path:
 | Data item | Comes from | Stored in | Purpose | Who can see | Required | Kept for | On account deletion |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Blocks | `block_user` (by handle) | `blocks` (`blocker_id`, `blocked_id`) | Hide each other | Blocker (`my_blocked_users`); Server | Optional | Until unblocked | Deleted when either account is deleted |
-| Reports: target type (user, listing, message), target ID, reason, details (500), time | `report_user`; web chat report (`workflow-mutations.ts`); mobile `DzirentRepository` report | `reports` (0 rows) | Moderation | Reporter, Server. No review tool exists | Optional | Indefinite | Reporter's reports: deleted. Reports about a deleted user: **kept, pointing to an ID that no longer exists** (no foreign key on `target_id`). A reported message is **not copied** into the report, so it disappears when its sender's account or the chat goes |
+| Reports: target type (user, listing, message), target ID, who it is about, reason, details (500), time, status and outcome (P2B) | `report_user`; web chat report (`workflow-mutations.ts`); mobile `DzirentRepository` report | `reports` | Moderation | Reporter (own rows); admins through `admin_list_reports` (two-step sign-in) | Optional | Open until an admin closes it; then `report_retention_days` after closing (730, **placeholder until the attorney decides**; deletion job P3B) | **Kept** after either person deletes their account (the reporter's id becomes null), for the retention period, so the privacy policy must say so |
+| Report evidence (P2B): a snapshot taken when the report is made. For a message: its text and up to 5 messages before and after it in that chat, with sender ids, names, handles and times. For a listing: title, description, notes, category, status, photo paths. For a profile: its public fields | Server, at report time | `app_private.report_evidence` (never changes) | Moderation, and evidence that outlives edits and deletions | Admins only (two-step sign-in); never the reporter | Automatic | With its report | **Kept** with its report, including other people's messages from that chat, after either account is deleted |
+| Warnings from Dzirent (P2B) | Admin (`admin_warn_user`) | `user_warnings` (note, report, admin, time) | Moderation record | The warned user (own rows); admins | Automatic | Until the account is deleted | Deleted |
+| Suspension (P2B) | Admin | `profiles.suspended_until`, `suspension_reason` | Enforcement | The user (own profile); admins | Automatic | Until lifted or it ends | Deleted with the profile |
+| Admin log (P2B): admin id, action, target type and id, reason, before/after snapshots of what changed (can include profile text and listing state), time | Every admin function | `app_private.admin_actions` (append-only) | Accountability for admin actions | Admins (`admin_audit_log`) | Automatic | Indefinite (no retention set yet; P3B) | **Kept**, with the account ids in it |
+| Copyright takedown requests (P2B): claimant name and contact, the work, URLs, listing ids, dates, counter-notice text | Admins, from support emails | `app_private.takedown_requests` | DMCA process | Admins | For each request | Indefinite (no retention set yet; P3B) | Not tied to a Dzirent account |
+| Admin accounts (P2B) | Seed script from `ADMIN_EMAILS` | `app_private.admin_users` (account id, added time, by whom) | Who may use admin tools | Server | - | Until removed | Deleted with the account |
 
 ### 1.10 Declarations
 
@@ -203,7 +209,7 @@ No third-party cookies, scripts, fonts or trackers: the font is served with the 
 
 ### 1.16 Schema check (Phase 2)
 
-Live schema on 2026-11-06 (`information_schema.columns`): 26 tables in `public`, all with RLS on. Every one is in the tables above: `accessory_declarations`, `app_settings`, `availability`, `blocks`, `conversation_reads`, `conversations`, `device_tokens`, `listing_declarations`, `listing_events`, `listing_measurements`, `listing_photos`, `listing_scans`, `listings`, `messages`, `notification_settings`, `photo_scans`, `policy_item_types`, `private_profiles`, `profiles`, `rental_outcomes`, `rentals`, `reports`, `saved_listings`, `saved_studios`, `suggestion_events`, `us_cities`. P1B part 1 (same day) added `legal_documents` and `legal_acceptances` (28 tables now) and `private_profiles.measurements_consent_at`; they are in 1.1, 1.3 and the map. Every column is covered. The map below lists each table's columns exactly as the live schema has them (generated from `information_schema.columns` on 2026-11-06) and the section that describes them.
+Live schema on 2026-11-06 (`information_schema.columns`): 26 tables in `public`, all with RLS on. Every one is in the tables above: `accessory_declarations`, `app_settings`, `availability`, `blocks`, `conversation_reads`, `conversations`, `device_tokens`, `listing_declarations`, `listing_events`, `listing_measurements`, `listing_photos`, `listing_scans`, `listings`, `messages`, `notification_settings`, `photo_scans`, `policy_item_types`, `private_profiles`, `profiles`, `rental_outcomes`, `rentals`, `reports`, `saved_listings`, `saved_studios`, `suggestion_events`, `us_cities`. P1B part 1 (same day) added `legal_documents` and `legal_acceptances` (28 tables now) and `private_profiles.measurements_consent_at`; they are in 1.1, 1.3 and the map. P2B part 1 (2026-11-07) added `user_warnings` (29) and columns on `reports`, `profiles`, `listings` and `listing_scans` (map below), plus closed tables in `app_private` that hold personal data: `admin_users`, `admin_actions`, `report_evidence`, `takedown_requests` (all in 1.9), and `settings` (no personal data). Every column is covered. The map below lists each table's columns exactly as the live schema has them (generated from `information_schema.columns` on 2026-11-06) and the section that describes them.
 
 | Table | Live columns | Section |
 | --- | --- | --- |
@@ -220,21 +226,22 @@ Live schema on 2026-11-06 (`information_schema.columns`): 26 tables in `public`,
 | `listing_events` | `id`, `user_id`, `listing_id`, `type`, `created_at` | 1.7 |
 | `listing_measurements` | `id`, `listing_id`, `label`, `value`, `unit` | 1.5 |
 | `listing_photos` | `id`, `listing_id`, `storage_path`, `position`, `slot` | 1.5 |
-| `listing_scans` | `id`, `listing_id`, `status`, `verdict`, `reason`, `suggestions`, `photo_set_hash`, `admin_decision`, `error`, `created_at`, `started_at`, `finished_at`, `admin_decided_at` | 1.6 |
-| `listings` | `id`, `lender_id`, `title`, `category`, `size_label`, `description`, `price_note`, `city`, `approx_lat`, `approx_lng`, `status`, `created_at`, `retail_value`, `deposit_note`, `item_type`, `price_usd`, `listing_styles`, `garment_type`, `ai_review_needed`, `auto_paused_reason` | 1.4, 1.5 |
+| `listing_scans` | `id`, `listing_id`, `status`, `verdict`, `reason`, `suggestions`, `photo_set_hash`, `admin_decision`, `error`, `created_at`, `started_at`, `finished_at`, `admin_decided_at`, `admin_reason` (P2B) | 1.6 |
+| `listings` | `id`, `lender_id`, `title`, `category`, `size_label`, `description`, `price_note`, `city`, `approx_lat`, `approx_lng`, `status`, `created_at`, `retail_value`, `deposit_note`, `item_type`, `price_usd`, `listing_styles`, `garment_type`, `ai_review_needed`, `auto_paused_reason`, `hold`, `hold_reason`, `hold_restores` (P2B) | 1.4, 1.5 |
 | `messages` | `id`, `conversation_id`, `sender_id`, `body`, `created_at` | 1.8 |
 | `notification_settings` | `user_id`, `messages`, `show_message_text`, `updated_at` | 1.11 |
 | `photo_scans` | `id`, `scan_id`, `listing_id`, `photo_id`, `storage_path`, `slot`, `blur_score`, `brightness_score`, `framing_score`, `worn_probability`, `fingerprint`, `labels`, `warnings`, `decision`, `scanned_at` | 1.6 |
 | `policy_item_types` | `key`, `label`, `kind`, `allowed`, `category`, `item_type`, `garment_type`, `style`, `policy_group`, `noun`, `looks_like`, `reason`, `prompts`, `position` | 1.15 |
 | `private_profiles` | `user_id`, `chest_cm`, `waist_cm`, `hips_cm`, `shoulder_cm`, `height_cm`, `inseam_cm`, `activity_seen_at`, `updated_at`, `fit_profile`, `style_interests`, `measurements_consent_at` (P1B) | 1.3 |
-| `profiles` | `id`, `display_name`, `role`, `city`, `approx_lat`, `approx_lng`, `adult_confirmed`, `created_at`, `studio_name`, `studio_handle`, `studio_bio`, `style_tags`, `pickup_area` | 1.2, 1.4 |
+| `profiles` | `id`, `display_name`, `role`, `city`, `approx_lat`, `approx_lng`, `adult_confirmed`, `created_at`, `studio_name`, `studio_handle`, `studio_bio`, `style_tags`, `pickup_area`, `suspended_until`, `suspension_reason` (P2B) | 1.2, 1.4, 1.9 |
 | `rental_outcomes` | `conversation_id`, `user_id`, `happened`, `answered_at` | 1.8 |
 | `rentals` | `id`, `conversation_id`, `listing_id`, `renter_id`, `lender_id`, `status`, `start_date`, `end_date`, `updated_by`, `created_at`, `updated_at` | 1.8 |
-| `reports` | `id`, `reporter_id`, `target_type`, `target_id`, `reason`, `created_at`, `details` | 1.9 |
+| `reports` | `id`, `reporter_id`, `target_type`, `target_id`, `reason`, `created_at`, `details`, `target_user_id`, `status`, `outcome`, `outcome_note`, `closed_at`, `closed_by` (P2B) | 1.9 |
 | `saved_listings` | `user_id`, `listing_id`, `created_at` | 1.8 |
 | `saved_studios` | `user_id`, `lender_id`, `created_at` | 1.8 |
 | `suggestion_events` | `id`, `user_id`, `listing_id`, `field`, `label`, `action`, `created_at` | 1.7 |
 | `us_cities` | `id`, `name`, `state`, `lat`, `lng` | 1.15 |
+| `user_warnings` (P2B) | `id`, `user_id`, `note`, `report_id`, `created_by`, `created_at` | 1.9 |
 
 `storage` schema: `buckets` (1 bucket) and `objects` are covered (1.5). Internal to Supabase Storage and unused by Dzirent's code: `migrations` (Storage's own versions), `s3_multipart_uploads` and `s3_multipart_uploads_parts` (temporary S3-protocol uploads, 0 rows; the apps upload through the Storage API), `buckets_analytics`, `buckets_vectors`, `vector_indexes` (0 rows each), `bucket_lifecycle_states`, `lifecycle_abandoned_artifacts` (Storage features Dzirent doesn't use).
 
@@ -421,7 +428,16 @@ Each gap has a suggested fix and the phase from the handoff plan.
    - **Website follow-up needed:** `apps/web/src/lib/workflow-mutations.ts` saves measurements with no consent step, so the database now refuses those saves until the website adds one.
 10. **Deleting an account deletes the other person's chat and rental history.** `conversations`, `messages` and `rentals` cascade on either participant. The privacy policy must say so, or the product should keep the other person's copy with the deleted user anonymized. Phase: P1A (disclose); unassigned for a change (suggested P3B).
 11. **Reports lose their evidence.** A report stores only the target ID; the reported message disappears when its sender's account goes, and reports about deleted users point to nothing. Fix: snapshot the reported content and the target's handle into the report, kept for a set period. Phase: P2B.
+   - **Closed (P2B part 1, 2026-11-07).**
+     - Every report gets an evidence snapshot at creation (`app_private.report_evidence`) that never changes: the message with 5 before and after, the listing, or the profile.
+     - Reports and evidence survive either account's deletion for `report_retention_days` after closing (730, a placeholder for the attorney). The privacy policy must disclose this: who sees it (admins with two-step sign-in), what it holds (including other people's chat messages around a reported one) and for how long.
+     - Report details are no longer filtered, so reporters can quote abuse.
+     - Still open: the deletion job (P3B) and the attorney's period.
 12. **No way for staff to review reports or photo checks.** Only the Supabase dashboard. Phase: P2B.
+   - **Backend done (P2B part 1, 2026-11-07); website still to build (P2B part 2).**
+     - Admin functions cover queues, reports, photo-check decisions, listing hide and unhide, suspensions, bans, takedowns, flags, metrics, lookup and the log.
+     - Every action is logged in an append-only table.
+     - Admins must sign in with two-step verification.
 13. **No download-my-data.** Phase: P3A.
 14. **History that grows forever.** Every `listing_scans` and `photo_scans` row is kept until the listing is deleted; `listing_events` (which nothing reads) and stale `device_tokens` are never removed; `auth.sessions` have no time limit; `pg_net` replies outlive their 6-hour TTL. Fix: retention jobs, and stop writing `listing_events` until it has a use. Phase: P3B.
 15. **Log retention and contents are unknown.** Supabase logs keep IP, approximate place, user agent, account ID and query strings for at least 7 days; Vercel and Cloud Logging retention were not checked. Fix: record each provider's retention in the account inventory, set the shortest workable period, and state it in the privacy policy. Phase: P3B (log retention), P5B, P7B.

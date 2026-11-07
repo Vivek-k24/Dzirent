@@ -2,6 +2,151 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P2B part 1 - 2026-11-07 - admin backend
+
+Done:
+- Before starting: working tree clean. `git pull --rebase` fast-forwarded `Preview` from `a69f158` to `fbf8b7c` (website catch-up).
+- `supabase/migrations/20261107100000_p2b_admin_core.sql`:
+  - **Admins:** `app_private.admin_users` (account, added time, added by), closed to every API role. `public.is_admin()` is true only for an admin whose JWT is `aal2`. `app_private.require_admin()` is the first statement of every admin function.
+  - **Admin log:** `app_private.admin_actions` (admin, action, target type and id, reason, before and after, time). Triggers refuse every update, delete and truncate. Written by `app_private.log_admin_action`.
+  - **Settings:** `app_private.settings` with `report_retention_days` = 730, a placeholder for the attorney.
+  - **Suspensions:**
+    - `profiles.suspended_until` and `suspension_reason`; a trigger keeps them for app roles.
+    - Messages, new chats and reports by a suspended account are refused: "Your account is suspended until Nov 8, 2026. Reason: …." For a ban (`infinity`): "Your account is suspended. Reason: …."
+  - **Holds:** `listings.hold` (`hidden` or `suspended`), `hold_reason` and `hold_restores`.
+    - A held listing is paused (out of the shop window) with `auto_paused_reason` ("Hidden by Dzirent: …." or "Paused while your account is suspended."). Apps can't set or clear a hold or republish a held listing, and a suspended owner can't publish.
+    - Lifting a hold restores `active` if the listing was active. An admin hide survives the end of a suspension.
+    - I chose holds over editing every shop-window function: the shop window already shows only active listings.
+  - **Reports:**
+    - The reporter's foreign key is now `on delete set null`.
+    - New columns: `target_user_id` (server-set), `status`, `outcome`, `outcome_note`, `closed_at`, `closed_by`. Apps always insert `open`.
+    - Message reports must be in the reporter's own chats.
+    - `app_private.report_evidence`: a snapshot at insert (message plus 5 before and after with sender ids, names, handles and times; listing text and photo paths; profile public fields). It is closed to API roles and an update trigger refuses changes.
+    - Report details skip the text filter; reason is still checked.
+    - `app_private.purge_expired_reports()` exists but isn't scheduled (P3B).
+  - **Other tables and columns:**
+    - `public.user_warnings`: owner-readable warnings.
+    - `app_private.takedown_requests`.
+    - `listing_scans.admin_reason`.
+- `supabase/migrations/20261107101000_p2b_admin_functions.sql`: the admin functions listed below. Each checks `require_admin()` first and writes one log row, reads included.
+- **Edge Function `admin-actions`** (deployed, `verify_jwt = false` in `config.toml`):
+  - Validates the token, then asks `is_admin()` with the caller's own token.
+  - Only then uses the server key: Auth ban or unban (`ban_duration` about 100 years / `none`), or deleting photo files. The database side (`admin_record_ban` / `admin_remove_photos`) runs as the caller.
+  - Self-ban is refused.
+- **`supabase/seed/admins.mjs`:** syncs `admin_users` to `ADMIN_EMAILS` (adds listed accounts, removes unlisted ones, logs each change, refuses an empty list, prints counts only). It runs the CLI binary directly, so the SQL isn't mangled by a shell.
+- **Apps** (shared code):
+  - The review banner shows the check's own reason when there is one (hood, photo safety, copied photo, or "not sure what this piece is"), otherwise "Someone at Dzirent will check these photos."
+  - An admin's rejection shows `admin_reason`.
+  - **Suspension notice:** `Profile.suspendedUntil` / `suspensionReason` and `util/Suspension.kt` give the same wording as the database plus "Contact support if you think this is a mistake." A `SuspensionNotice` card shows:
+    - at the top of the listing editor;
+    - instead of the chat message box;
+    - instead of the report form.
+    - Each screen reads the profile fresh, so a suspension that started after sign-in still shows.
+  - The suspension, hidden-listing and own-chat refusals reach the screens word for word (`DATABASE_MESSAGES`).
+- **Docs:** `contract.md` ("Admin"), `security-log.md` ("Admin role", Advisor findings, `admin-actions`), `compliance.md` (gap 11 closed, gap 12's backend done, report retention and admin data in 1.9, column map), `decisions.md` ("Admin (2026-11-07)"), `BOARD.md`.
+
+Every admin function (all need admin + two-step sign-in, all logged):
+- **Status:**
+  - `is_admin()`: true for an admin at `aal2` (any signed-in user may ask).
+- **Queues:**
+  - `admin_queues()`: counts of open reports, scans in review, open takedowns, and ID reviews (0 until P6A).
+  - `admin_list_reports(p_status, p_limit, p_offset)`: reports with reporter and target names and the evidence snapshot.
+  - `admin_list_scan_reviews(p_limit, p_offset)`: photo checks waiting for a person, with each photo's path, decision, warnings, nudity and hood scores.
+  - `admin_list_takedowns(p_status, p_limit, p_offset)`: takedown requests (open ones by default).
+  - `admin_list_id_reviews()`: an empty list until ID verification (P6A).
+- **Reports:**
+  - `admin_dismiss_report(p_report_id, p_reason)`: closes a report as dismissed.
+  - `admin_warn_user(p_user_id, p_note, p_report_id)`: stores a warning the user can read; closes the report as warned.
+  - `admin_remove_reported_content(p_report_id, p_reason)`: deletes a reported message, hides a reported listing, or clears a profile's studio name, bio and pickup area; closes the report as content_removed.
+- **Suspensions and bans:**
+  - `admin_suspend_user(p_user_id, p_days, p_reason, p_report_id)`: suspends for 1 to 3650 days and holds the user's active listings.
+  - `admin_unsuspend_user(p_user_id, p_reason)`: lifts the suspension and restores the held listings.
+  - `admin_record_ban(p_user_id, p_banned, p_reason, p_report_id)`: the database side of a ban or unban (open-ended suspension); called by `admin-actions`.
+- **Photo checks:**
+  - `admin_decide_scan(p_scan_id, p_decision, p_reason)`: approves or rejects a finished photo check, with a reason the lender sees.
+- **Listings:**
+  - `admin_hide_listing(p_listing_id, p_reason)` / `admin_unhide_listing(p_listing_id, p_reason)`: hides a listing from everyone, then restores it.
+- **Takedowns:**
+  - `admin_create_takedown(...)`: records a copyright takedown request from a support email.
+  - `admin_takedown_remove_listing(p_takedown_id, p_listing_id, p_reason)`: hides the listing and marks the request actioned.
+  - `admin_remove_photos(p_listing_id, p_photo_ids, p_reason, p_takedown_id)`: removes photo rows and returns their storage paths. Use it through `admin-actions`, which also deletes the files.
+  - `admin_record_counter_notice(p_takedown_id, p_notice, p_received_at)`: records a counter-notice.
+  - `admin_set_takedown_status(p_takedown_id, p_status, p_note)`: sets rejected or restored, or corrects the status.
+- **Flags, metrics, lookup, the log:**
+  - `set_flag(p_key, p_enabled)`: switches a feature flag.
+  - `admin_metrics()`: users, new users this week, active listings, scans this week by verdict, open reports, messages this week, suspended users.
+  - `admin_find_user(p_query)`: looks up an account by email, handle or id, with suspension, ban, report, warning and listing counts.
+  - `admin_audit_log(p_limit, p_offset)`: the admin log, newest first.
+- **Edge Function `admin-actions`:** `ban`, `unban` and `remove_photos`, the steps that need the server key.
+
+How to add an admin (also in `contract.md`):
+1. The person signs up on Dzirent with their email.
+2. The owner adds that email to `ADMIN_EMAILS` in `H:\DziRent\secrets\providers.env` (comma-separated).
+3. An agent runs `node supabase/seed/admins.mjs` from the repo root.
+4. The admin enrolls TOTP and signs in with it; the admin website does this in P2B part 2.
+
+To remove an admin, take the email out of `ADMIN_EMAILS` and run the script again.
+
+What I ran:
+1. Read the hosted Auth MFA settings (GET, non-secret fields): TOTP enroll and verify on, `mfa_allow_low_aal = false`. Edge Function secret names: the default key variables are present.
+2. `supabase db push --linked` (dry run first) for both migrations. `supabase functions deploy admin-actions --no-verify-jwt`.
+3. `node supabase/tests/p2b_admin.mjs`: PASSED on the first run, and again after I extended it.
+   - I extended it because test user 3 has no active listings, so the hold path wasn't exercised. It now also hides and unhides a listing and briefly suspends test user 2.
+   - Refusals:
+     - Test user 3 (not an admin): all 23 admin functions and `is_admin()` refused (`42501`, "Admins only"); `admin-actions` refused (403).
+     - Test user 1 in `admin_users` at `aal1`: all refused with "two-step"; `admin-actions` refused.
+   - TOTP: enrolled through `/auth/v1/factors`, with the code computed in the script. After verify, `is_admin()` is true at `aal2`.
+   - Queues: all four counts.
+   - Report evidence:
+     - Test user 3 reported a message from test user 1, with a filtered word in the details, and the report was accepted.
+     - The evidence held the message plus 5 before and 1 after.
+     - `admin_remove_reported_content` deleted the message and closed the report as `content_removed`; the evidence was byte-for-byte unchanged.
+   - A listing report: its evidence held the title and 2 photo paths, and it was dismissed.
+   - Suspending test user 3 for 1 day: sending a message was refused ("Your account is suspended until Nov 8, 2026. Reason: P2B test suspension."), and so was reporting. Unsuspending made sending work again.
+   - Hiding one of test user 1's listings:
+     - guests couldn't see it;
+     - the owner's republish was refused ("This listing is hidden by Dzirent: P2B test hide. Contact support if you think this is a mistake.");
+     - My closet showed "Hidden by Dzirent: P2B test hide.";
+     - unhiding made it active again.
+   - Suspending test user 2: active listings went 6 → 0, all held with "Paused while your account is suspended."; unsuspending brought back all 6.
+   - Ban through `admin-actions`: test user 3's sign-in was refused (400); after unban it worked.
+   - `payments_enabled` was switched on, then off.
+   - Metrics, and lookup by `@handle`, worked.
+   - Admin log: 19 rows by test user 1 in the run, covering every action. A SQL update on the log was refused.
+   - Clean-up: TOTP factor deleted, test user 1 removed from `admin_users`, 0 flags on, test user 3 neither suspended nor banned (checked by SQL).
+4. Security Advisor (2026-11-07 04:01 UTC): new are `is_admin` and the 23 admin functions (signed-in, elevated) and 5 INFO entries for the closed `app_private` tables. No new guest-callable function. All logged.
+5. `node supabase/seed/admins.mjs`: "Listed: 1, accounts found: 0, added: 0, removed: 0". The email in `ADMIN_EMAILS` has no Dzirent account yet, so nobody is an admin.
+6. `gradlew :shared:compileCommonMainKotlinMetadata :androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded silently): BUILD SUCCESSFUL. 21 shared unit tests, 0 failures, 0 skipped; new: `suspensionNoticeMatchesTheDatabaseWording` and banner cases. No warnings in the changed files.
+7. No emulator, device or screenshots.
+
+Debug APK: `H:\DziRent\Dzirent_dev\mobile\androidApp\build\outputs\apk\debug\androidApp-debug.apk` (22.2 MB, 2026-11-06 22:04 local).
+
+Owner phone test (after an admin has suspended your test account, or using the P2B part 2 website):
+- While suspended: the listing editor shows the notice at the top, the chat shows it instead of the message box, and Report shows it instead of the form.
+- A hidden listing in My closet shows "Hidden by Dzirent: …".
+- A photo check in review shows its own reason, for example "This piece has a hood, …".
+
+iOS-facing changes for a Mac check (all `commonMain`):
+- `Models.kt` (`Profile` suspension fields and `suspensionNotice`, `ListingScan.adminReason`)
+- `util/Suspension.kt` (new), `util/PhotoScan.kt`
+- `Moderation.kt` (`rememberSuspensionNotice`, `SuspensionNotice`, the report dialog), `ListingEditor.kt`, `ChatScreens.kt`, `ListingStepPhotos.kt`
+- `DzirentRepository.kt` (messages list)
+
+Open issues:
+- **`ADMIN_EMAILS` has no matching account yet.** Sign up with that email, then re-run the seed script.
+- **No admin website yet** (P2B part 2), so there is no way to enroll TOTP except through the API.
+- **Retention:** the 730-day report period is a placeholder for the attorney, and nothing deletes expired reports yet (`purge_expired_reports`, P3B). The admin log and takedown requests have no retention period either.
+- **A ban keeps working sessions alive for a while.** It stops sign-in and token refresh, but an access token already issued works until it expires (up to 1 hour). The database refuses messaging, chats, reports and publishing at once, through the open-ended suspension.
+- **Calling `admin_remove_photos` directly leaves the files** in the public bucket. The website should always use the Edge Function.
+- **Test data stays:** messages and reports from the test, and the admin log rows (append-only by design).
+- **Removing a profile's content** clears the studio name, bio and pickup area, but not the display name; use suspend or warn for that.
+
+Requests (website, P2B part 2):
+- Admin sign-in with TOTP: enroll (QR code from `/auth/v1/factors`), challenge, verify, then call the functions above with the `aal2` session. `is_admin()` tells whether to show the admin area.
+- Ban, unban and photo removal go through `POST /functions/v1/admin-actions` with the admin's token.
+- Show the scan's `admin_reason` and the listing's `auto_paused_reason` (holds) to the lender, and the suspension message where a suspended user would publish, message or report. The refusals already carry these words.
+- Show the review reason from the scan (as the apps now do).
+
 ## P2A - 2026-11-07 - content safety
 
 Done:

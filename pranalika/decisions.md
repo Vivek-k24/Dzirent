@@ -114,3 +114,12 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - Photos: clear nudity or sexual content is rejected ("This photo isn't allowed on Dzirent."); uncertain goes to review. The safety model is open source with a permissive license (Marqo/nsfw-image-detection-384, Apache 2.0), built into the vision service.
 - A photo the model reads as a hooded garment goes to review instead of allowed (a rejection stays a rejection).
 - A piece being worn is never penalized: it never adds a warning and never changes the verdict.
+
+## Admin (2026-11-07)
+
+- Admin tools require two-step sign-in: an admin is an account in `admin_users` signed in with Supabase MFA (TOTP, `aal2`). Every admin function checks both first and refuses otherwise. Admins are added and removed only through `ADMIN_EMAILS` and the seed script.
+- Every admin action, reads included, is written to an append-only admin log that nobody can change or delete.
+- Every report saves an evidence snapshot when it is made (a message with up to 5 messages before and after it, a listing, or a profile). The snapshot never changes. Reports and their evidence survive either person's account deletion for a retention period (a placeholder of 2 years until the attorney sets it).
+- Report details are not filtered, so people can quote abuse; everything else stays filtered. This replaces "report reason and details" in "Content safety" for details only.
+- Feature flags are switched by admins (`set_flag`, logged), no longer only by migrations. This replaces "They change only through migrations" in "Photo scanning (2026-11-05)".
+- A suspended account can't publish, message, start chats or report, and its listings leave the shop window until the suspension ends. A ban is an Auth ban plus an open-ended suspension.

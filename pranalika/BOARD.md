@@ -141,7 +141,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (P1A part 1, P1B part 1, P2A), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up) | |
+| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up) | |
 | P1A part 1: data inventory and `compliance.md`; legal fill-ins in `legal-placeholders.md` | Done |
 | P1A part 2: website legal pages (privacy policy, terms, community rules and prohibited items, copyright/DMCA, safety tips, delete-account page, support/contact), fill-ins in one config | Done |
 | P1A fix-up: legal page corrections (zero fallbacks, log placeholders, cache disclosure, worn photos allowed, real photo check scope, support@ only, Everyday category) | Done |
@@ -157,8 +157,14 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | P2A photos: `Marqo/nsfw-image-detection-384` (Apache 2.0) in the vision service (nudity rejected, uncertain to review), hooded garments to review, worn never penalized; revision `vision-00005-9cg` | Done |
 | Owner: phone test of P2A (see the P2A handoff) | To do |
 | Mac: iOS build check of the P2A shared-code changes | To do |
-| Owner: decide on list words left blocked that are also fashion or Spanish words ("lolita", "negro"), and whether report details should allow quoting abuse (see the P2A handoff) | To do |
-| P2B Admin dashboard: reports, photo reviews, takedowns, suspend/ban, listings, feature flags, simple metrics; every admin action logged | To do |
+| Owner: decide on list words left blocked that are also fashion or Spanish words ("lolita", "negro"), and whether report details should allow quoting abuse (see the P2A handoff) | Report details: decided in P2B (unfiltered). The two words: to do |
+| P2B Admin dashboard: reports, photo reviews, takedowns, suspend/ban, listings, feature flags, simple metrics; every admin action logged | Doing |
+| P2B part 1 (backend, Claude Code): admins with two-step sign-in (`admin_users`, `is_admin`, `require_admin`), append-only admin log, report evidence snapshots kept after account deletion, report details unfiltered, suspensions and listing holds, 23 admin functions, `admin-actions` Edge Function (ban, unban, photo files), `set_flag`, seed script; apps: review banner shows the check's reason, suspension notice | Done |
+| Owner: sign up on Dzirent with the email in `ADMIN_EMAILS` (no account has it yet), then ask an agent to re-run `node supabase/seed/admins.mjs`; then enroll TOTP on the admin website (P2B part 2) | To do |
+| P2B part 2 (website): admin pages on top of the P2B part 1 functions, TOTP enrollment and sign-in | To do |
+| Owner: phone test of P2B part 1 (see the P2B part 1 handoff) | To do |
+| Mac: iOS build check of the P2B part 1 shared-code changes | To do |
+| Attorney: report and evidence retention period (placeholder 730 days in `app_private.settings`) | To do |
 | P2C Age gate: store age signals on Android and iPhone, state list table, 18+ on the website (Texas SB 2420, Utah) | To do |
 | P3A Download my data on all three platforms | To do |
 | P3B Cleanup and retention jobs: abandoned drafts, orphan photos, old scans, log retention; sample listings removed from production | To do |

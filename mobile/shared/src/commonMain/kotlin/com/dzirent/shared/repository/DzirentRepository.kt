@@ -68,7 +68,11 @@ private val DATABASE_MESSAGES = listOf(
     "Give consent before saving your measurements",
     // The text filter (P2A); its HINT names the field.
     "This text includes language that isn't allowed",
-    "Please remove contact details"
+    "Please remove contact details",
+    // Admin actions (P2B).
+    "Your account is suspended",
+    "This listing is hidden by Dzirent",
+    "You can only report messages in your own chats"
 )
 
 /** How often the editor asks for a scan's state when Realtime hasn't sent it. */

@@ -18,6 +18,10 @@ verify_jwt = false
 [functions.scan-listing]
 verify_jwt = false
 
+# Admins only: the handler asks the database is_admin() with the caller's own token (P2B).
+[functions.admin-actions]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.
