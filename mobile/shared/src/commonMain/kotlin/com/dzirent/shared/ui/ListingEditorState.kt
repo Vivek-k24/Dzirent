@@ -118,6 +118,16 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
     var listingDeclarationChecked by mutableStateOf(false)
     var aiReviewNeeded by mutableStateOf(original?.aiReviewNeeded ?: false)
 
+    /**
+     * The text filter's refusal at publish, by database column ("title", "description",
+     * "price_note", "deposit_note"); shown under that field until it's edited.
+     */
+    var textErrors by mutableStateOf<Map<String, String>>(emptyMap())
+
+    fun clearTextError(column: String) {
+        if (column in textErrors) textErrors = textErrors - column
+    }
+
     init {
         original?.let { listing ->
             val photos = listing.photos.sortedBy { it.position }
@@ -206,13 +216,19 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
 
     fun editTitle(value: TextFieldValue) {
         if (value.text.length > 80) return
-        if (value.text != title.text) fields[SuggestField.TITLE] = editedState(field(SuggestField.TITLE), value.text)
+        if (value.text != title.text) {
+            fields[SuggestField.TITLE] = editedState(field(SuggestField.TITLE), value.text)
+            clearTextError("title")
+        }
         title = value
     }
 
     fun editDescription(value: TextFieldValue) {
         if (value.text.length > 1000) return
-        if (value.text != description.text) fields[SuggestField.DESCRIPTION] = editedState(field(SuggestField.DESCRIPTION), value.text)
+        if (value.text != description.text) {
+            fields[SuggestField.DESCRIPTION] = editedState(field(SuggestField.DESCRIPTION), value.text)
+            clearTextError("description")
+        }
         description = value
     }
 

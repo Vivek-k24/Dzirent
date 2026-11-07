@@ -51,7 +51,8 @@ import kotlinx.serialization.json.*
 import kotlin.random.Random
 
 /** User-friendly exception safe for display in UI. */
-class DzirentException(message: String) : Exception(message)
+/** A message for the person. [field] is the database column a refusal is about (its HINT), if any. */
+class DzirentException(message: String, val field: String? = null) : Exception(message)
 
 const val CANT_MESSAGE_USER = "You can't message this user."
 
@@ -64,7 +65,10 @@ private val DATABASE_MESSAGES = listOf(
     "Too many photo checks",
     "Add a photo first",
     "Sign the accessory declaration",
-    "Give consent before saving your measurements"
+    "Give consent before saving your measurements",
+    // The text filter (P2A); its HINT names the field.
+    "This text includes language that isn't allowed",
+    "Please remove contact details"
 )
 
 /** How often the editor asks for a scan's state when Realtime hasn't sent it. */
@@ -166,8 +170,11 @@ class DzirentRepository(
     private fun fail(operation: String, throwable: Throwable): DzirentException {
         if (throwable is DzirentException) return throwable
         // The database's own plain-words refusals (publish gate, photo checks, declaration) are shown as they are.
-        (throwable as? RestException)?.error?.trim()?.let { said ->
-            if (DATABASE_MESSAGES.any { said.startsWith(it) }) return DzirentException(said)
+        (throwable as? RestException)?.let { rest ->
+            val said = rest.error.trim()
+            if (DATABASE_MESSAGES.any { said.startsWith(it) }) {
+                return DzirentException(said, field = rest.description?.trim()?.ifBlank { null })
+            }
         }
         val raw = throwable.message.orEmpty().lowercase()
         val message = when {
@@ -584,6 +591,22 @@ class DzirentRepository(
         } catch (e: Exception) {
             throw fail("save declaration", e)
         }
+    }
+
+    // --- Text filter (P2A) ---
+    /**
+     * The database's refusal for [text] written in [where] ("listing", "profile", "message" or
+     * "report"), or null when it's fine. Saving runs the same check; this is for asking first
+     * (sign-up's display name). Works signed out.
+     */
+    suspend fun checkText(text: String, where: String): String? = try {
+        val answer = postgrest.rpc("check_text", buildJsonObject {
+            put("p_text", text)
+            put("p_where", where)
+        }).decodeAs<kotlinx.serialization.json.JsonElement>()
+        (answer as? JsonPrimitive)?.takeIf { it.isString }?.content
+    } catch (e: Exception) {
+        throw fail("check your text", e)
     }
 
     // --- Terms of Use and Privacy Policy ---

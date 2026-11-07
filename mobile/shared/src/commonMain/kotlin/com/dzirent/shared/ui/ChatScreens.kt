@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.dzirent.shared.model.*
 import com.dzirent.shared.repository.CANT_MESSAGE_USER
 import com.dzirent.shared.repository.ChatSubscription
+import com.dzirent.shared.repository.DzirentException
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.repository.InboxSnapshot
 import com.dzirent.shared.util.ActivityItem
@@ -296,6 +297,7 @@ fun ChatScreen(
     var input by remember { mutableStateOf(initialDraft.orEmpty()) }
     var isSending by remember { mutableStateOf(false) }
     var sendError by remember { mutableStateOf<String?>(null) }
+    var sendRefused by remember { mutableStateOf(false) }
     var actionError by remember { mutableStateOf<String?>(null) }
     var isSavingRental by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -396,6 +398,8 @@ fun ChatScreen(
                 }
             } catch (e: Exception) {
                 sendError = e.userMessage("Couldn't send your message. Please try again.")
+                // The text filter said no: sending the same text again can't work.
+                sendRefused = (e as? DzirentException)?.field != null
             }
             isSending = false
         }
@@ -680,10 +684,10 @@ fun ChatScreen(
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f)
                         )
-                        if (sendError != null && sendError != CANT_MESSAGE_USER) {
+                        if (sendError != null && sendError != CANT_MESSAGE_USER && !sendRefused) {
                             TextButton(onClick = { send(input) }, enabled = !isSending) { Text("Retry") }
                         } else {
-                            TextButton(onClick = { actionError = null }) { Text("OK") }
+                            TextButton(onClick = { actionError = null; if (sendRefused) sendError = null }) { Text("OK") }
                         }
                     }
                 }

@@ -9,7 +9,11 @@ The rules, strongest first:
 - Not-allowed item -> rejected, naming the item. Not clothing -> rejected.
 - Allowed only when every photo of the whole piece agrees and the photos together are clearly
   an allowed item. Low confidence or photos that disagree -> review. Unsure is never allowed.
-- Photo quality never changes the verdict (quality.py only adds warnings).
+- Content safety (P2A), around those rules: any photo the safety model reads as clear nudity or
+  sexual content -> rejected, before anything else; an uncertain one -> review (unless already
+  rejected); a photo read as a hooded garment -> review instead of allowed.
+- Photo quality never changes the verdict (quality.py only adds warnings), and neither does the
+  piece being worn by a person: worn photos are fine and never produce a warning.
 """
 
 from dataclasses import dataclass
@@ -34,6 +38,11 @@ LEAN_ALLOWED_MIN = 0.50          # an unsure photo still "leans allowed" at this
 LEAN_OTHER_MAX = 0.25            # ...with not-allowed and not-clothing each below this
 SUGGEST_MIN = 0.45               # a review listing still gets suggestions above this top-item probability
 
+# Content safety (P2A; owner to tune, see services/vision/README.md).
+NSFW_REJECT_MIN = 0.90           # the safety model is at least this sure of nudity or sexual content: rejected
+NSFW_REVIEW_MIN = 0.40           # ...at least this unsure: review
+HOODED_MIN = 0.60                # the hooded-garment check reaches this: review, never allowed straight away
+
 # Photos that show a detail, not the whole piece. They can only raise a conflict.
 SUPPORT_SLOTS = frozenset({"close_up", "size_tag"})
 
@@ -42,6 +51,9 @@ REASON_UNSURE = "We're not sure what this piece is, so someone at Dzirent will c
 REASON_CONFLICT = "The photos seem to show different things, so someone at Dzirent will check them."
 REASON_NO_WHOLE_PIECE = "Add a photo that shows the whole piece, so we can check it."
 REASON_PHOTO_FAILED = "We couldn't open one of the photos, so someone at Dzirent will check them."
+REASON_NOT_ALLOWED_PHOTO = "This photo isn't allowed on Dzirent."
+REASON_SAFETY_UNSURE = "Someone at Dzirent will check these photos before this listing can go live."
+REASON_HOODED = "This piece has a hood, so someone at Dzirent will check it."
 
 
 @dataclass
@@ -109,6 +121,8 @@ class PhotoView:
     """One photo as the listing verdict sees it. [decision] is None when it couldn't be opened."""
     slot: str | None
     decision: Decision | None
+    nsfw: float = 0.0    # the safety model: P(nudity or sexual content)
+    hooded: float = 0.0  # the hooded-garment check: P(hooded)
 
 
 @dataclass
@@ -121,8 +135,24 @@ class Verdict:
 def decide_listing(photos: list[PhotoView], combined: Decision | None, vocab: Vocab) -> Verdict:
     """
     [combined] is decide_photo on the averaged embedding of the whole-piece photos that are
-    allowed or unsure (None when there are none).
+    allowed or unsure (None when there are none). Every photo counts for content safety, size
+    tags and close-ups too.
     """
+    opened = [p for p in photos if p.decision is not None]
+    if any(p.nsfw >= NSFW_REJECT_MIN for p in opened):
+        return Verdict("rejected", REASON_NOT_ALLOWED_PHOTO, None)
+    verdict = _decide_item(photos, combined, vocab)
+    if verdict.verdict == "rejected":
+        return verdict
+    if any(p.nsfw >= NSFW_REVIEW_MIN for p in opened):
+        return Verdict("review", REASON_SAFETY_UNSURE, None)
+    if verdict.verdict == "allowed" and any(p.hooded >= HOODED_MIN for p in opened):
+        return Verdict("review", REASON_HOODED, verdict.item_key)
+    return verdict
+
+
+def _decide_item(photos: list[PhotoView], combined: Decision | None, vocab: Vocab) -> Verdict:
+    """What the item is and whether Dzirent lists it (the rules before content safety)."""
     if any(p.decision is None for p in photos):
         return Verdict("review", REASON_PHOTO_FAILED, None)
     whole = [p for p in photos if p.slot not in SUPPORT_SLOTS and p.decision.decision != DETAIL]

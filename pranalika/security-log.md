@@ -98,6 +98,21 @@ By design, not Advisor findings:
 - `needs_legal_acceptance` runs as the caller (not elevated): it reads the public versions and the caller's own acceptances under RLS.
 - `app_private.require_measurements_consent` (trigger on `private_profiles`) is not callable through the API; EXECUTE revoked from `public`, `anon` and `authenticated`.
 
+## dzirent-server Advisor check (P2A additions)
+
+Migrations `20261107010000_p2a_text_filter.sql` and `20261107012000_p2a_text_filter_one_as_l.sql` (2026-11-07). `unaccent` is installed in the `extensions` schema. Advisor run after both (2026-11-07 02:47 UTC): the four findings below are new; the earlier findings are unchanged.
+
+| Finding | Function or table | Why it is intended |
+| --- | --- | --- |
+| WARN: guests can run elevated function | `check_text` | Sign-up's display-name check runs before there is an account. It returns only the refusal message or null, never the word list or which word matched. It needs elevated rights to read the closed lists in `app_private`. Input capped at 5000 characters; `p_where` must be one of four values. |
+| WARN: signed-in users can run elevated function | `check_text` | Same as above. |
+| INFO: RLS on, no policies | `app_private.text_filter_terms` | The word list (LDNOOBW English). Closed to every API role (no grants, not in an exposed schema); only the elevated `app_private.text_refusal` reads it. |
+| INFO: RLS on, no policies | `app_private.text_filter_allowed` | The allowlist. Same handling. |
+
+By design, not Advisor findings:
+- The triggers on `listings`, `profiles`, `messages` and `reports` run as the person writing. They call `app_private.check_text_field` (elevated, reads the lists through `text_refusal`). EXECUTE on it is granted to `authenticated` and `service_role` only because of these triggers; `app_private` is not exposed, so it can't be called through the API. Every other new function (`filter_normalize`, `filter_pattern`, `text_has_contact`, `text_refusal`, the four trigger functions) has EXECUTE revoked from `public`, `anon` and `authenticated`.
+- A refusal never says which word matched (only the plain-words reason and the column name).
+
 ## Google Cloud (Step 8A)
 
 Project `dzirent`, region `us-west1`. The $20 billing kill switch (budget, Pub/Sub topic `billing-alerts`, function `stop-billing`) was not touched.

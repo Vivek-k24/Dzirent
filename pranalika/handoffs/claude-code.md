@@ -2,6 +2,124 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P2A - 2026-11-07 - content safety
+
+Done:
+- Before starting: working tree clean. `git pull --rebase` fast-forwarded `Preview` from `ea240b7` to `c1be438` (P1B part 2, website).
+
+Part 1, text filter, in the database:
+- `supabase/migrations/20261107010000_p2a_text_filter.sql`, applied with `supabase db push` after a dry run.
+  - **Lists:**
+    - `app_private.text_filter_terms`: the LDNOOBW English list, 402 entries. The one emoji entry is left out.
+    - `app_private.text_filter_allowed`: 20 phrases that are ordinary on a clothing marketplace, each with a note. Examples: "nude", "sexy", "tied up", "tight white", "big black", "girl on", "xx"/"xxx", "s&m" (it normalizes to "s m", as in sizes S M L), "pussy bow", "bondage pants", "poof sleeve(s)".
+    - Both tables have RLS and no grants for any API role.
+  - **Matching:**
+    - Normalizes lower case and accents (`unaccent`), and reads 0 1 3 4 5 7 @ $ ! as o i e a s t a s i. Anything else becomes a space.
+    - Each term is a whole-word pattern in which every letter may repeat. So "fuuuck" is found, but "cocktail", "classic" or "as" never match.
+    - Allowlisted phrases are masked out first.
+  - **Contact details** (public text only): phone numbers in US formats, 10 or more digits in a row, email addresses, links, bare domains on common endings, and `@handles`.
+  - **Triggers** on `listings` (title, description, price note, deposit note), `profiles` (display name, studio name, handle, bio, pickup area), `messages` (body) and `reports` (reason, details). A column is checked only when it is inserted or changes.
+  - **Refusals** are `P0001` with the plain-words message, and `hint` is the column name.
+  - **`check_text(p_text, p_where)`** lets guests and signed-in users check text before saving. Sign-up needs it because the Auth API hides the database's message.
+- `20261107012000_p2a_text_filter_one_as_l.sql`: my first check showed "bu11sh!t" getting through, because people write 1 for l too. The language check now reads the text both ways.
+- **Apps** (shared code):
+  - `DzirentException.field` carries the hint. The two refusal messages are passed through as they are.
+  - Sign-up checks the display name first (`checkText`) and shows the refusal under the field.
+  - My studio shows it under the studio name, handle, bio or pickup area.
+  - The listing editor goes back to the form instead of the "publish failed" view. It opens the step with the field, shows the message under the title, description, price details or deposit note, and keeps what was typed. The message clears when the field is edited.
+  - Chat shows it under the chat box, keeps the text and drops the Retry button.
+  - The report dialog already showed errors under the details field.
+
+Part 2, photos, in the vision service:
+- `app/safety.py` (new): `Marqo/nsfw-image-detection-384`, pinned to `0c26ec22111b83f106d72a55f611ec35962bcb65`.
+  - Preprocessing as in its model card: 384 center crop, bicubic, mean and std 0.5.
+  - Loaded strictly with timm (already a dependency). `build_assets.py` downloads it into `/opt/model/safety` and loads it during the build, so a broken download fails the build.
+- `app/verdict.py`, rules around the existing ones:
+  - Any photo (size tags and close-ups included) with P(nudity or sexual content) of at least 0.90: rejected, "This photo isn't allowed on Dzirent.", before any other rule.
+  - At least 0.40: review, unless already rejected.
+  - A hooded reading (new `hooded` prompt bank in `vocab.json`) of at least 0.60 turns allowed into review: "This piece has a hood, so someone at Dzirent will check it."
+- Worn: no warning ever mentioned it, and it was never a verdict input; tests now pin both. The per-photo labels in `photo_scans.labels` now also carry `hooded` and `safety.nsfw`.
+- `policy.json` and `policy_item_types` are unchanged and still in sync (`test_policy_sync` passes).
+- Redeployed with the Step 8A settings. Revision **`vision-00005-9cg`** serves 100%. `describe` shows max 1 instance, 2 CPU, 4 GiB, 120 s, concurrency 4, runs as `vision-runtime`; the only IAM binding is `roles/run.invoker` for `vision-invoker`. Health reports `service_version` `p2a.1`, both models with their revisions and licenses, and a 23.6 s start-up.
+- Docs:
+  - root `README.md` (open-source section: the safety model and its base, a "Text filter" table for the word list with its changes, the `unaccent` extension, NOTICE note);
+  - `services/vision/README.md`;
+  - `decisions.md` (appended "Content safety (2026-11-07)");
+  - `contract.md`, `security-log.md` (four new Advisor findings, logged);
+  - `compliance.md` (gap 22 closed; gap 23's nudity check closed, the fingerprint question still with the attorney);
+  - `BOARD.md`.
+
+Licenses checked (Hugging Face and GitHub APIs, at the pinned revisions):
+- Word list: LDNOOBW, CC BY 4.0, commit `5faf2ba42d7b1c0977169ec3611df25a3c08eb13` (2020-07-13). Attribution and changes are in the README.
+- Safety classifier: `Marqo/nsfw-image-detection-384`, Apache 2.0 (model card and API metadata). Its base model `timm/vit_tiny_patch16_384.augreg_in21k_ft_in1k` is Apache 2.0.
+- Neither ships a NOTICE file. The card says it was trained on a proprietary dataset; the license is still Apache 2.0.
+- Not used: the card's own example image, `beignets-task-guide.png`. It comes from the `huggingface/documentation-images` dataset, which is CC BY-NC-SA 4.0 (non-commercial). An openly licensed beignets photo stood in for it.
+
+What I ran:
+1. `supabase db push --linked` (dry run first) for both migrations.
+2. Read-only `text_refusal` checks on 22 example texts. These cover leetspeak, repeated letters, spaced letters, words inside words, allowlisted words, sizes, phones, emails, links, domains, handles and accents. The one miss ("bu11sh!t") led to the second migration, then passed.
+3. Existing rows that would fail: **none**. 13 listings × 4 fields, 5 profiles × 5 fields, 14 messages, 0 reports.
+4. `node supabase/tests/p2a_text_filter.mjs` (test users 1 and 3): PASSED on the first run.
+   - A phone number in a listing title was refused (400, hint `title`) and the title stayed unchanged.
+   - The same number in a chat message was accepted.
+   - A slur in a chat message was refused (hint `body`).
+   - "cocktail", "classic" and "nude heels" were accepted.
+   - `check_text` as a guest: "Jane Doe" passes; a name with an email is refused.
+   - Two test messages stay in the test chat between users 1 and 3.
+5. Security Advisor (2026-11-07 02:47 UTC): new are `check_text` (guest and signed-in elevated) and two INFO entries for the closed `app_private` filter tables. All are logged in `security-log.md`.
+6. Vision service tests in the Step 8B scratch venv (Python 3.12.10, the pinned torch/timm/open_clip), with `VISION_SAFETY_DIR` set to the downloaded safety model: **54 passed**. 14 are new:
+   - nudity rules: reject, review, support photos count, a rejection is never softened, low scores change nothing;
+   - hood rules: review, a rejection is never softened, below the threshold stays allowed;
+   - worn: never a verdict input, and no warning mentions wearing;
+   - safety model: preprocessing, a strict load, and synthetic plain images scoring below the review line.
+   - No real or explicit images were used.
+7. Local run of the service's own code on the built assets (main model from the Step 8B scratch copy, text embeddings rebuilt for the new prompts). It matched the deployed results below exactly.
+8. `services/vision/eval/run_eval.py` against the deployed service:
+   - **Sample photos:** all 22 allowed one by one; all 12 sample listings allowed. Highest nudity score 0.054, highest hood score 0.340.
+   - **Worn dresses** (openly licensed photos in my scratch): the red-carpet gown is allowed with only "Bottom of the item is cut off"; the runway maxi dress is allowed with no warning; a head-and-shoulders portrait goes to review because the item is unclear. No warning anywhere mentions wearing.
+   - **Hoodie and sweatshirt set:** 4 rejected, 3 review. `hoodie/4` is allowed, as in Step 8B: that photo is the back of a long-sleeve print dress with no hood visible (I looked).
+   - **Beignets** (the openly licensed stand-in): rejected as not clothing, nudity score 0.054.
+   - **Step 8B Commons sets:** accept set 12 allowed, 2 review, 2 rejected; reject set 32 rejected, 10 review, 0 allowed. Both are the same as in Step 8B.
+   - The script exits 1 only because of `hoodie/4`.
+   - Highest nudity score over all 92 photos: 0.148, against the 0.40 review line.
+   - Single-photo scans: median 1.1 s.
+9. **Hood rule, end to end:** two openly licensed down-jacket photos (CC BY-SA 4.0) on the deployed service both went to review with "This piece has a hood…" (hood scores 0.95, nudity scores 0.05).
+10. `gradlew :shared:compileCommonMainKotlinMetadata :androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded silently):
+    - The first run failed: `decodeAs<String?>()` isn't allowed. I fixed it by decoding a `JsonElement`.
+    - Second run: BUILD SUCCESSFUL. 20 shared unit tests, 0 failures, 0 skipped. No warnings in the changed files.
+11. No emulator, device or app screenshots. The only images I viewed were a contact sheet of the three dress photos and the `hoodie/4` thumbnail; all test images stay in my scratch folder.
+
+Vision revision: `vision-00005-9cg`.
+
+Debug APK: `H:\DziRent\Dzirent_dev\mobile\androidApp\build\outputs\apk\debug\androidApp-debug.apk` (22.2 MB, 2026-11-06 20:06 local).
+
+Owner phone test:
+- Put a phone number in a listing's description and publish. You should go back to the details step, with the message under Description and your text kept.
+- In the price or deposit note: More options opens with the message under that field.
+- In My studio's bio: the message appears under Bio.
+- Send a phone number in chat: it is sent. Send a listed word: the message shows under the chat box, with no Retry, and the text stays.
+- Sign up with a display name that has an email in it: the message appears under Display Name.
+- Upload a photo of a hooded jacket: the review banner shows.
+
+iOS-facing changes for a Mac check (all `commonMain`):
+- `DzirentRepository.kt` (`DzirentException.field`, `checkText`, the messages list)
+- `AuthScreens.kt`, `MyStudioScreen.kt`, `ChatScreens.kt`
+- `ListingEditor.kt` (`DepositFields` has a new optional parameter), `ListingEditorState.kt`, `ListingStepPhotos.kt`, `ListingStepDetails.kt`
+
+Open issues:
+- **The list is mostly sexual terms;** it covers only some slurs and hate terms. More terms can be added with a migration (`source` column).
+- **Left blocked, though also ordinary words:** "lolita" (a Japanese fashion style) and "negro" (Spanish for black). The owner should decide; the BOARD has a row for it.
+- **Report details are filtered too, as the task asked.** Someone reporting abuse can't quote a slur in the details; the reason picker still works.
+- **Not checked:** listing measurement labels (free text up to 40 characters), and the accessory declaration's legal name.
+- **The thresholds were calibrated only on the photos I had:** nudity 0.90 / 0.40, hood 0.60. No explicit images were used, so the reject line has no positive examples locally; the unit tests cover it with synthetic scores.
+- **The apps' review banner** shows its own generic wording ("Someone at Dzirent will check these photos."), not the new hood or safety reason.
+- **Two test chat messages stay in the database** (between test users 1 and 3).
+
+Requests (website, `apps/web` not touched):
+- Show the two text-filter refusals next to the field, and keep what was typed. Refusals carry the column name in `hint`.
+- Check the sign-up display name with `check_text(name, 'profile')`, as the apps do, because the Auth API hides the database's message.
+- Reuse the photo-check reasons as they are ("This photo isn't allowed on Dzirent.", "This piece has a hood, …").
+
 ## P1B part 1 - 2026-11-06 - terms acceptance and consent
 
 Done:

@@ -21,6 +21,7 @@ import com.dzirent.shared.data.ListingPublisher
 import com.dzirent.shared.data.PhotoItem
 import com.dzirent.shared.data.PublishStepException
 import com.dzirent.shared.model.*
+import com.dzirent.shared.repository.DzirentException
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.util.AccessoryDeclaration
 import com.dzirent.shared.util.CHECKING_PHOTOS
@@ -51,6 +52,9 @@ import com.dzirent.shared.util.PhotoReview
 import com.dzirent.shared.util.today
 
 private const val DEPOSIT_NOTE_MAX = 120
+
+/** The listing columns the database's text filter checks; its refusal names one of them. */
+private val LISTING_TEXT_COLUMNS = setOf("title", "description", "price_note", "deposit_note")
 
 /** How long the editor follows a photo check (a cold start of the vision service takes about a minute). */
 private const val CHECK_TIMEOUT_MS = 180_000L
@@ -503,7 +507,17 @@ private fun ListingEditorForm(
                 publishState = PublishState.Idle
                 onSaved()
             } catch (e: PublishStepException) {
-                publishState = PublishState.Failed(e.step, e.message ?: "Please try again.")
+                val refused = e.cause as? DzirentException
+                val column = refused?.field
+                if (refused != null && column in LISTING_TEXT_COLUMNS) {
+                    // The text filter said no: back to the form, the message under that field, nothing lost.
+                    state.textErrors = mapOf(column!! to (refused.message ?: "Please change this text."))
+                    state.step = if (column == "title" || column == "description") STEP_DETAILS else STEP_PRICE
+                    errorMessage = refused.message
+                    publishState = PublishState.Idle
+                } else {
+                    publishState = PublishState.Failed(e.step, e.message ?: "Please try again.")
+                }
             }
         }
     }
@@ -703,7 +717,9 @@ fun DepositFields(
     onRetailValueChange: (String) -> Unit,
     depositNote: String,
     onDepositNoteChange: (String) -> Unit,
-    retailError: String? = null
+    retailError: String? = null,
+    /** The text filter's refusal for the deposit note, if any. */
+    depositNoteError: String? = null
 ) {
     OutlinedTextField(
         value = retailValueText,
@@ -726,7 +742,8 @@ fun DepositFields(
         onValueChange = { if (it.length <= DEPOSIT_NOTE_MAX) onDepositNoteChange(it) },
         label = { Text("Deposit note - optional") },
         placeholder = { Text("e.g. \$40 refundable deposit, cash at pickup") },
-        supportingText = { Text("${depositNote.length}/$DEPOSIT_NOTE_MAX") },
+        isError = depositNoteError != null,
+        supportingText = { Text(depositNoteError ?: "${depositNote.length}/$DEPOSIT_NOTE_MAX") },
         singleLine = true,
         modifier = Modifier.fillMaxWidth()
     )

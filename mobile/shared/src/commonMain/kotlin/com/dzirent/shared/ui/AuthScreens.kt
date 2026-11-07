@@ -282,6 +282,8 @@ fun SignUpScreen(
     var adultConfirmed by remember { mutableStateOf(false) }
     var termsAccepted by remember { mutableStateOf(false) }
     var showPolicy by remember { mutableStateOf(false) }
+    // The text filter's refusal for the display name, shown under the field.
+    var nameError by remember { mutableStateOf<String?>(null) }
 
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -354,9 +356,11 @@ fun SignUpScreen(
 
             OutlinedTextField(
                 value = displayName,
-                onValueChange = { displayName = it },
+                onValueChange = { displayName = it; nameError = null },
                 label = { Text("Display Name") },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                isError = nameError != null,
+                supportingText = nameError?.let { { Text(it) } },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -491,6 +495,12 @@ fun SignUpScreen(
                         errorMessage = null
                         val trimmedEmail = email.trim()
                         try {
+                            // Sign-up can't say why the database refused a name, so ask first.
+                            repository.checkText(displayName.trim(), "profile")?.let { refusal ->
+                                nameError = refusal
+                                isLoading = false
+                                return@launch
+                            }
                             val profile = repository.signUp(
                                 emailStr = trimmedEmail,
                                 passwordStr = password.trim(),

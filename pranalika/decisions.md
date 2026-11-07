@@ -104,3 +104,13 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - Photos of the item being worn are allowed: hanger, mannequin, flat-lay or worn are all fine. If you appear in a photo, it is public like every listing photo. Do not include other people without their permission. Keep no text, prices, phone numbers, social handles or watermarks on photos.
 - Counterfeits and replicas, and damaged or dirty items, are prohibited. Keep them in the prohibited list.
 - The category name is "Everyday" exactly as in the app. Remove "Everyday Special Pieces" and any other renamed category; every category name must match the app.
+
+## Content safety (2026-11-07)
+
+- The text filter lives in the database, so the website, Android and iPhone get the same rules. It matches whole words only, after normalizing case, accents, repeated letters and common character swaps; a listed word inside another word ("cocktail") never matches. The word list is LDNOOBW English (CC BY 4.0), with a small allowlist for words that are ordinary on a clothing marketplace.
+- Language that isn't allowed (slurs, hate terms, sexually explicit terms) is refused everywhere people write: listing title, description, price and deposit notes; display name, studio name, handle, bio and pickup area; chat messages; report reason and details.
+- Contact details and outside links (phone numbers, email addresses, URLs, @handles) are refused in public text only (listings and profiles). Chat allows them.
+- Refusals say why in plain words without repeating the word: "This text includes language that isn't allowed on Dzirent." or "Please remove contact details from your listing; people can message you in Dzirent." (profile: "…from your profile…"). Existing rows are not changed.
+- Photos: clear nudity or sexual content is rejected ("This photo isn't allowed on Dzirent."); uncertain goes to review. The safety model is open source with a permissive license (Marqo/nsfw-image-detection-384, Apache 2.0), built into the vision service.
+- A photo the model reads as a hooded garment goes to review instead of allowed (a rejection stays a rejection).
+- A piece being worn is never penalized: it never adds a warning and never changes the verdict.

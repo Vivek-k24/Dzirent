@@ -80,7 +80,9 @@ class PhotoResult:
     decision: Decision | None = None
     quality: Quality | None = None
     votes: ColorVotes | None = None
-    worn: float | None = None
+    worn: float | None = None    # recorded only: being worn never changes the verdict or adds a warning
+    hooded: float | None = None  # the hooded-garment check (verdict.HOODED_MIN)
+    nsfw: float | None = None    # the safety model (verdict.NSFW_*)
     extra: dict | None = None  # pattern, style and fabric probabilities
 
     def to_json(self) -> dict:
@@ -107,6 +109,8 @@ class PhotoResult:
                 "items": _top(self.scores.items, TOP_ITEM_LABELS),
                 "groups": {k: _r(v) for k, v in d.groups.items()},
                 "not_fashion": _r(self.scores.not_fashion),
+                "hooded": _r(self.hooded),
+                "safety": {"nsfw": _r(self.nsfw)},
                 **{name: {k: _r(v) for k, v in probs.items()} for name, probs in self.extra.items()},
             },
             "fingerprint": [round(float(v), 6) for v in self.embedding],
@@ -114,13 +118,15 @@ class PhotoResult:
 
 
 def analyze_photo(result: PhotoResult, embedding: np.ndarray, rgb: np.ndarray, banks: dict[str, TextBank],
-                  vocab: Vocab) -> None:
+                  vocab: Vocab, nsfw: float = 0.0) -> None:
     result.embedding = embedding
     result.scores = item_scores(embedding, banks)
     result.decision = decide_photo(result.scores, vocab)
     result.quality = check_photo(rgb)
     result.votes = color_votes(rgb, result.quality.region, result.quality.background)
     result.worn = zero_shot(embedding, banks["worn"])["worn"]
+    result.hooded = zero_shot(embedding, banks["hooded"])["hooded"]
+    result.nsfw = nsfw
     result.extra = {name: zero_shot(embedding, banks[name]) for name in ("patterns", "styles", "fabrics")}
 
 
@@ -184,7 +190,8 @@ def _quality_summary(results: list[PhotoResult]) -> dict:
 
 def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab) -> dict:
     """[results] are already analyzed (or carry an error). Returns the /scan response body."""
-    views = [PhotoView(r.slot, None if r.error else r.decision) for r in results]
+    views = [PhotoView(r.slot, None if r.error else r.decision, nsfw=r.nsfw or 0.0, hooded=r.hooded or 0.0)
+             for r in results]
     whole = [r for r in results if not r.error and r.slot not in SUPPORT_SLOTS and r.decision.decision != DETAIL]
     candidates = [r for r in whole if r.decision.decision in (ALLOWED, UNSURE)]
     combined = unit_mean([r.embedding for r in candidates])
@@ -200,6 +207,8 @@ def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank]
         "quality": _quality_summary(results),
         "photos": [r.to_json() for r in results],
         "model": {"id": config.MODEL_ID, "revision": config.MODEL_REVISION, "license": config.MODEL_LICENSE},
+        "safety_model": {"id": config.SAFETY_MODEL_ID, "revision": config.SAFETY_MODEL_REVISION,
+                         "license": config.SAFETY_MODEL_LICENSE},
         "policy_digest": vocab.digest[:16],
         "service_version": config.SERVICE_VERSION,
     }

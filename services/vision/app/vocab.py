@@ -63,7 +63,7 @@ class Entry:
     adjective: str | None = None
 
 
-BANKS = ("general", "worn", "details", "patterns", "styles", "fabrics")
+BANKS = ("general", "worn", "hooded", "details", "patterns", "styles", "fabrics")
 
 
 @dataclass(frozen=True, eq=False)
@@ -140,8 +140,9 @@ def load() -> Vocab:
     if [e.key for e in banks["styles"]] != list(STYLES):
         raise ValueError("vocab styles must be the database's listing styles, in order")
     if [e.key for e in banks["general"]] != ["fashion", "not_fashion"] or \
-            [e.key for e in banks["worn"]] != ["worn", "not_worn"]:
-        raise ValueError("vocab general and worn have fixed keys")
+            [e.key for e in banks["worn"]] != ["worn", "not_worn"] or \
+            [e.key for e in banks["hooded"]] != ["hooded", "not_hooded"]:
+        raise ValueError("vocab general, worn and hooded have fixed keys")
     return Vocab(items=items, banks=banks, by_key={i.key: i for i in items})
 
 

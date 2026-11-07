@@ -304,6 +304,8 @@ Today:
 | No rate limit on messages, reports, chats, saves or sign-ups beyond Supabase Auth's own | - |
 | Passwords: hosted minimum 8 characters; leaked-password protection on per `BOARD.md` Step 0 (not re-read from the API this session); refresh-token rotation on | Hosted Auth settings |
 | Push text filter: no phone numbers, emails, addresses, map links or coordinates in notifications | `app_private.push_safe_text` (`20261104035948_step7a_push_notifications.sql`) |
+| Text filter (P2A): language that isn't allowed is refused in listings, profiles, chat and reports; contact details and links are refused in listings and profiles | Triggers and `app_private.text_refusal` (`20261107010000_p2a_text_filter.sql`, `20261107012000_p2a_text_filter_one_as_l.sql`) |
+| Photo safety check (P2A): nudity rejected or reviewed; hooded garments reviewed | `services/vision/app/safety.py`, `verdict.py` |
 | Publish gate and automatic re-check of changed photos (gate off until `vision_required` is on) | Step 8A/8B migrations |
 | Encryption in transit: HTTPS for every service; Supabase, Vercel and Google encrypt stored data at rest (provider default, not configured by Dzirent) | Provider defaults |
 | Not in place: CAPTCHA (`security_captcha_enabled = false`), email confirmation (`mailer_autoconfirm = true`), website security headers (`next.config.ts` sets none), MFA not offered in the apps | Hosted Auth settings, `apps/web/next.config.ts` |
@@ -432,7 +434,15 @@ Each gap has a suggested fix and the phase from the handoff plan.
    - **Closed for the Android and iPhone apps (P1B part 1, 2026-11-06).** Sign-up, Change password and the "too weak" message all use `PASSWORD_MIN_LENGTH = 8` (`Models.kt`, used in `AuthScreens.kt`, `SettingsScreen.kt`, `DzirentRepository.kt`).
    - **Still open on the website:** `apps/web/src/app/auth/page.tsx` (`minLength={6}`, "At least 6 characters."), `components/settings.tsx` (`minLength={6}`) and `lib/workflow-mutations.ts` ("Use at least 6 characters.").
 22. **Chat text is unfiltered.** Phone numbers, emails and addresses are kept out of pushes but not out of messages, listings or profiles. Phase: P2A.
+   - **Closed (P2A, 2026-11-07)**, in the database for every platform (`supabase/migrations/20261107010000_p2a_text_filter.sql`, `..._012000_p2a_text_filter_one_as_l.sql`):
+     - Language that isn't allowed is refused everywhere: listings, profiles and studios, chat, reports.
+     - Contact details and outside links are refused in public text (listings and profiles).
+     - Chat keeps allowing contact details on purpose (decisions.md "Content safety"), so people can arrange pickup.
+     - The apps show each refusal under the field or the chat box and keep what was typed.
+     - No existing row would be refused (checked 2026-11-07).
 23. **Photos of people.** The vision service estimates whether a person wears the piece, and photos may show faces. There is no nudity check, and fingerprints are stored for every photo. Fix: the P2A nudity check, and attorney confirmation that fingerprints are not biometric data. Phase: P2A, P1A.
+   - **Nudity check: closed (P2A, 2026-11-07).** The vision service runs `Marqo/nsfw-image-detection-384` (Apache 2.0) on every photo: clear nudity or sexual content is rejected, uncertain goes to review. A hooded garment goes to review. Being worn never adds a warning or changes the verdict. The per-photo nudity probability is kept in `photo_scans.labels` with the other scores.
+   - **Still open:** the attorney's confirmation that the stored image fingerprints are not biometric data (P1A).
 24. **Public photos stay at their URL.** The bucket is public and photo views by anyone are logged with IP. Deleted photos may stay in the CDN cache for a while (unconfirmed). Fix: disclose in the privacy policy; check the cache behaviour. Phase: P1A (disclose), P3B (orphan photos).
 25. **Display name visible to guests.** A lender without a studio name shows their display name on public cards. Fix: disclose, or require a studio name before listing. Phase: P1A (disclose); unassigned for a change (suggested P2A).
 26. **Possible sensitive inferences.** Studio style tag "Maternity" and cultural style interests. Fix: attorney review for TDPSA and Washington. Phase: P1A.

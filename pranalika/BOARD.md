@@ -141,18 +141,23 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (P1A part 1, P1B part 1), Antigravity (P1A part 2, P1A fix-up, P1B part 2) | |
+| Done by: Claude Code (P1A part 1, P1B part 1, P2A), Antigravity (P1A part 2, P1A fix-up, P1B part 2) | |
 | P1A part 1: data inventory and `compliance.md`; legal fill-ins in `legal-placeholders.md` | Done |
 | P1A part 2: website legal pages (privacy policy, terms, community rules and prohibited items, copyright/DMCA, safety tips, delete-account page, support/contact), fill-ins in one config | Done |
 | P1A fix-up: legal page corrections (zero fallbacks, log placeholders, cache disclosure, worn photos allowed, real photo check scope, support@ only, Everyday category) | Done |
 | Owner and attorney: fill `legal-placeholders.md` (company, addresses, DMCA agent, law and disputes, taxes, age wording, retention periods) | To do |
-| Owner: `gcloud auth login` on this PC, so agents can read Cloud Logging retention and the billing kill switch (P1A part 1 couldn't) | To do |
+| Owner: `gcloud auth login` on this PC, so agents can read Cloud Logging retention and the billing kill switch (P1A part 1 couldn't) | Done (2026-11-07, during P2A); the retention and kill-switch checks themselves are still to do |
 | P1B FAQ and help center; in-app Help links; terms acceptance recorded with version and date on all three platforms; explicit consent before saving body measurements | Done |
 | P1B part 1 (backend and apps): `legal_documents`, `legal_acceptances`, `accept_legal`, `needs_legal_acceptance`; measurements consent (`give_`/`withdraw_measurements_consent`, refused without it; test users' measurements cleared); sign-up terms tick with links; "We've updated our terms" step; consent dialog and Settings control; 8-character passwords; Settings > Help & legal | Done |
 | Website (P1B part 2): record terms acceptance at sign-up (`accept_legal('web')`) and check `needs_legal_acceptance`; measurements consent step and withdrawal; 8-character passwords; `/help` page and footer/sitemap | Done |
 | Owner: phone test of P1B part 1 (see the P1B part 1 handoff) | To do |
 | Mac: iOS build check of the P1B part 1 shared-code changes | To do |
-| P2A Text filter on listings, profiles and chat (database); nudity check and "hooded garment goes to review" (vision service) | To do |
+| P2A Text filter on listings, profiles and chat (database); nudity check and "hooded garment goes to review" (vision service) | Done (Claude Code) |
+| P2A text filter: LDNOOBW English list (CC BY 4.0) and allowlist in `app_private`, whole-word matching after normalizing; language refused in listings, profiles, chat and reports; contact details refused in listings and profiles only; `check_text` for sign-up; apps show refusals under the field or chat box | Done |
+| P2A photos: `Marqo/nsfw-image-detection-384` (Apache 2.0) in the vision service (nudity rejected, uncertain to review), hooded garments to review, worn never penalized; revision `vision-00005-9cg` | Done |
+| Owner: phone test of P2A (see the P2A handoff) | To do |
+| Mac: iOS build check of the P2A shared-code changes | To do |
+| Owner: decide on list words left blocked that are also fashion or Spanish words ("lolita", "negro"), and whether report details should allow quoting abuse (see the P2A handoff) | To do |
 | P2B Admin dashboard: reports, photo reviews, takedowns, suspend/ban, listings, feature flags, simple metrics; every admin action logged | To do |
 | P2C Age gate: store age signals on Android and iPhone, state list table, 18+ on the website (Texas SB 2420, Utah) | To do |
 | P3A Download my data on all three platforms | To do |
