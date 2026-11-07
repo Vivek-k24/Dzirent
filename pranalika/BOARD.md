@@ -142,7 +142,8 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up) | |
+| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
+
 | P1A part 1: data inventory and `compliance.md`; legal fill-ins in `legal-placeholders.md` | Done |
 | P1A part 2: website legal pages (privacy policy, terms, community rules and prohibited items, copyright/DMCA, safety tips, delete-account page, support/contact), fill-ins in one config | Done |
 | P1A fix-up: legal page corrections (zero fallbacks, log placeholders, cache disclosure, worn photos allowed, real photo check scope, support@ only, Everyday category) | Done |
@@ -159,10 +160,11 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Owner: phone test of P2A (see the P2A handoff) | To do |
 | Mac: iOS build check of the P2A shared-code changes | To do |
 | Owner: decide on list words left blocked that are also fashion or Spanish words ("lolita", "negro"), and whether report details should allow quoting abuse (see the P2A handoff) | Report details: decided in P2B (unfiltered). The two words: to do |
-| P2B Admin dashboard: reports, photo reviews, takedowns, suspend/ban, listings, feature flags, simple metrics; every admin action logged | Doing |
+| P2B Admin dashboard: reports, photo reviews, takedowns, suspend/ban, listings, feature flags, simple metrics; every admin action logged | Done |
 | P2B part 1 (backend, Claude Code): admins with two-step sign-in (`admin_users`, `is_admin`, `require_admin`), append-only admin log, report evidence snapshots kept after account deletion, report details unfiltered, suspensions and listing holds, 23 admin functions, `admin-actions` Edge Function (ban, unban, photo files), `set_flag`, seed script; apps: review banner shows the check's reason, suspension notice | Done |
-| Owner: sign up on Dzirent with the email in `ADMIN_EMAILS` (no account has it yet), then ask an agent to re-run `node supabase/seed/admins.mjs`; then enroll TOTP on the admin website (P2B part 2) | To do |
-| P2B part 2 (website): admin pages on top of the P2B part 1 functions, TOTP enrollment and sign-in | To do |
+| Owner: seed script ran and seeded admin (`accounts found: 1, added: 1`); enroll TOTP authenticator on the admin website (`/admin`) | To do |
+| P2B part 2 (website): admin pages on top of the P2B part 1 functions, TOTP enrollment and sign-in | Done |
+
 | Owner: phone test of P2B part 1 (see the P2B part 1 handoff) | To do |
 | Mac: iOS build check of the P2B part 1 shared-code changes | To do |
 | Attorney: report and evidence retention period (placeholder 730 days in `app_private.settings`) | To do |

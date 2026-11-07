@@ -290,6 +290,7 @@ export function Shell({
   name,
   showWelcome,
   needsLegal = false,
+  isAdmin = false,
   children,
 }: {
   ctx: BrowseContext;
@@ -299,6 +300,7 @@ export function Shell({
   name: string;
   showWelcome: boolean;
   needsLegal?: boolean;
+  isAdmin?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -571,6 +573,16 @@ export function Shell({
                           <strong>{name}</strong>
                           <small>Your neighborhood wardrobe</small>
                         </div>
+                        {isAdmin && (
+                          <Link
+                            href="/admin"
+                            className="account-dropdown-item"
+                            onClick={() => setAccountMenuOpen(false)}
+                          >
+                            <Icon name="sparkle" />
+                            <span>Admin</span>
+                          </Link>
+                        )}
                         <Link
                           href="/app/settings"
                           className="account-dropdown-item"
@@ -898,6 +910,12 @@ export function Shell({
               </div>
             </div>
             <nav className="drawer-nav">
+              {isAdmin && authenticated && (
+                <Link href="/admin" onClick={() => setFilters(false)}>
+                  Admin
+                  <Icon name="chevron" />
+                </Link>
+              )}
               <Link
                 href={authenticated ? "/app/settings" : "/auth"}
                 onClick={() => setFilters(false)}

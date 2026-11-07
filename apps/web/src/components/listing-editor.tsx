@@ -30,6 +30,7 @@ import {
   type MeasurementRow,
 } from "./listing-fields";
 import { Icon } from "./icon";
+import { suspensionNotice } from "@/lib/suspension";
 
 type ScanSuggestions = {
   title?: string;
@@ -46,6 +47,7 @@ type ListingScan = {
   verdict?: string | null;
   reason?: string | null;
   admin_decision?: string | null;
+  admin_reason?: string | null;
   suggestions?: ScanSuggestions | null;
 };
 
@@ -204,7 +206,10 @@ function PhotoCheckBanner({
       );
     }
     if (isRejected) {
-      const reason = scan.reason || "These photos can't be listed.";
+      const reason =
+        scan.admin_reason?.trim() ||
+        scan.reason ||
+        "These photos can't be listed.";
       return (
         <div className="policy-note notice error" style={{ margin: "16px 0" }}>
           <p>
@@ -222,14 +227,12 @@ function PhotoCheckBanner({
       );
     }
     // Review verdict
-    const hasSpecificReason =
-      scan.reason &&
-      scan.reason !== "We're not sure what this piece is.";
+    const reviewReason = scan.reason?.trim();
     return (
       <div className="policy-note" style={{ margin: "16px 0" }}>
         <strong>Someone at Dzirent will check these photos.</strong>
-        {hasSpecificReason && (
-          <p style={{ fontSize: "12px", margin: "4px 0 0" }}>{scan.reason}</p>
+        {reviewReason && (
+          <p style={{ fontSize: "13px", margin: "4px 0 0" }}>{reviewReason}</p>
         )}
       </div>
     );
@@ -752,6 +755,14 @@ export function ListingEditor({
   }
 
   async function publish() {
+    const userSuspended = suspensionNotice(
+      profile.suspended_until,
+      profile.suspension_reason,
+    );
+    if (userSuspended) {
+      setError(userSuspended);
+      return;
+    }
     const nextForm = { ...form, measurements: usedMeasurements(rows) };
     const validation = validateListing(nextForm);
     if (validation) {
@@ -891,6 +902,21 @@ export function ListingEditor({
           My Closet <Icon name="chevron" />
         </Link>
       </div>
+      {suspensionNotice(profile.suspended_until, profile.suspension_reason) && (
+        <div className="policy-note notice error" style={{ margin: "16px 0" }}>
+          <strong>
+            {suspensionNotice(
+              profile.suspended_until,
+              profile.suspension_reason,
+            )}
+          </strong>
+        </div>
+      )}
+      {listing?.auto_paused_reason && (
+        <div className="policy-note notice warning" style={{ margin: "16px 0" }}>
+          <strong>{listing.auto_paused_reason}</strong>
+        </div>
+      )}
       <div className="editor-progress" aria-label={"Step " + step + " of 3"}>
         {["Photos", "Details", "Size, price and dates"].map((title, i) => (
           <button

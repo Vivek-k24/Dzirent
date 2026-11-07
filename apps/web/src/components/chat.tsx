@@ -388,7 +388,11 @@ export function Chat({
       )}
       <Notice message={error} error />
       <Notice message={notice} />
-      {data.blocked ? (
+      {data.mySuspension ? (
+        <div className="policy-note notice error" style={{ margin: "16px 0" }}>
+          <strong>{data.mySuspension}</strong>
+        </div>
+      ) : data.blocked ? (
         <div className="blocked-banner">
           <strong>You blocked this user</strong>
           <button
@@ -528,6 +532,11 @@ export function Chat({
           busy={busy}
           onClose={() => setModal(null)}
         >
+          {data.mySuspension ? (
+            <div className="policy-note notice error" style={{ margin: "16px 0" }}>
+              <p><strong>{data.mySuspension}</strong></p>
+            </div>
+          ) : (
           <form
             onSubmit={async (e) => {
               e.preventDefault();
@@ -600,6 +609,7 @@ export function Chat({
               Send report
             </button>
           </form>
+          )}
         </WorkflowModal>
       )}
       {modal === "block" && (

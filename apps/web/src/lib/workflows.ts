@@ -10,6 +10,8 @@ export type Profile = {
   studio_bio: string | null;
   pickup_area: string | null;
   style_tags: string[];
+  suspended_until?: string | null;
+  suspension_reason?: string | null;
 };
 export type PrivateProfile = {
   user_id: string;
@@ -120,6 +122,7 @@ export type ChatData = {
   rental: Rental | null;
   outcome: Outcome | null;
   blocked: boolean;
+  mySuspension?: string | null;
 };
 export type SettingsData = {
   profile: Profile;
