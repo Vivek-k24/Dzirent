@@ -59,9 +59,10 @@ export default function CopyrightPage() {
         </p>
 
         <div className="legal-card" style={{ maxWidth: "600px", marginTop: "16px" }}>
-          <h4 style={{ marginBottom: "12px", borderBottom: "1px solid var(--border-subtle)", paddingBottom: "8px" }}>
+          <h3 style={{ marginBottom: "12px", borderBottom: "1px solid var(--border-subtle)", paddingBottom: "8px" }}>
             Designated DMCA Agent Contact
-          </h4>
+          </h3>
+
           <div style={{ display: "grid", gap: "8px", fontSize: "0.95rem" }}>
             <div>
               <strong>Agent Name:</strong>{" "}

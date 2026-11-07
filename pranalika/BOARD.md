@@ -186,7 +186,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Owner: decide when to switch each cleanup job to deleting (admin Flags page, `cleanup_<job>`); check the admin overview's Cleanup jobs card after the first nightly runs | To do |
 | Owner: say when to remove the 12 sample listings (`node supabase/seed/remove_sample_data.mjs --yes`, run by an agent) | To do |
 | Attorney: declaration retention period (placeholder 7 years) and report retention (placeholder 730 days) | To do |
-| P4A Website accessibility to WCAG 2.1 AA (automated checker in the build plus a manual pass) | To do |
+| P4A Website accessibility to WCAG 2.1 AA (automated checker in the build plus a manual pass) | Done (Antigravity) |
 | P4B App accessibility: screen reader labels, touch targets, large text, contrast in both themes (iPhone part on the Mac) | Android done (Claude Code); iPhone VoiceOver check on the Mac |
 | P4B (Claude Code): headings on every screen and dialog title and section header, errors and photo-check progress announced, listing cards read as one item, row photos and avatars decorative, labelled closet switch and Edit/Delete/Remove buttons, selectable sidebar categories, 48 dp targets (photo remove, date chips, categories), buttons grow with large text, theme contrast fixes (outline, dark accent), Lint accessibility checks as errors (shared module included), two Lint errors fixed (Android 8 crash in MainActivity, Fragment version for the save picker) | Done |
 | Owner: TalkBack and largest-font test of P4B on Android (list in the P4B handoff) | To do |

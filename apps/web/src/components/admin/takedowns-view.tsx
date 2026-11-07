@@ -403,85 +403,86 @@ export function TakedownsView({ initialTakedowns }: { initialTakedowns: AdminTak
 
             <form onSubmit={handleCreateSubmit}>
               <div style={{ marginBottom: "12px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 500, marginBottom: "4px" }}>
-                  Claimant Name *
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 500 }}>
+                  <span style={{ display: "block", marginBottom: "4px" }}>Claimant Name *</span>
+                  <input
+                    type="text"
+                    required
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="e.g. John Doe / Studio Brand"
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
+                  />
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. John Doe / Studio Brand"
-                  style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
-                />
               </div>
 
               <div style={{ marginBottom: "12px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 500, marginBottom: "4px" }}>
-                  Claimant Contact (Email / Phone) *
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 500 }}>
+                  <span style={{ display: "block", marginBottom: "4px" }}>Claimant Contact (Email / Phone) *</span>
+                  <input
+                    type="text"
+                    required
+                    value={newContact}
+                    onChange={(e) => setNewContact(e.target.value)}
+                    placeholder="e.g. legal@brand.com"
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
+                  />
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={newContact}
-                  onChange={(e) => setNewContact(e.target.value)}
-                  placeholder="e.g. legal@brand.com"
-                  style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
-                />
               </div>
 
               <div style={{ marginBottom: "12px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 500, marginBottom: "4px" }}>
-                  Description of Copyrighted Work *
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 500 }}>
+                  <span style={{ display: "block", marginBottom: "4px" }}>Description of Copyrighted Work *</span>
+                  <textarea
+                    required
+                    rows={2}
+                    value={newWork}
+                    onChange={(e) => setNewWork(e.target.value)}
+                    placeholder="Describe original photograph, design, or work claimed..."
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
+                  />
                 </label>
-                <textarea
-                  required
-                  rows={2}
-                  value={newWork}
-                  onChange={(e) => setNewWork(e.target.value)}
-                  placeholder="Describe original photograph, design, or work claimed..."
-                  style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
-                />
               </div>
 
               <div style={{ marginBottom: "12px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 500, marginBottom: "4px" }}>
-                  Relevant URLs (comma or newline separated)
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 500 }}>
+                  <span style={{ display: "block", marginBottom: "4px" }}>Relevant URLs (comma or newline separated)</span>
+                  <textarea
+                    rows={2}
+                    value={newUrls}
+                    onChange={(e) => setNewUrls(e.target.value)}
+                    placeholder="https://..."
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
+                  />
                 </label>
-                <textarea
-                  rows={2}
-                  value={newUrls}
-                  onChange={(e) => setNewUrls(e.target.value)}
-                  placeholder="https://..."
-                  style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
-                />
               </div>
 
               <div style={{ marginBottom: "12px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 500, marginBottom: "4px" }}>
-                  Listing IDs (comma or newline separated UUIDs)
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 500 }}>
+                  <span style={{ display: "block", marginBottom: "4px" }}>Listing IDs (comma or newline separated UUIDs)</span>
+                  <textarea
+                    rows={2}
+                    value={newListingIds}
+                    onChange={(e) => setNewListingIds(e.target.value)}
+                    placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
+                  />
                 </label>
-                <textarea
-                  rows={2}
-                  value={newListingIds}
-                  onChange={(e) => setNewListingIds(e.target.value)}
-                  placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
-                  style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
-                />
               </div>
 
               <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 500, marginBottom: "4px" }}>
-                  Notes (optional)
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 500 }}>
+                  <span style={{ display: "block", marginBottom: "4px" }}>Notes (optional)</span>
+                  <textarea
+                    rows={2}
+                    value={newNotes}
+                    onChange={(e) => setNewNotes(e.target.value)}
+                    placeholder="Internal administrative notes..."
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
+                  />
                 </label>
-                <textarea
-                  rows={2}
-                  value={newNotes}
-                  onChange={(e) => setNewNotes(e.target.value)}
-                  placeholder="Internal administrative notes..."
-                  style={{ width: "100%", padding: "8px 10px", borderRadius: "4px", border: "1px solid var(--line)" }}
-                />
               </div>
+
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
                 <button
@@ -533,24 +534,24 @@ export function TakedownsView({ initialTakedowns }: { initialTakedowns: AdminTak
           onConfirm={handleDialogConfirm}
         >
           <div style={{ marginBottom: "12px" }}>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 500, marginBottom: "4px" }}>
-              Counter-Notice content:
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 500 }}>
+              <span style={{ display: "block", marginBottom: "4px" }}>Counter-Notice content:</span>
+              <textarea
+                rows={4}
+                required
+                value={counterNoticeText}
+                onChange={(e) => setCounterNoticeText(e.target.value)}
+                placeholder="Paste counter-notice statement received from lender..."
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--line)",
+                  background: "var(--paper)",
+                  color: "var(--ink)",
+                }}
+              />
             </label>
-            <textarea
-              rows={4}
-              required
-              value={counterNoticeText}
-              onChange={(e) => setCounterNoticeText(e.target.value)}
-              placeholder="Paste counter-notice statement received from lender..."
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                borderRadius: "4px",
-                border: "1px solid var(--line)",
-                background: "var(--paper)",
-                color: "var(--ink)",
-              }}
-            />
           </div>
         </ActionDialog>
       )}
@@ -569,29 +570,30 @@ export function TakedownsView({ initialTakedowns }: { initialTakedowns: AdminTak
           onConfirm={handleDialogConfirm}
         >
           <div style={{ marginBottom: "12px" }}>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 500, marginBottom: "4px" }}>
-              New Status:
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 500 }}>
+              <span style={{ display: "block", marginBottom: "4px" }}>New Status:</span>
+              <select
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--line)",
+                  background: "var(--paper)",
+                  color: "var(--ink)",
+                }}
+              >
+                <option value="received">received</option>
+                <option value="actioned">actioned</option>
+                <option value="rejected">rejected</option>
+                <option value="countered">countered</option>
+                <option value="restored">restored</option>
+              </select>
             </label>
-            <select
-              value={newStatus}
-              onChange={(e) => setNewStatus(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                borderRadius: "4px",
-                border: "1px solid var(--line)",
-                background: "var(--paper)",
-                color: "var(--ink)",
-              }}
-            >
-              <option value="received">received</option>
-              <option value="actioned">actioned</option>
-              <option value="rejected">rejected</option>
-              <option value="countered">countered</option>
-              <option value="restored">restored</option>
-            </select>
           </div>
         </ActionDialog>
+
       )}
     </div>
   );

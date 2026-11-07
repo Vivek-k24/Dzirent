@@ -172,9 +172,9 @@ export function AdminMfaGate() {
                 if (error) setError("");
               }}
               style={{ fontSize: "24px", letterSpacing: "6px", textAlign: "center", padding: "12px" }}
-              autoFocus
               disabled={busy}
               required
+
             />
           </label>
           <button

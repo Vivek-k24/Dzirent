@@ -62,17 +62,18 @@ export function Gallery({
             <button
               key={src + "-" + i}
               type="button"
-              aria-label={"View photo " + (i + 1)}
+              aria-label={"View " + (i + 1) + " of " + photos.length}
               aria-pressed={selected === i}
               className={selected === i ? "selected" : ""}
               onClick={() => setSelected(i)}
             >
               <Photo
                 src={src}
-                alt={title + ", photo " + (i + 1)}
+                alt={`${title} - view ${i + 1}`}
                 sizes="80px"
               />
             </button>
+
           ))}
         </div>
       )}

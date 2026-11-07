@@ -77,15 +77,24 @@ export function WelcomeChecklistModal({
   useEffect(() => {
     if (activeStep) return;
     const dialog = ref.current;
+    const previouslyFocused = (typeof document !== "undefined" ? document.activeElement : null) as HTMLElement | null;
     if (dialog && !dialog.open) {
       dialog.showModal();
     }
+    const handleClick = (e: MouseEvent) => {
+      if (e.target === dialog) onClose();
+    };
+    dialog?.addEventListener("click", handleClick);
     return () => {
+      dialog?.removeEventListener("click", handleClick);
       if (dialog && dialog.open) {
         dialog.close();
       }
+      previouslyFocused?.focus();
     };
-  }, [activeStep]);
+  }, [activeStep, onClose]);
+
+
 
   const canLend = profile.role === "lender" || profile.role === "both";
   const items = setupItems(canLend);
@@ -178,10 +187,8 @@ export function WelcomeChecklistModal({
       className="modal welcome-checklist-modal"
       aria-label="Welcome to Dzirent"
       onCancel={onClose}
-      onClick={(e) => {
-        if (e.target === ref.current) onClose();
-      }}
     >
+
       <div className="modal-content">
         <div className="modal-top">
           <div>
@@ -322,9 +329,19 @@ export function FinishSetupCard({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={onOpenChecklist}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpenChecklist();
+        }
+      }}
       className="finish-setup-card"
+      aria-label="Finish setting up your account"
       style={{
+
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -414,19 +431,35 @@ export function GuideOverlay({
         position: "fixed",
         inset: 0,
         zIndex: 9999,
-        background: "rgba(0, 0, 0, 0.65)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         padding: "20px",
       }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
     >
+      <button
+        type="button"
+        className="guide-backdrop"
+        aria-label="Close guide"
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0, 0, 0, 0.65)",
+          border: "none",
+          cursor: "default",
+          width: "100%",
+          height: "100%",
+        }}
+      />
       <div
         className="guide-card"
+        role="dialog"
+        aria-modal="true"
+        aria-label="App tour"
         style={{
+          position: "relative",
+          zIndex: 1,
           background: "var(--paper, #fff)",
           color: "var(--ink, #111)",
           borderRadius: "16px",
@@ -436,6 +469,7 @@ export function GuideOverlay({
           boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
         }}
       >
+
         <span
           className="eyebrow accent"
           style={{ fontSize: "10px", letterSpacing: "1.5px", marginBottom: "8px" }}

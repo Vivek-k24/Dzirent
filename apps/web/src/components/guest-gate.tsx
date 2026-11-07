@@ -58,22 +58,30 @@ export function GuestGateDialog({
 
   useEffect(() => {
     const dialog = ref.current;
+    const previouslyFocused = (typeof document !== "undefined" ? document.activeElement : null) as HTMLElement | null;
     if (dialog && !dialog.open) {
       dialog.showModal();
     }
     const handleClose = () => {
       onClose();
     };
+    const handleClick = (e: MouseEvent) => {
+      if (e.target === dialog) onClose();
+    };
     dialog?.addEventListener("close", handleClose);
     dialog?.addEventListener("cancel", handleClose);
+    dialog?.addEventListener("click", handleClick);
     return () => {
       dialog?.removeEventListener("close", handleClose);
       dialog?.removeEventListener("cancel", handleClose);
+      dialog?.removeEventListener("click", handleClick);
       if (dialog && dialog.open) {
         dialog.close();
       }
+      previouslyFocused?.focus();
     };
   }, [onClose]);
+
 
   return (
     <dialog
@@ -82,10 +90,8 @@ export function GuestGateDialog({
       aria-label={info.title}
       onCancel={onClose}
       onClose={onClose}
-      onClick={(e) => {
-        if (e.target === ref.current) onClose();
-      }}
     >
+
       <div className="modal-content">
         <div className="modal-top">
           <h2>{info.title}</h2>

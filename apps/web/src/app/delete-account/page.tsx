@@ -49,7 +49,7 @@ export default function DeleteAccountPage() {
 
         <div className="legal-card-grid">
           <div className="legal-card">
-            <h4>On Android or iOS App</h4>
+            <h3>On Android or iOS App</h3>
             <ol style={{ paddingLeft: "20px", margin: "8px 0" }}>
               <li>Open the Dzirent app and tap <strong>Profile</strong>.</li>
               <li>Go to <strong>Settings</strong> &gt; <strong>Account</strong>.</li>
@@ -58,7 +58,7 @@ export default function DeleteAccountPage() {
             </ol>
           </div>
           <div className="legal-card">
-            <h4>On the Dzirent Website</h4>
+            <h3>On the Dzirent Website</h3>
             <ol style={{ paddingLeft: "20px", margin: "8px 0" }}>
               <li>Sign in at <strong>dzirent.com</strong>.</li>
               <li>Click your profile avatar &gt; <strong>Profile &amp; Settings</strong>.</li>
@@ -197,7 +197,7 @@ export default function DeleteAccountPage() {
           email or two-factor device), you can request manual deletion by contacting our support team:
         </p>
         <div className="legal-card" style={{ maxWidth: "560px", marginTop: "12px" }}>
-          <h4>Manual Deletion Request</h4>
+          <h3>Manual Deletion Request</h3>
           <p style={{ margin: "8px 0" }}>
             Email us from the address associated with your account:
           </p>

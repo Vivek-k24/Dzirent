@@ -117,11 +117,12 @@ function EditorPhotoPreview({ photo }: { photo: EditorPhoto }) {
   return url ? (
     <Image
       src={url}
-      alt={slotNames[slots.indexOf(photo.slot)] + " photo"}
+      alt={slotNames[slots.indexOf(photo.slot)] + " view"}
       fill
       unoptimized
       sizes="160px"
     />
+
   ) : (
     <Icon name="hanger" />
   );

@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/safety",
     "/delete-account",
     "/support",
+    "/accessibility",
     "/studios",
   ];
 

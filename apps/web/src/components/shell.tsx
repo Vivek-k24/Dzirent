@@ -83,20 +83,28 @@ function Modal({
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const dialog = ref.current;
+    const previouslyFocused = (typeof document !== "undefined" ? document.activeElement : null) as HTMLElement | null;
     dialog?.showModal();
-    return () => dialog?.close();
-  }, []);
+    const handleClick = (e: MouseEvent) => {
+      if (e.target === dialog) onClose();
+    };
+    dialog?.addEventListener("click", handleClick);
+    return () => {
+      dialog?.removeEventListener("click", handleClick);
+      dialog?.close();
+      previouslyFocused?.focus();
+    };
+  }, [onClose]);
+
   return (
     <dialog
       ref={ref}
       className={"modal " + className}
       aria-label={title}
       onCancel={onClose}
-      onClick={(e) => {
-        if (e.target === ref.current) onClose();
-      }}
     >
       <div className="modal-content">
+
         <div className="modal-top">
           <h2>{title}</h2>
           <button className="icon-button" aria-label="Close" onClick={onClose}>
@@ -205,9 +213,9 @@ function LocationPicker({ onClose }: { onClose: () => void }) {
       <label className="field">
         <span>City</span>
         <input
-          autoFocus
           placeholder="Start typing a city..."
           value={query}
+
           onChange={(e) => {
             setQuery(e.target.value);
             setCities([]);
@@ -690,7 +698,6 @@ export function Shell({
                   className={"date-chip " + (ctx.datesActive ? "active" : "")}
                   onClick={() => setDates(true)}
                   title="Choose dates"
-                  aria-label="Choose dates"
                 >
                   <Icon name="calendar" />
                   <span>{dateLabel}</span>
@@ -703,7 +710,6 @@ export function Shell({
                   className="location-button"
                   onClick={() => setLocation(true)}
                   title="Change location"
-                  aria-label="Change location"
                 >
                   <Icon name="pin" />
                   <span>{ctx.city}</span>
@@ -909,6 +915,7 @@ export function Shell({
               <Link href="/safety">Safety</Link>
               <Link href="/delete-account">Delete account</Link>
               <Link href="/support">Support</Link>
+              <Link href="/accessibility">Accessibility</Link>
               <Link href="/about">About</Link>
             </nav>
           </div>

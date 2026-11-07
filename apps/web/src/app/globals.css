@@ -338,6 +338,77 @@ html[data-theme=dark] .preview-label {
   }
 }
 
+/* Accessibility: Enhanced skip-link */
+.skip-link {
+  position: fixed;
+  left: 20px;
+  top: -100px;
+  z-index: 1000;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 12px 18px;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition: top 0.15s ease-in-out;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 15px;
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Accessibility: Target size (minimum 24x24px) */
+button,
+[role="button"],
+input,
+select,
+textarea,
+a.button,
+a.icon-button {
+  min-width: 24px;
+  min-height: 24px;
+}
+
+/* Accessibility: Color contrast improvements */
+.bottom-nav > button {
+  color: var(--muted);
+}
+
+.field small,
+.date-caption,
+.location-change,
+.auth-card > p,
+.auth-switch,
+.footer-inner p,
+.footer-bottom,
+.welcome-modal .modal-top h2,
+.welcome-modal p,
+.rental-note,
+.breadcrumbs,
+.listing-location,
+.studio-byline small,
+.studio-stats span,
+.studio-card p,
+.empty-state p {
+  color: var(--muted) !important;
+}
+
+/* Accessibility: Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
 
 
 

@@ -119,8 +119,9 @@ export function PhotoReviewsView({ initialItems }: { initialItems: PhotoReviewIt
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={photoUrl(p.storage_path) || p.storage_path}
-                        alt={`Photo slot ${p.slot}`}
+                        alt={`${item.title || "Listing piece"} - slot ${p.slot}`}
                         width={160}
+
                         height={200}
                         style={{ width: "100%", height: "180px", objectFit: "cover", display: "block" }}
                       />
