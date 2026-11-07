@@ -72,7 +72,9 @@ private val DATABASE_MESSAGES = listOf(
     // Admin actions (P2B).
     "Your account is suspended",
     "This listing is hidden by Dzirent",
-    "You can only report messages in your own chats"
+    "You can only report messages in your own chats",
+    // Age gate (P2C).
+    "Dzirent is only for people 18 and older"
 )
 
 /** How often the editor asks for a scan's state when Realtime hasn't sent it. */
@@ -647,6 +649,25 @@ class DzirentRepository(
         } catch (e: Exception) {
             throw fail("withdraw your consent", e)
         }
+    }
+
+    // --- Age gate (P2C) ---
+    /**
+     * Records what the app store said about my age ([source] "store_signal" or "self_declared",
+     * [result] "adult", "minor" or "unknown", [platform] "android" or "ios"). Returns true when my
+     * account is blocked afterwards (Dzirent is 18+).
+     */
+    suspend fun recordAgeCheck(source: String, result: String, platform: String): Boolean = try {
+        postgrest.rpc(
+            "record_age_check",
+            buildJsonObject {
+                put("p_source", source)
+                put("p_result", result)
+                put("p_platform", platform)
+            }
+        ).decodeAs<Boolean>()
+    } catch (e: Exception) {
+        throw fail("check your age", e)
     }
 
     // --- Push notifications ---

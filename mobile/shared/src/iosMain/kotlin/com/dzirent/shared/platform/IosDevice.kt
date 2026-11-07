@@ -48,6 +48,7 @@ class IosDeviceServices : DeviceServices {
         text?.let { runCatching { SearchRelated.parse(it) }.getOrNull() } ?: SearchRelated(emptyMap(), emptyMap())
     }
     override val push: PushService = IosPushService()
+    override val ageSignals: AgeSignalsService = IosAgeSignals()
 
     private val info = NSBundle.mainBundle.infoDictionary
     override val appVersion: String = info?.get("CFBundleShortVersionString") as? String ?: ""

@@ -40,7 +40,7 @@ export default function PrivacyPage() {
           label="effective date"
         />
       }
-      lastUpdated="November 6, 2026"
+      lastUpdated="November 7, 2026"
       toc={toc}
     >
       <section id="overview">
@@ -82,12 +82,19 @@ export default function PrivacyPage() {
             in, and deliver essential account emails such as password resets.
           </li>
           <li>
-            <strong>Password:</strong> Stored in a scrambled form that can&apos;t
-            be read back by anyone, including us.
+            <strong>Password:</strong> Your password is protected with one-way
+            encryption, so no one, including us, can read it.
           </li>
           <li>
             <strong>Adult confirmation:</strong> Your confirmation that you are
             at least 18 years old.
+          </li>
+          <li>
+            <strong>Age check:</strong> In some states, we use your app
+            store&apos;s age check to confirm you are 18 or older. We keep only
+            the answer (18 or older, under 18, or no answer), where it came from
+            (your app store or your own confirmation), and when. We never ask for
+            or store your birthdate.
           </li>
           <li>
             <strong>Terms acceptance:</strong> Which version of the Terms of Use
@@ -165,9 +172,9 @@ export default function PrivacyPage() {
           <li>
             <strong>Notification registration:</strong> If you use our Android
             app, your phone is registered for notifications so we can tell you
-            about new messages and date changes. Google Firebase delivers them
-            for us, and its software in the app sends Google an identifier for
-            the app installation and delivery details.
+            about new messages and date changes. Our notification provider
+            delivers them for us, and its software in the app sends the provider
+            an identifier for the app installation and delivery details.
           </li>
           <li>
             <strong>Safe notification text:</strong> Notifications never include
@@ -361,17 +368,10 @@ export default function PrivacyPage() {
       <section id="outside-services">
         <h2>8. Outside Service Providers</h2>
         <p>
-          A few companies help us run {LEGAL_CONFIG.BRAND_NAME}:
-        </p>
-        <ul>
-          <li><strong>Supabase:</strong> our database, sign-in, and photo storage.</li>
-          <li><strong>Vercel:</strong> hosts the website.</li>
-          <li><strong>Google Cloud:</strong> runs our photo checks.</li>
-          <li><strong>Google Firebase:</strong> sends app notifications.</li>
-        </ul>
-        <p>
-          These providers process data only to run Dzirent for us, and our data
-          is stored in the United States.
+          A few trusted service providers help us run {LEGAL_CONFIG.BRAND_NAME}:
+          they host our database and photos, run our website, check listing
+          photos, and send app notifications. They handle data only to run
+          Dzirent for us, in the United States.
         </p>
       </section>
 
@@ -470,7 +470,7 @@ export default function PrivacyPage() {
             ).
           </li>
           <li>Your phone is no longer registered for notifications.</li>
-          <li>Your saved pieces and studios, your terms acceptance, and any warnings on your account are deleted.</li>
+          <li>Your saved pieces and studios, your terms acceptance, your age checks, and any warnings on your account are deleted.</li>
         </ul>
 
         <div className="legal-callout">
@@ -595,6 +595,13 @@ export default function PrivacyPage() {
           garments.
         </p>
         <p>
+          Everyone confirms they are 18 or older when they sign up. In some
+          states, we also use your app store&apos;s age check to confirm you are
+          18 or older. We never ask for or store your birthdate. If your app
+          store says you are under 18, your account can no longer be used,
+          except to see your own information and delete the account.
+        </p>
+        <p>
           We do not knowingly collect personal data from children under 18. If we
           learn that an account belongs to a minor under 18 years of age, we will
           promptly suspend and delete the account and its associated data. Parents
@@ -626,8 +633,8 @@ export default function PrivacyPage() {
             data, photos, and backups.
           </li>
           <li>
-            <strong>Passwords:</strong> Stored in a scrambled form that can&apos;t
-            be read back by anyone, including us.
+            <strong>Passwords:</strong> Your password is protected with one-way
+            encryption, so no one, including us, can read it.
           </li>
           <li>
             <strong>Limited staff access:</strong> Only a few people at Dzirent

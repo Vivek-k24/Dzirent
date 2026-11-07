@@ -32,7 +32,24 @@ export type AdminUserData = {
   listings_total: number;
   listings_active: number;
   listings_held: number;
+  /** The latest age check (P2C), or null if none was recorded. */
+  age_check: {
+    source: "store_signal" | "self_declared";
+    result: "adult" | "minor" | "unknown";
+    platform: "web" | "android" | "ios";
+    checked_at: string;
+  } | null;
+  /** Blocked by the age gate: only reading and deleting the account work. */
+  age_blocked: boolean;
 };
+
+function ageCheckLabel(u: AdminUserData) {
+  const c = u.age_check;
+  if (!c) return "No check yet";
+  const source = c.source === "store_signal" ? "App store signal" : "Self-declared";
+  const platform = c.platform === "web" ? "website" : c.platform === "ios" ? "iPhone" : "Android";
+  return `${source}: ${c.result} (${platform}, ${new Date(c.checked_at).toLocaleDateString()})`;
+}
 
 export function UsersView({ initialUsers, initialQuery }: { initialUsers: AdminUserData[]; initialQuery?: string }) {
   const [query, setQuery] = useState(initialQuery || "");
@@ -221,6 +238,11 @@ export function UsersView({ initialUsers, initialQuery }: { initialUsers: AdminU
                           Admin
                         </span>
                       )}
+                      {u.age_blocked && (
+                        <span className="badge" style={{ background: "#8e44ad", color: "#fff" }}>
+                          Under 18: blocked
+                        </span>
+                      )}
                       {banned ? (
                         <span className="badge" style={{ background: "#c0392b", color: "#fff" }}>
                           Banned
@@ -397,6 +419,12 @@ export function UsersView({ initialUsers, initialQuery }: { initialUsers: AdminU
                     <div className="muted">Last Sign-in</div>
                     <div style={{ fontSize: "13px", marginTop: "2px" }}>
                       {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "Never"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="muted">Age Check</div>
+                    <div style={{ fontSize: "13px", marginTop: "2px", color: u.age_blocked ? "#8e44ad" : undefined }}>
+                      {ageCheckLabel(u)}
                     </div>
                   </div>
                 </div>

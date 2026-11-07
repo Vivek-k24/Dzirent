@@ -2,6 +2,144 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Mac iOS session - 2026-11-07
+
+Branch: `ios01` only. Before starting: `git fetch`, `git switch ios01`, `git pull origin Preview` fast-forwarded `8c51207` to `9bdfd2c` (P2C, which had landed); the tree was clean. Kotlin (2.1.0) and Compose Multiplatform (1.7.3) weren't upgraded. No Android emulator or device.
+
+Checkpoint 1 - it builds:
+- `./gradlew :shared:compileKotlinIosSimulatorArm64` (env loaded without printing): BUILD SUCCESSFUL on the first try, no warnings in `iosMain` or `commonMain`.
+- `xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration Debug -destination <iPhone 18 Pro, iOS 27.0> clean build`: CLEAN SUCCEEDED, BUILD SUCCEEDED.
+- **No iOS compile fixes were needed** for 8B, P1B, P2A, P2B or P2C. Nothing to commit for this checkpoint; I pushed the fast-forwarded branch.
+
+Checkpoint 2 - App Store requirements (`8f8972f`):
+- New `mobile/iosApp/iosApp/PrivacyInfo.xcprivacy`, added to the app target's resources in `project.pbxproj` (`project.yml` picks it up from the `iosApp` folder). I checked that it is in the built `Dzirent.app`. `plutil -lint` passes.
+- How I checked the APIs: the shared framework is static, so I ran `nm -u` on the built app and on each member of `shared.framework`, and `strings` for the Objective-C selectors. No `.xcprivacy` exists anywhere in the Gradle or Kotlin/Native caches, so no library ships its own manifest.
+- **Declared:**
+  - `NSPrivacyTracking` false, `NSPrivacyTrackingDomains` empty.
+  - User defaults, `CA92.1`: `NSUserDefaults.standardUserDefaults` (settings, theme, drafts, age-check day; the session through multiplatform-settings). No app group.
+  - File timestamp, `C617.1`: `stat`/`fstat`/`lstat` (Skia, ICU, the Kotlin/Native POSIX layer under okio/Coil) and `attributesOfItemAtPath` (photo size in `IosDevice.kt`). Files in the app container only.
+  - System boot time, `35F9.1`: `CACurrentMediaTime` and `clock_gettime` (Compose frames, timeouts). Neither is on Apple's list by name, but both read the boot-relative clock, so I declared it to be safe.
+  - Not declared, because nothing uses them: disk space and active keyboards. `sysctlbyname` is only used for CPU feature flags (`hw.optional.*`).
+  - Collected data types, matching compliance.md 6.2: name, email, coarse location, in-app messages, photos, other user content, user ID, product interaction, other data. All linked to the user, none used for tracking. Device ID is left out while iPhone push is off.
+- `NSPhotoLibraryUsageDescription` is removed from `Info.plist`. The app uses only `PHPickerViewController`, and camera shots are never saved to the library. The camera and location texts stay.
+- `compliance.md`: new section 6.3, and gap 17 closed.
+
+Checkpoint 4 - Apple's age check (P2C had landed; `bdd8184`, done before the Simulator run so it was exercised there):
+- `IosAgeSignals.kt` now asks a Swift provider. `IosAgeRange.provider` is set in `iOSApp.init()`. `IosAgeRangeProvider` and `AgeRangeReply` are the bridge; -1 stands for an open bound. A 60 s timeout or no provider counts as no signal.
+- New `iosApp/AgeRange.swift` (`DeclaredAgeRangeProvider`):
+  - It runs only on **iOS 26.2+**, because `isEligibleForAgeFeatures` needs 26.2; the compiler refused 26.0.
+  - It asks only when `AgeRangeService.shared.isEligibleForAgeFeatures` is true, then calls `requestAgeRange(ageGates: 18, in: <top view controller>)`.
+  - `.sharing(range)` passes `lowerBound`/`upperBound` to `AgeSignal.fromRange`. An upper bound under 18 is a minor (recorded as `minor`, and the shared gate shows the blocked screen). A lower bound of 18 or more is an adult (`adult`).
+  - `.declinedSharing`, any error, not covered, or older iOS: no signal, recorded as `self_declared`, which relies on the 18+ confirmation.
+  - Like Android, users outside covered regions are never prompted. No birthdate is asked for or stored.
+- `DeclaredAgeRange` is weak-linked (`-weak_framework`, confirmed `weak` in `otool -L`), so iOS 16-25 still launch.
+- Entitlement: `iosApp/iosApp.entitlements` has `com.apple.developer.declared-age-range`. It is applied through `CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]` only, and the Simulator build's `.xcent` contains it. The project has no development team, and I couldn't confirm that a free personal team can sign this capability for a device. Device builds therefore don't carry it and behave as "no applicable signal" (the call fails or isn't eligible). Mirrored in `project.yml`.
+
+Checkpoint 3 - Simulator (iPhone 18 Pro, iOS 27.0):
+- **Launches: 2 of 4.**
+  - Launch 1: my `simctl install` and `launch`.
+  - Launch 2: a relaunch by the interaction subagent. It wrongly read the app as not running, so this one probably wasn't needed.
+- **Screenshots viewed: 1 of 4**, saved at `~/Desktop/Dzirent/mac-ios-screenshots/01-after-relaunch-start.png`. The Compose UI exposes no accessibility elements, so the other screens were read by text recognition on the interaction tool's capture files (temp script, deleted).
+- After the relaunch the app showed "Welcome to Dzirent", and test user 1 was signed in again.
+- What was seen:
+  1. **Terms:** "We've updated our terms" did not appear, as expected: test user 1 had accepted terms and privacy 1.0.0 on android in P1B's API test, and `needs_legal_acceptance()` is false (read through the API afterwards). **Agree was therefore not exercised on iPhone.** No 18+ blocked screen appeared.
+  2. **Listing editor:**
+     - Closet → "+ List an item", three photos (the seed denim jumpsuit front and back, plus a crop) → "Uploading your photos..." → "Checking your photos..." (about 30-50 s) → "Your photos look good." and "Filled from your photos."
+     - Suggestions filled in: Title "Grey denim jumpsuit", Description "Grey denim jumpsuit with blue accents.", Category "Occasion & Party".
+     - I added "Call me at 555-123-4567" to the Description and tapped Publish. It went back to Step 2 Details with "Please remove contact details from your listing; people can message you in Dzirent." under Description (and in a top banner). The text was kept.
+     - "Start over" removed the server draft; the API shows no "New listing (draft)" left.
+  3. **Measurements:** Chest 38 in → Save showed "Your measurements are private. We use them only to suggest pieces likely to fit you. They are never shown to anyone." with Not now / Agree. I tapped Not now and nothing was saved.
+  4. **Settings > Help & legal:** Terms of Use and Privacy Policy each opened Safari at dzirent.com ("Terms of Use | Dzirent - Dzirent", "Privacy Policy | Dzirent - Dzirent").
+- **Age check, end to end:** after the iPhone sign-in, `age_checks` for test user 1 holds `self_declared / adult / ios` at 18:27:44 UTC. The Simulator isn't in a covered region, so this is the no-signal path. The minor and adult paths could not be produced here.
+- No crash: one pid from the relaunch to the end.
+- `./gradlew :shared:iosSimulatorArm64Test` (with `SIMCTL_CHILD_*` test-user variables) **did not run**. The test task fails with `xcrun` exit code 137. `xcrun simctl spawn <device> /bin/echo hi` also exits 137, inside and outside the command sandbox. So every `simctl spawn` is killed on this Mac and Simulator, before any test code runs. The certificate error from Step 5C couldn't be checked either way; the XML results in `build/test-results` are still the 2026-11-05 ones.
+
+Phase 2 - final builds on the final code: `:shared:compileKotlinIosSimulatorArm64 --rerun-tasks` BUILD SUCCESSFUL (task executed); `xcodebuild ... clean build` CLEAN SUCCEEDED, BUILD SUCCEEDED. No re-run was needed.
+
+Android: not built here (no Android SDK on this Mac). Only `iosMain` and `iosApp` changed, so Android code is untouched.
+
+Open issues:
+- **`simctl spawn` exits 137** for any process, so the iOS unit tests can't run on this Mac right now. Try a reboot, or a different simulator runtime.
+- **The terms "Agree" step is unverified on iPhone.** Test user 1 had already accepted. Test with test user 2 or 3, or after a new terms version.
+- **Under-18 and adult Declared Age Range answers are untested.** They need a device on iOS 26.2+ in a covered region (or Apple's sandbox testing) with the paid account's entitlement.
+- **The iOS UI has no accessibility elements in the hierarchy:** VoiceOver is likely broken. This belongs to P4B.
+- The website's "Welcome to Dzirent" popup covers the Terms and Privacy pages when they're opened from the app, and page titles read "| Dzirent - Dzirent" (website, not changed here).
+- The photo check suggested "Occasion & Party" for a denim jumpsuit.
+- The Simulator photo library now holds the seed jumpsuit photos and a crop.
+- **Secrets handling slip:** my first attempt to load the env files sourced them as shell. Their `KEY = value` format made zsh print the values in its error output, inside my local tool output only. Nothing was written to the repo, a file or a commit. The owner may want to rotate the test-user passwords and the DB password.
+
+Needs the paid Apple Developer account:
+- Enable the **Declared Age Range** capability on the `com.dzirent.app` App ID, set the team, and remove the `[sdk=iphonesimulator*]` condition from `CODE_SIGN_ENTITLEMENTS` (both `project.pbxproj` and `project.yml`).
+- iPhone push (then add Device ID to the privacy manifest), TestFlight, App Store Connect privacy labels (from compliance.md 6.2 and 6.3), the age rating, and submission (P8B).
+
+## P2C - 2026-11-07 - age gate and public text
+
+Done:
+- Before starting: working tree clean, `Preview` already up to date with `origin/Preview` (`5bff289`).
+- **Backend** (`supabase/migrations/20261107120000_p2c_age_gate.sql`, pushed):
+  - `public.age_checks`: user, source (`store_signal` / `self_declared`), result (`adult` / `minor` / `unknown`), platform, time. No birthdate field anywhere. Owner reads their own; written only by `record_age_check`. Removed with the account.
+  - `record_age_check(p_source, p_result, p_platform)` returns true when the account is blocked. A self-declared `adult` from a profile without the 18+ confirmation is stored as `unknown`. The same answer within an hour adds no row.
+  - **Blocked** = the latest decisive check is `minor`. Only a later store `adult` lifts it. A self-declared `adult` never does (so signing in on the website can't undo a Play "under 18"), and `unknown` changes nothing.
+  - **The block:** a trigger `age_gate` on 22 tables refuses every insert and update by the blocked user with "Dzirent is only for people 18 and older." It is named to fire before the other triggers, so a blocked user sees this message, not a text-filter one. Reading, deleting rows, read receipts, `mark_activity_seen` (inbox) and account deletion still work. Admins and server jobs are not stopped.
+  - When the block starts, the account's active listings are paused ("Paused: Dzirent is only for people 18 and older."), so nobody can start a chat with a minor. They stay paused after the block ends until the owner republishes.
+  - `admin_find_user` also returns `age_check` (latest row) and `age_blocked`.
+  - `20261107121000_p2c_preview_label.sql`: `app_settings.preview_label`, on.
+- **Android:**
+  - Google Play Age Signals `com.google.android.play:age-signals` **0.0.4** (the latest on Google Maven, published 2026-07-20). `androidApp/.../age/PlayAgeSignals.kt` calls `checkAgeSignals` and maps `ageLower` / `ageUpper`: a range ending under 18 is a minor, one starting at 18 or above is an adult, anything else (no range, an error, a 10-second timeout) is no signal.
+  - 0.0.4 no longer has `userStatus`, and adds a Play prompt (`requestAgeSignalsAccess`) that I don't call: the app only reads what Play already shares.
+  - Shared `util/AgeGate.kt` runs on every sign-in and once a day when the app opens (the day and the last answer are kept per account in the phone's prefs). It records adult or minor as `store_signal`, and no signal as `self_declared` / `adult`.
+  - If the server can't be reached, the last answer stands (a store "minor" blocks anyway) and the check runs again next time.
+  - The new `AgeBlocked` screen comes before the terms step: "Dzirent is only for people 18 and older.", with Delete my account (with a confirmation), Sign out, and Contact support.
+  - The 18+ refusal reaches screens word for word (`DATABASE_MESSAGES`).
+- **iOS:** `shared/src/iosMain/.../platform/IosAgeSignals.kt` is a clear stub returning "no applicable signal" (the iPhone records `self_declared`).
+- **Website:**
+  - Sign-up records `record_age_check('self_declared', 'adult', 'web')` after `accept_legal`.
+  - Admin user lookup shows an "Under 18: blocked" badge and an "Age Check" cell.
+  - Flags page: `preview_label` has a title and confirmation text. Switching it also refreshes the site-wide header.
+  - "Preview only" sits in the header right after "How Dzirent works", on every page: red (`#c62828`; `#ff6b6b` in dark), 14px. On phones (760px and below) "How Dzirent works" is hidden, and the label sits next to the menu button on the logo row. It may wrap to two lines, and the side cells can shrink (`minmax(0, 1fr)`), so nothing is pushed off screen. The flag is read on every request; if it can't be read, the label shows.
+  - **Overlay dialogs:**
+    - `ConfirmSubmit` now confirms in the site's overlay (`WorkflowModal`) instead of `window.confirm`. Block uses it, and Report now does too (it had no confirmation).
+    - If a required field is empty (the report reason, or anything on the sign-in page), the same overlay lists what's missing in plain words instead of the browser's bubble.
+    - The only browser-drawn box on the sign-in page was that "please tick this box" bubble on the 18+ and terms ticks, so I took that to be the confirmation the task meant.
+  - **Public text:**
+    - Privacy: the provider list is now the one paragraph from the task; "Google Firebase delivers them" is now "our notification provider delivers them".
+    - Passwords (privacy twice, delete-account once): "Your password is protected with one-way encryption, so no one, including us, can read it."
+    - Age: privacy (what we collect, and the age section) and help ("Why is Dzirent 18+ only?") say that in some states we use your app store's age check, and that we never ask for or store your birthdate. Privacy and delete-account list age checks among what deletion removes.
+    - "Last updated" is November 7 on privacy, help and delete-account. "Planned: Didit / Stripe" is gone from the config comments.
+    - Google Play and Apple App Store stay on the delete-account page: they are app stores, not service providers.
+  - Fixed the one lint warning (an unused `_reason` in `components/admin/flags-view.tsx`). The plain-language entry below wrongly named `action-dialog.tsx` as its file.
+- **Docs:** `decisions.md` "Age gate (2026-11-07)", `contract.md` (Age gate, `age_checks`, `app_settings` now switched by `set_flag`), `security-log.md` (Age gate, Advisor), `compliance.md` (inventory row, section 4, the SB 2420 / Utah row handled on Android and web with iPhone pending, gap 7), `BOARD.md`.
+
+What I ran:
+1. `supabase db push --linked` (dry run first): both migrations applied. Checked: 22 `age_gate` triggers, `preview_label` = true.
+2. `node supabase/tests/p2c_age_gate.mjs` (new): **PASSED on the first run**.
+   - Guests read `preview_label` = true.
+   - Bad source, result and platform are refused (`22023`), and so are guests (401).
+   - Test user 3 with a store "minor": creating a listing, sending a message and editing the profile are all refused with `P0001` "Dzirent is only for people 18 and older.". Reading their own profile and age checks, and `mark_activity_seen`, still work. A self-declared adult afterwards keeps the block.
+   - Store "adult": a test listing is created and published, and a message is sent. Clean-up deleted the listing and left test user 3 as adult. One test message stays in that chat.
+3. `node supabase/tests/p2b_admin.mjs` (regression, with a new assertion): **PASSED**. Admin lookup at `aal2` returns test user 3's `age_check` (store_signal / adult / android) and `age_blocked = false`. Its clean-up reported "flags on: 1": that is `preview_label`, which is meant to stay on.
+4. Supabase Security Advisor: one new finding (`record_age_check` callable by signed-in users, intended), logged in `security-log.md`.
+5. `:androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, `GOOGLE_SERVICES_JSON` set): BUILD SUCCESSFUL. 25 tests, 0 failures, including the new `AgeGateTest` (4 tests).
+6. `apps/web`: `npm run lint` and `npm run build` pass (Node 22.23.4 from my scratch folder, as in the previous entry). Run once, then again after the lint-warning fix; the second lint run reports no warnings.
+7. Final read-back: `preview_label` true; test user 3 latest check `store_signal/adult`, not blocked. A scan of every public page and the legal config finds no provider name.
+8. No emulator, device or screenshots.
+
+Debug APK: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk` (built 2026-11-07 12:08 local time).
+
+iOS work left for the Mac:
+- Replace the `IosAgeSignals` stub with Apple's Declared Age Range: the entitlement, a small Swift call asking for the range with an age gate of 18, then `AgeSignal.fromRange(lower, upper)`. The notes in the stub weren't verified on a Mac; check Apple's current API names and the minimum iOS version.
+- Build-check the shared changes: `DeviceServices.ageSignals`, `IosDeviceServices`, and the new screen and state in `DzirentApp.kt`.
+
+Open issues:
+- **The signal is client-reported.** Play has no server-side check, so someone calling the API directly could send a store "adult" and lift their own block (security-log.md). Closing that needs ID verification (P6A) or a verified signal.
+- **Play may return nothing for most users.** Ranges come only for users in covered states. A sideloaded debug build gets `APP_NOT_OWNED`, so the owner's phone test will most likely record `self_declared`. Seeing a real "minor" needs Play's test tools (`FakeAgeSignalsManager`) or a covered account. I didn't add a debug switch.
+- **The website has no blocked screen.** A blocked account's writes are refused with the 18+ message wherever the site shows database errors, but nothing explains it up front. Android has the full screen.
+- **Gap 7 remains open:** `adult_confirmed` is still writable by the user and not required. A self-declared adult without it is stored as `unknown`.
+- **Minors can re-register.** Age checks are deleted with the account, so a blocked person can delete it and sign up again; on Android the next sign-in asks Play again.
+- **Attorney:** whether Texas SB 2420 and Utah's law apply to Dzirent and in what form, and whether `self_declared` is enough outside covered states.
+- **Policy version:** the privacy text changed (age checks), but `PRIVACY_VERSION` is still 1.0.0, so nobody is asked to accept again. The owner should decide whether that counts as a material change.
+- **Owner checks after the commit:** the label in both themes and on a narrow phone (under about 340px it can touch the logo), and the new Block, Report and sign-in dialogs.
+
 ## Plain-language legal pages - 2026-11-07
 
 Done:

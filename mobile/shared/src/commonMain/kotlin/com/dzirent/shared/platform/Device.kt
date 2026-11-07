@@ -49,6 +49,9 @@ interface DeviceServices {
     val searchRelated: com.dzirent.shared.util.SearchRelated
     val push: PushService
 
+    /** The app store's age signal (P2C age gate). */
+    val ageSignals: AgeSignalsService
+
     /** The app's version name ("1.0.0"), recorded with the accessory declaration. */
     val appVersion: String
 

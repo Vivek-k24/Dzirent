@@ -160,9 +160,9 @@ export const LEGAL_CONFIG: LegalConfig = {
   SAFETY_TIPS: "", // To be filled by Owner
 
   // 9. Later phases
-  ID_VERIFICATION_PROVIDER: "", // P6A (Planned: Didit)
+  ID_VERIFICATION_PROVIDER: "", // P6A
   ID_DATA_RETENTION: "", // P6A
-  PAYMENT_PROVIDER: "", // P6B (Planned: Stripe)
+  PAYMENT_PROVIDER: "", // P6B
   PAYMENT_PROVIDER_TERMS_URL: "", // P6B
   FEES: "", // P6B
   REFUND_POLICY: "", // P6B

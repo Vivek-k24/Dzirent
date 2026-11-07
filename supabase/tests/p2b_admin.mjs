@@ -325,7 +325,10 @@ async function run() {
     assert.equal(found.length, 1);
     assert.equal(found[0].id, u3.id);
     assert.equal(found[0].suspended_until, null);
-    console.log(`   metrics: users ${metrics.users}, active listings ${metrics.active_listings}, open reports ${metrics.open_reports}; lookup found test user 3 (${found[0].reports_made} reports made)`);
+    // P2C: the latest age check and the block are part of the lookup.
+    assert.ok("age_check" in found[0], "lookup has age_check");
+    assert.equal(found[0].age_blocked, false, "test user 3 is not age-blocked");
+    console.log(`   metrics: users ${metrics.users}, active listings ${metrics.active_listings}, open reports ${metrics.open_reports}; lookup found test user 3 (${found[0].reports_made} reports made, age check ${JSON.stringify(found[0].age_check)})`);
 
     console.log("\n12. The admin log...");
     const log = (await rpc(admin, "admin_audit_log", { p_limit: 200 })).filter((r) => r.id > startId && r.admin_id === u1.id);

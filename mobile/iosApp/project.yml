@@ -40,6 +40,12 @@ targets:
           - "$(inherited)"
           - "-framework"
           - "shared"
+          # Declared Age Range exists only on iOS 26+; weak so iOS 16-25 still launch.
+          - "-weak_framework"
+          - "DeclaredAgeRange"
+        # Declared Age Range entitlement. Simulator only for now: a free (personal team) account
+        # can't sign it for a device. With the paid account, enable the capability and drop the condition.
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": iosApp/iosApp.entitlements
     preBuildScripts:
       - name: Build shared Kotlin framework
         script: '"$SRCROOT/scripts/build-shared.sh"'

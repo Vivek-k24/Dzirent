@@ -72,6 +72,13 @@ export async function authenticate(form: FormData) {
       );
     if (data.session) {
       await client.rpc("accept_legal", { p_platform: "web" });
+      // The age gate (P2C): the website has no app store signal, so the 18+ tick is recorded
+      // as self-declared. No birthdate is asked for or stored.
+      await client.rpc("record_age_check", {
+        p_source: "self_declared",
+        p_result: "adult",
+        p_platform: "web",
+      });
     }
     if (!data.session)
       redirect(

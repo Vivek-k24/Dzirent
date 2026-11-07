@@ -295,6 +295,8 @@ export async function setFlagAction(key: string, enabled: boolean) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin");
   revalidatePath("/admin/flags");
+  // The header on every page reads preview_label.
+  if (key === "preview_label") revalidatePath("/", "layout");
 }
 
 export async function findUserAction(query: string) {

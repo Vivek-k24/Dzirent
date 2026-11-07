@@ -98,6 +98,7 @@ export default async function Auth({
                 maxLength={80}
                 defaultValue={value(q, "name")}
                 required
+                data-required-message="Enter your name."
               />
               {value(q, "name_error") && (
                 <p
@@ -121,6 +122,7 @@ export default async function Auth({
               autoComplete="email"
               defaultValue={value(q, "email")}
               required
+              data-required-message="Enter your email address."
             />
           </label>
           <label className="field">
@@ -131,6 +133,9 @@ export default async function Auth({
               autoComplete={signup ? "new-password" : "current-password"}
               minLength={signup ? 8 : undefined}
               required
+              data-required-message={
+                signup ? "Choose a password of at least 8 characters." : "Enter your password."
+              }
             />
             {signup && <small>At least 8 characters.</small>}
           </label>
@@ -145,11 +150,21 @@ export default async function Auth({
                 </select>
               </label>
               <label className="checkbox">
-                <input type="checkbox" name="adult" required />
+                <input
+                  type="checkbox"
+                  name="adult"
+                  required
+                  data-required-message="Confirm that you are 18 or older."
+                />
                 <span>I confirm I am 18 years of age or older.</span>
               </label>
               <label className="checkbox">
-                <input type="checkbox" name="legal" required />
+                <input
+                  type="checkbox"
+                  name="legal"
+                  required
+                  data-required-message="Agree to the Terms of Use and Privacy Policy."
+                />
                 <span>
                   I agree to the{" "}
                   <Link className="accent" href="/terms" target="_blank">

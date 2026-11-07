@@ -123,3 +123,14 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - Report details are not filtered, so people can quote abuse; everything else stays filtered. This replaces "report reason and details" in "Content safety" for details only.
 - Feature flags are switched by admins (`set_flag`, logged), no longer only by migrations. This replaces "They change only through migrations" in "Photo scanning (2026-11-05)".
 - A suspended account can't publish, message, start chats or report, and its listings leave the shop window until the suspension ends. A ban is an Auth ban plus an open-ended suspension.
+
+## Age gate (2026-11-07)
+
+- Dzirent never asks for or stores a birthdate. An age check stores only the source (`store_signal` or `self_declared`), the result (`adult`, `minor`, `unknown`), the platform and the time, in `age_checks`, written only by `record_age_check`.
+- Android asks Google Play Age Signals (`com.google.android.play:age-signals` 0.0.4) on every sign-in and once a day when the app opens. A range under 18 records `minor`; 18 or older records `adult`; no applicable signal records `self_declared` (the 18+ confirmation at sign-up stands). The app never shows Play's own age-sharing prompt.
+- iPhone: a stub that behaves like "no applicable signal" until Apple's Declared Age Range is wired up in the Mac session.
+- The website records the 18+ tick at sign-up as `self_declared`.
+- A store's `minor` blocks the account. Only a later store `adult` lifts it; a self-declared `adult` never does, and `unknown` changes nothing.
+- A blocked account can only read its own data and delete itself: every write by that user is refused with "Dzirent is only for people 18 and older." Its active listings are paused when the block starts and stay paused after it ends until the owner republishes them.
+- Admins see the latest age check and the block in user lookup.
+- `preview_label` (`app_settings`, default on) shows "Preview only" in red in the website header; admins switch it on the Flags page.
