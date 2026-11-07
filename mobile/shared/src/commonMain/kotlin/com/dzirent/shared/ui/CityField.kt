@@ -122,7 +122,7 @@ fun CityField(
                     text = state.message,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).announced()
                 )
                 TextButton(onClick = { retryCount++ }) { Text("Retry") }
             }

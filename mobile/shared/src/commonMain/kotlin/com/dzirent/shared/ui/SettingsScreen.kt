@@ -94,7 +94,7 @@ fun SettingsScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("Settings") },
+            title = { Text("Settings", modifier = Modifier.asHeading()) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -187,7 +187,7 @@ fun SettingsScreen(
                     text = it,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp).announced()
                 )
             }
             if (profile != null) OutlinedButton(
@@ -210,7 +210,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
-                    .height(50.dp)
+                    .heightIn(min = 50.dp)
             ) {
                 Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -229,7 +229,7 @@ fun SettingsGroup(title: String) {
         style = MaterialTheme.typography.titleSmall,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 4.dp)
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 4.dp).asHeading()
     )
 }
 
@@ -408,7 +408,7 @@ private fun ChangePasswordDialog(
     AlertDialog(
         onDismissRequest = { if (!isSaving) onDismiss() },
         properties = DialogProperties(dismissOnClickOutside = !isSaving),
-        title = { Text("Change password") },
+        title = { Text("Change password", modifier = Modifier.asHeading()) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PasswordField("Current password", current) { current = it; error = null }
@@ -416,7 +416,8 @@ private fun ChangePasswordDialog(
                 Text(
                     text = error ?: "At least $PASSWORD_MIN characters.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.announced()
                 )
             }
         },
@@ -484,7 +485,7 @@ private fun DeleteAccountDialog(
         onDismissRequest = { if (!isDeleting) onDismiss() },
         properties = DialogProperties(dismissOnClickOutside = !isDeleting),
         icon = { Icon(Icons.Default.DeleteForever, contentDescription = null) },
-        title = { Text("Delete account?") },
+        title = { Text("Delete account?", modifier = Modifier.asHeading()) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -508,7 +509,7 @@ private fun DeleteAccountDialog(
                         )
                     }
                 }
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.announced()) }
             }
         },
         confirmButton = {

@@ -130,7 +130,7 @@ fun CommunityPolicyScreen(onBack: () -> Unit) {
 private fun PolicyScreen(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text(title) },
+            title = { Text(title, modifier = Modifier.asHeading()) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -152,7 +152,7 @@ fun HowDzirentWorksDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Shield, contentDescription = null) },
-        title = { Text(DzirentPolicy.TITLE) },
+        title = { Text(DzirentPolicy.TITLE, modifier = Modifier.asHeading()) },
         text = { PolicyBody() },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Got it") }

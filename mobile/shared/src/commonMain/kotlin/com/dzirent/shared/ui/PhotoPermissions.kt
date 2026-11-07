@@ -8,6 +8,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.dzirent.shared.platform.KeyValueStore
 import com.dzirent.shared.platform.PhotoStore
 
@@ -38,7 +39,7 @@ fun PhotoConsentDialog(source: PhotoSource, onContinue: () -> Unit, onDismiss: (
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(if (camera) Icons.Default.PhotoCamera else Icons.Default.PhotoLibrary, contentDescription = null) },
-        title = { Text(if (camera) "Use your camera" else "Use your photos") },
+        title = { Text(if (camera) "Use your camera" else "Use your photos", modifier = Modifier.asHeading()) },
         text = {
             Text(
                 if (camera) "Dzirent uses your camera only to add pictures to your listing."

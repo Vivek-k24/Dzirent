@@ -616,7 +616,8 @@ private fun RowScope.BottomTab(
         modifier = modifier,
         icon = {
             BadgedBox(badge = { if (dot) AccentDot() }) {
-                Icon(tab.icon, contentDescription = if (dot) "${tab.label}, new" else tab.label)
+                // The label below already names the tab; the icon adds only the new-activity dot.
+                Icon(tab.icon, contentDescription = if (dot) "New activity" else null)
             }
         },
         label = {

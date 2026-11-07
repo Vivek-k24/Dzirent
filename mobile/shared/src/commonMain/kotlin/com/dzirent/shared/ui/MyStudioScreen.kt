@@ -72,7 +72,7 @@ fun MyStudioScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("My studio") },
+            title = { Text("My studio", modifier = Modifier.asHeading()) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -91,7 +91,7 @@ fun MyStudioScreen(
                 label = { Text("Studio name") },
                 placeholder = { Text(profile.displayName) },
                 isError = fieldErrors["studio_name"] != null,
-                supportingText = fieldErrors["studio_name"]?.let { { Text(it) } },
+                supportingText = fieldErrors["studio_name"]?.let { { Text(it, modifier = Modifier.announced()) } },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -101,7 +101,7 @@ fun MyStudioScreen(
                 onValueChange = { handle = cleanHandleInput(it); fieldErrors = fieldErrors - "studio_handle" },
                 label = { Text("Handle") },
                 prefix = { Text("@") },
-                supportingText = { Text(handleError ?: "Shown at the top of your studio page.") },
+                supportingText = { Text(handleError ?: "Shown at the top of your studio page.", modifier = Modifier.announced()) },
                 isError = handleError != null,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -123,7 +123,7 @@ fun MyStudioScreen(
                 label = { Text("Pickup area") },
                 placeholder = { Text("e.g. East Austin") },
                 isError = fieldErrors["pickup_area"] != null,
-                supportingText = { Text(fieldErrors["pickup_area"] ?: "A neighborhood, never your address.") },
+                supportingText = { Text(fieldErrors["pickup_area"] ?: "A neighborhood, never your address.", modifier = Modifier.announced()) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -150,13 +150,13 @@ fun MyStudioScreen(
 
             error?.let {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.announced())
             }
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = { save() },
                 enabled = !isSaving && handleError == null,
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) {
                 Text(if (isSaving) "Saving..." else "Save")
             }

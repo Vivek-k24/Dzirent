@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -42,7 +43,10 @@ fun initialsOf(name: String): String {
     }
 }
 
-/** Round avatar with the person's initials (profiles have no photo yet). */
+/**
+ * Round avatar with the person's initials (profiles have no photo yet). Decorative for screen
+ * readers: the name is always shown next to it, so the initials would only repeat it.
+ */
 @Composable
 fun Avatar(name: String, size: Dp, modifier: Modifier = Modifier) {
     Box(
@@ -51,6 +55,7 @@ fun Avatar(name: String, size: Dp, modifier: Modifier = Modifier) {
             .size(size)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clearAndSetSemantics { }
     ) {
         Text(
             text = initialsOf(name),

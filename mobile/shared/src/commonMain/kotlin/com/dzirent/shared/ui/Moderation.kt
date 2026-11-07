@@ -77,7 +77,7 @@ fun ReportDialog(
         AlertDialog(
             onDismissRequest = onDismiss,
             icon = { Icon(Icons.Default.Flag, contentDescription = null) },
-            title = { Text(target.title) },
+            title = { Text(target.title, modifier = Modifier.asHeading()) },
             text = { SuspensionNotice(suspended) },
             confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } }
         )
@@ -88,7 +88,7 @@ fun ReportDialog(
         AlertDialog(
             onDismissRequest = onDismiss,
             icon = { Icon(Icons.Default.CheckCircle, contentDescription = null) },
-            title = { Text("Report sent") },
+            title = { Text("Report sent", modifier = Modifier.asHeading()) },
             text = { Text("Thanks. We'll review this.") },
             confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } }
         )
@@ -99,7 +99,7 @@ fun ReportDialog(
         onDismissRequest = { if (!isSending) onDismiss() },
         properties = DialogProperties(dismissOnClickOutside = !isSending),
         icon = { Icon(Icons.Default.Flag, contentDescription = null) },
-        title = { Text(target.title) },
+        title = { Text(target.title, modifier = Modifier.asHeading()) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text("Why are you reporting this?", style = MaterialTheme.typography.bodyMedium)
@@ -136,7 +136,7 @@ fun ReportDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 error?.let {
-                    Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.announced())
                 }
             }
         },
@@ -183,7 +183,7 @@ fun BlockUserDialog(name: String, onConfirm: () -> Unit, onDismiss: () -> Unit) 
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Block, contentDescription = null) },
-        title = { Text("Block $name?") },
+        title = { Text("Block $name?", modifier = Modifier.asHeading()) },
         text = {
             Text(
                 "You won't be able to message each other, and you won't see each other's listings. " +
@@ -240,7 +240,7 @@ fun BlockedUsersScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("Blocked users") },
+            title = { Text("Blocked users", modifier = Modifier.asHeading()) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -265,7 +265,7 @@ fun BlockedUsersScreen(
                                     text = message,
                                     color = MaterialTheme.colorScheme.error,
                                     style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.padding(16.dp)
+                                    modifier = Modifier.padding(16.dp).announced()
                                 )
                             }
                         }

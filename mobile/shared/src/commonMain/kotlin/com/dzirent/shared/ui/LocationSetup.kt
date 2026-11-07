@@ -96,7 +96,7 @@ fun LocationSetupDialog(
         onDismissRequest = { if (!isSaving) onDismiss() },
         properties = DialogProperties(dismissOnClickOutside = !isSaving),
         icon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-        title = { Text("Set your location") },
+        title = { Text("Set your location", modifier = Modifier.asHeading()) },
         text = {
             Column {
                 when (step) {
@@ -141,7 +141,8 @@ fun LocationSetupDialog(
                     Text(
                         text = it,
                         color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.announced()
                     )
                 }
             }

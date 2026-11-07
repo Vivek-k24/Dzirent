@@ -123,7 +123,8 @@ fun TermsUpdateScreen(
                     text = it,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.announced()
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -143,7 +144,7 @@ fun TermsUpdateScreen(
                     }
                 },
                 enabled = !isBusy,
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) {
                 Text(if (isBusy) "Saving..." else "Agree")
             }
@@ -172,7 +173,7 @@ fun MeasurementsConsentDialog(onAgree: () -> Unit, onNotNow: () -> Unit) {
     AlertDialog(
         onDismissRequest = onNotNow,
         icon = { Icon(Icons.Default.Lock, contentDescription = null) },
-        title = { Text("Your measurements") },
+        title = { Text("Your measurements", modifier = Modifier.asHeading()) },
         text = { Text(MEASUREMENTS_CONSENT_TEXT) },
         confirmButton = { TextButton(onClick = onAgree) { Text("Agree") } },
         dismissButton = { TextButton(onClick = onNotNow) { Text("Not now") } }
@@ -214,7 +215,7 @@ fun MeasurementsConsentSetting(repository: DzirentRepository) {
     if (confirmWithdraw) {
         AlertDialog(
             onDismissRequest = { if (!isWithdrawing) confirmWithdraw = false },
-            title = { Text("Withdraw consent?") },
+            title = { Text("Withdraw consent?", modifier = Modifier.asHeading()) },
             text = {
                 Text(
                     "Your saved body measurements will be deleted, and \"Likely to fit you\" stops " +

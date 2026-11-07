@@ -683,7 +683,7 @@ fun ChatScreen(
                             text = message,
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f).announced()
                         )
                         if (sendError != null && sendError != CANT_MESSAGE_USER && !sendRefused) {
                             TextButton(onClick = { send(input) }, enabled = !isSending) { Text("Retry") }

@@ -124,7 +124,7 @@ fun MeasurementsSection(
                 text = error,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp).announced()
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
@@ -184,7 +184,7 @@ fun AvailabilitySection(
         }
     }
     error?.let {
-        Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.announced())
     }
     OutlinedButton(onClick = { showPicker = true; error = null }) {
         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -254,7 +254,7 @@ fun DateRangePickerDialog(
     ) {
         DateRangePicker(
             state = state,
-            title = { Text(title, modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp)) },
+            title = { Text(title, modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp).asHeading()) },
             showModeToggle = false,
             modifier = Modifier.weight(1f)
         )

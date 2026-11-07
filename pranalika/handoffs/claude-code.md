@@ -2,6 +2,86 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P4B - 2026-11-07 - app accessibility
+
+Done (shared code, so Android and iPhone both get it; no redesign):
+- Before starting: working tree clean, `Preview` up to date with `origin/Preview` (`17080e2`).
+- **Helpers** (`ui/Accessibility.kt`): `Modifier.asHeading()` (heading semantics) and `Modifier.announced()` (polite live region).
+- **Headings:**
+  - All 31 top-bar and dialog titles (`title = { Text(...) }`).
+  - `ScreenTitle` (bottom-bar screens), `SettingsGroup`, the closet's `SectionHeader`, the Home row titles, and the sidebar's "All categories".
+  - `SectionTitle` and the guided-pick step titles were already headings.
+- **Announced when they appear:**
+  - The sign-in and sign-up error cards, and 19 error texts across the screens and dialogs.
+  - Field errors in supporting text: legal name, display name, retail value, price note, title, studio name, handle, pickup area, measurement fields.
+  - The listing editor's publish errors.
+  - The whole photo-check banner: "Uploading your photos…" → "Checking your photos…" → result.
+  - Character counters were left alone, so typing isn't interrupted.
+- **Listing cards:** `ListingCard` reads as one item ("title, $25, 3 mi", the "·" read as a pause) with "double-tap to open". The photo no longer repeats the title.
+  - Row thumbnails (`ListingThumbnail`: inbox, chat header, closet, rentals) and the saved-piece photo are decorative, because their title sits next to them.
+  - Detail-screen photos keep "title, photo 2 of 4". Studio grid photos (photo-only) keep the title.
+- **Avatars** are decorative: the initials only repeated the name next to them. The Home avatar button is now labelled "Open menu"; its label was only the initials.
+- **Labels that say what they act on:**
+  - Closet: the switch is "Show <title> in the shop", reporting Active or Paused; "Edit <title>" and "Delete <title>".
+  - Saved: "Remove <title> from Saved" for pieces and studios.
+  - Home: "See all: <row>".
+  - Bottom tabs: the icon no longer repeats the tab label. The inbox dot reads "New activity".
+- **State:** sidebar categories are `selectable`, so TalkBack says which is selected (it was color and bold only). Material chips, tabs, segmented buttons and switches already reported their state. The Settings switch rows were already `toggleable`.
+- **Touch targets (48 dp):**
+  - The photo "remove" X keeps the same 32 dp circle in the same corner, inside a 48 dp touch area.
+  - The availability date chip: its 24 dp X button is gone; tapping the whole chip removes the dates, like the search filter chips, with the X as the visual hint and TalkBack hearing "double-tap to remove these dates".
+  - Sidebar categories are at least 48 dp tall.
+  - A scan found no other tappable element sized under 48 dp. Material components enforce 48 dp themselves.
+- **Large text:** 23 buttons with a fixed 48 or 50 dp height now use a minimum height, so the label grows instead of clipping. This includes Sign in, Create account, Message lender, Publish, Next, Reset, Apply, List an item, Sign out, Agree and Delete my account. The look is the same at normal sizes. Truncated one-line titles keep their full text for screen readers, and the full title shows on the listing page.
+- **Contrast**, measured for every theme pair (`ui/theme/Theme.kt`):
+  - Text all passed 4.5:1 except the dark accent on grey chips (4.497:1), nudged from #E8638A to #EA658C: now 4.6:1 there, 6.2:1 on the background.
+  - The outline color (text-field borders, outlined buttons, outline-tinted icons) was below 3:1. It is now #8C8C8C in light (3.4:1; was 2.5:1) and #6A6A6A in dark (3.6:1; was 3.0:1).
+  - Dividers (`outlineVariant`) are decorative and unchanged.
+- **Lint:** `androidApp/build.gradle.kts` sets `ContentDescription`, `ClickableViewAccessibility`, `GetContentDescriptionOverride`, `KeyboardInaccessibleWidget`, `LabelFor`, `AccessibilityWindowStateChangedEvent` and `AccessibilityScrollActions` as errors, with `checkDependencies = true` so the shared module is checked too.
+  - Lint reported no accessibility issues. Its accessibility checks read XML views; the Compose screens were reviewed by hand, above.
+  - It did report two real errors, both fixed:
+    - `MainActivity` called `PackageInfo.longVersionCode`, which needs Android 9, while the app supports Android 8, so it would have crashed at start on Android 8.x. It now uses `PackageInfoCompat`.
+    - The P3A save picker needs Fragment 1.3+, and Play services brought 1.1.0. `androidx.fragment` 1.8.5 is now pinned in the shared module.
+
+What I ran:
+1. A baseline `:androidApp:lintDebug` with the new settings: 2 errors (the two above), 0 accessibility issues, 71 warnings.
+2. `:androidApp:assembleDebug :androidApp:lintDebug :shared:testDebugUnitTest` (JDK 21, env loaded, `GOOGLE_SERVICES_JSON` set). It failed three times before passing:
+   - two missing `Modifier` imports, in `PhotoPermissions.kt` and then `Notifications.kt`;
+   - then the Fragment pin had to move from the app into the shared module, because lint checks each module with its own dependencies.
+   - **Final run: BUILD SUCCESSFUL.** Lint 0 errors (72 warnings: vector path length, dependency updates, KTX suggestions; none accessibility). Unit tests 28, 0 failures.
+3. Contrast ratios computed with a script (WCAG relative luminance) for 26 pairs, then for the new colors.
+4. No emulator, device or screenshots.
+
+APK (built 2026-11-07 14:42):
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, which replaced the P3A copy. Same size and SHA-256 as the original.
+
+TalkBack test list for the owner (TalkBack on, then Settings > Display > Font size and Display size at the largest):
+1. **Home:** swipe through. Each card is one stop ("title, price, distance"), row titles are headings (swipe up/down with headings selected), "See all: <row>", and the avatar says "Open menu".
+2. **Bottom bar:** each tab says its name once and "selected" on the current one; Inbox says "New activity" when the dot shows.
+3. **Sidebar:** categories say "selected" / "not selected"; "All categories" is a heading.
+4. **Listing page:** photos read "title, photo 1 of N"; Save says "Save" / "Remove from Saved".
+5. **List an item:**
+   - Add photos: the remove X on a photo says "Remove the front photo" and is easy to hit.
+   - "Uploading your photos…" and "Checking your photos…" are read out by themselves, then the result.
+   - In Details, tapping a date chip removes it, and TalkBack says "double-tap to remove these dates".
+6. **Errors:** wrong password on sign-in, a contact detail in a listing title, too-short password in Change password. Each message should be read without moving to it.
+7. **Closet:** the switch says "Show <title> in the shop, Active / Paused"; Edit and Delete say the title.
+8. **Largest font:** sign-in, sign-up, listing editor buttons, filter sheet Reset/Apply, Settings Sign out. Labels wrap or grow, never cut off.
+9. **Dark mode:** text field borders and outlined buttons are visible; accent text on grey chips is readable.
+
+iPhone VoiceOver items for the next Mac session:
+- **Test with VoiceOver actually on.** Compose Multiplatform builds the iOS accessibility tree only while an assistive technology is running. The Mac session's "no accessibility elements" was read from the inspector with VoiceOver off, so check again with VoiceOver on before concluding it's broken.
+- Then the same list as above, on iPhone: headings (rotor), announcements (errors, photo check), one-stop listing cards, labelled buttons, and Dynamic Type at the largest size (Compose follows the system font scale on iOS).
+- Build-check: `Accessibility.kt`, `Theme.kt` and the changed screens are all `commonMain`, with no iOS-specific code.
+
+Open issues:
+- **No device check:** none of this was heard on a device. TalkBack order, the live-region announcements and the largest-font layouts are untested until the owner's phone test.
+- **Lint coverage:** Android Lint has no Compose accessibility checks. Lint passing proves only the XML/manifest side, and the Compose screens were reviewed by reading the code.
+- **Small behavior change:** tapping an availability date chip now removes it. It used to do nothing, and only its tiny X removed it.
+- **Large-text gaps:** segmented buttons in Settings (theme, units) keep one-line labels; at the largest font a long label may truncate, and TalkBack still reads it in full. The Home top bar has a fixed 56 dp height, enough for one line at the largest scale, but worth a look.
+- **72 lint warnings** (none accessibility) are unchanged, mostly long vector paths in icons.
+
 ## P3B - 2026-11-07 - cleanup and retention
 
 Done:

@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -163,7 +164,7 @@ fun SizePriceDatesStep(
             label = { Text("Price details - optional") },
             placeholder = { Text("e.g. for 3 days, cleaning included") },
             isError = state.textErrors["price_note"] != null,
-            supportingText = state.textErrors["price_note"]?.let { { Text(it) } },
+            supportingText = state.textErrors["price_note"]?.let { { Text(it, modifier = Modifier.announced()) } },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -281,14 +282,16 @@ private fun AvailabilityChips(ranges: List<com.dzirent.shared.util.DateRange>, t
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ranges.sortedBy { it.start }.forEach { range ->
             val label = availabilityChipLabel(range, today)
+            // Tapping the chip removes the dates, like the search filter chips: the whole chip is
+            // the touch target (48 dp), and the X shows what a tap does.
             InputChip(
                 selected = true,
-                onClick = {},
+                onClick = { onRangesChange(ranges - range); error = null },
                 label = { Text(label) },
-                trailingIcon = {
-                    IconButton(onClick = { onRangesChange(ranges - range); error = null }, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove $label", modifier = Modifier.size(16.dp))
-                    }
+                trailingIcon = { Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                modifier = Modifier.semantics {
+                    onClick(label = "remove these dates") { onRangesChange(ranges - range); error = null; true }
+                    stateDescription = ""
                 }
             )
         }
@@ -298,7 +301,7 @@ private fun AvailabilityChips(ranges: List<com.dzirent.shared.util.DateRange>, t
             leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
         )
     }
-    error?.let { Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+    error?.let { Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.announced()) }
     if (showPicker) {
         DateRangePickerDialog(
             title = "Select available dates",

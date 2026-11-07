@@ -192,7 +192,8 @@ private fun SavedPieceRow(saved: SavedListing, onOpen: () -> Unit, onMessage: ()
         ) {
             ListingPhoto(
                 url = listing?.photos?.minByOrNull { it.position }?.storagePath,
-                contentDescription = listing?.title,
+                // The title is right next to it.
+                contentDescription = null,
                 modifier = Modifier
                     .size(width = 72.dp, height = 96.dp)
                     .clip(RoundedCornerShape(8.dp))
@@ -215,7 +216,7 @@ private fun SavedPieceRow(saved: SavedListing, onOpen: () -> Unit, onMessage: ()
                 }
             }
             IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Close, contentDescription = "Remove from Saved")
+                Icon(Icons.Default.Close, contentDescription = "Remove ${listing?.title ?: "this piece"} from Saved")
             }
         }
     }
@@ -244,7 +245,7 @@ private fun SavedStudioRow(saved: SavedStudio, onOpen: () -> Unit, onRemove: () 
                 }
             }
             IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Close, contentDescription = "Remove from Saved")
+                Icon(Icons.Default.Close, contentDescription = "Remove $title from Saved")
             }
         }
     }

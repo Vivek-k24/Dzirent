@@ -42,7 +42,7 @@ fun AboutScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("About Dzirent") },
+            title = { Text("About Dzirent", modifier = Modifier.asHeading()) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -92,7 +92,7 @@ fun LinkRow(title: String, icon: ImageVector, onClick: () -> Unit) {
 fun LicensesScreen(onBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("Open-source licenses") },
+            title = { Text("Open-source licenses", modifier = Modifier.asHeading()) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

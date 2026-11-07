@@ -99,7 +99,8 @@ fun AgeBlockedScreen(
                     text = it,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.announced()
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -107,7 +108,7 @@ fun AgeBlockedScreen(
                 onClick = { confirmDelete = true },
                 enabled = !isBusy,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) {
                 Text(if (isBusy) "Just a moment..." else "Delete my account")
             }
@@ -124,7 +125,7 @@ fun AgeBlockedScreen(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { if (!isBusy) confirmDelete = false },
-            title = { Text("Delete your account?") },
+            title = { Text("Delete your account?", modifier = Modifier.asHeading()) },
             text = { Text("Your profile, listings, photos and chats are deleted for good. This can't be undone.") },
             confirmButton = {
                 TextButton(

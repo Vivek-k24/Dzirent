@@ -187,7 +187,7 @@ private fun StudioContent(
                 }
                 if (!isMine && page.pieces.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onMessage, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                    Button(onClick = onMessage, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)) {
                         Text("Message ${lender.studioTitle}", maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }

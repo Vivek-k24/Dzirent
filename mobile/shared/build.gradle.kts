@@ -99,6 +99,8 @@ kotlin {
                 implementation(libs.play.services.location)
                 implementation(libs.androidx.exifinterface)
                 implementation(libs.androidx.activity.compose)
+                // The system save picker (AndroidDataExport) needs Fragment 1.3.0+; Play services bring 1.1.0.
+                implementation(libs.androidx.fragment)
                 // Open-source licenses screen
                 implementation(libs.aboutlibraries.compose.m3)
             }

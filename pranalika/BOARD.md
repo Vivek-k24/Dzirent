@@ -142,7 +142,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages, P2C, P3A, P3B), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
+| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages, P2C, P3A, P3B, P4B), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
 
 | P1A part 1: data inventory and `compliance.md`; legal fill-ins in `legal-placeholders.md` | Done |
 | P1A part 2: website legal pages (privacy policy, terms, community rules and prohibited items, copyright/DMCA, safety tips, delete-account page, support/contact), fill-ins in one config | Done |
@@ -187,7 +187,10 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Owner: say when to remove the 12 sample listings (`node supabase/seed/remove_sample_data.mjs --yes`, run by an agent) | To do |
 | Attorney: declaration retention period (placeholder 7 years) and report retention (placeholder 730 days) | To do |
 | P4A Website accessibility to WCAG 2.1 AA (automated checker in the build plus a manual pass) | To do |
-| P4B App accessibility: screen reader labels, touch targets, large text, contrast in both themes (iPhone part on the Mac) | To do |
+| P4B App accessibility: screen reader labels, touch targets, large text, contrast in both themes (iPhone part on the Mac) | Android done (Claude Code); iPhone VoiceOver check on the Mac |
+| P4B (Claude Code): headings on every screen and dialog title and section header, errors and photo-check progress announced, listing cards read as one item, row photos and avatars decorative, labelled closet switch and Edit/Delete/Remove buttons, selectable sidebar categories, 48 dp targets (photo remove, date chips, categories), buttons grow with large text, theme contrast fixes (outline, dark accent), Lint accessibility checks as errors (shared module included), two Lint errors fixed (Android 8 crash in MainActivity, Fragment version for the save picker) | Done |
+| Owner: TalkBack and largest-font test of P4B on Android (list in the P4B handoff) | To do |
+| Mac: VoiceOver pass of the shared screens with VoiceOver actually on (P4B handoff), and build-check the P4B shared-code changes | To do |
 | P5A Security hardening: database rule audit, rate limits, bot check on sign-up, website security headers, input checks on every server function, dependency and secret scanning | To do |
 | P5B Logs and monitoring: error tracking, uptime checks, alerts, backup restore drill, incident plan | To do |
 | P6A ID verification (Didit) on all three platforms; flag off, keys blank | To do |

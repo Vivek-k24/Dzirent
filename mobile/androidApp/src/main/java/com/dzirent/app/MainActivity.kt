@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.pm.PackageInfoCompat
 import com.dzirent.app.age.PlayAgeSignals
 import com.dzirent.app.push.ChatNotifications
 import com.dzirent.app.push.FirebasePush
@@ -34,7 +35,8 @@ class MainActivity : ComponentActivity() {
         val device = AndroidDeviceServices(
             applicationContext,
             packageInfo.versionName.orEmpty(),
-            packageInfo.longVersionCode,
+            // PackageInfo.longVersionCode needs Android 9 (API 28); the app starts at Android 8.
+            PackageInfoCompat.getLongVersionCode(packageInfo),
             FirebasePush(applicationContext),
             PlayAgeSignals(applicationContext),
             // Registers the "save file" picker, so it has to be made here in onCreate.
