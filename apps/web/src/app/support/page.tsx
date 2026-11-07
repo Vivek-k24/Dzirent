@@ -39,8 +39,8 @@ export default function SupportPage() {
             <h4>Customer Support</h4>
             <p>For questions about listings, account settings, or using the app.</p>
             <p style={{ fontWeight: 600, marginTop: "8px" }}>
-              <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL || "support@dzirent.com"}`}>
-                {LEGAL_CONFIG.SUPPORT_EMAIL || "support@dzirent.com"}
+              <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
+                {LEGAL_CONFIG.SUPPORT_EMAIL}
               </a>
             </p>
             <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>
@@ -48,7 +48,6 @@ export default function SupportPage() {
               <LegalPlaceholder
                 name="SUPPORT_RESPONSE_TIME"
                 label="support response time"
-                fallback="within 1–2 business days"
               />
             </p>
           </div>
@@ -57,8 +56,8 @@ export default function SupportPage() {
             <h4>Privacy & Data Rights</h4>
             <p>For data export, deletion assistance, or privacy questions.</p>
             <p style={{ fontWeight: 600, marginTop: "8px" }}>
-              <a href={`mailto:${LEGAL_CONFIG.PRIVACY_EMAIL || "privacy@dzirent.com"}`}>
-                {LEGAL_CONFIG.PRIVACY_EMAIL || "privacy@dzirent.com"}
+              <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
+                {LEGAL_CONFIG.SUPPORT_EMAIL}
               </a>
             </p>
           </div>
@@ -67,8 +66,8 @@ export default function SupportPage() {
             <h4>Trust, Safety & Abuse</h4>
             <p>To report abusive behavior, safety concerns, or fraud.</p>
             <p style={{ fontWeight: 600, marginTop: "8px" }}>
-              <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL || "support@dzirent.com"}`}>
-                {LEGAL_CONFIG.SUPPORT_EMAIL || "support@dzirent.com"}
+              <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
+                {LEGAL_CONFIG.SUPPORT_EMAIL}
               </a>
             </p>
           </div>
@@ -77,8 +76,8 @@ export default function SupportPage() {
             <h4>Security Disclosures</h4>
             <p>For security researchers reporting platform vulnerabilities.</p>
             <p style={{ fontWeight: 600, marginTop: "8px" }}>
-              <a href={`mailto:${LEGAL_CONFIG.SECURITY_EMAIL || "security@dzirent.com"}`}>
-                {LEGAL_CONFIG.SECURITY_EMAIL || "security@dzirent.com"}
+              <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
+                {LEGAL_CONFIG.SUPPORT_EMAIL}
               </a>
             </p>
           </div>
@@ -198,7 +197,6 @@ export default function SupportPage() {
           <LegalPlaceholder
             name="ACCESSIBILITY_CONTACT"
             label="accessibility contact email"
-            fallback="support@dzirent.com"
           />
           .
         </p>

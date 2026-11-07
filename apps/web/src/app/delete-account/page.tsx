@@ -108,7 +108,13 @@ export default function DeleteAccountPage() {
           </li>
           <li>
             <strong>Wardrobe listings &amp; photos:</strong> All items in your closet, including their
-            listing photos and visual search embeddings, are permanently removed from storage.
+            listing photos and visual search embeddings, are permanently removed from storage (deleted photos
+            may stay in a content delivery cache for a short time after deletion; exact time:{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="content delivery cache retention duration"
+            />
+            ).
           </li>
           <li>
             <strong>Private measurements:</strong> All recorded body measurements, sizing preferences,
@@ -137,9 +143,13 @@ export default function DeleteAccountPage() {
             duration required by applicable legal statutes of limitation.
           </li>
           <li>
-            <strong>Server logs:</strong> Standard web server, edge routing, and security access logs
-            (which record IP addresses and request endpoints) are retained on a rolling 30-day window
-            strictly for DDoS defense and error diagnostics before automatic overwriting.
+            <strong>Server logs:</strong> Technical access logs (which record IP addresses and request
+            endpoints) are retained for operational troubleshooting and security auditing for a limited period{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="server log retention period (Supabase keeps logs for at least 7 days; other providers unconfirmed)"
+            />
+            , after which they expire automatically.
           </li>
         </ul>
         <p>
@@ -147,7 +157,6 @@ export default function DeleteAccountPage() {
           <LegalPlaceholder
             name="WHAT_STAYS_AFTER_DELETION"
             label="post-deletion record retention details"
-            fallback="No personal advertising identifiers or marketing profiles are ever created or retained."
           />
         </p>
       </section>
@@ -172,7 +181,7 @@ export default function DeleteAccountPage() {
         <h2>7. Help If You Cannot Sign In</h2>
         <p>
           If you are unable to sign in to your Dzirent account (for example, if you lost access to your
-          email or two-factor device), you can request manual deletion by contacting our privacy team:
+          email or two-factor device), you can request manual deletion by contacting our support team:
         </p>
         <div className="legal-card" style={{ maxWidth: "560px", marginTop: "12px" }}>
           <h4>Manual Deletion Request</h4>
@@ -180,8 +189,8 @@ export default function DeleteAccountPage() {
             Email us from the address associated with your account:
           </p>
           <p style={{ fontWeight: 600 }}>
-            <a href={`mailto:${LEGAL_CONFIG.PRIVACY_EMAIL || "privacy@dzirent.com"}`}>
-              {LEGAL_CONFIG.PRIVACY_EMAIL || "privacy@dzirent.com"}
+            <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
+              {LEGAL_CONFIG.SUPPORT_EMAIL}
             </a>
           </p>
           <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", margin: 0 }}>
@@ -190,7 +199,6 @@ export default function DeleteAccountPage() {
             <LegalPlaceholder
               name="SUPPORT_RESPONSE_TIME"
               label="privacy request turnaround time"
-              fallback="30 days"
             />
             .
           </p>

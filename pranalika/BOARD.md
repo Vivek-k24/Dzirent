@@ -141,9 +141,10 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (P1A part 1), Antigravity (P1A part 2) | |
+| Done by: Claude Code (P1A part 1), Antigravity (P1A part 2, P1A fix-up) | |
 | P1A part 1: data inventory and `compliance.md`; legal fill-ins in `legal-placeholders.md` | Done |
 | P1A part 2: website legal pages (privacy policy, terms, community rules and prohibited items, copyright/DMCA, safety tips, delete-account page, support/contact), fill-ins in one config | Done |
+| P1A fix-up: legal page corrections (zero fallbacks, log placeholders, cache disclosure, worn photos allowed, real photo check scope, support@ only, Everyday category) | Done |
 | Owner and attorney: fill `legal-placeholders.md` (company, addresses, DMCA agent, law and disputes, taxes, age wording, retention periods) | To do |
 | Owner: `gcloud auth login` on this PC, so agents can read Cloud Logging retention and the billing kill switch (P1A part 1 couldn't) | To do |
 | P1B FAQ and help center; in-app Help links; terms acceptance recorded with version and date on all three platforms; explicit consent before saving body measurements | To do |

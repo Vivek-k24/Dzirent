@@ -37,6 +37,8 @@ One account can be both renter and lender.
 - Accessories allowed: sunglasses, handbags, ties, watches, belt buckles and costume jewelry (necklaces, earrings, bracelets, rings, brooches). Costume jewelry, like every accessory, needs the accessory declaration. Not allowed: smartwatches, caps, hats, boots, shoes, socks, pantyhose.
 - Not offered: everyday basics such as T-shirts, tank tops, hoodies, sweatshirts, track pants, sweatpants, joggers, shorts, jean shorts and plain everyday jeans.
 - Not allowed: lingerie, underwear and swimwear.
+- Not allowed: counterfeits, replicas, or damaged or dirty items.
+- Photos of the item being worn are allowed (hanger, mannequin, flat-lay, or worn are all fine). If a user appears in a photo, it is public like every listing photo; users must not include other people without their permission. No text, prices, phone numbers, social handles or watermarks on photos.
 - Listing photos are checked automatically. A check comes back allowed, not allowed (with the reason), or for review by a person at Dzirent. When the photos of a live listing change, they are checked again.
 - Location shows as "City, ST". Exact locations are never shown; only distance.
 - Listing cards show only the photo, title and "$price · distance". Never the word "free". No save button on cards.

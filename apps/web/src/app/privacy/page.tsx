@@ -484,15 +484,21 @@ export default function PrivacyPage() {
           <li>
             <strong>Deleted listings:</strong> When you delete a listing, its
             database entry, garment measurements, availability dates, and photo
-            files in storage are permanently removed.
+            files in storage are permanently removed. Deleted photos may stay in a
+            content delivery cache for a short time after deletion (exact time:{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="content delivery cache retention duration"
+            />
+            ).
           </li>
           <li>
-            <strong>Server logs:</strong> Standard server access logs (including
+            <strong>Server logs:</strong> Technical access logs (including
             IP addresses and request paths) are retained for operational
             troubleshooting and security auditing for a limited period{" "}
             <LegalPlaceholder
               name="DATA_RETENTION"
-              label="server log retention period, e.g. 30 days"
+              label="server log retention period (Supabase keeps logs for at least 7 days; other providers unconfirmed)"
             />
             , after which they expire automatically.
           </li>
@@ -525,7 +531,16 @@ export default function PrivacyPage() {
           <li>Your profile, display name, handle, bio, and studio information are deleted.</li>
           <li>Your private body measurements and style interests are deleted.</li>
           <li>All your listings, garment measurements, and availability schedules are deleted.</li>
-          <li>All photo files you uploaded to Supabase Storage are permanently removed.</li>
+          <li>
+            All photo files you uploaded to Supabase Storage are permanently
+            removed from storage (deleted photos may stay in a content delivery
+            cache for a short time after deletion; exact time:{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="content delivery cache retention duration"
+            />
+            ).
+          </li>
           <li>Your push notification device tokens are revoked and deleted.</li>
         </ul>
 
@@ -549,8 +564,13 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Server Infrastructure Logs:</strong> Technical server access
-            logs recorded prior to your deletion remain in rolling operational
-            archives until their scheduled expiration.
+            logs recorded prior to your deletion remain in operational logs for a
+            limited period{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="server log retention period (Supabase keeps logs for at least 7 days; other providers unconfirmed)"
+            />
+            {" "}before expiring.
           </li>
         </ul>
       </section>
@@ -613,12 +633,10 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Privacy Inquiries &amp; Appeals:</strong> To exercise your
-            rights or appeal a decision, contact our privacy contact at{" "}
-            <LegalPlaceholder
-              name="PRIVACY_EMAIL"
-              label="privacy email address"
-              fallback={LEGAL_CONFIG.SUPPORT_EMAIL}
-            />
+            rights or appeal a decision, contact our support team at{" "}
+            <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
+              {LEGAL_CONFIG.SUPPORT_EMAIL}
+            </a>
             .
           </li>
         </ul>
@@ -637,11 +655,9 @@ export default function PrivacyPage() {
           promptly suspend and delete the account and its associated data. Parents
           or guardians who believe their child has created an account may contact
           us at{" "}
-          <LegalPlaceholder
-            name="SUPPORT_EMAIL"
-            label="support email address"
-            fallback="support@dzirent.com"
-          />
+          <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
+            {LEGAL_CONFIG.SUPPORT_EMAIL}
+          </a>
           .
         </p>
       </section>
@@ -685,7 +701,7 @@ export default function PrivacyPage() {
           date at the top of this page, and provide notice{" "}
           <LegalPlaceholder
             name="CHANGE_NOTICE"
-            label="change notification method and notice period, e.g. via email or in-app notice 30 days prior"
+            label="change notification method and notice period"
           />
           .
         </p>
@@ -695,15 +711,7 @@ export default function PrivacyPage() {
         </p>
         <ul>
           <li>
-            <strong>Email:</strong>{" "}
-            <LegalPlaceholder
-              name="PRIVACY_EMAIL"
-              label="privacy email address"
-              fallback={LEGAL_CONFIG.SUPPORT_EMAIL}
-            />
-          </li>
-          <li>
-            <strong>Support:</strong>{" "}
+            <strong>Email &amp; Support:</strong>{" "}
             <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
               {LEGAL_CONFIG.SUPPORT_EMAIL}
             </a>

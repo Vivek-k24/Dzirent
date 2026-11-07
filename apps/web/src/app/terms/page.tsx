@@ -76,7 +76,6 @@ export default function TermsPage() {
           <LegalPlaceholder
             name="MINIMUM_AGE"
             label="minimum age"
-            fallback="18"
           />{" "}
           years of age.
         </p>
@@ -121,7 +120,7 @@ export default function TermsPage() {
         <ul>
           <li>
             <strong>Allowed Garments:</strong> Career &amp; Professional, Occasion
-            &amp; Party, Cultural &amp; Traditional, Outerwear, and select approved
+            &amp; Party, Cultural &amp; Traditional, Everyday, Outerwear, and select approved
             Accessories (sunglasses, handbags, ties, non-smart watches, belt
             buckles, and costume jewelry).
           </li>
@@ -129,7 +128,7 @@ export default function TermsPage() {
             <strong>Prohibited Items:</strong> Everyday basics (T-shirts, tank
             tops, hoodies, sweatshirts, sweatpants, plain jeans); lingerie,
             underwear, and swimwear; shoes, boots, sneakers, hats, caps, socks,
-            and smartwatches.
+            and smartwatches; counterfeits and replicas, and damaged or dirty items.
           </li>
           <li>
             <strong>Authenticity &amp; Ownership:</strong> You may only list items
@@ -169,9 +168,11 @@ export default function TermsPage() {
           </li>
           <li>
             <strong>Photo standards:</strong> Photos must depict the actual
-            garment on a hanger or mannequin against a clean, light background.
-            Stock photos and photos showing human faces or watermarks are not
-            permitted.
+            garment on a hanger, clean mannequin, clean flat-lay, or being worn against
+            a clean, light background. Photos of the item being worn are allowed (if you
+            appear in a photo, it is public like every listing photo; you must not include other
+            people without their permission). Stock photos, or photos containing overlaid
+            text, prices, phone numbers, social media handles, or watermarks are not permitted.
           </li>
         </ul>
       </section>
@@ -287,7 +288,6 @@ export default function TermsPage() {
           <LegalPlaceholder
             name="MARKETPLACE_ROLE"
             label="marketplace disclaimer"
-            fallback="The Dzirent platform and all content are provided on an 'as is' and 'as available' basis without warranties of any kind."
           />
         </p>
         <p>
@@ -304,7 +304,6 @@ export default function TermsPage() {
           <LegalPlaceholder
             name="LIABILITY_CAP"
             label="limitation of liability clause and maximum liability cap from attorney"
-            fallback="To the fullest extent permitted by applicable law, Dzirent and its officers, directors, and employees shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits, data, or personal property arising out of your use of the platform or any rental transactions between users."
           />
         </p>
       </section>

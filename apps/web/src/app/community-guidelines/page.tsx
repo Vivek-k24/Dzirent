@@ -31,7 +31,6 @@ export default function CommunityGuidelinesPage() {
         <LegalPlaceholder
           name="EFFECTIVE_DATE_RULES"
           label="rules effective date"
-          fallback="November 6, 2026"
         />
       }
       lastUpdated="November 6, 2026"
@@ -94,9 +93,9 @@ export default function CommunityGuidelinesPage() {
             </p>
           </div>
           <div className="legal-card">
-            <h4>Everyday Special Pieces</h4>
+            <h4>Everyday</h4>
             <p>
-              Designer blouses, elevated knitwear, premium silk shirts, structured vests, statement
+              Elevated tops, blouses, premium knitwear, silk shirts, structured vests, statement
               jackets, and distinctive fashion pieces with exceptional cut, fabric, or design.
             </p>
           </div>
@@ -108,11 +107,11 @@ export default function CommunityGuidelinesPage() {
             </p>
           </div>
           <div className="legal-card">
-            <h4>Approved Accessories</h4>
+            <h4>Accessories</h4>
             <p>
               Curated luxury sunglasses, high-end handbags and clutches, designer silk ties,
-              non-smart classic watches, statement belt buckles, and costume jewelry accompanied by a
-              clear declaration.
+              non-smart classic watches, statement belt buckles, and costume jewelry accompanied by an
+              accessory declaration.
             </p>
           </div>
         </div>
@@ -173,7 +172,6 @@ export default function CommunityGuidelinesPage() {
           <LegalPlaceholder
             name="PROHIBITED_ITEMS"
             label="prohibited items policy specifics"
-            fallback="Listing prohibited items may result in immediate listing deletion and account penalties."
           />
         </p>
       </section>
@@ -202,22 +200,22 @@ export default function CommunityGuidelinesPage() {
               </tr>
               <tr>
                 <td><strong>Presentation</strong></td>
-                <td>Garment neatly displayed on a wooden/neutral hanger or a clean dressmaker mannequin.</td>
-                <td>Preserves garment shape and provides an accurate, professional representation.</td>
+                <td>Garment neatly displayed on a wooden or neutral hanger, a clean mannequin, a clean flat-lay, or photographed being worn.</td>
+                <td>Preserves garment shape and provides an accurate, versatile representation.</td>
               </tr>
               <tr>
-                <td><strong>Front & Back</strong></td>
+                <td><strong>Front &amp; Back</strong></td>
                 <td>At least one high-resolution front photo is required. A back photo is strongly recommended.</td>
                 <td>Borrowers need to see zippers, closures, vents, and back cut details.</td>
               </tr>
               <tr>
-                <td><strong>No Human Faces</strong></td>
-                <td>Do not show people&apos;s faces in listing photos. Mannequins or headless crops are required.</td>
-                <td>Protects user privacy and maintains an impartial, product-focused closet.</td>
+                <td><strong>Photos Being Worn</strong></td>
+                <td>Photos of the item being worn are allowed. If you appear in a photo, it is public like every listing photo. Do not include other people without their permission.</td>
+                <td>Shows real drape and fit while respecting personal privacy and consent.</td>
               </tr>
               <tr>
                 <td><strong>No Overlays</strong></td>
-                <td>No text, price badges, phone numbers, social media handles, or watermarks.</td>
+                <td>No text, price badges, phone numbers, social media handles, or watermarks on photos.</td>
                 <td>Maintains an uncluttered experience and prevents off-platform solicitation.</td>
               </tr>
               <tr>
@@ -233,45 +231,61 @@ export default function CommunityGuidelinesPage() {
       <section id="photo-scanning">
         <h2>5. How Photo Scanning Works</h2>
         <p>
-          To maintain quality standards without requiring lengthy manual turnaround, Dzirent uses an
-          automated visual analysis model (Marqo-FashionSigLIP). When you upload photos for a
-          listing, our system analyzes the visual features of the garment:
+          To help lenders list accurately and maintain catalog standards, Dzirent uses an
+          automated visual analysis service (powered by the open-source Marqo-FashionSigLIP model)
+          that checks listing photos on the server:
         </p>
         <ul>
           <li>
-            <strong>Feature embedding:</strong> The model extracts a mathematical vector representation
-            (a 768-dimensional visual embedding) of the garment to match against category patterns
-            and ensure compliance.
+            <strong>Item identification:</strong> The check evaluates what kind of item it is, and
+            whether it is clothing or an accessory we list (such as dresses, blazers, coats, or approved
+            accessories).
           </li>
           <li>
-            <strong>Automated checks:</strong> The scanner checks for forbidden categories (e.g., plain
-            tees, sneakers, swimwear), presence of human faces, watermark text, and photo clarity.
+            <strong>Category &amp; policy compliance:</strong> It checks whether the piece belongs to
+            an allowed category or an excluded category (such as hoodies, sweatshirts, sweatpants, plain
+            basics, or swimwear).
+          </li>
+          <li>
+            <strong>Photo quality:</strong> It evaluates blur, lighting, and whether the whole piece is
+            in the frame. Photo quality alone never rejects a listing; it only adds helpful suggestions or
+            warnings to that photo.
+          </li>
+          <li>
+            <strong>Worn detection:</strong> It checks whether someone is wearing the garment (worn photos
+            are completely allowed).
+          </li>
+          <li>
+            <strong>Duplicate check:</strong> It generates a 768-number image fingerprint compared on
+            the server against other listings to check whether the photo matches another listing and
+            prevent copied imagery.
           </li>
         </ul>
 
         <h3>Scan Outcomes</h3>
-        <p>When you submit a listing, your photos receive one of three statuses:</p>
+        <p>When you submit photos for a listing, the check returns one of three outcomes:</p>
         <ol>
           <li>
-            <strong>Allowed:</strong> The photos meet all quality and category standards. The listing
-            is published immediately to search and browse.
+            <strong>Allowed:</strong> The photos meet all listing standards. The piece can be published to
+            search and browse.
           </li>
           <li>
-            <strong>Not allowed:</strong> The photo violates one or more rules (for example, a face was
-            detected, background was too cluttered, or the item appears to be an excluded category like
-            basic denim). You will receive an explanatory message so you can replace the photo.
+            <strong>Not allowed:</strong> The item violates a listing policy (for example, it appears to be
+            an excluded everyday basic such as a hoodie, sweatshirt, or sweatpants). The check returns a
+            clear explanation of why the item cannot be listed.
           </li>
           <li>
-            <strong>Under review:</strong> If the model is uncertain or the garment has unique cultural
-            drapery, the listing is temporarily held for a fast manual check before appearing in search.
+            <strong>Under review:</strong> When the automated check is uncertain, or if a photo matches
+            another listing, the listing is held for manual review by a person at Dzirent before appearing
+            in search.
           </li>
         </ol>
 
         <div className="legal-callout note">
-          <div className="callout-title">Photo Updates Are Scanned</div>
+          <div className="callout-title">Changed Photos Are Re-Checked</div>
           <p>
-            Whenever you replace, reorder, or add photos to an existing listing, the new images undergo
-            the same automated scan to ensure continuous compliance.
+            Whenever you change or replace photos on an active listing, the server automatically checks
+            the new photos to ensure continued compliance.
           </p>
         </div>
       </section>

@@ -2,6 +2,78 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P1A fix-up - 2026-11-06 - legal page corrections
+
+- What was done:
+  - Log retention:
+    - Removed every "30-day" claim regarding server logs across `/privacy`, `/delete-account`, and legal components.
+    - Replaced with `<LegalPlaceholder name="DATA_RETENTION" label="server log retention period (Supabase keeps logs for at least 7 days; other providers unconfirmed)" />`.
+    - Removed "30 days" notice period example from `CHANGE_NOTICE` placeholder to avoid false positive log claims.
+  - Zero placeholder fallbacks:
+    - Removed `fallback` prop support entirely from `LegalPlaceholder` in `apps/web/src/components/legal-layout.tsx`.
+    - Removed all `fallback` props across all pages (`/privacy`, `/terms`, `/community-guidelines`, `/copyright`, `/safety`, `/delete-account`, `/support`). Every unknown placeholder renders solely as `[To be completed: <what>]` with class `legal-placeholder`.
+  - Community guidelines photo check description:
+    - Updated section 5 strictly to what the check really does per `compliance.md` section 1.6: what kind of item it is, whether it is clothing or an accessory we list, blur, lighting, whether the whole piece is in the frame, whether someone is wearing it, and whether the photo matches another listing (768-vector image fingerprint compared on the server).
+    - Removed all mentions of detecting faces or detecting watermarks.
+  - Email addresses:
+    - Standardized exclusively to `support@dzirent.com` across all legal pages, contact cards, and descriptions. Removed all instances of `privacy@`, `security@`, and `copyright@`.
+    - On `/copyright`, DMCA takedown notices are directed to `support@dzirent.com` with the subject "Copyright notice"; the DMCA agent contact details remain a placeholder for official Copyright Office filing data.
+  - Delivery cache disclosure:
+    - Added disclosure to both `/privacy` (sections 10 & 11) and `/delete-account` (section 4) that deleted photos may stay in a content delivery cache for a short time after deletion (exact time: placeholder `<LegalPlaceholder name="DATA_RETENTION" label="content delivery cache retention duration" />`).
+  - Owner decisions applied:
+    - Photos of the item being worn are allowed: Updated photo standards across `/community-guidelines` and `/terms` (hanger, mannequin, flat-lay, or worn are all fine; public photo note; no other people without their permission; no text, prices, phone numbers, social handles or watermarks). Removed the "No Human Faces" table row and replaced with the worn photos rule.
+    - Counterfeits/replicas and damaged/dirty garments kept in the prohibited list.
+    - Category name updated to "Everyday" exactly as in the app; removed "Everyday Special Pieces" and renamed "Approved Accessories" to "Accessories".
+    - Root `README.md` updated under "## Product rules" adding the worn photo allowance, counterfeit/replica prohibition, and damaged/dirty item prohibition.
+    - Appended decisions to `pranalika/decisions.md` under `## Listing rules (2026-11-06)`.
+    - Updated `pranalika/BOARD.md` marking P1A fix-up as Done.
+
+- Fallbacks removed:
+  1. `apps/web/src/components/legal-layout.tsx`: Removed `fallback` parameter and fallback rendering from `LegalPlaceholder`.
+  2. `apps/web/src/app/community-guidelines/page.tsx`:
+     - `fallback="November 6, 2026"` on `EFFECTIVE_DATE_RULES`
+     - `fallback="Listing prohibited items may result in immediate listing deletion and account penalties."` on `PROHIBITED_ITEMS`
+  3. `apps/web/src/app/copyright/page.tsx`:
+     - `fallback="November 6, 2026"` on `EFFECTIVE_DATE_COPYRIGHT`
+     - `fallback="Dzirent"` on `COMPANY_LEGAL_NAME`
+     - `fallback="copyright@dzirent.com"` on `DMCA_AGENT_EMAIL`
+     - `fallback="In appropriate circumstances and at our sole discretion..."` on `REPEAT_INFRINGER_RULE`
+  4. `apps/web/src/app/delete-account/page.tsx`:
+     - `fallback="No personal advertising identifiers or marketing profiles are ever created or retained."` on `WHAT_STAYS_AFTER_DELETION`
+     - `fallback="30 days"` on `SUPPORT_RESPONSE_TIME`
+  5. `apps/web/src/app/privacy/page.tsx`:
+     - `fallback={LEGAL_CONFIG.SUPPORT_EMAIL}` on `PRIVACY_EMAIL`
+     - `fallback="support@dzirent.com"` on `SUPPORT_EMAIL`
+     - `fallback={LEGAL_CONFIG.SUPPORT_EMAIL}` on `PRIVACY_EMAIL`
+  6. `apps/web/src/app/safety/page.tsx`:
+     - `fallback="Always trust your intuition..."` on `SAFETY_TIPS`
+     - `fallback="For pieces of significant retail value..."` on `DEPOSIT_RECOMMENDATION`
+  7. `apps/web/src/app/support/page.tsx`:
+     - `fallback="within 1–2 business days"` on `SUPPORT_RESPONSE_TIME`
+     - `fallback="support@dzirent.com"` on `ACCESSIBILITY_CONTACT`
+  8. `apps/web/src/app/terms/page.tsx`:
+     - `fallback="18"` on `MINIMUM_AGE`
+     - `fallback="The Dzirent platform and all content are provided on an 'as is' and 'as available' basis..."` on `MARKETPLACE_ROLE`
+     - `fallback="To the fullest extent permitted by applicable law..."` on `LIABILITY_CAP`
+  9. `apps/web/src/content/legal/config.ts`: Set all unconfirmed placeholder values to empty string `""` so they render strictly as `[To be completed: <label>]`.
+
+- What was actually run & verified:
+  - `npm ci`, `npm run lint` (ESLint 9): passed clean with 0 errors and 0 warnings.
+  - `npm run build` (Next.js 16.4.3 Turbopack): passed clean, all 21 pages compiled.
+  - Built pages source scan (`.next/server` and `src/app`):
+    - `30-day`: 0 matches.
+    - `30 days`: 0 matches in `src/app`; only 2 matches in `.next/server` within `src/components/listing-editor.tsx` ("Next 30 days" calendar picker button for availability). Zero log claims.
+    - `privacy@`: 0 matches.
+    - `security@`: 0 matches.
+    - `copyright@`: 0 matches.
+    - `faces`: 0 matches in `src/app`.
+    - `watermark`: 2 matches in `src/app` solely in the photo content rule ("no text, prices, phone numbers, social media handles, or watermarks on photos").
+    - `Everyday Special`: 0 matches.
+  - Local HTTP verification (`npx next start -p 3004`): all 7 legal routes returned HTTP 200 with the draft banner and all footer links.
+
+- Open issues:
+  - None.
+
 ## P1A part 2 - 2026-11-06 - website legal pages
 
 - What was done:

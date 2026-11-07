@@ -98,3 +98,9 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - Costume jewelry (necklaces, earrings, bracelets, rings, brooches) is allowed, with the accessory declaration.
 - A copied photo of a banned item stays rejected: a photo matching another listing sends the listing to review, but never turns a rejection into a review.
 - Changed photos are checked again: any change to the photos of an active listing queues a new check on the server, and the listing stays active while it runs. While `vision_required` is on, a result that isn't allowed pauses the listing with a plain reason (`listings.auto_paused_reason`), cleared when the owner republishes. While the flag is off, photos are re-checked only, never paused.
+
+## Listing rules (2026-11-06)
+
+- Photos of the item being worn are allowed: hanger, mannequin, flat-lay or worn are all fine. If you appear in a photo, it is public like every listing photo. Do not include other people without their permission. Keep no text, prices, phone numbers, social handles or watermarks on photos.
+- Counterfeits and replicas, and damaged or dirty items, are prohibited. Keep them in the prohibited list.
+- The category name is "Everyday" exactly as in the app. Remove "Everyday Special Pieces" and any other renamed category; every category name must match the app.

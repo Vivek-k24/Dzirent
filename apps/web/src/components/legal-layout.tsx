@@ -7,18 +7,13 @@ import { Icon } from "./icon";
 export function LegalPlaceholder({
   name,
   label,
-  fallback,
 }: {
   name: keyof LegalConfig;
   label: string;
-  fallback?: string;
 }) {
   const value = LEGAL_CONFIG[name];
   if (typeof value === "string" && value.trim().length > 0) {
     return <span>{value}</span>;
-  }
-  if (fallback && fallback.trim().length > 0) {
-    return <span>{fallback}</span>;
   }
   return (
     <span

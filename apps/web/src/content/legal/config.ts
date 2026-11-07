@@ -14,8 +14,6 @@ export interface LegalConfig {
   REGISTERED_ADDRESS: string;
   CONTACT_EMAIL: string;
   SUPPORT_EMAIL: string;
-  PRIVACY_EMAIL: string;
-  SECURITY_EMAIL: string;
   SUPPORT_RESPONSE_TIME: string;
 
   // 2. Dates and versions
@@ -104,8 +102,6 @@ export const LEGAL_CONFIG: LegalConfig = {
   REGISTERED_ADDRESS: "", // To be filled by Owner (postal address for legal notices)
   CONTACT_EMAIL: "", // To be filled by Owner
   SUPPORT_EMAIL: "support@dzirent.com",
-  PRIVACY_EMAIL: "", // To be filled by Owner
-  SECURITY_EMAIL: "", // To be filled by Owner
   SUPPORT_RESPONSE_TIME: "", // To be filled by Owner (e.g. within 2 business days)
 
   // 2. Dates and versions
@@ -122,12 +118,9 @@ export const LEGAL_CONFIG: LegalConfig = {
   VENUE: "", // To be filled by Attorney
   DISPUTE_PROCESS: "", // To be filled by Attorney (informal resolution, arbitration, small claims)
   LIABILITY_CAP: "", // To be filled by Attorney
-  MARKETPLACE_ROLE:
-    "Dzirent provides a peer-to-peer platform connecting lenders and renters. Dzirent is not a party to any rental agreements, takes no rental payments or commissions today, and does not hold or ship garments.",
-  DAMAGE_AND_LOSS:
-    "Renters and lenders settle any damage, loss, cleaning, or late returns between themselves while there are no integrated payments on the platform.",
-  DEPOSIT_RECOMMENDATION:
-    "Lenders are encouraged to ask for a security deposit on high-value pieces, arranged directly between the parties.",
+  MARKETPLACE_ROLE: "", // To be filled by Attorney
+  DAMAGE_AND_LOSS: "", // To be filled by Owner + attorney
+  DEPOSIT_RECOMMENDATION: "", // To be filled by Owner
   SERVICE_AREA: "United States (US cities available in the platform city selection)",
 
   // 4. Age
@@ -143,16 +136,12 @@ export const LEGAL_CONFIG: LegalConfig = {
   DATA_RETENTION: "", // To be decided by Owner + attorney
   PRIVACY_REQUEST_PROCESS: "", // To be filled by Attorney (how requests are verified and response timeframe)
   APPEAL_PROCESS: "", // To be filled by Attorney (process and timing for privacy appeals)
-  SALE_AND_ADS_STATEMENT:
-    "Dzirent does not sell personal data, share personal data for cross-context behavioral advertising, or use third-party tracking scripts.",
-  LOCATION_STATEMENT:
-    "Device location is rounded to approximately 1 km (2 decimal places) before storage. Coordinates are never shared with other users; only distance in whole miles is shown.",
+  SALE_AND_ADS_STATEMENT: "", // To be filled by Attorney
+  LOCATION_STATEMENT: "", // To be filled by Attorney
   CONSUMER_HEALTH_DATA: "", // To be reviewed by Attorney (Washington MHMDA review of body measurements)
   SENSITIVE_DATA_REVIEW: "", // To be reviewed by Attorney (state privacy law review of cultural styles and studio tags)
-  BIOMETRIC_STATEMENT:
-    "Listing photo checks generate a 768-dimensional numerical image fingerprint used strictly for duplicate image detection. This is a mathematical vector representing garment visual patterns, not a biometric identifier or facial template.",
-  WHAT_STAYS_AFTER_DELETION:
-    "Account deletion removes your profile, private body measurements, style interests, listings, and photos, and cascades to delete conversation history and rental records for both participants. Signed accessory declarations and listing declarations are retained for legal audit with user identifiers unlinked. System infrastructure logs are retained until their natural expiration.",
+  BIOMETRIC_STATEMENT: "", // To be reviewed by Attorney
+  WHAT_STAYS_AFTER_DELETION: "", // To be filled by Owner + attorney
   DELETE_ACCOUNT_URL: "https://dzirent.com/delete-account",
 
   // 7. Copyright and DMCA
@@ -165,12 +154,10 @@ export const LEGAL_CONFIG: LegalConfig = {
   COUNTER_NOTICE_PROCESS: "", // To be filled by Attorney (counter-notice requirements and waiting period)
 
   // 8. Community rules, prohibited items and safety
-  PROHIBITED_ITEMS:
-    "Everyday basics (T-shirts, tank tops, hoodies, sweatshirts, track pants, sweatpants, joggers, shorts, plain jeans); lingerie, underwear, and swimwear; shoes, boots, hats, caps, socks, pantyhose, and smartwatches.",
+  PROHIBITED_ITEMS: "", // To be confirmed by Owner
   COMMUNITY_RULES: "", // To be filled by Owner + attorney (behavior standards, suspension, and ban policy)
   REPORT_HANDLING: "", // To be filled by Owner (report review timeframe and process)
-  SAFETY_TIPS:
-    "Meet in daylight in busy public places, tell a friend where you are going, inspect the piece together before paying, and keep all communications within the app.",
+  SAFETY_TIPS: "", // To be filled by Owner
 
   // 9. Later phases
   ID_VERIFICATION_PROVIDER: "", // P6A (Planned: Didit)

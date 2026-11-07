@@ -87,7 +87,6 @@ export default function SafetyPage() {
           <LegalPlaceholder
             name="SAFETY_TIPS"
             label="meetup safety guidelines"
-            fallback="Always trust your intuition. Do not invite strangers inside private residences unless you feel entirely comfortable doing so."
           />
         </p>
       </section>
@@ -174,7 +173,6 @@ export default function SafetyPage() {
           <LegalPlaceholder
             name="DEPOSIT_RECOMMENDATION"
             label="deposit policy recommendation"
-            fallback="For pieces of significant retail value (such as luxury designer suits, bridal or cultural lehengas, or fine evening gowns), lenders are strongly encouraged to request a refundable security deposit directly from the borrower at pickup."
           />
         </p>
 
@@ -256,13 +254,9 @@ export default function SafetyPage() {
           </p>
         </div>
         <p style={{ marginTop: "16px" }}>
-          For non-emergency platform safety concerns or account issues, contact our support team at{" "}
-          <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL || "support@dzirent.com"}`}>
-            {LEGAL_CONFIG.SUPPORT_EMAIL || "support@dzirent.com"}
-          </a>{" "}
-          or report security vulnerabilities to{" "}
-          <a href={`mailto:${LEGAL_CONFIG.SECURITY_EMAIL || "security@dzirent.com"}`}>
-            {LEGAL_CONFIG.SECURITY_EMAIL || "security@dzirent.com"}
+          For platform safety concerns, security reports, or account issues, contact our support team at{" "}
+          <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
+            {LEGAL_CONFIG.SUPPORT_EMAIL}
           </a>
           .
         </p>

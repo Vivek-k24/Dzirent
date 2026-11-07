@@ -30,7 +30,6 @@ export default function CopyrightPage() {
         <LegalPlaceholder
           name="EFFECTIVE_DATE_COPYRIGHT"
           label="copyright effective date"
-          fallback="November 6, 2026"
         />
       }
       lastUpdated="November 6, 2026"
@@ -70,7 +69,7 @@ export default function CopyrightPage() {
             </div>
             <div>
               <strong>Company:</strong>{" "}
-              <LegalPlaceholder name="COMPANY_LEGAL_NAME" label="company legal name" fallback="Dzirent" />
+              <LegalPlaceholder name="COMPANY_LEGAL_NAME" label="company legal name" />
             </div>
             <div>
               <strong>Mailing Address:</strong>{" "}
@@ -78,7 +77,7 @@ export default function CopyrightPage() {
             </div>
             <div>
               <strong>Email:</strong>{" "}
-              <LegalPlaceholder name="DMCA_AGENT_EMAIL" label="DMCA agent email address" fallback="copyright@dzirent.com" />
+              <LegalPlaceholder name="DMCA_AGENT_EMAIL" label="DMCA agent email address" />
             </div>
             <div>
               <strong>Telephone:</strong>{" "}
@@ -97,7 +96,11 @@ export default function CopyrightPage() {
         <p>
           If you believe in good faith that any content hosted on Dzirent (such as listing photographs
           or descriptive text) infringes your copyright, please send a written notification containing
-          the following six elements to our Designated Copyright Agent:
+          the following six elements to our team by email at{" "}
+          <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
+            {LEGAL_CONFIG.SUPPORT_EMAIL}
+          </a>{" "}
+          with the subject &quot;Copyright notice&quot; (or deliver it to our Designated Copyright Agent above):
         </p>
 
         <ol>
@@ -195,7 +198,6 @@ export default function CopyrightPage() {
           <LegalPlaceholder
             name="REPEAT_INFRINGER_RULE"
             label="repeat infringer rule details"
-            fallback="In appropriate circumstances and at our sole discretion, we terminate the accounts of users who are found to repeatedly infringe copyright or intellectual property rights."
           />
         </p>
         <p>
@@ -225,8 +227,8 @@ export default function CopyrightPage() {
         <p>
           For general intellectual property questions or trademark inquiries that do not involve DMCA
           copyright takedowns, you may contact our legal team at{" "}
-          <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL || "support@dzirent.com"}`}>
-            {LEGAL_CONFIG.SUPPORT_EMAIL || "support@dzirent.com"}
+          <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
+            {LEGAL_CONFIG.SUPPORT_EMAIL}
           </a>
           .
         </p>
