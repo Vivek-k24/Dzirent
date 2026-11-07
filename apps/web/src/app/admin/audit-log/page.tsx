@@ -3,7 +3,7 @@ import { serverClient } from "@/lib/supabase/server";
 import { AuditLogView, AuditLogEntry } from "@/components/admin/audit-log-view";
 
 export const metadata: Metadata = {
-  title: "Audit Log | Dzirent Admin",
+  title: "Admin: Audit Log",
   robots: {
     index: false,
     follow: false,

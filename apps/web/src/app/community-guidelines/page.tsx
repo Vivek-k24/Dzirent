@@ -5,7 +5,7 @@ import { LegalLayout, LegalPlaceholder } from "@/components/legal-layout";
 import { LEGAL_CONFIG } from "@/content/legal/config";
 
 export const metadata: Metadata = {
-  title: "Community Guidelines — Dzirent",
+  title: "Community Guidelines",
   description:
     "Standards, allowed categories, photo requirements, and etiquette for lending and renting on Dzirent.",
 };

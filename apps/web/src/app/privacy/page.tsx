@@ -5,7 +5,7 @@ import { LegalLayout, LegalPlaceholder } from "@/components/legal-layout";
 import { LEGAL_CONFIG } from "@/content/legal/config";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Dzirent",
+  title: "Privacy Policy",
   description: "How Dzirent collects, uses, protects, and handles your personal data.",
 };
 
@@ -564,12 +564,14 @@ export default function PrivacyPage() {
           <li>
             <strong>Deletion:</strong> You can delete any listing, photo, or
             measurement, or delete your entire account through Settings or at{" "}
-            <Link href="/delete-account">/delete-account</Link>.
+            <Link href="/delete-account">our account deletion page</Link>.
           </li>
           <li>
-            <strong>Data Portability:</strong> We are building a dedicated
-            self-service download tool. In the meantime, you can request an export
-            of your data by contacting us.
+            <strong>Download Your Data:</strong> You can download one file with the
+            information we keep about you, in the app under Settings &gt; Privacy
+            &amp; safety &gt; Download my data, or on the website under Profile
+            &amp; settings &gt; Settings &gt; Privacy &amp; safety. It works once a
+            day. Other people appear in it only by their name and studio handle.
           </li>
           <li>
             <strong>Notification Controls:</strong> You can disable push

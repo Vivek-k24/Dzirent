@@ -5,7 +5,7 @@ import { LegalLayout, LegalPlaceholder } from "@/components/legal-layout";
 import { LEGAL_CONFIG } from "@/content/legal/config";
 
 export const metadata: Metadata = {
-  title: "Trust & Safety Guide — Dzirent",
+  title: "Trust & Safety Guide",
   description:
     "Practical safety advice, in-person meetup recommendations, security deposits, and reporting tools for Dzirent members.",
 };

@@ -5,7 +5,7 @@ import { LegalLayout, LegalPlaceholder } from "@/components/legal-layout";
 import { LEGAL_CONFIG } from "@/content/legal/config";
 
 export const metadata: Metadata = {
-  title: "Help & Support — Dzirent",
+  title: "Help & Support",
   description:
     "Get help with your Dzirent account, find answers to common questions, or contact our support and safety teams.",
 };

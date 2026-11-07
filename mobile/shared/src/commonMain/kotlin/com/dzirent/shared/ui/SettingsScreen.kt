@@ -162,6 +162,7 @@ fun SettingsScreen(
             SettingsGroup("Privacy & safety")
             if (profile != null) SettingsRow("Blocked users", null, Icons.Default.Block, onClick = onOpenBlockedUsers)
             if (profile != null) MeasurementsConsentSetting(repository)
+            if (profile != null) DataExportSetting(repository, profile.id)
             SettingsRow("Clear search history", null, Icons.Default.History, showChevron = false) {
                 onClearSearchHistory()
                 device.toast("Search history cleared")

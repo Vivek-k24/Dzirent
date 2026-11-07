@@ -166,6 +166,32 @@ Advisor run after the migrations (2026-11-07 18:06 UTC): one new finding; the ea
 | --- | --- | --- |
 | WARN: signed-in users can run elevated function | `record_age_check` | Apps record the caller's own age check. It writes only the caller's row (`auth.uid()`), validates every input against a fixed list, and returns only true or false. It needs elevated rights because `age_checks` has no insert grant. Not callable by guests (EXECUTE revoked from `public` and `anon`). |
 
+## Download my data (P3A)
+
+Migration `20261107130000_p3a_data_export.sql` and the Edge Function `export-my-data` (2026-11-07).
+
+- **Only the caller's own data:** `export_my_data()` takes no arguments and reads `auth.uid()` only. Every query is filtered by the caller's id. It was read through, query by query, against this rule before it shipped.
+  - Other people appear only through `app_private.export_person`: a name (studio name, else display name) and a studio handle. That is what the shop window and the chat list already show. Never their account id, email, city, location, measurements or anything else.
+  - Messages in the caller's own chats are included, the other person's too: the caller can already read them, and each is marked only "you" or "other person".
+  - Saved pieces show a title only while the piece is public (active, not blocked either way).
+  - Reports the caller filed give the reason, details and open or closed. Not the outcome, admin notes, evidence, or reports about the caller.
+  - Photo checks' `duplicate` is only true or false, never which listing matched.
+- **The function holds no server key.** It verifies the token with Auth in code (gateway check off, like `delete-account`), then calls `export_my_data` with the caller's own token. A bug in the function can't export someone else.
+- **Once a day:** `public.data_exports` records each export (owner reads their own; no write grants). A transaction-level advisory lock stops two parallel calls from both passing. A refusal is HTTP 429 with "You can download your data once a day. Try again after <time> UTC."
+- **Photo links** in the file are the public `listing-photos` URLs of the caller's own photos, which anyone with the link could open already.
+- **On the phone:** the downloaded file stays in memory only (for a retry if the save picker is cancelled), for that account and day, and is dropped on sign-out. It is written only where the user chooses in the system picker.
+- `public.age_blocked()` returns only true or false for the caller (the website's blocked page).
+- The API test checked that test user 1's email and account id are nowhere in test user 3's file. Every other-person entry holds only a name and handle, and every message only from, text and time.
+
+Advisor run after the migration (2026-11-07 18:59 UTC): two new findings; the earlier findings are unchanged.
+
+| Finding | Function or table | Why it is intended |
+| --- | --- | --- |
+| WARN: signed-in users can run elevated function | `export_my_data` | Returns the caller's own data only (above), once a day. It needs elevated rights to read `auth.users` (the caller's email) and to write `data_exports`. Not callable by guests. |
+| WARN: signed-in users can run elevated function | `age_blocked` | Returns only true or false for the caller. It needs elevated rights to read the decision in `app_private`. Not callable by guests. |
+
+`app_private.export_person` has EXECUTE revoked from `public`, `anon` and `authenticated`.
+
 ## Google Cloud (Step 8A)
 
 Project `dzirent`, region `us-west1`. The $20 billing kill switch (budget, Pub/Sub topic `billing-alerts`, function `stop-billing`) was not touched.

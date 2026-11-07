@@ -18,6 +18,25 @@ import { Appearance, ThemeToggle } from "./local-preferences";
 import { DistanceUnit } from "./distance";
 import { dateChip, type Profile } from "@/lib/workflows";
 import { WelcomeChecklistModal, GuideOverlay } from "./onboarding";
+import { AgeBlockedPage } from "./age-blocked";
+
+/**
+ * Policy, help and support pages: no welcome popup or first-visit checklist opens here (they're
+ * often opened from the apps), and an age-blocked account can still read them.
+ */
+const QUIET_PATHS = [
+  "/terms",
+  "/privacy",
+  "/community-guidelines",
+  "/copyright",
+  "/safety",
+  "/delete-account",
+  "/support",
+  "/help",
+];
+function isQuietPage(pathname: string | null) {
+  return QUIET_PATHS.some((p) => pathname === p || Boolean(pathname?.startsWith(p + "/")));
+}
 import { TermsUpdateScreen } from "./terms-update";
 import {
   GuestGateDialog,
@@ -292,6 +311,7 @@ export function Shell({
   needsLegal = false,
   isAdmin = false,
   previewLabel = false,
+  ageBlocked = false,
   children,
 }: {
   ctx: BrowseContext;
@@ -304,6 +324,8 @@ export function Shell({
   isAdmin?: boolean;
   /** Shows "Preview only" in the header (the preview_label flag). */
   previewLabel?: boolean;
+  /** The age gate blocked this account (P2C): show only the blocked page. */
+  ageBlocked?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -313,6 +335,10 @@ export function Shell({
     needsLegal &&
     pathname !== "/terms" &&
     pathname !== "/privacy";
+  const quietPage = isQuietPage(pathname);
+  // An account the age gate blocked sees only the blocked page, except on the policy and
+  // support pages (so "Contact support" and the policies stay readable).
+  const showAgeBlocked = authenticated && ageBlocked && !quietPage;
   const [location, setLocation] = useState(false);
   const [dates, setDates] = useState(false);
   const [filters, setFilters] = useState(false);
@@ -400,18 +426,21 @@ export function Shell({
     router.push(qs ? `/?${qs}` : "/");
   }
 
+  // The first-visit checklist waits for a page that isn't a policy or help page, so it never
+  // covers Terms or Privacy opened from the app.
   useEffect(() => {
-    if (authenticated && userId) {
-      Promise.resolve().then(() => {
-        try {
-          const seen = localStorage.getItem("welcome_seen_" + userId);
-          if (!seen) {
-            localStorage.setItem("welcome_seen_" + userId, "true");
-            setChecklistOpen(true);
-          }
-        } catch {}
-      });
-    }
+    if (!authenticated || !userId || quietPage) return;
+    Promise.resolve().then(() => {
+      try {
+        const seen = localStorage.getItem("welcome_seen_" + userId);
+        if (!seen) {
+          localStorage.setItem("welcome_seen_" + userId, "true");
+          setChecklistOpen(true);
+        }
+      } catch {}
+    });
+  }, [authenticated, userId, quietPage]);
+  useEffect(() => {
     const onStartTour = () => setGuideOpen(true);
     const onOpenChecklist = () => setChecklistOpen(true);
     const onOpenGate = (e: Event) => {
@@ -426,7 +455,7 @@ export function Shell({
       window.removeEventListener("dzirent-open-checklist", onOpenChecklist);
       window.removeEventListener("dzirent-open-guest-gate", onOpenGate);
     };
-  }, [authenticated, userId]);
+  }, []);
   function handleMenuClick() {
     setDefaults(
       Object.fromEntries(new URLSearchParams(window.location.search)),
@@ -466,6 +495,8 @@ export function Shell({
     setWelcome(false);
     if (path) router.push(path);
   }
+  // After every hook above, so the hook order never changes.
+  if (showAgeBlocked) return <AgeBlockedPage />;
   return (
     <ShellContext.Provider
       value={{
@@ -1138,7 +1169,7 @@ export function Shell({
             )}
           </Modal>
         )}
-        {welcome && !authenticated && !pathname.startsWith("/auth") && (
+        {welcome && !authenticated && !pathname.startsWith("/auth") && !quietPage && (
           <Modal
             title="Welcome to Dzirent"
             onClose={() => dismissWelcome()}
@@ -1180,7 +1211,7 @@ export function Shell({
             </button>
           </Modal>
         )}
-        {checklistOpen && userProfile && !showTermsUpdate && (
+        {checklistOpen && userProfile && !showTermsUpdate && !quietPage && (
           <WelcomeChecklistModal
             profile={userProfile}
             onOpenLocation={() => setLocation(true)}

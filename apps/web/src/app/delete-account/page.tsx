@@ -5,7 +5,7 @@ import { LegalLayout, LegalPlaceholder } from "@/components/legal-layout";
 import { LEGAL_CONFIG } from "@/content/legal/config";
 
 export const metadata: Metadata = {
-  title: "Delete Your Account — Dzirent",
+  title: "Delete Your Account",
   description:
     "How to delete your Dzirent account, what data is permanently erased, and what minimal records are retained.",
 };

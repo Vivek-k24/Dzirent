@@ -249,6 +249,14 @@ Reports (P2B changes):
 - Apps show a full-screen "Dzirent is only for people 18 and older." step (Delete my account, Sign out) when `record_age_check` returns true.
 - `admin_find_user` (P2B) also returns `age_check` (`{ source, result, platform, checked_at }` of the latest row, or null) and `age_blocked` (boolean).
 
+- `age_blocked()` → `boolean` (P3A): Signed-in only. True while the caller is blocked by the age gate. The website shows its full blocked page then.
+
+### Download my data (P3A)
+- **Clients call the Edge Function `export-my-data`** (below). It returns the file; the database function behind it is `export_my_data()`.
+- `export_my_data()` → `jsonb`: Signed-in only. Everything Dzirent holds about the caller, built from `auth.uid()` only. Once per 24 hours: a second call is refused with `P0001` "You can download your data once a day. Try again after Nov 8, 2026, 6:51 PM UTC." Each successful call adds a row to `data_exports`.
+- **Parts:** `account` (email, created, last sign-in), `profile`, `private_profile`, `listings` (each with `measurements`, `availability`, `photos`, `photo_checks` with per-photo results), `saved_pieces`, `saved_studios`, `chats` (with `messages`), `rentals`, `blocked_people`, `reports_filed`, `warnings`, `accessory_declarations`, `listing_declarations`, `legal_acceptances`, `age_checks`, `notification_settings`, `devices` (platform and dates, never tokens), `suggestion_choices`, `listing_activity`, `earlier_exports`.
+- **Other people** appear only as `{ name, handle }` (studio name, else display name; studio handle). Messages say `from: "you"` or `"other person"`. Never another user's account id, email, location, measurements or private fields. Reports about the caller, report evidence, outcomes and admin notes are not included.
+
 ### Photo checks (Step 8A, Step 8B)
 - `request_scan(p_listing_id uuid)`: Signed-in listing owner only. Returns the `uuid` of the photo check (a `listing_scans` row) for the listing's current photos. The check runs on the server and usually finishes within a minute (longer when the vision service starts cold). Watch the row until `status` is `done` or `failed`: Realtime `UPDATE` events on `listing_scans` filtered by `id`, with polling by ID as the fallback (Step 8B).
   - One scan at a time per listing: asking again while one is `queued` or `running` returns that scan's ID. Since Step 8B, when the latest check is `done` and covers the current photos (`photo_set_hash`), that check's ID comes back instead of a new one. A scan that hasn't finished after 10 minutes is marked `failed` and a new one can start.
@@ -300,6 +308,19 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 - **Behavior:** Gets a Google access token with the Firebase server key (`FIREBASE_SERVICE_ACCOUNT_BASE64`), sends the data message above through the FCM HTTP v1 API to each of the recipient's Android tokens (TTL one day), then deletes the tokens Firebase reports as unregistered or invalid.
 - **Returns:** HTTP 200 `{ "sent", "failed", "removed", "errors" }`: counts and Firebase error codes only, never tokens or text.
 
+### `export-my-data` (P3A)
+- **Who can call:** Signed-in user (`POST /functions/v1/export-my-data`, body `{}`).
+- **Auth:** Bearer token verified in code (`auth.getUser(token)`). `verify_jwt = false`. Holds no server key: it calls `export_my_data()` with the caller's own token.
+- **Returns:** HTTP 200 with the file, as `application/json` and `Content-Disposition: attachment; filename="dzirent-data-<YYYY-MM-DD>.json"`. It starts with `about` (a plain-language explanation of each part, the photo links and the daily limit), then `exported_at`, then the parts above in that order. Each listing photo gets `link`, the public URL of the caller's own photo.
+- **Errors:** JSON `{ error, code, message }`, with the same sentence in `error` and `message`:
+  - 401 `not_signed_in`;
+  - 429 `once_a_day` (the database's sentence);
+  - 500 `export_failed`.
+- **Clients:**
+  - Website: Settings > Privacy & safety > Download my data, through `/api/workflows/export`.
+  - Android: Settings > Privacy & safety > Download my data, saved with the system "save file" picker.
+  - iPhone: the same row opens the website's page for now.
+
 ### `scan-listing` (Step 8A)
 - **Who can call:** The database only (`request_scan` and the automatic re-check, through `pg_net`). Never apps.
 - **Auth:** Header `x-scan-listing-secret` must equal the function secret `SCAN_LISTING_SECRET` (the same value is in Vault as `scan_listing_secret`); compared in constant time. `verify_jwt = false`. Anything else gets HTTP 401.
@@ -346,6 +367,7 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `photo_scans` | SELECT | Owned listing only. Written only by the server. One row per scanned photo: `scan_id`, `listing_id`, `photo_id`, `storage_path`, `slot`, `blur_score` (0 sharp to 1 blurry), `brightness_score` (0 black to 1 white), `framing_score` (0 = whole piece in frame; higher = more of its outline on the edge), `worn_probability`, `fingerprint` (`vector(768)`), `labels` (JSON label scores), `warnings` (text[], worded as on the phone), `decision` (`allowed`, `not_allowed`, `not_clothing`, `detail`, `unsure`), `scanned_at`. Removed with the photo or listing. |
 | `policy_item_types` | SELECT | Everyone, guests included (`using (true)`); no writes through the API. Columns `key`, `label`, `kind` (`garment`, `accessory`, `other`), `allowed`, `category`, `item_type`, `garment_type`, `style`, `policy_group`, `noun`, `looks_like`, `reason`, `prompts`, `position`. |
 | `app_settings` | SELECT | Everyone, guests included; changed by admins through `set_flag` (P2B). Columns `key`, `enabled`, `description`, `updated_at`. |
+| `data_exports` | SELECT | `user_id = auth.uid()` (P3A). Written only by `export_my_data`. Columns `id` (bigint), `user_id`, `exported_at`. Removed with the account. |
 | `age_checks` | SELECT | `user_id = auth.uid()` (P2C). Written only by `record_age_check`. Columns `id` (bigint), `user_id`, `source` (`store_signal`, `self_declared`), `result` (`adult`, `minor`, `unknown`), `platform` (`web`, `android`, `ios`), `checked_at`. No birthdate. Removed with the account. |
 | `legal_documents` | SELECT | Everyone, guests included; changed only by migrations (P1B). One row per document: `document` (`terms`, `privacy`), `version` (seeded `1.0.0` and `1.0.0`, from the website's `TERMS_VERSION` and `PRIVACY_VERSION`), `url`, `updated_at`. |
 | `legal_acceptances` | SELECT | `user_id = auth.uid()`. Written only by `accept_legal` (P1B). Columns `id`, `user_id`, `document`, `version`, `platform` (`web`, `android`, `ios`), `accepted_at`; one row per user, document and version. Removed with the account. |

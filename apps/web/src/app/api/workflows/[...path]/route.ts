@@ -40,6 +40,32 @@ function failure(error: unknown) {
     },
   );
 }
+/**
+ * Settings > Privacy > Download my data (P3A): the export-my-data Edge Function, as the signed-in
+ * user, returned as a file. Once a day; the function's own sentence explains a refusal.
+ */
+async function exportMyData() {
+  const { client } = await session();
+  const result = await client.functions.invoke("export-my-data", { body: {} });
+  if (result.error) {
+    const context = (result.error as { context?: Response }).context;
+    let message = "Couldn't prepare your data. Please try again.";
+    if (context) {
+      try {
+        message = (await context.json()).message || message;
+      } catch {}
+    }
+    throw new WorkflowError(message, context?.status === 429 ? 429 : 400);
+  }
+  const date = new Date().toISOString().slice(0, 10);
+  return new NextResponse(JSON.stringify(result.data, null, 2), {
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Disposition": `attachment; filename="dzirent-data-${date}.json"`,
+      "Cache-Control": "private, no-store",
+    },
+  });
+}
 export async function GET(_request: NextRequest, { params }: Params) {
   try {
     await session();
@@ -82,6 +108,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
     if (path[0] === "chat")
       return reply(await chatMutation(path[1], path[2], body));
+    if (path[0] === "export") return await exportMyData();
     if (path[0] === "account") {
       if (path[1] === "delete") {
         if (String(body.confirm).trim() !== "DELETE")

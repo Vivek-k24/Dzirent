@@ -558,6 +558,8 @@ object AppLinks {
     const val COPYRIGHT_URL = "https://dzirent.com/copyright"
     const val DELETE_ACCOUNT_URL = "https://dzirent.com/delete-account"
     const val SUPPORT_URL = "https://dzirent.com/support"
+    /** The website's Settings > Privacy & safety, with "Download my data" (the iPhone opens it for now). */
+    const val DATA_EXPORT_URL = "https://dzirent.com/app/settings/preferences#privacy"
 }
 
 /** The shortest password the server accepts (Supabase Auth `password_min_length`). */

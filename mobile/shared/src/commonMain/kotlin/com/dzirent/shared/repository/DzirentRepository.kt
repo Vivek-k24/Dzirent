@@ -16,6 +16,9 @@ import io.github.jan.supabase.auth.SettingsSessionManager
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.exceptions.RestException
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
+import com.dzirent.shared.util.DataExport
 import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.Postgrest
@@ -285,6 +288,8 @@ class DzirentRepository(
     }
 
     suspend fun signOut() {
+        // The downloaded data file (kept in memory for a retry) goes with the session.
+        DataExport.forget()
         try {
             auth.signOut()
         } catch (_: Exception) {
@@ -747,6 +752,25 @@ class DzirentRepository(
         } catch (e: Exception) {
             throw fail("delete your listing", e)
         }
+    }
+
+    /**
+     * Download my data (P3A): the export-my-data function's JSON file, as text. Once a day: a
+     * second try within 24 hours is refused with the server's plain sentence.
+     */
+    suspend fun exportMyData(): String {
+        val response = try {
+            functions.invoke("export-my-data", buildJsonObject {})
+        } catch (e: Exception) {
+            val rest = e as? RestException
+            val said = DataExport.refusal(listOfNotNull(rest?.error, rest?.description, e.message).joinToString(" "))
+            throw if (said != null) DzirentException(said) else fail("download your data", e)
+        }
+        val text = response.bodyAsText()
+        if (!response.status.isSuccess()) {
+            throw DzirentException(DataExport.refusal(text) ?: "Couldn't prepare your data. Please try again.")
+        }
+        return text
     }
 
     suspend fun deleteAccount() {

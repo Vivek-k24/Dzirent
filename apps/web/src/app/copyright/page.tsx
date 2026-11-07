@@ -5,7 +5,7 @@ import { LegalLayout, LegalPlaceholder } from "@/components/legal-layout";
 import { LEGAL_CONFIG } from "@/content/legal/config";
 
 export const metadata: Metadata = {
-  title: "Copyright & DMCA Policy — Dzirent",
+  title: "Copyright & DMCA Policy",
   description:
     "How Dzirent respects intellectual property rights, handles DMCA takedown notices, counter-notices, and addresses repeat infringement.",
 };

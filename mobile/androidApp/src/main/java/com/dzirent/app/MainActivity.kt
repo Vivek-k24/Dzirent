@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import com.dzirent.app.age.PlayAgeSignals
 import com.dzirent.app.push.ChatNotifications
 import com.dzirent.app.push.FirebasePush
+import com.dzirent.shared.platform.AndroidDataExport
 import com.dzirent.shared.platform.AndroidDeviceServices
 import com.dzirent.shared.platform.AndroidSettingsStorage
 import com.dzirent.shared.platform.LocalDevice
@@ -35,7 +36,9 @@ class MainActivity : ComponentActivity() {
             packageInfo.versionName.orEmpty(),
             packageInfo.longVersionCode,
             FirebasePush(applicationContext),
-            PlayAgeSignals(applicationContext)
+            PlayAgeSignals(applicationContext),
+            // Registers the "save file" picker, so it has to be made here in onCreate.
+            AndroidDataExport(this)
         )
         setContent {
             // Wait for the saved settings (a few ms) so the app never flashes the other theme.

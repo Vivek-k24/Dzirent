@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   icons: { icon: "/logo-mark.svg" },
   title: {
     default: "Dzirent - Your neighborhood wardrobe",
-    template: "%s - Dzirent",
+    template: "%s | Dzirent",
   },
   description:
     "Discover pieces for your next occasion from closets close to you. Browse local clothing rentals, find your fit, and get to know neighborhood studios.",
@@ -46,16 +46,19 @@ export default async function RootLayout({
   let userProfile = null;
   let needsLegal = false;
   let isAdmin = false;
+  let ageBlocked = false;
   if (user) {
     const client = await serverClient();
-    const [{ data }, { data: needs }, { data: adminAal2 }] = await Promise.all([
+    const [{ data }, { data: needs }, { data: adminAal2 }, { data: blocked }] = await Promise.all([
       client.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       client.rpc("needs_legal_acceptance"),
       client.rpc("is_admin"),
+      client.rpc("age_blocked"),
     ]);
     name = data?.display_name || "Your account";
     userProfile = data;
     needsLegal = Boolean(needs);
+    ageBlocked = blocked === true;
     if (adminAal2) {
       isAdmin = true;
     } else {
@@ -81,6 +84,7 @@ export default async function RootLayout({
           needsLegal={needsLegal}
           isAdmin={isAdmin}
           previewLabel={previewLabel}
+          ageBlocked={ageBlocked}
         >
           {children}
         </Shell>

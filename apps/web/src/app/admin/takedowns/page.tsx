@@ -3,7 +3,7 @@ import { serverClient } from "@/lib/supabase/server";
 import { TakedownsView, AdminTakedownItem } from "@/components/admin/takedowns-view";
 
 export const metadata: Metadata = {
-  title: "Takedowns | Dzirent Admin",
+  title: "Admin: Takedowns",
   robots: {
     index: false,
     follow: false,

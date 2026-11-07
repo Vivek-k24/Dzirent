@@ -2,6 +2,72 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P3A - 2026-11-07 - download my data
+
+Done:
+- **Before starting:** working tree clean. `git pull --rebase` fast-forwarded `Preview` from `9bdfd2c` to `6603cce` (the Mac iOS session, merged from `ios01`).
+- **Backend:** `supabase/migrations/20261107130000_p3a_data_export.sql`, pushed.
+  - `public.data_exports` records when each export ran; the owner reads their own and nobody writes it directly.
+  - `public.export_my_data()` builds the whole file from `auth.uid()` only. It allows once per 24 hours, with an advisory lock against two exports at once, and refuses with "You can download your data once a day. Try again after Nov 8, 2026, 6:51 PM UTC."
+  - Other people go through `app_private.export_person`: name (studio name, else display name) and handle.
+  - `public.age_blocked()`, true or false for the caller, feeds the website's blocked page.
+- **The rule:** I read every query against "nothing from another user's private data" before shipping. Choices it led to:
+  - Messages are only `from: you / other person`, text and time, never sender ids.
+  - Saved pieces show a title only while the piece is public.
+  - Reports the user filed give reason, details and status. Not the outcome, admin note or evidence.
+  - Blocked people, saved studios, chat and rental partners are name + handle only.
+  - Photo checks' `duplicate` is only true or false.
+- **Edge Function `export-my-data`** (deployed, `verify_jwt = false` in `config.toml`):
+  - It verifies the token with Auth in code, then calls `export_my_data` with the caller's own token. It holds no server key.
+  - It adds the plain-language `about` part (what each part is, the photo links, once a day), `exported_at`, and a `link` for every listing photo.
+  - It returns the file with `Content-Disposition: attachment; filename="dzirent-data-<date>.json"`. The once-a-day refusal is HTTP 429.
+- **Website:**
+  - Settings > Privacy & safety (now `#privacy` on `/app/settings/preferences`) has "Download my data". It goes through `/api/workflows/export` and saves the file under the name the function gives.
+  - The privacy page ("Download Your Data" in Your rights) and help ("Can I download a copy of my data?") now say where it is and that it works once a day. The privacy page's visible "/delete-account" link text is now "our account deletion page" (the plain-language task missed it).
+  - **Welcome popups:** neither the guest "Welcome to Dzirent" popup nor the signed-in first-visit checklist opens on `/terms`, `/privacy`, `/community-guidelines`, `/copyright`, `/safety`, `/delete-account`, `/support` or `/help`. The app opens these in a browser, as a guest, so it was the guest popup the Mac session saw. The checklist waits for the next other page.
+  - **Titles:** the template is `%s | Dzirent`, and the policy pages no longer add their own "| Dzirent" / "— Dzirent". Admin pages read "Admin: User Management | Dzirent" and so on.
+  - **Age-blocked accounts** see a full page before anything else: "Dzirent is only for people 18 and older.", Delete my account (with a confirmation in the site's overlay), Sign out, and "Think this is a mistake? Contact support". The policy and support pages above stay readable.
+- **Android and shared code:**
+  - `platform/DataExport.kt` adds a `DataExportService` (`savesFiles`, `save` → SAVED / CANCELLED / FAILED) to `DeviceServices`.
+  - `androidMain/.../AndroidDataExport.kt` uses the system "save file" picker (`ActivityResultContracts.CreateDocument("application/json")`). It is registered in `MainActivity.onCreate`, and the waiting file is held per process, so turning the phone while the picker is open still saves it.
+  - Settings > Privacy & safety > "Download my data" (`DataExportSetting` in `Legal.kt`) suggests `dzirent-data-<date>.json` and shows a "Saved" toast and "Saved as …" under the row.
+  - The downloaded file stays in memory, for that account and day, so a cancelled or failed save can be retried without hitting the daily limit. It is dropped on sign-out (`DzirentRepository.signOut`).
+  - The once-a-day sentence reaches the row word for word.
+- **iPhone:** `iosMain/.../IosDataExport.kt` has `savesFiles = false`, so the same row opens `AppLinks.DATA_EXPORT_URL` (the website's Settings > Privacy & safety).
+- **Docs:** `contract.md` (`export-my-data`, `export_my_data`, `age_blocked`, `data_exports`), `security-log.md` ("Download my data (P3A)", Advisor), `compliance.md` (gap 13 handled with the rule, the TDPSA row, the column map), `BOARD.md`.
+
+The export's parts, in file order: `about`, `exported_at`, `account` (email, created, last sign-in), `profile`, `private_profile` (measurements, consent time, fit profile, style interests), `listings` (each with `measurements`, `availability`, `photos` with `link`, `photo_checks` with per-photo results including the 768-number fingerprint), `saved_pieces`, `saved_studios`, `chats` (with `messages`, read time and rental answer), `rentals`, `blocked_people`, `reports_filed`, `warnings`, `accessory_declarations`, `listing_declarations`, `legal_acceptances`, `age_checks`, `notification_settings`, `devices` (platform and dates, no tokens), `suggestion_choices`, `listing_activity`, `earlier_exports`.
+
+What I ran:
+1. `supabase db push --linked` (dry run first) and `supabase functions deploy export-my-data --no-verify-jwt`.
+2. `node supabase/tests/p3a_data_export.mjs` (new), as test user 3: **PASSED on the first run**.
+   - The file is named `dzirent-data-2026-11-07.json`, starts with `about` then `exported_at`, and has all 20 parts, each explained in `about`.
+   - Test user 1 appears only as `{"name":"Studio Rostova","handle":"studiorostova"}`. Their email and account id are nowhere in the file.
+   - All 10 other-person entries hold only name and handle, and all 17 messages only from, text and time.
+   - A second export is refused (429): "You can download your data once a day. Try again after Nov 8, 2026, 6:51 PM UTC." No token gets 401.
+   - Setup cleared test user 3's earlier export times first (test data). This run's time stays, so test user 3 can't export again until Nov 8, 18:51 UTC.
+3. Test user 3 has no listings, so I also checked the listing parts with one SQL call acting as test user 1. It returned 6 listings, 11 photos, 10 photo checks and 18 per-photo results (fingerprints of 768 numbers), with test user 3's email and id absent. I then deleted the `data_exports` row it made, so test user 1's daily limit is untouched.
+4. Supabase Security Advisor: two new findings (`export_my_data`, `age_blocked`, both intended), logged.
+5. `:androidApp:assembleDebug :shared:testDebugUnitTest`: BUILD SUCCESSFUL. 28 tests, 0 failures, including the new `DataExportTest` (3 tests).
+6. `apps/web`: `npm run lint` and `npm run build` pass (Node 22.23.4 from my scratch folder). The first lint run flagged `window.location` in the blocked page; I switched it to the router and re-ran, and lint now reports no warnings.
+7. No emulator, device or screenshots. Not run: an iOS build (no Mac here).
+
+A mistake I made and fixed: a PowerShell replace script for the page titles flattened its list and swapped every letter "t" in 15 website files (`layout.tsx`, the eight policy pages, six admin pages). A byte-for-byte check showed each file differed from `HEAD` only by that swap, and none had other uncommitted changes. I restored them with `git checkout --` and made the title edits one by one. `git diff --numstat` then showed exactly one changed line per file. Nothing broken was committed.
+
+Debug APK: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk` (built 2026-11-07 13:00 local time).
+
+iOS work left for the Mac:
+- Build-check the shared changes: `DeviceServices.dataExport`, `IosDeviceServices`, and the new `IosDataExport.kt`. None of the iosMain code was compiled here.
+- **Native save:** in `IosDataExport.save`, write the bytes to a temporary file named `fileName`, then present `UIDocumentPickerViewController(forExporting:)` (or a share sheet) from the top view controller. Delete the temporary file afterwards, and return SAVED / CANCELLED / FAILED. Then set `savesFiles = true`; the shared row already handles the rest.
+- Until then the iPhone row opens the website page in Safari, which needs the user to sign in there.
+
+Open issues:
+- **What the file leaves out:** provider logs (Supabase, Vercel, Google), declarations already unlinked from a deleted account, report evidence and reports about the user (moderation data), and anything only on the phone or in the browser. compliance.md gap 13 lists these for the attorney.
+- **The daily limit counts at download, not at save.** On Android the kept file covers a cancelled or failed save until the app is closed. On the website a download the browser blocks still uses the day.
+- **Android rotation:** if the phone turns while the picker is open, the file is still saved, but the "Saved" confirmation is lost with the old screen.
+- **Size:** fingerprints make photo checks large: 768 numbers per photo, so about 8 KB each. Test user 1's file is fine, but a lender with many re-checked listings could reach a few MB.
+- **Test user 3 can't export again** until Nov 8, 18:51 UTC (the test run's record). The test clears it itself next time.
+
 ## Mac iOS session - 2026-11-07
 
 Branch: `ios01` only. Before starting: `git fetch`, `git switch ios01`, `git pull origin Preview` fast-forwarded `8c51207` to `9bdfd2c` (P2C, which had landed); the tree was clean. Kotlin (2.1.0) and Compose Multiplatform (1.7.3) weren't upgraded. No Android emulator or device.

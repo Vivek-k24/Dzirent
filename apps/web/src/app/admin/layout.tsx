@@ -5,7 +5,7 @@ import { AdminNav, type AdminQueueCounts } from "@/components/admin/admin-nav";
 import { AdminMfaGate } from "@/components/admin/mfa-gate";
 
 export const metadata: Metadata = {
-  title: "Admin - Dzirent",
+  title: "Admin",
   robots: {
     index: false,
     follow: false,

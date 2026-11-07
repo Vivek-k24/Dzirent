@@ -49,6 +49,7 @@ class IosDeviceServices : DeviceServices {
     }
     override val push: PushService = IosPushService()
     override val ageSignals: AgeSignalsService = IosAgeSignals()
+    override val dataExport: DataExportService = IosDataExport()
 
     private val info = NSBundle.mainBundle.infoDictionary
     override val appVersion: String = info?.get("CFBundleShortVersionString") as? String ?: ""

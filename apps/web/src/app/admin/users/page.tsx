@@ -3,7 +3,7 @@ import { serverClient } from "@/lib/supabase/server";
 import { UsersView, AdminUserData } from "@/components/admin/users-view";
 
 export const metadata: Metadata = {
-  title: "User Management | Dzirent Admin",
+  title: "Admin: User Management",
   robots: {
     index: false,
     follow: false,

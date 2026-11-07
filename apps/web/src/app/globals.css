@@ -276,6 +276,42 @@ html[data-theme=dark] .legal-placeholder{background:#3d3314;color:#ffd666;border
   }
 }
 
+/* The age gate's blocked page (P3A website fix). */
+.age-blocked-page {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  max-width: 560px;
+}
+.age-blocked-page h1 {
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 8px 0 0;
+}
+.age-blocked-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+}
+.age-blocked-actions form,
+.age-blocked-actions .button {
+  width: 100%;
+}
+.button.danger {
+  background: #c62828;
+  border-color: #c62828;
+  color: #fff;
+}
+
 /* "Preview only" in the header while the preview_label flag is on (P2C). */
 .preview-label {
   color: #c62828;

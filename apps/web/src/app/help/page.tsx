@@ -4,7 +4,7 @@ import Link from "next/link";
 import { LegalLayout } from "@/components/legal-layout";
 
 export const metadata: Metadata = {
-  title: "Help Center & FAQ — Dzirent",
+  title: "Help Center & FAQ",
   description:
     "Frequently asked questions about renting, lending, private measurements, safety meetups, and account settings on Dzirent.",
 };
@@ -408,8 +408,14 @@ export default function HelpPage() {
             <summary className="faq-question">Can I download a copy of my data?</summary>
             <div className="faq-answer">
               <p>
-                A self-service data export tool is coming soon. In the meantime, you may request a
-                full copy of your personal data by contacting us at{" "}
+                Yes. In the app, go to Settings &gt; Privacy &amp; safety &gt; Download my data. On
+                the website, go to Profile &amp; settings &gt; Settings, then Privacy &amp; safety
+                &gt; Download my data. You get one file with your account, profile, measurements,
+                listings and photos, chats, saved pieces and more. Other people appear in it only by
+                their name and studio handle.
+              </p>
+              <p>
+                You can download your data once a day. If something is missing, contact us at{" "}
                 <Link href="/support" className="accent">
                   Support
                 </Link>
