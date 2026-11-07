@@ -386,7 +386,31 @@ Tracking: **no data is used to track** (no ads, no data brokers, no linking with
 | Other data | Other data types | Yes: body measurements, fit profile | Yes | No | App functionality |
 | **[P6A]** Sensitive info / User content / Identifiers | Government ID, face photo, date of birth | Yes when ID verification is live | Yes | No | App functionality (fraud prevention) |
 
-The iPhone app also needs a privacy manifest (`PrivacyInfo.xcprivacy`) before submission (gap 17).
+The iPhone app's privacy manifest is in place since the Mac iOS session (2026-11-07); see 6.3.
+
+### 6.3 iPhone privacy manifest
+
+File: `mobile/iosApp/iosApp/PrivacyInfo.xcprivacy`, in the app target's resources (checked in the built `Dzirent.app`).
+
+How it was checked (Mac iOS session, 2026-11-07):
+- The shared Kotlin framework is static (`isStatic = true`), so every library is linked into the app binary itself. `nm -u` on the built app and on each member of `shared.framework` listed the imported system calls; `strings` listed the Objective-C selectors.
+- No dependency ships its own privacy manifest: none of the Gradle and Kotlin/Native caches on the Mac holds a `.xcprivacy` file. So the app's manifest covers them all.
+
+Required-reason APIs declared:
+
+| Category | Reason | What uses it |
+| --- | --- | --- |
+| User defaults (`NSPrivacyAccessedAPICategoryUserDefaults`) | `CA92.1`: data only this app reads and writes | `NSUserDefaults.standardUserDefaults` for settings, theme, drafts and the age-check day (`IosDevice.kt`, `IosPlatformServices.kt`), and the sign-in session through `multiplatform-settings` (supabase-kt). No app group, no other app's defaults |
+| File timestamp (`NSPrivacyAccessedAPICategoryFileTimestamp`) | `C617.1`: metadata of files inside the app container | `stat` / `fstat` / `lstat` (Skia, ICU, the Kotlin/Native POSIX layer used by okio for Coil's image cache) and `NSFileManager attributesOfItemAtPath` (photo file size in `IosDevice.kt`) |
+| System boot time (`NSPrivacyAccessedAPICategorySystemBootTime`) | `35F9.1`: elapsed time between events in the app | `CACurrentMediaTime` and `clock_gettime` (Compose frame timing, coroutine timeouts). Neither is named on Apple's list (`systemUptime`, `mach_absolute_time`), but both read the same boot-relative clock, so it is declared to be safe |
+
+Not declared, because nothing uses them: disk space (`statfs`, `statvfs`, `NSFileSystemFreeSize`, volume capacity keys) and active keyboards (`activeInputModes`). `sysctlbyname` appears only for CPU feature flags (`hw.optional.*`, in zlib and the Kotlin/Native Darwin layer), not boot time.
+
+Tracking: `NSPrivacyTracking` false, `NSPrivacyTrackingDomains` empty.
+
+Collected data types (all linked to the user, none used for tracking, matching 6.2): name, email address, coarse location, in-app messages (`EmailsOrTextMessages`), photos, other user content, user ID, product interaction (analytics and app functionality), other data (body measurements, fit profile). Device ID is left out while iPhone push is off (P8B).
+
+Permission texts in `Info.plist`: camera and location only. `NSPhotoLibraryUsageDescription` was removed: the app picks photos with the system picker (`PHPickerViewController`, no permission needed) and never saves to the photo library.
 
 ## 7. Rules to features
 
@@ -448,6 +472,7 @@ Each gap has a suggested fix and the phase from the handoff plan.
 15. **Log retention and contents are unknown.** Supabase logs keep IP, approximate place, user agent, account ID and query strings for at least 7 days; Vercel and Cloud Logging retention were not checked. Fix: record each provider's retention in the account inventory, set the shortest workable period, and state it in the privacy policy. Phase: P3B (log retention), P5B, P7B.
 16. **`send-push` puts IDs and tokens in URLs.** It reads tokens with `user_id=eq.<id>` and deletes dead tokens with `token=eq.<token>` in the query string, which Supabase API logs record (field `request.search`). From code; no such request was in the logs window. Fix: move both to an RPC with the values in the body. Phase: P5A.
 17. **No iPhone privacy manifest.** `PrivacyInfo.xcprivacy` is missing; the app uses NSUserDefaults, a required-reason API. Phase: P8B.
+   - **Closed (Mac iOS session, 2026-11-07).** `mobile/iosApp/iosApp/PrivacyInfo.xcprivacy` declares user defaults, file timestamp and system boot time, no tracking and the collected data types (section 6.3). When iPhone push is added (P8B), add Device ID there and recheck the libraries.
 18. **Android backup includes the session and drafts.** `android:allowBackup="true"` with no backup rules. Fix: `dataExtractionRules` / `fullBackupContent` that leave out the session, drafts and photos (or `allowBackup="false"`). Phase: P5A.
 19. **Email confirmation off; Auth `site_url` is `http://localhost:3000`; no custom SMTP.** Anyone can sign up with someone else's address, and email links may point to localhost. Fix: set `site_url` to dzirent.com, add an email service, turn confirmation on. Phase: P6C (email service), P8C (confirmation on, `site_url`).
 20. **No bot check, no message or report rate limits, no website security headers.** Phase: P5A.
