@@ -18,8 +18,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.dzirent.shared.model.PASSWORD_MIN_LENGTH
 import com.dzirent.shared.model.Profile
 import com.dzirent.shared.model.UsCity
+import com.dzirent.shared.platform.LocalDevice
 import com.dzirent.shared.repository.DzirentRepository
 import kotlinx.coroutines.launch
 
@@ -278,13 +280,14 @@ fun SignUpScreen(
     var showCityHint by remember { mutableStateOf(false) }
     var selectedRole by remember { mutableStateOf("both") }
     var adultConfirmed by remember { mutableStateOf(false) }
-    var policyAccepted by remember { mutableStateOf(false) }
+    var termsAccepted by remember { mutableStateOf(false) }
     var showPolicy by remember { mutableStateOf(false) }
 
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var confirmationSentTo by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val device = LocalDevice.current
 
     if (isLoading) {
         LoadingView(message = "Creating account...")
@@ -375,6 +378,7 @@ fun SignUpScreen(
                 label = { Text("Password") },
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 visualTransformation = PasswordVisualTransformation(),
+                supportingText = { Text("At least $PASSWORD_MIN_LENGTH characters") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -443,13 +447,10 @@ fun SignUpScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Checkbox(
-                    checked = policyAccepted,
-                    onCheckedChange = { policyAccepted = it }
+                    checked = termsAccepted,
+                    onCheckedChange = { termsAccepted = it }
                 )
-                Text(
-                    text = DzirentPolicy.SIGN_UP_CONSENT,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                LegalLinksText(before = "I agree to the ", modifier = Modifier.weight(1f))
             }
             TextButton(
                 onClick = { showPolicy = true },
@@ -468,8 +469,8 @@ fun SignUpScreen(
                         errorMessage = "Please fill in all required fields."
                         return@Button
                     }
-                    if (password.trim().length < 6) {
-                        errorMessage = "Password must be at least 6 characters."
+                    if (password.trim().length < PASSWORD_MIN_LENGTH) {
+                        errorMessage = "Password must be at least $PASSWORD_MIN_LENGTH characters."
                         return@Button
                     }
                     if (city == null && cityText.isNotBlank()) {
@@ -481,8 +482,8 @@ fun SignUpScreen(
                         errorMessage = "You must confirm you are 18+ to proceed."
                         return@Button
                     }
-                    if (!policyAccepted) {
-                        errorMessage = "Please confirm you understand Dzirent only connects people."
+                    if (!termsAccepted) {
+                        errorMessage = "Please agree to the Terms of Use and Privacy Policy."
                         return@Button
                     }
                     scope.launch {
@@ -498,10 +499,16 @@ fun SignUpScreen(
                                 adultConfirmed = true,
                                 city = city
                             )
+                            if (profile != null) {
+                                // The ticked agreement, recorded now there is a session. If this fails,
+                                // the terms step after sign-in asks again.
+                                runCatching { repository.acceptLegal(device.push.platform) }
+                            }
                             isLoading = false
                             if (profile != null) {
                                 onSignUpSuccess(profile)
                             } else {
+                                // No session until the email is confirmed: the terms step asks at first sign-in.
                                 confirmationSentTo = trimmedEmail
                             }
                         } catch (e: Exception) {

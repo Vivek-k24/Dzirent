@@ -63,7 +63,8 @@ private val DATABASE_MESSAGES = listOf(
     "The photos changed after they were checked",
     "Too many photo checks",
     "Add a photo first",
-    "Sign the accessory declaration"
+    "Sign the accessory declaration",
+    "Give consent before saving your measurements"
 )
 
 /** How often the editor asks for a scan's state when Realtime hasn't sent it. */
@@ -175,7 +176,7 @@ class DzirentRepository(
             "already registered" in raw || "already been registered" in raw || "user_already_exists" in raw ->
                 "An account with this email already exists. Try logging in."
             "password should" in raw || "weak_password" in raw ->
-                "That password is too weak. Use at least 6 characters."
+                "That password is too weak. Use at least $PASSWORD_MIN_LENGTH characters."
             "rate limit" in raw || "too many requests" in raw ->
                 "Too many attempts. Please try again later."
             "unable to resolve host" in raw || "failed to connect" in raw || "timeout" in raw || "timed out" in raw ->
@@ -582,6 +583,42 @@ class DzirentRepository(
             )
         } catch (e: Exception) {
             throw fail("save declaration", e)
+        }
+    }
+
+    // --- Terms of Use and Privacy Policy ---
+    /** True while I haven't accepted the current version of the Terms of Use or Privacy Policy. */
+    suspend fun needsLegalAcceptance(): Boolean = try {
+        postgrest.rpc("needs_legal_acceptance").decodeAs<Boolean>()
+    } catch (e: Exception) {
+        throw fail("check the terms", e)
+    }
+
+    /** Records that I accept the current Terms of Use and Privacy Policy, from [platform] ("android" or "ios"). */
+    suspend fun acceptLegal(platform: String) {
+        try {
+            postgrest.rpc("accept_legal", buildJsonObject { put("p_platform", platform) })
+        } catch (e: Exception) {
+            throw fail("save your agreement", e)
+        }
+    }
+
+    // --- Measurements consent ---
+    /** Lets my body measurements be saved (needed before the first one). */
+    suspend fun giveMeasurementsConsent() {
+        try {
+            postgrest.rpc("give_measurements_consent")
+        } catch (e: Exception) {
+            throw fail("save your consent", e)
+        }
+    }
+
+    /** Withdraws the consent; the server deletes my saved body measurements with it. */
+    suspend fun withdrawMeasurementsConsent() {
+        try {
+            postgrest.rpc("withdraw_measurements_consent")
+        } catch (e: Exception) {
+            throw fail("withdraw your consent", e)
         }
     }
 

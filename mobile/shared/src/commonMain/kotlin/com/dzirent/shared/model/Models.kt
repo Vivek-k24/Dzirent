@@ -46,9 +46,12 @@ data class PrivateProfile(
     @SerialName("inseam_cm") val inseamCm: Double? = null,
     @SerialName("activity_seen_at") val activitySeenAt: String? = null,
     @SerialName("fit_profile") val fitProfile: String? = null,
-    @SerialName("style_interests") val styleInterests: List<String> = emptyList()
+    @SerialName("style_interests") val styleInterests: List<String> = emptyList(),
+    /** When I agreed to my measurements being saved (null: not given; the database refuses new ones). */
+    @SerialName("measurements_consent_at") val measurementsConsentAt: String? = null
 ) {
     val fit: FitProfile? get() = FitProfile.fromDb(fitProfile)
+    val hasMeasurementsConsent: Boolean get() = measurementsConsentAt != null
 
     fun bodyCm(measurement: BodyMeasurement): Double? = when (measurement) {
         BodyMeasurement.CHEST -> chestCm
@@ -541,5 +544,14 @@ object AppLinks {
     const val TERMS_URL = "https://dzirent.com/terms"
     const val PRIVACY_URL = "https://dzirent.com/privacy"
     const val SUPPORT_EMAIL = "support@dzirent.com"
+    const val HELP_URL = "https://dzirent.com/help"
+    const val SAFETY_URL = "https://dzirent.com/safety"
+    const val COMMUNITY_GUIDELINES_URL = "https://dzirent.com/community-guidelines"
+    const val COPYRIGHT_URL = "https://dzirent.com/copyright"
+    const val DELETE_ACCOUNT_URL = "https://dzirent.com/delete-account"
+    const val SUPPORT_URL = "https://dzirent.com/support"
 }
+
+/** The shortest password the server accepts (Supabase Auth `password_min_length`). */
+const val PASSWORD_MIN_LENGTH = 8
 

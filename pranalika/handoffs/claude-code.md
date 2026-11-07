@@ -2,6 +2,73 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P1B part 1 - 2026-11-06 - terms acceptance and consent
+
+Done:
+- Before starting: working tree clean. `git pull --rebase` fast-forwarded `Preview` from `03df5fe` to `cbd6ce5` (P1A part 2 and its fix-up). `TERMS_VERSION` and `PRIVACY_VERSION` in `apps/web/src/content/legal/config.ts` are both `1.0.0`.
+- Migration `supabase/migrations/20261106120000_p1b_legal_and_consent.sql`, applied with `supabase db push` (dry run first: only this migration was pending):
+  - `legal_documents`: `terms` 1.0.0 and `privacy` 1.0.0, with their URLs. Readable by everyone; no API role can write it.
+  - `legal_acceptances`: user, document, version, platform (`web`, `android`, `ios`), time. Unique per user, document and version. Owner reads; written only by `accept_legal`; removed with the account.
+  - `accept_legal(p_platform)` (elevated, signed-in only) records the current version of both documents. `needs_legal_acceptance()` (runs as the caller) is true while either is missing. No user had accepted anything, so every existing user gets the terms step.
+  - `private_profiles.measurements_consent_at`. The trigger `app_private.require_measurements_consent`:
+    - keeps the stored consent time when an app writes the row (apps can't set or clear it);
+    - refuses a new body measurement without consent (`P0001` "Give consent before saving your measurements."), on insert, update and upsert. An upsert reaches the INSERT trigger first, so the trigger reads the consent from the existing row.
+    - Clearing a measurement, and saving only fit profile or styles, stays allowed.
+  - `give_measurements_consent()` returns the consent time, keeping the first one. `withdraw_measurements_consent()` deletes the six measurements and the consent time.
+  - All existing body measurements were deleted, so everyone is asked fresh.
+- Mobile shared code (Android builds it here; iOS shares it):
+  - **Sign-up:** the tick is now "I agree to the Terms of Use and Privacy Policy". Both names are links (`LinkAnnotation`) that open dzirent.com/terms and /privacy in the browser. It is required, and `accept_legal` runs right after sign-up (`AuthScreens.kt`). "Read how Dzirent works" stays below it.
+  - **Terms step:** a new `AuthScreenState.NeedsTerms`. After sign-in, and when a saved session opens at app start, `needs_legal_acceptance()` decides. While it's true, the app shows only `TermsUpdateScreen` ("We've updated our terms", both links, Agree, Sign out). Agree calls `accept_legal` with `"android"` or `"ios"` (the push service's platform name). Sign out unregisters push first, as Settings does (`DzirentApp.kt`, `Legal.kt`).
+  - **Measurements:** before the first save that includes a measurement, a dialog shows "Your measurements are private. We use them only to suggest pieces likely to fit you. They are never shown to anyone." with Agree / Not now. Agree calls `give_measurements_consent`, then saves (`BodyMeasurementsScreen.kt`).
+  - **Settings > Privacy & safety > Measurements consent:** shows "Given" or "Not given". When given, tapping it asks "Withdraw consent?" ("Your saved body measurements will be deleted…") and then calls `withdraw_measurements_consent`.
+  - **Passwords:** `PASSWORD_MIN_LENGTH = 8` (`Models.kt`) is used by the sign-up check, the sign-up field's hint, Change password, and the "too weak" server message.
+  - **Settings > Help & legal:** Help (/help), Safety tips, Community guidelines, Terms of Use, Privacy Policy, Copyright, Delete account (/delete-account), Contact support (/support). All open in the browser; guests see them too. `LinkRow` from About is now shared, and About says "Terms of Use" instead of "Terms of Service".
+  - Removed the unused `DzirentPolicy.SIGN_UP_CONSENT`.
+- New test `supabase/tests/p1b_legal_consent.mjs`.
+- `contract.md`, `security-log.md` (three new Advisor findings, logged), `compliance.md` (gaps 8, 9 and 21 closed for the database and apps, with the website remainder named; inventory rows and the column map updated) and `BOARD.md`.
+
+What I ran:
+1. `supabase db push --linked --dry-run`, then `supabase db push --linked`: applied.
+2. `node supabase/tests/p1b_legal_consent.mjs` as test user 1: PASSED on the first run.
+   - `legal_documents` shows privacy 1.0.0 and terms 1.0.0. `needs_legal_acceptance()` was true; after `accept_legal('android')` it is false. The two rows are privacy 1.0.0 and terms 1.0.0 on android. A guest call to `accept_legal` was refused (401).
+   - A chest measurement upsert without consent was refused (400, P0001, "Give consent before saving your measurements."). A direct PATCH of `measurements_consent_at` was ignored.
+   - After `give_measurements_consent()` the upsert saved 92 cm. `withdraw_measurements_consent()` then cleared the measurement and the consent time.
+3. Read-only queries afterwards:
+   - 1 of 5 users has acceptances (test user 1, from the test).
+   - 0 rows with a body measurement, 0 with consent.
+   - `has_function_privilege`: `anon` can't run any of the four functions; `authenticated` can't run the trigger function.
+   - `has_table_privilege`: `authenticated` can't insert acceptances or change documents; `service_role` can't insert documents; `anon` can read documents, not acceptances.
+4. Security Advisor (2026-11-07 01:03 UTC): new are `accept_legal`, `give_measurements_consent` and `withdraw_measurements_consent` (signed-in elevated functions, logged with reasons). Nothing else changed.
+5. `gradlew :shared:compileCommonMainKotlinMetadata :androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, both env files and `GOOGLE_SERVICES_JSON` loaded silently): BUILD SUCCESSFUL. 20 shared unit tests, 0 failures, 0 skipped (`SmokeTest` ran with the test-user env). No compiler warnings in the changed files.
+6. No emulator, device or screenshots.
+
+Debug APK: `H:\DziRent\Dzirent_dev\mobile\androidApp\build\outputs\apk\debug\androidApp-debug.apk` (22.2 MB, 2026-11-06 19:07 local).
+
+Owner phone test:
+- Sign in as test user 2 or 3. Test user 1 already accepted through the API test, so it won't see the terms step. You should see "We've updated our terms"; both links should open the website; Agree should enter the app; signing out and in again shouldn't show the step again.
+- Sign out from the terms step: it should land in guest browsing.
+- Sign up a new account: the tick needs ticking; the links open the pages; there should be no terms step afterwards.
+- My measurements: enter a measurement and Save. The consent dialog shows; Not now saves nothing; Agree saves. Then Settings > Privacy & safety > Measurements consent > Withdraw: My measurements is empty again.
+- Settings > Help & legal: each row opens the right page. Help (/help) has no page on the website yet.
+- Sign-up with a 7-character password: refused with "at least 8".
+
+iOS-facing changes for a Mac check (all in `commonMain`, no `iosMain` change):
+- `Legal.kt` (new): `LinkAnnotation.Clickable` / `withLink` in `buildAnnotatedString`, `LocalUriHandler`, `AlertDialog`, Material icons `QuestionAnswer`, `Groups`, `Copyright`, `SupportAgent`, `Straighten`, `Description`, `PrivacyTip`.
+- `DzirentApp.kt`: the `NeedsTerms` state and its check at start and sign-in.
+- `AuthScreens.kt`, `SettingsScreen.kt`, `BodyMeasurementsScreen.kt`, `AboutScreen.kt` (`LinkRow` no longer private), `Models.kt`, `DzirentRepository.kt`.
+- On iPhone, `accept_legal` gets `"ios"` from `IosPushService.platform`.
+
+Open issues:
+- **Website (out of scope here, `apps/web` not touched):**
+  - It still uses the old "only connects people" tick, doesn't call `accept_legal` and doesn't check `needs_legal_acceptance`.
+  - Its measurements form (`lib/workflow-mutations.ts`) has no consent step, so the database now refuses website measurement saves.
+  - It still says 6-character passwords.
+  - There is no `/help` page, which the apps link to.
+  - Listed on `BOARD.md`.
+- If `needs_legal_acceptance()` can't be reached (no connection), the app opens anyway and checks again at the next start or sign-in. The database doesn't block other actions for users who haven't accepted.
+- With email confirmation turned on later (P8C), sign-up returns no session, so `accept_legal` can't run then. The terms step asks at the first sign-in instead, with the heading "We've updated our terms".
+- A new terms or privacy version needs a migration that updates `legal_documents` together with the website's config.
+
 ## P1A part 1 - 2026-11-06 - data inventory
 
 Done:

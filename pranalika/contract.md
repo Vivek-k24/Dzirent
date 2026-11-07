@@ -163,6 +163,14 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 - `unregister_push_token(p_token text)`: Signed-in only. Removes the token if it is the caller's. Call before signing out. Returns nothing.
 - Settings are the caller's own `notification_settings` row (table below). No row means Messages on and message text hidden.
 
+### Terms acceptance and measurements consent (P1B part 1)
+- `needs_legal_acceptance()`: Signed-in only. Returns `boolean`: true while the caller hasn't accepted the current version (`legal_documents`) of the Terms of Use or the Privacy Policy. Runs as the caller. The apps ask it after sign-in and when a saved session opens; while true they show only the "We've updated our terms" step (Agree or Sign out).
+- `accept_legal(p_platform text)`: Signed-in only. Records that the caller accepts the current version of both documents; `p_platform` is `'web'`, `'android'` or `'ios'`. Accepting a version twice keeps the first row. Returns nothing. Call right after sign-up (the sign-up tick) and from the terms step.
+- `give_measurements_consent()`: Signed-in only. Returns the consent time (`timestamptz`); keeps the first time if consent was already given. Needed before the first body measurement is saved.
+- `withdraw_measurements_consent()`: Signed-in only. Deletes the caller's six body measurements and the consent time; fit profile and style interests stay. Returns nothing.
+- Saving a body measurement (`chest_cm`, `waist_cm`, `hips_cm`, `shoulder_cm`, `height_cm`, `inseam_cm` set to a new value, by insert, update or upsert) without consent is refused: `P0001` "Give consent before saving your measurements." Clearing a measurement, and saving only `fit_profile` or `style_interests`, is always allowed. Apps can't write `measurements_consent_at` (a trigger keeps the stored value).
+- Publishing a new terms or privacy version means a migration that updates its `legal_documents` row (the same version as `apps/web/src/content/legal/config.ts`); every user then accepts again.
+
 ### Photo checks (Step 8A, Step 8B)
 - `request_scan(p_listing_id uuid)`: Signed-in listing owner only. Returns the `uuid` of the photo check (a `listing_scans` row) for the listing's current photos. The check runs on the server and usually finishes within a minute (longer when the vision service starts cold). Watch the row until `status` is `done` or `failed`: Realtime `UPDATE` events on `listing_scans` filtered by `id`, with polling by ID as the fallback (Step 8B).
   - One scan at a time per listing: asking again while one is `queued` or `running` returns that scan's ID. Since Step 8B, when the latest check is `done` and covers the current photos (`photo_set_hash`), that check's ID comes back instead of a new one. A scan that hasn't finished after 10 minutes is marked `failed` and a new one can start.
@@ -232,7 +240,7 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | Table | Operations | RLS Rule |
 | --- | --- | --- |
 | `profiles` | SELECT, UPDATE | `id = auth.uid()` |
-| `private_profiles` | ALL | `user_id = auth.uid()` |
+| `private_profiles` | ALL | `user_id = auth.uid()`. `measurements_consent_at` (P1B) is written only by `give_measurements_consent` / `withdraw_measurements_consent`; body measurements need it (see "Terms acceptance and measurements consent"). |
 | `listings` | SELECT, INSERT, UPDATE, DELETE | `lender_id = auth.uid()`. INSERT requires lender/both role. UPDATE restricted to safe columns. DELETE requires empty Storage folder. `auto_paused_reason` (Step 8B) is read-only for apps. |
 | `listing_photos` | ALL | Owned listing only (`l.lender_id = auth.uid()`). |
 | `listing_measurements` | ALL | Owned listing only (`l.lender_id = auth.uid()`). |
@@ -257,3 +265,5 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `photo_scans` | SELECT | Owned listing only. Written only by the server. One row per scanned photo: `scan_id`, `listing_id`, `photo_id`, `storage_path`, `slot`, `blur_score` (0 sharp to 1 blurry), `brightness_score` (0 black to 1 white), `framing_score` (0 = whole piece in frame; higher = more of its outline on the edge), `worn_probability`, `fingerprint` (`vector(768)`), `labels` (JSON label scores), `warnings` (text[], worded as on the phone), `decision` (`allowed`, `not_allowed`, `not_clothing`, `detail`, `unsure`), `scanned_at`. Removed with the photo or listing. |
 | `policy_item_types` | SELECT | Everyone, guests included (`using (true)`); no writes through the API. Columns `key`, `label`, `kind` (`garment`, `accessory`, `other`), `allowed`, `category`, `item_type`, `garment_type`, `style`, `policy_group`, `noun`, `looks_like`, `reason`, `prompts`, `position`. |
 | `app_settings` | SELECT | Everyone, guests included; changed only by migrations. Columns `key`, `enabled`, `description`, `updated_at`. |
+| `legal_documents` | SELECT | Everyone, guests included; changed only by migrations (P1B). One row per document: `document` (`terms`, `privacy`), `version` (seeded `1.0.0` and `1.0.0`, from the website's `TERMS_VERSION` and `PRIVACY_VERSION`), `url`, `updated_at`. |
+| `legal_acceptances` | SELECT | `user_id = auth.uid()`. Written only by `accept_legal` (P1B). Columns `id`, `user_id`, `document`, `version`, `platform` (`web`, `android`, `ios`), `accepted_at`; one row per user, document and version. Removed with the account. |

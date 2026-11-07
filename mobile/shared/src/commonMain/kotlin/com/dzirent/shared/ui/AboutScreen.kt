@@ -52,7 +52,7 @@ fun AboutScreen(
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             SettingsRow(DzirentPolicy.TITLE, null, Icons.Default.Info, onClick = onOpenHowItWorks)
             SettingsRow(DzirentPolicy.COMMUNITY_TITLE, null, Icons.Default.Shield, onClick = onOpenCommunityPolicy)
-            LinkRow("Terms of Service", Icons.Default.Description) {
+            LinkRow("Terms of Use", Icons.Default.Description) {
                 open(AppLinks.TERMS_URL, "Couldn't open the link. Visit ${AppLinks.TERMS_URL}")
             }
             LinkRow("Privacy Policy", Icons.Default.PrivacyTip) {
@@ -77,7 +77,7 @@ fun AboutScreen(
 
 /** A row that leaves the app (opens the browser), so it shows that instead of a chevron. */
 @Composable
-private fun LinkRow(title: String, icon: ImageVector, onClick: () -> Unit) {
+fun LinkRow(title: String, icon: ImageVector, onClick: () -> Unit) {
     ListItem(
         headlineContent = { Text(title) },
         leadingContent = { Icon(icon, contentDescription = null) },

@@ -28,7 +28,8 @@ Account deletion (`supabase/functions/delete-account/index.ts`): refused (HTTP 4
 | Sessions: IP address, user agent, times | Every sign-in and token refresh | `auth.sessions` (`ip`, `user_agent`, `created_at`, `refreshed_at`), `auth.refresh_tokens` (52 sessions and 123 refresh tokens for 5 users on 2026-11-06) | Keep users signed in | Server | Automatic | Until sign-out or expiry. Hosted `sessions_timebox` and `sessions_inactivity_timeout` are 0 (no forced end) | Deleted |
 | Session ID | Supabase JWT claim | Copied into `accessory_declarations.session_id`, `listing_declarations.session_id` | Audit of a declaration | Owner, Server | Automatic | Until deleted | **Kept** in the declarations |
 | Auth audit events: action, user ID, email, user agent | Supabase Auth | Supabase log stream `auth_audit_logs` only. Not in Postgres: hosted `audit_log_disable_postgres = true`, `auth.audit_log_entries` has 0 rows | Security audit | Server | Automatic | Supabase log retention (see 1.12) | Kept until the logs expire |
-| "I understand Dzirent only connects people" tick | Sign-up form (web `policy` checkbox, mobile `AuthScreens.kt`) | **Not stored anywhere** | Required to sign up in the apps | - | Required in the apps | - | - |
+| "I understand Dzirent only connects people" tick (website only since P1B part 1) | Website sign-up form (`policy` checkbox) | **Not stored anywhere** | Required to sign up on the website | - | Required on the website | - | - |
+| Terms of Use and Privacy Policy acceptance (P1B part 1) | Android and iPhone: the sign-up tick "I agree to the Terms of Use and Privacy Policy" (`accept_legal` right after sign-up) and the "We've updated our terms" step (`TermsUpdateScreen`) | `legal_acceptances` (`document`, `version`, `platform`, `accepted_at`; one row per document and version); current versions in `legal_documents` | Record of agreement to the current terms and privacy policy | Owner, Server | Required to use the apps signed in | Until deletion | Deleted (cascade) |
 
 ### 1.2 Profile and studio (`profiles`)
 
@@ -48,7 +49,8 @@ Account deletion (`supabase/functions/delete-account/index.ts`): refused (HTTP 4
 
 | Data item | Comes from | Stored in | Purpose | Who can see | Required | Kept for | On account deletion |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Body measurements: chest, waist, hips, shoulder, height, inseam (cm) | Measurements screen (web `measurements-editor.tsx`, mobile `BodyMeasurementsScreen.kt`) | `private_profiles.*_cm` | "Likely to fit you" (`fit_listings` reads them on the server) | Owner only; Server | Optional. No separate consent step today | Until deleted | Deleted |
+| Body measurements: chest, waist, hips, shoulder, height, inseam (cm) | Measurements screen (web `measurements-editor.tsx`, mobile `BodyMeasurementsScreen.kt`) | `private_profiles.*_cm` | "Likely to fit you" (`fit_listings` reads them on the server) | Owner only; Server | Optional. Needs consent first (P1B part 1): the database refuses new measurements without it | Until deleted, or until consent is withdrawn | Deleted |
+| Measurements consent time | "Agree" in the consent dialog before the first save (`give_measurements_consent`) | `private_profiles.measurements_consent_at` (written only by the consent functions) | Record that the user agreed before measurements were saved | Owner, Server | Needed for measurements | Until withdrawn (`withdraw_measurements_consent`, which also deletes the measurements) | Deleted |
 | Fit profile (man or woman) | Measurements screen | `private_profiles.fit_profile` | Picks the fit rules | Owner, Server | Optional | Until deleted | Deleted |
 | Style interests (9 cultural and Western styles) | Measurements screen, saved with the measurements (web `workflow-mutations.ts` action `measurements`, mobile `BodyMeasurementsScreen.kt`) | `private_profiles.style_interests` | Home rows ("for your style") and search suggestions | Owner, Server | Optional | Until deleted | Deleted |
 | Activity last seen | `mark_activity_seen` | `private_profiles.activity_seen_at` | Notification dot | Owner | Automatic | Until deleted | Deleted |
@@ -201,7 +203,7 @@ No third-party cookies, scripts, fonts or trackers: the font is served with the 
 
 ### 1.16 Schema check (Phase 2)
 
-Live schema on 2026-11-06 (`information_schema.columns`): 26 tables in `public`, all with RLS on. Every one is in the tables above: `accessory_declarations`, `app_settings`, `availability`, `blocks`, `conversation_reads`, `conversations`, `device_tokens`, `listing_declarations`, `listing_events`, `listing_measurements`, `listing_photos`, `listing_scans`, `listings`, `messages`, `notification_settings`, `photo_scans`, `policy_item_types`, `private_profiles`, `profiles`, `rental_outcomes`, `rentals`, `reports`, `saved_listings`, `saved_studios`, `suggestion_events`, `us_cities`. Every column is covered. The map below lists each table's columns exactly as the live schema has them (generated from `information_schema.columns` on 2026-11-06) and the section that describes them.
+Live schema on 2026-11-06 (`information_schema.columns`): 26 tables in `public`, all with RLS on. Every one is in the tables above: `accessory_declarations`, `app_settings`, `availability`, `blocks`, `conversation_reads`, `conversations`, `device_tokens`, `listing_declarations`, `listing_events`, `listing_measurements`, `listing_photos`, `listing_scans`, `listings`, `messages`, `notification_settings`, `photo_scans`, `policy_item_types`, `private_profiles`, `profiles`, `rental_outcomes`, `rentals`, `reports`, `saved_listings`, `saved_studios`, `suggestion_events`, `us_cities`. P1B part 1 (same day) added `legal_documents` and `legal_acceptances` (28 tables now) and `private_profiles.measurements_consent_at`; they are in 1.1, 1.3 and the map. Every column is covered. The map below lists each table's columns exactly as the live schema has them (generated from `information_schema.columns` on 2026-11-06) and the section that describes them.
 
 | Table | Live columns | Section |
 | --- | --- | --- |
@@ -212,6 +214,8 @@ Live schema on 2026-11-06 (`information_schema.columns`): 26 tables in `public`,
 | `conversation_reads` | `user_id`, `conversation_id`, `last_read_at` | 1.8 |
 | `conversations` | `id`, `listing_id`, `renter_id`, `lender_id`, `created_at`, `requested_start`, `requested_end` | 1.8 |
 | `device_tokens` | `token`, `user_id`, `platform`, `created_at`, `last_seen_at` | 1.11 |
+| `legal_acceptances` (P1B) | `id`, `user_id`, `document`, `version`, `platform`, `accepted_at` | 1.1 |
+| `legal_documents` (P1B) | `document`, `version`, `url`, `updated_at` | 1.1 |
 | `listing_declarations` | `id`, `listing_id`, `user_id`, `declaration_version`, `ip`, `session_id`, `created_at` | 1.10 |
 | `listing_events` | `id`, `user_id`, `listing_id`, `type`, `created_at` | 1.7 |
 | `listing_measurements` | `id`, `listing_id`, `label`, `value`, `unit` | 1.5 |
@@ -222,7 +226,7 @@ Live schema on 2026-11-06 (`information_schema.columns`): 26 tables in `public`,
 | `notification_settings` | `user_id`, `messages`, `show_message_text`, `updated_at` | 1.11 |
 | `photo_scans` | `id`, `scan_id`, `listing_id`, `photo_id`, `storage_path`, `slot`, `blur_score`, `brightness_score`, `framing_score`, `worn_probability`, `fingerprint`, `labels`, `warnings`, `decision`, `scanned_at` | 1.6 |
 | `policy_item_types` | `key`, `label`, `kind`, `allowed`, `category`, `item_type`, `garment_type`, `style`, `policy_group`, `noun`, `looks_like`, `reason`, `prompts`, `position` | 1.15 |
-| `private_profiles` | `user_id`, `chest_cm`, `waist_cm`, `hips_cm`, `shoulder_cm`, `height_cm`, `inseam_cm`, `activity_seen_at`, `updated_at`, `fit_profile`, `style_interests` | 1.3 |
+| `private_profiles` | `user_id`, `chest_cm`, `waist_cm`, `hips_cm`, `shoulder_cm`, `height_cm`, `inseam_cm`, `activity_seen_at`, `updated_at`, `fit_profile`, `style_interests`, `measurements_consent_at` (P1B) | 1.3 |
 | `profiles` | `id`, `display_name`, `role`, `city`, `approx_lat`, `approx_lng`, `adult_confirmed`, `created_at`, `studio_name`, `studio_handle`, `studio_bio`, `style_tags`, `pickup_area` | 1.2, 1.4 |
 | `rental_outcomes` | `conversation_id`, `user_id`, `happened`, `answered_at` | 1.8 |
 | `rentals` | `id`, `conversation_id`, `listing_id`, `renter_id`, `lender_id`, `status`, `start_date`, `end_date`, `updated_by`, `created_at`, `updated_at` | 1.8 |
@@ -404,7 +408,15 @@ Each gap has a suggested fix and the phase from the handoff plan.
 6. **Coordinates are not rounded by the database after sign-up.** `profiles` and `listings` accept any precision from a direct API call. Fix: a trigger that rounds `approx_lat/lng` to 2 decimals on insert and update. Phase: P5A.
 7. **18+ is a self-attested checkbox the user can undo.** `adult_confirmed` is not enforced and the user can update it. Fix: make it server-written only, block accounts without it, add the store age signals and state list. Phase: P2C.
 8. **Terms acceptance is not recorded.** The "Dzirent only connects people" tick is required but not stored, and there are no terms yet. Fix: store terms version and time at sign-up on all three platforms. Phase: P1B.
+   - **Closed for the database and the Android and iPhone apps (P1B part 1, 2026-11-06).**
+     - Database: `legal_documents` holds the current versions; `legal_acceptances` holds who accepted which version, when and on which platform; `accept_legal` writes it and `needs_legal_acceptance` checks it (`supabase/migrations/20261106120000_p1b_legal_and_consent.sql`).
+     - Apps: the sign-up tick is "I agree to the Terms of Use and Privacy Policy" with both pages linked, and `accept_legal` runs right after sign-up (`AuthScreens.kt`). After sign-in, and when a saved session opens, the app shows only "We've updated our terms" until the user agrees or signs out (`DzirentApp.kt`, `Legal.kt` `TermsUpdateScreen`).
+   - **Still open on the website** (outside P1B part 1): `apps/web/src/app/auth/page.tsx` still has the old `policy` tick, and the website neither calls `accept_legal` nor checks `needs_legal_acceptance`.
 9. **Body measurements are saved without an explicit consent step.** Fix: explicit consent before the first save, and a statement on how they are used. Phase: P1B.
+   - **Closed in the database for every platform, and in the apps (P1B part 1, 2026-11-06).**
+     - Database: `private_profiles.measurements_consent_at` is written only by `give_measurements_consent` and `withdraw_measurements_consent`. A trigger (`app_private.require_measurements_consent`) refuses any new body measurement while it is null. Withdrawing deletes the six measurements. Measurements saved before this were deleted by the migration.
+     - Apps: before the first save that includes a measurement, a dialog says "Your measurements are private. We use them only to suggest pieces likely to fit you. They are never shown to anyone." with Agree / Not now (`BodyMeasurementsScreen.kt`, `Legal.kt`). Settings > Privacy & safety > Measurements consent withdraws it after a confirmation.
+   - **Website follow-up needed:** `apps/web/src/lib/workflow-mutations.ts` saves measurements with no consent step, so the database now refuses those saves until the website adds one.
 10. **Deleting an account deletes the other person's chat and rental history.** `conversations`, `messages` and `rentals` cascade on either participant. The privacy policy must say so, or the product should keep the other person's copy with the deleted user anonymized. Phase: P1A (disclose); unassigned for a change (suggested P3B).
 11. **Reports lose their evidence.** A report stores only the target ID; the reported message disappears when its sender's account goes, and reports about deleted users point to nothing. Fix: snapshot the reported content and the target's handle into the report, kept for a set period. Phase: P2B.
 12. **No way for staff to review reports or photo checks.** Only the Supabase dashboard. Phase: P2B.
@@ -417,6 +429,8 @@ Each gap has a suggested fix and the phase from the handoff plan.
 19. **Email confirmation off; Auth `site_url` is `http://localhost:3000`; no custom SMTP.** Anyone can sign up with someone else's address, and email links may point to localhost. Fix: set `site_url` to dzirent.com, add an email service, turn confirmation on. Phase: P6C (email service), P8C (confirmation on, `site_url`).
 20. **No bot check, no message or report rate limits, no website security headers.** Phase: P5A.
 21. **Password length differs.** Hosted minimum is 8, but the apps say "at least 6" (`auth/page.tsx` `minLength={6}`, `AuthScreens.kt`). Fix: align the clients with 8. Phase: P5A.
+   - **Closed for the Android and iPhone apps (P1B part 1, 2026-11-06).** Sign-up, Change password and the "too weak" message all use `PASSWORD_MIN_LENGTH = 8` (`Models.kt`, used in `AuthScreens.kt`, `SettingsScreen.kt`, `DzirentRepository.kt`).
+   - **Still open on the website:** `apps/web/src/app/auth/page.tsx` (`minLength={6}`, "At least 6 characters."), `components/settings.tsx` (`minLength={6}`) and `lib/workflow-mutations.ts` ("Use at least 6 characters.").
 22. **Chat text is unfiltered.** Phone numbers, emails and addresses are kept out of pushes but not out of messages, listings or profiles. Phase: P2A.
 23. **Photos of people.** The vision service estimates whether a person wears the piece, and photos may show faces. There is no nudity check, and fingerprints are stored for every photo. Fix: the P2A nudity check, and attorney confirmation that fingerprints are not biometric data. Phase: P2A, P1A.
 24. **Public photos stay at their URL.** The bucket is public and photo views by anyone are logged with IP. Deleted photos may stay in the CDN cache for a while (unconfirmed). Fix: disclose in the privacy policy; check the cache behaviour. Phase: P1A (disclose), P3B (orphan photos).

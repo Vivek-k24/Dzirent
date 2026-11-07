@@ -82,6 +82,22 @@ Migrations `20261106040000_step8b_photo_policy.sql`, `20261106050000_step8b_swea
 - Automatic pause happens only while `vision_required` is on. It was on for about two minutes for the Step 8B API test (`..._test_vision_on`, then `..._test_vision_off`; off again at 04:26 UTC) and is off.
 - `listing_scans` is in the `supabase_realtime` publication. Realtime sends a change only to subscribers whose RLS lets them read the row (the listing's owner), the same rule as reading the table.
 
+## dzirent-server Advisor check (P1B part 1 additions)
+
+Migration `20261106120000_p1b_legal_and_consent.sql` (2026-11-06). Both new tables have RLS and explicit grants (checked with `has_table_privilege` and `has_function_privilege` for `anon`, `authenticated` and `service_role`). Advisor run after the migration (2026-11-07 01:03 UTC): the three findings below are new; the earlier findings are unchanged.
+
+| Finding | Function or table | Why it is intended |
+| --- | --- | --- |
+| WARN: signed-in users can run elevated function | `accept_legal` | Signed-in only (rejects null `auth.uid()`), checks the platform. It needs elevated rights to insert into `legal_acceptances`, which apps can only read. It records only the caller's acceptance of the current versions; returns nothing. |
+| WARN: signed-in users can run elevated function | `give_measurements_consent` | Signed-in only. It needs elevated rights because apps can't write `measurements_consent_at` (the consent trigger keeps the stored value for `authenticated` and `anon`). Touches only the caller's own `private_profiles` row; returns only the consent time. |
+| WARN: signed-in users can run elevated function | `withdraw_measurements_consent` | Signed-in only. Same reason: it clears `measurements_consent_at` with the caller's six body measurements, on the caller's own row only. Returns nothing. |
+
+By design, not Advisor findings:
+- `legal_documents` is readable by guests (the current terms and privacy versions are public), like `app_settings`. No INSERT/UPDATE/DELETE grant to any API role, `service_role` included: only migrations change it.
+- `legal_acceptances`: owners read their own rows; no API role can write it directly (only `accept_legal`). `service_role` can read it (for the admin tool and data download later).
+- `needs_legal_acceptance` runs as the caller (not elevated): it reads the public versions and the caller's own acceptances under RLS.
+- `app_private.require_measurements_consent` (trigger on `private_profiles`) is not callable through the API; EXECUTE revoked from `public`, `anon` and `authenticated`.
+
 ## Google Cloud (Step 8A)
 
 Project `dzirent`, region `us-west1`. The $20 billing kill switch (budget, Pub/Sub topic `billing-alerts`, function `stop-billing`) was not touched.

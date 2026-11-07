@@ -16,13 +16,27 @@ import com.dzirent.shared.platform.LocalDevice
 import com.dzirent.shared.platform.SettingsStorage
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.ui.theme.DzirentTheme
+import kotlinx.coroutines.launch
 
 sealed class AuthScreenState {
     object Loading : AuthScreenState()
     object AuthFlow : AuthScreenState()
     data class Authenticated(val profile: Profile) : AuthScreenState()
+    /** Signed in, but the current Terms of Use or Privacy Policy isn't accepted yet. */
+    data class NeedsTerms(val profile: Profile) : AuthScreenState()
     object Guest : AuthScreenState()
 }
+
+/**
+ * Where a signed-in account goes: the terms step first while the current versions aren't
+ * accepted. If the check can't run (no connection), the app opens and asks again next time.
+ */
+private suspend fun signedInState(repository: DzirentRepository, profile: Profile): AuthScreenState =
+    if (runCatching { repository.needsLegalAcceptance() }.getOrDefault(false)) {
+        AuthScreenState.NeedsTerms(profile)
+    } else {
+        AuthScreenState.Authenticated(profile)
+    }
 
 /**
  * Main Dzirent Composable entry point.
@@ -41,12 +55,13 @@ fun DzirentApp(
     var pendingGatedAction by remember { mutableStateOf<GatedAction?>(null) }
     var authStartDestination by rememberSaveable { mutableStateOf("welcome") }
     val push = LocalDevice.current.push
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         repository.awaitAuth()
         val profile = runCatching { repository.getCurrentProfile() }.getOrNull()
         if (profile != null) {
-            screenState = AuthScreenState.Authenticated(profile)
+            screenState = signedInState(repository, profile)
         } else {
             // Guest mode: first time user sees first visit sheet
             screenState = AuthScreenState.Guest
@@ -81,12 +96,20 @@ fun DzirentApp(
                             startDestination = authStartDestination,
                             onLoginSuccess = { profile ->
                                 firstVisitSeen = true
-                                screenState = AuthScreenState.Authenticated(profile)
+                                screenState = AuthScreenState.Loading
+                                scope.launch { screenState = signedInState(repository, profile) }
                             },
                             onBrowseAsGuest = {
                                 firstVisitSeen = true
                                 screenState = AuthScreenState.Guest
                             }
+                        )
+                    }
+                    is AuthScreenState.NeedsTerms -> {
+                        TermsUpdateScreen(
+                            repository = repository,
+                            onAgreed = { screenState = AuthScreenState.Authenticated(state.profile) },
+                            onSignedOut = { screenState = AuthScreenState.Guest }
                         )
                     }
                     is AuthScreenState.Authenticated -> {
