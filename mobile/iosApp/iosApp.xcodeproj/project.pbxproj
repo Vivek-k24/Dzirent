@@ -11,6 +11,7 @@
 		307C2654CD5972A25FB7FD87 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668CECA83ACC03A83C85A623 /* iOSApp.swift */; };
 		A0E24E848460394173AA527E /* search_related.json in Resources */ = {isa = PBXBuildFile; fileRef = 11FEBED8E7D027CC8F78E611 /* search_related.json */; };
 		D2A7C0E15B3F4A6E8C9D0F12 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D2A7C0E15B3F4A6E8C9D0F13 /* PrivacyInfo.xcprivacy */; };
+		D2A7C0E15B3F4A6E8C9D0F14 /* AgeRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A7C0E15B3F4A6E8C9D0F15 /* AgeRange.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -20,6 +21,8 @@
 		C117AD187833E2513BD2F553 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F543015C899423D4B01CEB2E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D2A7C0E15B3F4A6E8C9D0F13 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		D2A7C0E15B3F4A6E8C9D0F15 /* AgeRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgeRange.swift; sourceTree = "<group>"; };
+		D2A7C0E15B3F4A6E8C9D0F16 /* iosApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iosApp.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -34,8 +37,10 @@
 		1DB4B685CAEE8BEFEBBAEF94 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				D2A7C0E15B3F4A6E8C9D0F15 /* AgeRange.swift */,
 				F543015C899423D4B01CEB2E /* Assets.xcassets */,
 				C117AD187833E2513BD2F553 /* Info.plist */,
+				D2A7C0E15B3F4A6E8C9D0F16 /* iosApp.entitlements */,
 				668CECA83ACC03A83C85A623 /* iOSApp.swift */,
 				D2A7C0E15B3F4A6E8C9D0F13 /* PrivacyInfo.xcprivacy */,
 			);
@@ -187,6 +192,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D2A7C0E15B3F4A6E8C9D0F14 /* AgeRange.swift in Sources */,
 				307C2654CD5972A25FB7FD87 /* iOSApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -321,6 +327,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = iosApp/iosApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -338,6 +345,8 @@
 					"$(inherited)",
 					"-framework",
 					shared,
+					"-weak_framework",
+					DeclaredAgeRange,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.dzirent.app;
 				PRODUCT_NAME = Dzirent;
@@ -354,6 +363,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = iosApp/iosApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -371,6 +381,8 @@
 					"$(inherited)",
 					"-framework",
 					shared,
+					"-weak_framework",
+					DeclaredAgeRange,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.dzirent.app;
 				PRODUCT_NAME = Dzirent;
