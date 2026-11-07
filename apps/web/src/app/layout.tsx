@@ -32,16 +32,16 @@ export default async function RootLayout({
   ]);
   let name = "Your account";
   let userProfile = null;
+  let needsLegal = false;
   if (user) {
-    const { data } = await (
-      await serverClient()
-    )
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
+    const client = await serverClient();
+    const [{ data }, { data: needs }] = await Promise.all([
+      client.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+      client.rpc("needs_legal_acceptance"),
+    ]);
     name = data?.display_name || "Your account";
     userProfile = data;
+    needsLegal = Boolean(needs);
   }
   return (
     <html lang="en">
@@ -53,6 +53,7 @@ export default async function RootLayout({
           userProfile={userProfile}
           name={name}
           showWelcome={!user && !jar.get("dzirent-welcome")}
+          needsLegal={needsLegal}
         >
           {children}
         </Shell>

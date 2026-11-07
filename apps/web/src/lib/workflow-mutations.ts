@@ -290,6 +290,20 @@ export async function accountMutation(action: string, body: Body) {
     );
     return { ok: true };
   }
+  if (action === "give_measurements_consent") {
+    must(
+      await client.rpc("give_measurements_consent"),
+      "Couldn't record measurements consent.",
+    );
+    return { ok: true };
+  }
+  if (action === "withdraw_measurements_consent") {
+    must(
+      await client.rpc("withdraw_measurements_consent"),
+      "Couldn't withdraw measurements consent.",
+    );
+    return { ok: true };
+  }
   if (action === "unblock") {
     must(
       await client
@@ -304,8 +318,8 @@ export async function accountMutation(action: string, body: Body) {
   if (action === "password") {
     const current = text(body, "current"),
       password = text(body, "password");
-    if (current.length < 6 || password.length < 6)
-      throw new WorkflowError("Use at least 6 characters.");
+    if (current.length < 8 || password.length < 8)
+      throw new WorkflowError("Use at least 8 characters.");
     if (current === password)
       throw new WorkflowError("Choose a different new password.");
     const verified = await client.auth.signInWithPassword({

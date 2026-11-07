@@ -105,10 +105,10 @@ export default async function Auth({
               name="password"
               type="password"
               autoComplete={signup ? "new-password" : "current-password"}
-              minLength={signup ? 6 : undefined}
+              minLength={signup ? 8 : undefined}
               required
             />
-            {signup && <small>At least 6 characters.</small>}
+            {signup && <small>At least 8 characters.</small>}
           </label>
           {signup && (
             <>
@@ -122,17 +122,27 @@ export default async function Auth({
               </label>
               <label className="checkbox">
                 <input type="checkbox" name="adult" required />
-                <span>I confirm I am 18 or older.</span>
+                <span>I confirm I am 18 years of age or older.</span>
               </label>
               <label className="checkbox">
-                <input type="checkbox" name="policy" required />
+                <input type="checkbox" name="legal" required />
                 <span>
-                  I understand Dzirent only connects people.{" "}
-                  <Link className="accent" href="/about#how-it-works">
-                    How Dzirent works
+                  I agree to the{" "}
+                  <Link className="accent" href="/terms" target="_blank">
+                    Terms of Use
+                  </Link>{" "}
+                  and{" "}
+                  <Link className="accent" href="/privacy" target="_blank">
+                    Privacy Policy
                   </Link>
+                  .
                 </span>
               </label>
+              <p style={{ fontSize: "12px", margin: "-6px 0 16px 28px" }}>
+                <Link className="muted" href="/about#how-it-works">
+                  Read how Dzirent works
+                </Link>
+              </p>
             </>
           )}
           <Submit label={signup ? "Create account" : "Sign in"} />

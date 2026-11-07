@@ -18,6 +18,7 @@ import { Appearance, ThemeToggle } from "./local-preferences";
 import { DistanceUnit } from "./distance";
 import { dateChip, type Profile } from "@/lib/workflows";
 import { WelcomeChecklistModal, GuideOverlay } from "./onboarding";
+import { TermsUpdateScreen } from "./terms-update";
 import {
   GuestGateDialog,
   GatedActionTrigger,
@@ -288,6 +289,7 @@ export function Shell({
   userProfile = null,
   name,
   showWelcome,
+  needsLegal = false,
   children,
 }: {
   ctx: BrowseContext;
@@ -296,10 +298,16 @@ export function Shell({
   userProfile?: Profile | null;
   name: string;
   showWelcome: boolean;
+  needsLegal?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const showTermsUpdate =
+    authenticated &&
+    needsLegal &&
+    pathname !== "/terms" &&
+    pathname !== "/privacy";
   const [location, setLocation] = useState(false);
   const [dates, setDates] = useState(false);
   const [filters, setFilters] = useState(false);
@@ -658,13 +666,20 @@ export function Shell({
             </div>
           </div>
         </header>
-        <div className={"site-body" + (desktopFilterOpen ? " filter-open" : "")}>
-          <aside
-            className={
-              "desktop-docked-panel " + (desktopFilterOpen ? "open" : "closed")
-            }
-            aria-label="Filters"
-          >
+        <div
+          className={
+            "site-body" +
+            (desktopFilterOpen && !showTermsUpdate ? " filter-open" : "")
+          }
+        >
+          {!showTermsUpdate && (
+            <aside
+              className={
+                "desktop-docked-panel " +
+                (desktopFilterOpen ? "open" : "closed")
+              }
+              aria-label="Filters"
+            >
             <div className="docked-panel-inner">
               <div className="docked-panel-top">
                 <h3 className="filter-heading">
@@ -815,7 +830,10 @@ export function Shell({
               </form>
             </div>
           </aside>
-          <main id="main">{children}</main>
+          )}
+          <main id="main">
+            {showTermsUpdate ? <TermsUpdateScreen /> : children}
+          </main>
         </div>
         <footer>
           <div className="footer-inner">
@@ -836,6 +854,7 @@ export function Shell({
               <p>Your next look is closer than you think.</p>
             </div>
             <nav aria-label="Footer">
+              <Link href="/help">Help</Link>
               <Link href="/privacy">Privacy</Link>
               <Link href="/terms">Terms</Link>
               <Link href="/community-guidelines">Community guidelines</Link>
@@ -1139,7 +1158,7 @@ export function Shell({
             </button>
           </Modal>
         )}
-        {checklistOpen && userProfile && (
+        {checklistOpen && userProfile && !showTermsUpdate && (
           <WelcomeChecklistModal
             profile={userProfile}
             onOpenLocation={() => setLocation(true)}
@@ -1147,7 +1166,7 @@ export function Shell({
             onClose={() => setChecklistOpen(false)}
           />
         )}
-        {guideOpen && (
+        {guideOpen && !showTermsUpdate && (
           <GuideOverlay
             canLend={userProfile?.role !== "renter"}
             onClose={() => setGuideOpen(false)}

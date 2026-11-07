@@ -22,6 +22,7 @@ export type PrivateProfile = {
   fit_profile: "man" | "woman" | null;
   style_interests: string[];
   activity_seen_at: string | null;
+  measurements_consent_at: string | null;
 };
 export type OwnPhoto = {
   id: string;

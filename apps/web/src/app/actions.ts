@@ -23,9 +23,10 @@ export async function authenticate(form: FormData) {
     );
   if (!email || !password) fail("Enter your email and password.");
   if (mode === "signup") {
+    if (password.length < 8) fail("Password must be at least 8 characters.");
     if (form.get("adult") !== "on") fail("Please confirm you are at least 18.");
-    if (form.get("policy") !== "on")
-      fail("Please confirm you understand Dzirent only connects people.");
+    if (form.get("legal") !== "on")
+      fail("Please agree to the Terms of Use and Privacy Policy.");
     if (!field(form, "name")) fail("Enter your name.");
     const origin = (await headers()).get("origin") || "https://dzirent.com";
     const location = await context();
@@ -57,6 +58,9 @@ export async function authenticate(form: FormData) {
           ? "An account already exists. Please sign in."
           : "We could not create your account. Check your details and try again.",
       );
+    if (data.session) {
+      await client.rpc("accept_legal", { p_platform: "web" });
+    }
     if (!data.session)
       redirect(
         "/auth?mode=signin&message=" +
@@ -79,6 +83,13 @@ export async function authenticate(form: FormData) {
   });
   revalidatePath("/", "layout");
   redirect(next);
+}
+export async function acceptLegalAction() {
+  const client = await serverClient();
+  const user = await currentUser();
+  if (!user) redirect("/auth?mode=signin");
+  await client.rpc("accept_legal", { p_platform: "web" });
+  revalidatePath("/", "layout");
 }
 export async function signOut() {
   await (await serverClient()).auth.signOut();

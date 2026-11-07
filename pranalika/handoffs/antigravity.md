@@ -2,6 +2,64 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P1B part 2 - 2026-11-06 - help center and consent on the website
+
+- What was done:
+  - Help Center & FAQ (`/help`):
+    - Created `apps/web/src/app/help/page.tsx` using `LegalLayout` with a sticky TOC sidebar and collapsible `<details className="faq-item">` / `<summary className="faq-question">` elements.
+    - Grouped into the 6 required sections with plain, friendly, compliant English matching `compliance.md`:
+      1. Getting started (`#getting-started`): what Dzirent is, guest browsing, signing up, 18+ policy.
+      2. Renting (`#renting`): finding pieces, date availability filtering, in-app messaging, safe meetup practices, peer-to-peer security deposits.
+      3. Lending (`#lending`): listing garments, automated vision checks and verdict meanings (`Approved`, `Flagged`, `Rejected`), worn photos allowed, allowed and prohibited categories, pausing/deleting listings.
+      4. Fit & measurements (`#fit-measurements`): fit matching, private measurements, consent before first save and how to withdraw consent anytime.
+      5. Account & privacy (`#account-privacy`): editing profile, reporting/blocking members, deleting account, download data coming soon.
+      6. Safety (`#safety`): direct link to comprehensive Trust & Safety Guide (`/safety`).
+    - Added FAQ and Terms update styles to `apps/web/src/app/globals.css`.
+  - Navigation, footer & sitemap:
+    - Added `/help` as the first link in `<nav aria-label="Footer">` in `apps/web/src/components/shell.tsx`.
+    - Added `/help` to public sitemap routes in `apps/web/src/app/sitemap.ts`.
+  - Sign-up legal agreement:
+    - Updated `apps/web/src/app/auth/page.tsx` so the sign-up form requires checking "I agree to the Terms of Use and Privacy Policy", linking to `/terms` and `/privacy` in separate tabs.
+    - Added validation in `apps/web/src/app/actions.ts` (`form.get("legal") === "on"`).
+    - When a sign-up returns an active session, `actions.ts` immediately calls `client.rpc("accept_legal", { p_platform: "web" })`.
+  - Terms update screen:
+    - Created `apps/web/src/components/terms-update.tsx` (`TermsUpdateScreen`): displays document icon, "We've updated our terms", links to `/terms` and `/privacy`, "Agree" button, and "Sign out" option.
+    - In `apps/web/src/app/layout.tsx`, calls `needs_legal_acceptance()` for authenticated sessions and passes `needsLegal` to `Shell`.
+    - In `apps/web/src/components/shell.tsx`, when `needsLegal` is true and the user is not viewing `/terms` or `/privacy`, `TermsUpdateScreen` is rendered in place of the page content, and the docked filter panel and onboarding tours are suppressed.
+    - Clicking "Agree" runs `acceptLegalAction()` in `actions.ts` (calls `accept_legal('web')` and revalidates layout).
+  - Measurements consent & withdrawal:
+    - Added `measurements_consent_at: string | null` to `PrivateProfile` in `apps/web/src/lib/workflows.ts`.
+    - Added `account/give_measurements_consent` and `account/withdraw_measurements_consent` handlers to `apps/web/src/lib/workflow-mutations.ts`.
+    - In `apps/web/src/components/measurements-editor.tsx`:
+      - Intercepts save if any body measurement is provided and no consent exists, displaying modal: "Your measurements", "Your measurements are private. We use them only to suggest pieces likely to fit you. They are never shown to anyone.", with "Agree" and "Not now" buttons. Agree calls `give_measurements_consent` and saves the measurements.
+      - When consent is active, displays a "Withdraw consent" option opening confirmation modal: "Withdraw consent?", "Your saved body measurements will be deleted, and \"Likely to fit you\" stops until you add them again.", with "Withdraw and delete" and "Cancel" buttons.
+    - In `apps/web/src/components/settings.tsx`:
+      - Under Settings (`section === "preferences"`), added "Privacy & safety" section with Measurements consent status ("Given. Click to withdraw it and delete your saved measurements." / "Not given. You'll be asked when you save measurements.") and the same withdrawal confirmation modal.
+  - Password length enforcement:
+    - Minimum 8 characters enforced across website:
+      - `apps/web/src/app/auth/page.tsx`: password input `minLength={8}`, helper text "At least 8 characters.".
+      - `apps/web/src/app/actions.ts`: sign-up checks `password.length >= 8` ("Password must be at least 8 characters.").
+      - `apps/web/src/components/settings.tsx`: change password inputs have `minLength={8}`.
+      - `apps/web/src/lib/workflow-mutations.ts`: change password mutation checks `password.length >= 8` and `current.length >= 8` ("Use at least 8 characters.").
+  - Settings "Help & legal" section:
+    - Added "Help & legal" group in `apps/web/src/components/settings.tsx` with links to Help (`/help`), Safety (`/safety`), Community guidelines (`/community-guidelines`), Terms (`/terms`), Privacy (`/privacy`), Copyright (`/copyright`), Delete account (`/delete-account`), and Support (`/support`).
+  - Board updated: marked P1B part 2 and website deliverables as Done in `pranalika/BOARD.md`.
+
+- What was run and verified:
+  1. `npm run lint` in `apps/web`: 0 errors, 0 warnings.
+  2. `npm run build` in `apps/web`: Next.js production build succeeded with 22 routes generated (including `/help` and `/sitemap.xml`).
+  3. `verify_p1b.mjs` against Supabase:
+     - Test user 3 `needs_legal_acceptance()` returned true before acceptance.
+     - `accept_legal('web')` recorded terms and privacy 1.0.0 for platform `'web'`; `needs_legal_acceptance()` returned false.
+     - Saving body measurements without consent failed with error 400 (`P0001: Give consent before saving your measurements.`).
+     - `give_measurements_consent()` returned timestamp; subsequent body measurement save succeeded.
+     - `withdraw_measurements_consent()` cleared `chest_cm`, `waist_cm`, and `measurements_consent_at`.
+  4. Local Next.js server test on port 3004:
+     - `GET /help`: HTTP 200, verified presence of all 6 sections, collapsible `<details>` / `<summary>`, and `/help` in footer.
+     - `GET /sitemap.xml`: HTTP 200, verified `https://dzirent.com/help` entry.
+     - `GET /`: HTTP 200, verified `/help` in footer navigation.
+     - `GET /auth?mode=signup`: HTTP 200, verified terms and privacy links, adult checkbox, legal agreement checkbox, and 8-character password hint.
+
 ## P1A fix-up - 2026-11-06 - legal page corrections
 
 - What was done:
