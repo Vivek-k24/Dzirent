@@ -2,6 +2,54 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Website fixes - 2026-11-07 - overlays, header, footer, settings
+
+- Root causes of the 5 issues:
+  1. Modals: The `WelcomeChecklistModal` rendered with the static HTML `open` attribute rather than triggering `dialog.showModal()`, leaving the dialog in standard document flow below the footer instead of the browser's top layer. Global dialog centering, backdrop styling, containment, and background scroll locking (`html:has(dialog[open]), body:has(dialog[open]) { overflow: hidden !important; }`) were missing. Additionally, `window.confirm` was used for block user and deal cancellation instead of structured overlay dialogs.
+  2. Header bleed-through: `.site-header` used semi-transparent background colors (`rgba(255, 255, 255, 0.98)` in light mode, `#181818f5` in dark mode) which allowed underlying page cards, text, and docked filter panel borders to bleed through during scrolling.
+  3. Dark mode footer: Footer lacked dark mode rules, displaying a light background (`#fcfcfc`) with dark text, low-contrast links, and an un-inverted dark wordmark logo.
+  4. Stray "How Dzirent works": An obsolete `<details className="account-policy">` block remained inside `apps/web/src/components/settings.tsx` under the Profile section, duplicating the primary link in the top bar and phone drawer.
+  5. Settings tour link: "App tour" was located in `apps/web/src/components/local-preferences.tsx` within the preferences list instead of being housed under the "Help & legal" section in `apps/web/src/components/settings.tsx`.
+
+- What was done:
+  - Modals as true top-layer overlays:
+    - Updated `WelcomeChecklistModal` in `apps/web/src/components/onboarding.tsx` to use `dialogRef.current?.showModal()` inside a top-level `useEffect` when the modal is active, closing on cancel/dismiss.
+    - Added global modal centering, backdrop blur, and scroll lock in `apps/web/src/app/globals.css` (`dialog.modal, .modal { position: fixed; inset: 0; margin: auto; max-height: calc(100dvh - 32px); overscroll-behavior: contain; }`, `html:has(dialog[open]), body:has(dialog[open]) { overflow: hidden !important; }`).
+    - Replaced `window.confirm` dialogs in `apps/web/src/components/chat.tsx` for blocking a user and cancelling an uncompleted deal with accessible `<WorkflowModal>` dialogs.
+  - Solid top bar:
+    - Set `.site-header` to solid `#ffffff` in light mode and `#141414` in dark mode at `z-index: 40` in `apps/web/src/app/globals.css`.
+    - Maintained docked filter panel at `top: 130px; z-index: 20` so content and filters tuck seamlessly beneath the header during scrolling.
+  - Dark mode footer:
+    - Added dark mode footer styles in `apps/web/src/app/globals.css`: background `#181818`, border top `var(--line)` (`#383838`), paragraph text `var(--muted)` (`#b1b1b1`), link text `var(--ink)` (`#f4f4f4`), and `filter: invert(1)` on `.footer-wordmark`.
+  - Profile & settings clean-up:
+    - Removed the stray `<details className="account-policy">How Dzirent works...</details>` block from `apps/web/src/components/settings.tsx`.
+    - Removed "App tour" from `apps/web/src/components/local-preferences.tsx`.
+    - Added "App tour" as the last item under `<h3>Help &amp; legal</h3>` in `apps/web/src/components/settings.tsx`, styled matching existing links with `.profile-link-btn`.
+
+- Files changed:
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/components/chat.tsx`
+  - `apps/web/src/components/local-preferences.tsx`
+  - `apps/web/src/components/onboarding.tsx`
+  - `apps/web/src/components/settings.tsx`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+
+- What was run and verified:
+  1. `npm run lint` in `apps/web`: 0 errors, 0 warnings.
+  2. `npm run build` in `apps/web` (with Node v24.19.0 and environment variables loaded): all 22 static and dynamic routes compiled with 0 errors, TypeScript passed cleanly.
+  3. Visual & behavioral headless Chrome CDP test suite (`visual_check.py`):
+     - Check 1: Desktop Home Page scrolled halfway in light mode (`#ffffff`) and dark mode (`#141414`). Header solid, sticky at `z-index: 40`, docked filter panel passing underneath. Screenshots: `home_scrolled_light_desktop.png`, `home_scrolled_dark_desktop.png`.
+     - Check 2: Phone Home Page scrolled halfway in light and dark mode. Header solid and sticky. Screenshots: `home_scrolled_light_phone.png`, `home_scrolled_dark_phone.png`.
+     - Check 3: Footer in light mode (`#fcfcfc`) and dark mode (`rgb(24, 24, 24)` background, legible contrast). Screenshots: `footer_light.png`, `footer_dark.png`.
+     - Check 4: Profile page verified free of any stray "How Dzirent works" accordion. Screenshot: `profile_clean.png`.
+     - Check 5: Settings preferences verified with "App tour" removed from main list, and verified present as the 9th and final item in "Help & legal". Screenshot: `settings_preferences.png`.
+     - Check 6: Listing editor header verified solid (`#ffffff`, `z-index: 40`) when scrolled. Screenshot: `listing_editor_scrolled.png`.
+     - Check 7: Welcome checklist modal opened via `showModal()` in top layer `:modal`, centered, html/body overflow locked to `hidden`, and body overflow restored to `visible` upon close. Screenshot: `welcome_modal_overlay.png`.
+
+- Requests / Open issues:
+  - None.
+
 ## Website catch-up - 2026-11-06 - photo scanning and content safety
 
 - What was done:

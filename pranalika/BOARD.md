@@ -36,13 +36,14 @@ Status: `To do` / `Doing` / `Done`. The owner assigns each step to an agent. The
 
 | Item | Status |
 | --- | --- |
-| Done by: Codex (2A), Claude Code (2B, 2C), Antigravity (2D, 2E, 2F) | |
+| Done by: Codex (2A), Claude Code (2B, 2C), Antigravity (2D, 2E, 2F, Website fixes) | |
 | 2A Environment wiring, guest mode, browse, search, listing detail | Done |
 | 2B Sign-up gates, fit matching, studio pages, onboarding | Done |
 | 2C Website fixes (guest gates, welcome modal, measurements, studio) | Done |
 | 2D Website layout redesign, light default theme, guest gate fixes | Done |
 | 2E Desktop docked filter panel, account menu, remove home piece count | Done |
 | 2F Move My closet to top bar, vertical divider, account menu cleanup | Done |
+| Website fixes: true modal overlays with scroll locking, solid sticky header in both themes, solid dark-mode footer, settings & profile clean-up | Done |
 
 ## Step 3 - Shared mobile code
 

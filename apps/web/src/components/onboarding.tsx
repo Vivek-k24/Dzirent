@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "./icon";
 import {
@@ -66,12 +66,26 @@ export function WelcomeChecklistModal({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const ref = useRef<HTMLDialogElement>(null);
   const [settings, setSettings] = useState<SettingsData | null>(
     initialSettings || null,
   );
   const [activeStep, setActiveStep] = useState<"measurements" | "studio" | null>(
     null,
   );
+
+  useEffect(() => {
+    if (activeStep) return;
+    const dialog = ref.current;
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
+    return () => {
+      if (dialog && dialog.open) {
+        dialog.close();
+      }
+    };
+  }, [activeStep]);
 
   const canLend = profile.role === "lender" || profile.role === "both";
   const items = setupItems(canLend);
@@ -160,10 +174,13 @@ export function WelcomeChecklistModal({
 
   return (
     <dialog
+      ref={ref}
       className="modal welcome-checklist-modal"
-      open
       aria-label="Welcome to Dzirent"
       onCancel={onClose}
+      onClick={(e) => {
+        if (e.target === ref.current) onClose();
+      }}
     >
       <div className="modal-content">
         <div className="modal-top">

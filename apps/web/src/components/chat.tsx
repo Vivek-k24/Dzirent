@@ -36,9 +36,9 @@ export function Chat({
   const [error, setError] = useState("");
   const [sendError, setSendError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [modal, setModal] = useState<"dates" | "rental" | "report" | null>(
-    null,
-  );
+  const [modal, setModal] = useState<
+    "dates" | "rental" | "report" | "block" | "cancel_deal" | null
+  >(null);
   const [reportId, setReportId] = useState("");
   const [reportDetails, setReportDetails] = useState("");
   const [reportDetailsError, setReportDetailsError] = useState("");
@@ -225,13 +225,11 @@ export function Chat({
               disabled={busy}
               onClick={() => {
                 menuRef.current?.removeAttribute("open");
-                if (
-                  data.blocked ||
-                  window.confirm(
-                    "Block user? You won’t be able to message each other.",
-                  )
-                )
-                  void action("block", { blocked: !data.blocked });
+                if (data.blocked) {
+                  void action("block", { blocked: false });
+                } else {
+                  setModal("block");
+                }
               }}
             >
               {data.blocked ? "Unblock user" : "Block user"}
@@ -462,10 +460,7 @@ export function Chat({
           <button
             className="text-button"
             disabled={busy}
-            onClick={() => {
-              if (window.confirm("Deal didn't happen?"))
-                void action("rental", { status: "cancelled" });
-            }}
+            onClick={() => setModal("cancel_deal")}
           >
             Deal didn&apos;t happen
           </button>
@@ -605,6 +600,70 @@ export function Chat({
               Send report
             </button>
           </form>
+        </WorkflowModal>
+      )}
+      {modal === "block" && (
+        <WorkflowModal
+          title="Block user?"
+          busy={busy}
+          onClose={() => setModal(null)}
+        >
+          <p>
+            You won’t be able to message each other, and pending deals will be
+            canceled.
+          </p>
+          <Notice message={error} error />
+          <div className="button-row">
+            <button
+              className="button danger-button"
+              disabled={busy}
+              onClick={async () => {
+                await action("block", { blocked: true });
+              }}
+            >
+              Block user
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy}
+              onClick={() => setModal(null)}
+            >
+              Cancel
+            </button>
+          </div>
+        </WorkflowModal>
+      )}
+      {modal === "cancel_deal" && (
+        <WorkflowModal
+          title="Deal didn't happen?"
+          busy={busy}
+          onClose={() => setModal(null)}
+        >
+          <p>
+            Mark this deal as cancelled. You and the other member will still be
+            able to message each other.
+          </p>
+          <Notice message={error} error />
+          <div className="button-row">
+            <button
+              className="button"
+              disabled={busy}
+              onClick={async () => {
+                await action("rental", { status: "cancelled" });
+              }}
+            >
+              Cancel deal
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy}
+              onClick={() => setModal(null)}
+            >
+              Keep deal
+            </button>
+          </div>
         </WorkflowModal>
       )}
     </div>

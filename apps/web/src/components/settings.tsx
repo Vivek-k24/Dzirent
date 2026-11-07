@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { workflow, fullPolicy, type SettingsData } from "@/lib/workflows";
+import { workflow, type SettingsData } from "@/lib/workflows";
 import { cityLabel } from "@/lib/types";
 import { signOut } from "@/app/actions";
 import { StudioEditor } from "./studio-editor";
@@ -289,6 +289,19 @@ export function Settings({
                   </span>
                   <Icon name="chevron" />
                 </Link>
+                <button
+                  type="button"
+                  className="profile-link-btn"
+                  onClick={() =>
+                    window.dispatchEvent(new Event("dzirent-start-tour"))
+                  }
+                >
+                  <span>
+                    <strong>App tour</strong>
+                    <small>Take the interactive tour of Dzirent</small>
+                  </span>
+                  <Icon name="chevron" />
+                </button>
               </div>
             </>
           ) : section === "blocked" ? (
@@ -340,13 +353,6 @@ export function Settings({
           ) : null}
           <Notice message={error} error />
           <Notice message={notice} />
-          <details className="account-policy">
-            <summary>How Dzirent works</summary>
-            <p>{fullPolicy}</p>
-            <Link href="/about#rental-guidelines" className="text-link accent">
-              Rental guidelines →
-            </Link>
-          </details>
         </section>
       </div>
       {modal === "role" && (
