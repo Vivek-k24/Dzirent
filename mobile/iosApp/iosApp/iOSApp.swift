@@ -3,6 +3,11 @@ import shared
 
 @main
 struct iOSApp: App {
+    init() {
+        // The shared age gate asks Apple's Declared Age Range through this (AgeRange.swift).
+        IosAgeRange.shared.provider = DeclaredAgeRangeProvider()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()

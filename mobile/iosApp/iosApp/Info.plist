@@ -28,8 +28,6 @@
 	<string>Dzirent uses your approximate location to show clothes near you.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Dzirent uses your camera only to add pictures to your listing.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Dzirent uses your photos only to add pictures to your listing.</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

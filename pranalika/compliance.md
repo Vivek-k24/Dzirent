@@ -290,7 +290,7 @@ Today:
 - The apps refuse sign-up without "I confirm I am 18 years of age or older" (`AuthScreens.kt`).
 - The database stores it in `profiles.adult_confirmed` (default false, from `handle_new_user`).
 - Nothing else checks it. No date of birth, no age signal, no store age API.
-- **Since P2C (2026-11-07):** Android asks Google Play Age Signals on sign-in and daily, and the website records the sign-up tick, both through `record_age_check` into `age_checks` (source, result, platform, time; no birthdate). A store "under 18" blocks the account from everything but reading its own data and deleting itself. iPhone still relies on the checkbox (Declared Age Range stub). See section 7.
+- **Since P2C (2026-11-07):** Android asks Google Play Age Signals on sign-in and daily, and the website records the sign-up tick, both through `record_age_check` into `age_checks` (source, result, platform, time; no birthdate). A store "under 18" blocks the account from everything but reading its own data and deleting itself. iPhone (Mac iOS session, 2026-11-07) asks Apple's Declared Age Range on iOS 26.2 and later, only when Apple says age assurance applies to the user (`isEligibleForAgeFeatures`), with an age gate of 18; anything else records `self_declared`. See section 7.
 - A sign-up made straight through the Auth API without the flag gets `adult_confirmed = false` and can still use everything.
 - A user can change their own `adult_confirmed`: the `authenticated` role has UPDATE on all `profiles` columns.
 - Guests have no account and see listings only.
@@ -386,7 +386,31 @@ Tracking: **no data is used to track** (no ads, no data brokers, no linking with
 | Other data | Other data types | Yes: body measurements, fit profile | Yes | No | App functionality |
 | **[P6A]** Sensitive info / User content / Identifiers | Government ID, face photo, date of birth | Yes when ID verification is live | Yes | No | App functionality (fraud prevention) |
 
-The iPhone app also needs a privacy manifest (`PrivacyInfo.xcprivacy`) before submission (gap 17).
+The iPhone app's privacy manifest is in place since the Mac iOS session (2026-11-07); see 6.3.
+
+### 6.3 iPhone privacy manifest
+
+File: `mobile/iosApp/iosApp/PrivacyInfo.xcprivacy`, in the app target's resources (checked in the built `Dzirent.app`).
+
+How it was checked (Mac iOS session, 2026-11-07):
+- The shared Kotlin framework is static (`isStatic = true`), so every library is linked into the app binary itself. `nm -u` on the built app and on each member of `shared.framework` listed the imported system calls; `strings` listed the Objective-C selectors.
+- No dependency ships its own privacy manifest: none of the Gradle and Kotlin/Native caches on the Mac holds a `.xcprivacy` file. So the app's manifest covers them all.
+
+Required-reason APIs declared:
+
+| Category | Reason | What uses it |
+| --- | --- | --- |
+| User defaults (`NSPrivacyAccessedAPICategoryUserDefaults`) | `CA92.1`: data only this app reads and writes | `NSUserDefaults.standardUserDefaults` for settings, theme, drafts and the age-check day (`IosDevice.kt`, `IosPlatformServices.kt`), and the sign-in session through `multiplatform-settings` (supabase-kt). No app group, no other app's defaults |
+| File timestamp (`NSPrivacyAccessedAPICategoryFileTimestamp`) | `C617.1`: metadata of files inside the app container | `stat` / `fstat` / `lstat` (Skia, ICU, the Kotlin/Native POSIX layer used by okio for Coil's image cache) and `NSFileManager attributesOfItemAtPath` (photo file size in `IosDevice.kt`) |
+| System boot time (`NSPrivacyAccessedAPICategorySystemBootTime`) | `35F9.1`: elapsed time between events in the app | `CACurrentMediaTime` and `clock_gettime` (Compose frame timing, coroutine timeouts). Neither is named on Apple's list (`systemUptime`, `mach_absolute_time`), but both read the same boot-relative clock, so it is declared to be safe |
+
+Not declared, because nothing uses them: disk space (`statfs`, `statvfs`, `NSFileSystemFreeSize`, volume capacity keys) and active keyboards (`activeInputModes`). `sysctlbyname` appears only for CPU feature flags (`hw.optional.*`, in zlib and the Kotlin/Native Darwin layer), not boot time.
+
+Tracking: `NSPrivacyTracking` false, `NSPrivacyTrackingDomains` empty.
+
+Collected data types (all linked to the user, none used for tracking, matching 6.2): name, email address, coarse location, in-app messages (`EmailsOrTextMessages`), photos, other user content, user ID, product interaction (analytics and app functionality), other data (body measurements, fit profile). Device ID is left out while iPhone push is off (P8B).
+
+Permission texts in `Info.plist`: camera and location only. `NSPhotoLibraryUsageDescription` was removed: the app picks photos with the system picker (`PHPickerViewController`, no permission needed) and never saves to the photo library.
 
 ## 7. Rules to features
 
@@ -395,7 +419,7 @@ Laws named here are the compliance plan's list; how each applies is for the atto
 | Rule | What the platform does today | Gap | Phase |
 | --- | --- | --- | --- |
 | App store rules (Google Play, Apple) | Account deletion in the app (Android and iPhone Settings) and on the website; report and block for users, listings and messages; no ads or tracking; permission reasons in `Info.plist` and before each Android request; support email link (`support@dzirent.com`) in the apps' About screen and the website menu | No public deletion web page and no privacy policy URL; no Data safety form or privacy labels filed; no iPhone privacy manifest; no help center; no terms of use shown at sign-up | P1A (pages), P1B (help center, terms acceptance), P8A, P8B |
-| Texas SB 2420 and Utah app store age laws | **Handled on Android and the website (P2C, 2026-11-07); iPhone pending.** Android asks Google Play Age Signals (0.0.4) on every sign-in and once a day: under 18 records `minor` and blocks the account, 18+ records `adult`, no applicable signal records `self_declared`. The website records the 18+ sign-up tick as `self_declared`. The database refuses every write by a blocked account ("Dzirent is only for people 18 and older.") and pauses its listings; admins see the age check in user lookup. No birthdate is asked for or stored (`age_checks`: source, result, platform, time). | iPhone: Apple's Declared Age Range is a stub ("no applicable signal") until the Mac session. The signal is reported by the app and can't be verified on the server (security-log.md). Attorney to confirm what the laws require of an app like Dzirent (Texas SB 2420's status, Utah's dates). | P2C (Android, web), Mac session (iPhone) |
+| Texas SB 2420 and Utah app store age laws | **Handled on Android and the website (P2C, 2026-11-07) and on iPhone (Mac iOS session, 2026-11-07).** iPhone asks Apple's Declared Age Range (iOS 26.2+, only where `isEligibleForAgeFeatures` is true, age gate 18) through the same shared gate; older iOS, not covered, declined or an error record `self_declared`. Android asks Google Play Age Signals (0.0.4) on every sign-in and once a day: under 18 records `minor` and blocks the account, 18+ records `adult`, no applicable signal records `self_declared`. The website records the 18+ sign-up tick as `self_declared`. The database refuses every write by a blocked account ("Dzirent is only for people 18 and older.") and pauses its listings; admins see the age check in user lookup. No birthdate is asked for or stored (`age_checks`: source, result, platform, time). | iPhone: real under-18 and adult answers untested (the Simulator has no applicable signal), and the Declared Age Range entitlement is set for Simulator builds only until the paid Apple account adds the capability. The signal is reported by the app and can't be verified on the server (security-log.md). Attorney to confirm what the laws require of an app like Dzirent (Texas SB 2420's status, Utah's dates). | P2C (Android, web), Mac iOS session (iPhone), P8B (entitlement) |
 | COPPA and Texas SCOPE Act | Not aimed at children; 18+ checkbox; guests have no account | No age check beyond the checkbox; no process for an account found to belong to a minor | P2C (age gate), P2B (suspend from admin), P1A (policy wording) |
 | Texas TDPSA and other state privacy laws | Minimal data, no sale, no targeted ads; owner-only access; account deletion | No privacy policy; no "download my data"; declarations and suggestion events kept after deletion; no retention periods; no consent record for any sensitive data; no request process (access, correct, delete, appeal) | P1A, P3A, P3B, P1B |
 | Washington My Health My Data | Body measurements stored privately, used only for fit | Body measurements might be "consumer health data" (bodily measurements); no separate consent or health data policy; the "Maternity" style tag could suggest pregnancy. Attorney to decide | P1B (explicit consent before saving measurements), P1A (consumer health data section if needed) |
@@ -419,7 +443,7 @@ Each gap has a suggested fix and the phase from the handoff plan.
 5. **Original photos with EXIF stay on the phone.** Android and iPhone keep the original picked or taken bytes in app storage until upload or pruning. Fix: store the compressed copy instead, or clean abandoned draft photos on a schedule. Phase: P3B.
 6. **Coordinates are not rounded by the database after sign-up.** `profiles` and `listings` accept any precision from a direct API call. Fix: a trigger that rounds `approx_lat/lng` to 2 decimals on insert and update. Phase: P5A.
 7. **18+ is a self-attested checkbox the user can undo.** `adult_confirmed` is not enforced and the user can update it. Fix: make it server-written only, block accounts without it, add the store age signals and state list. Phase: P2C.
-   - **Store age signals done on Android and the website (P2C, 2026-11-07); iPhone pending.** `age_checks` and `record_age_check` record the store's answer or the self-declaration; a store `minor` blocks every write by the account (`supabase/migrations/20261107120000_p2c_age_gate.sql`). No state list is kept in the app: Google Play decides which users have an applicable signal.
+   - **Store age signals done on Android and the website (P2C, 2026-11-07) and on iPhone (Mac iOS session, 2026-11-07; device builds need the paid account's Declared Age Range capability).** `age_checks` and `record_age_check` record the store's answer or the self-declaration; a store `minor` blocks every write by the account (`supabase/migrations/20261107120000_p2c_age_gate.sql`). No state list is kept in the app: Google Play decides which users have an applicable signal.
    - **Still open:** `adult_confirmed` is still writable by the user and accounts without it are not blocked. A self-declared `adult` from an account without it is recorded as `unknown`.
 8. **Terms acceptance is not recorded.** The "Dzirent only connects people" tick is required but not stored, and there are no terms yet. Fix: store terms version and time at sign-up on all three platforms. Phase: P1B.
    - **Closed for the database and the Android and iPhone apps (P1B part 1, 2026-11-06).**
@@ -448,6 +472,7 @@ Each gap has a suggested fix and the phase from the handoff plan.
 15. **Log retention and contents are unknown.** Supabase logs keep IP, approximate place, user agent, account ID and query strings for at least 7 days; Vercel and Cloud Logging retention were not checked. Fix: record each provider's retention in the account inventory, set the shortest workable period, and state it in the privacy policy. Phase: P3B (log retention), P5B, P7B.
 16. **`send-push` puts IDs and tokens in URLs.** It reads tokens with `user_id=eq.<id>` and deletes dead tokens with `token=eq.<token>` in the query string, which Supabase API logs record (field `request.search`). From code; no such request was in the logs window. Fix: move both to an RPC with the values in the body. Phase: P5A.
 17. **No iPhone privacy manifest.** `PrivacyInfo.xcprivacy` is missing; the app uses NSUserDefaults, a required-reason API. Phase: P8B.
+   - **Closed (Mac iOS session, 2026-11-07).** `mobile/iosApp/iosApp/PrivacyInfo.xcprivacy` declares user defaults, file timestamp and system boot time, no tracking and the collected data types (section 6.3). When iPhone push is added (P8B), add Device ID there and recheck the libraries.
 18. **Android backup includes the session and drafts.** `android:allowBackup="true"` with no backup rules. Fix: `dataExtractionRules` / `fullBackupContent` that leave out the session, drafts and photos (or `allowBackup="false"`). Phase: P5A.
 19. **Email confirmation off; Auth `site_url` is `http://localhost:3000`; no custom SMTP.** Anyone can sign up with someone else's address, and email links may point to localhost. Fix: set `site_url` to dzirent.com, add an email service, turn confirmation on. Phase: P6C (email service), P8C (confirmation on, `site_url`).
 20. **No bot check, no message or report rate limits, no website security headers.** Phase: P5A.
