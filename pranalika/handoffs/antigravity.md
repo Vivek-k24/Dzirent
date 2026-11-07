@@ -2,6 +2,272 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Website fixes - 2026-11-07 - overlays, header, footer, settings
+
+- Root causes of the 5 issues:
+  1. Modals: The `WelcomeChecklistModal` rendered with the static HTML `open` attribute rather than triggering `dialog.showModal()`, leaving the dialog in standard document flow below the footer instead of the browser's top layer. Global dialog centering, backdrop styling, containment, and background scroll locking (`html:has(dialog[open]), body:has(dialog[open]) { overflow: hidden !important; }`) were missing. Additionally, `window.confirm` was used for block user and deal cancellation instead of structured overlay dialogs.
+  2. Header bleed-through: `.site-header` used semi-transparent background colors (`rgba(255, 255, 255, 0.98)` in light mode, `#181818f5` in dark mode) which allowed underlying page cards, text, and docked filter panel borders to bleed through during scrolling.
+  3. Dark mode footer: Footer lacked dark mode rules, displaying a light background (`#fcfcfc`) with dark text, low-contrast links, and an un-inverted dark wordmark logo.
+  4. Stray "How Dzirent works": An obsolete `<details className="account-policy">` block remained inside `apps/web/src/components/settings.tsx` under the Profile section, duplicating the primary link in the top bar and phone drawer.
+  5. Settings tour link: "App tour" was located in `apps/web/src/components/local-preferences.tsx` within the preferences list instead of being housed under the "Help & legal" section in `apps/web/src/components/settings.tsx`.
+
+- What was done:
+  - Modals as true top-layer overlays:
+    - Updated `WelcomeChecklistModal` in `apps/web/src/components/onboarding.tsx` to use `dialogRef.current?.showModal()` inside a top-level `useEffect` when the modal is active, closing on cancel/dismiss.
+    - Added global modal centering, backdrop blur, and scroll lock in `apps/web/src/app/globals.css` (`dialog.modal, .modal { position: fixed; inset: 0; margin: auto; max-height: calc(100dvh - 32px); overscroll-behavior: contain; }`, `html:has(dialog[open]), body:has(dialog[open]) { overflow: hidden !important; }`).
+    - Replaced `window.confirm` dialogs in `apps/web/src/components/chat.tsx` for blocking a user and cancelling an uncompleted deal with accessible `<WorkflowModal>` dialogs.
+  - Solid top bar:
+    - Set `.site-header` to solid `#ffffff` in light mode and `#141414` in dark mode at `z-index: 40` in `apps/web/src/app/globals.css`.
+    - Maintained docked filter panel at `top: 130px; z-index: 20` so content and filters tuck seamlessly beneath the header during scrolling.
+  - Dark mode footer:
+    - Added dark mode footer styles in `apps/web/src/app/globals.css`: background `#181818`, border top `var(--line)` (`#383838`), paragraph text `var(--muted)` (`#b1b1b1`), link text `var(--ink)` (`#f4f4f4`), and `filter: invert(1)` on `.footer-wordmark`.
+  - Profile & settings clean-up:
+    - Removed the stray `<details className="account-policy">How Dzirent works...</details>` block from `apps/web/src/components/settings.tsx`.
+    - Removed "App tour" from `apps/web/src/components/local-preferences.tsx`.
+    - Added "App tour" as the last item under `<h3>Help &amp; legal</h3>` in `apps/web/src/components/settings.tsx`, styled matching existing links with `.profile-link-btn`.
+
+- Files changed:
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/components/chat.tsx`
+  - `apps/web/src/components/local-preferences.tsx`
+  - `apps/web/src/components/onboarding.tsx`
+  - `apps/web/src/components/settings.tsx`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+
+- What was run and verified:
+  1. `npm run lint` in `apps/web`: 0 errors, 0 warnings.
+  2. `npm run build` in `apps/web` (with Node v24.19.0 and environment variables loaded): all 22 static and dynamic routes compiled with 0 errors, TypeScript passed cleanly.
+  3. Visual & behavioral headless Chrome CDP test suite (`visual_check.py`):
+     - Check 1: Desktop Home Page scrolled halfway in light mode (`#ffffff`) and dark mode (`#141414`). Header solid, sticky at `z-index: 40`, docked filter panel passing underneath. Screenshots: `home_scrolled_light_desktop.png`, `home_scrolled_dark_desktop.png`.
+     - Check 2: Phone Home Page scrolled halfway in light and dark mode. Header solid and sticky. Screenshots: `home_scrolled_light_phone.png`, `home_scrolled_dark_phone.png`.
+     - Check 3: Footer in light mode (`#fcfcfc`) and dark mode (`rgb(24, 24, 24)` background, legible contrast). Screenshots: `footer_light.png`, `footer_dark.png`.
+     - Check 4: Profile page verified free of any stray "How Dzirent works" accordion. Screenshot: `profile_clean.png`.
+     - Check 5: Settings preferences verified with "App tour" removed from main list, and verified present as the 9th and final item in "Help & legal". Screenshot: `settings_preferences.png`.
+     - Check 6: Listing editor header verified solid (`#ffffff`, `z-index: 40`) when scrolled. Screenshot: `listing_editor_scrolled.png`.
+     - Check 7: Welcome checklist modal opened via `showModal()` in top layer `:modal`, centered, html/body overflow locked to `hidden`, and body overflow restored to `visible` upon close. Screenshot: `welcome_modal_overlay.png`.
+
+- Requests / Open issues:
+  - None.
+
+## Website catch-up - 2026-11-06 - photo scanning and content safety
+
+- What was done:
+  - Photo scanning in listing editor (Step 8C):
+    - Redesigned listing editor into 3 steps: 1. Photos, 2. Details, 3. Size, price and dates (`apps/web/src/components/listing-editor.tsx`).
+    - Photos step: slot management, reordering, deleting, and camera/file uploads. Displays server warnings from `photo_scans` under each photo slot tile.
+    - Advance from Photos to Details: validates at least one photo; saves initial draft row (`listings/save` with title "New listing (draft)", placeholder category "Everyday", status "paused"); uploads pending photos; calls `request_scan` via `workflow("listings/scan", { id })`; advances immediately without blocking.
+    - Details step: non-blocking `PhotoCheckBanner` ("Checking your photos…") allows lender to type while scan runs.
+    - Realtime watcher + 3-second polling fallback on `listing_scans` (with 3-minute timeout):
+      - Allowed: suggestions fill empty/untouched fields only (`title`, `category`, `item_type` for Accessories, `garment_type`, `description`, `styles`). Provided accept/clear controls (per-field `✕` button and "Accept all").
+      - Rejected: displays red banner with refusal reason and "Replace photos" button (returns to Step 1).
+      - Review: displays the scan's specific reason when present (e.g. hood or safety reason), otherwise "Someone at Dzirent will check these photos."
+      - Failed / Timed out: displays "We couldn't check the photos right now." with "Check again" button.
+    - Publish gate: checks `app_settings.vision_required` both on server and via database trigger `vision_publish_gate`. Refusal message displayed directly without losing typed form data.
+  - My closet:
+    - In `apps/web/src/components/closet.tsx`, paused listings display `auto_paused_reason` when set.
+    - Paused draft listings (`title === "New listing (draft)"`) display a "Draft" badge with no activate switch (Edit and Delete only).
+  - Content safety (P2A text filter):
+    - Surfaced database trigger `P0001` refusal messages and column hints from Postgres error hints through `must()` in `apps/web/src/lib/workflow-server.ts` and `WorkflowClientError` in `apps/web/src/lib/workflows.ts`.
+    - Listings: `title`, `description`, `price_note`, `deposit_note` catch refusals, show the database message next to that specific field, and keep what was typed. Refusal message clears upon input change.
+    - Profiles / Studio: in `apps/web/src/components/studio-editor.tsx`, `studio_name`, `studio_handle`, `studio_bio`, `pickup_area` catch refusals, show messages under each input, and keep typed text.
+    - Chat: in `apps/web/src/components/chat.tsx`, message send errors are displayed under the message composer with no Retry button, keeping draft text. Report dialog errors are displayed under the details field and keep what was typed.
+    - Sign-up: in `apps/web/src/app/actions.ts`, calls `check_text(name, 'profile')` RPC before creating the account. If refused, redirects to `/auth` with `name_error`, displayed directly under the name field while preserving entered name and email in `apps/web/src/app/auth/page.tsx`.
+  - API & backend workflow handlers:
+    - Added `POST /api/workflows/listings/scan` endpoint calling `scanListing` (`client.rpc("request_scan")`) in `apps/web/src/lib/listing-mutations.ts` and `apps/web/src/app/api/workflows/[...path]/route.ts`.
+    - API failure responses include `{ error, field }`.
+  - Board updated: marked Step 8C website photo scanning and P2A website text filter as Done in `pranalika/BOARD.md`.
+
+- What was run and verified:
+  1. `npm run lint` in `apps/web`: 0 errors, 0 warnings.
+  2. `npx tsc --noEmit` in `apps/web`: 0 errors across all TypeScript files.
+  3. `node supabase/tests/p2a_text_filter.mjs`: all database text filter checks PASSED (title phone refusal with hint, message phone accepted, message slur refused, allowlisted words accepted, check_text RPC clean vs refusal).
+  4. Tested `request_scan` RPC on draft listings (returns scan ID, completes within 2s with allowed verdict and suggestions).
+
+- Requests:
+  - None.
+
+## P1B part 2 - 2026-11-06 - help center and consent on the website
+
+- What was done:
+  - Help Center & FAQ (`/help`):
+    - Created `apps/web/src/app/help/page.tsx` using `LegalLayout` with a sticky TOC sidebar and collapsible `<details className="faq-item">` / `<summary className="faq-question">` elements.
+    - Grouped into the 6 required sections with plain, friendly, compliant English matching `compliance.md`:
+      1. Getting started (`#getting-started`): what Dzirent is, guest browsing, signing up, 18+ policy.
+      2. Renting (`#renting`): finding pieces, date availability filtering, in-app messaging, safe meetup practices, peer-to-peer security deposits.
+      3. Lending (`#lending`): listing garments, automated vision checks and verdict meanings (`Approved`, `Flagged`, `Rejected`), worn photos allowed, allowed and prohibited categories, pausing/deleting listings.
+      4. Fit & measurements (`#fit-measurements`): fit matching, private measurements, consent before first save and how to withdraw consent anytime.
+      5. Account & privacy (`#account-privacy`): editing profile, reporting/blocking members, deleting account, download data coming soon.
+      6. Safety (`#safety`): direct link to comprehensive Trust & Safety Guide (`/safety`).
+    - Added FAQ and Terms update styles to `apps/web/src/app/globals.css`.
+  - Navigation, footer & sitemap:
+    - Added `/help` as the first link in `<nav aria-label="Footer">` in `apps/web/src/components/shell.tsx`.
+    - Added `/help` to public sitemap routes in `apps/web/src/app/sitemap.ts`.
+  - Sign-up legal agreement:
+    - Updated `apps/web/src/app/auth/page.tsx` so the sign-up form requires checking "I agree to the Terms of Use and Privacy Policy", linking to `/terms` and `/privacy` in separate tabs.
+    - Added validation in `apps/web/src/app/actions.ts` (`form.get("legal") === "on"`).
+    - When a sign-up returns an active session, `actions.ts` immediately calls `client.rpc("accept_legal", { p_platform: "web" })`.
+  - Terms update screen:
+    - Created `apps/web/src/components/terms-update.tsx` (`TermsUpdateScreen`): displays document icon, "We've updated our terms", links to `/terms` and `/privacy`, "Agree" button, and "Sign out" option.
+    - In `apps/web/src/app/layout.tsx`, calls `needs_legal_acceptance()` for authenticated sessions and passes `needsLegal` to `Shell`.
+    - In `apps/web/src/components/shell.tsx`, when `needsLegal` is true and the user is not viewing `/terms` or `/privacy`, `TermsUpdateScreen` is rendered in place of the page content, and the docked filter panel and onboarding tours are suppressed.
+    - Clicking "Agree" runs `acceptLegalAction()` in `actions.ts` (calls `accept_legal('web')` and revalidates layout).
+  - Measurements consent & withdrawal:
+    - Added `measurements_consent_at: string | null` to `PrivateProfile` in `apps/web/src/lib/workflows.ts`.
+    - Added `account/give_measurements_consent` and `account/withdraw_measurements_consent` handlers to `apps/web/src/lib/workflow-mutations.ts`.
+    - In `apps/web/src/components/measurements-editor.tsx`:
+      - Intercepts save if any body measurement is provided and no consent exists, displaying modal: "Your measurements", "Your measurements are private. We use them only to suggest pieces likely to fit you. They are never shown to anyone.", with "Agree" and "Not now" buttons. Agree calls `give_measurements_consent` and saves the measurements.
+      - When consent is active, displays a "Withdraw consent" option opening confirmation modal: "Withdraw consent?", "Your saved body measurements will be deleted, and \"Likely to fit you\" stops until you add them again.", with "Withdraw and delete" and "Cancel" buttons.
+    - In `apps/web/src/components/settings.tsx`:
+      - Under Settings (`section === "preferences"`), added "Privacy & safety" section with Measurements consent status ("Given. Click to withdraw it and delete your saved measurements." / "Not given. You'll be asked when you save measurements.") and the same withdrawal confirmation modal.
+  - Password length enforcement:
+    - Minimum 8 characters enforced across website:
+      - `apps/web/src/app/auth/page.tsx`: password input `minLength={8}`, helper text "At least 8 characters.".
+      - `apps/web/src/app/actions.ts`: sign-up checks `password.length >= 8` ("Password must be at least 8 characters.").
+      - `apps/web/src/components/settings.tsx`: change password inputs have `minLength={8}`.
+      - `apps/web/src/lib/workflow-mutations.ts`: change password mutation checks `password.length >= 8` and `current.length >= 8` ("Use at least 8 characters.").
+  - Settings "Help & legal" section:
+    - Added "Help & legal" group in `apps/web/src/components/settings.tsx` with links to Help (`/help`), Safety (`/safety`), Community guidelines (`/community-guidelines`), Terms (`/terms`), Privacy (`/privacy`), Copyright (`/copyright`), Delete account (`/delete-account`), and Support (`/support`).
+  - Board updated: marked P1B part 2 and website deliverables as Done in `pranalika/BOARD.md`.
+
+- What was run and verified:
+  1. `npm run lint` in `apps/web`: 0 errors, 0 warnings.
+  2. `npm run build` in `apps/web`: Next.js production build succeeded with 22 routes generated (including `/help` and `/sitemap.xml`).
+  3. `verify_p1b.mjs` against Supabase:
+     - Test user 3 `needs_legal_acceptance()` returned true before acceptance.
+     - `accept_legal('web')` recorded terms and privacy 1.0.0 for platform `'web'`; `needs_legal_acceptance()` returned false.
+     - Saving body measurements without consent failed with error 400 (`P0001: Give consent before saving your measurements.`).
+     - `give_measurements_consent()` returned timestamp; subsequent body measurement save succeeded.
+     - `withdraw_measurements_consent()` cleared `chest_cm`, `waist_cm`, and `measurements_consent_at`.
+  4. Local Next.js server test on port 3004:
+     - `GET /help`: HTTP 200, verified presence of all 6 sections, collapsible `<details>` / `<summary>`, and `/help` in footer.
+     - `GET /sitemap.xml`: HTTP 200, verified `https://dzirent.com/help` entry.
+     - `GET /`: HTTP 200, verified `/help` in footer navigation.
+     - `GET /auth?mode=signup`: HTTP 200, verified terms and privacy links, adult checkbox, legal agreement checkbox, and 8-character password hint.
+
+## P1A fix-up - 2026-11-06 - legal page corrections
+
+- What was done:
+  - Log retention:
+    - Removed every "30-day" claim regarding server logs across `/privacy`, `/delete-account`, and legal components.
+    - Replaced with `<LegalPlaceholder name="DATA_RETENTION" label="server log retention period (Supabase keeps logs for at least 7 days; other providers unconfirmed)" />`.
+    - Removed "30 days" notice period example from `CHANGE_NOTICE` placeholder to avoid false positive log claims.
+  - Zero placeholder fallbacks:
+    - Removed `fallback` prop support entirely from `LegalPlaceholder` in `apps/web/src/components/legal-layout.tsx`.
+    - Removed all `fallback` props across all pages (`/privacy`, `/terms`, `/community-guidelines`, `/copyright`, `/safety`, `/delete-account`, `/support`). Every unknown placeholder renders solely as `[To be completed: <what>]` with class `legal-placeholder`.
+  - Community guidelines photo check description:
+    - Updated section 5 strictly to what the check really does per `compliance.md` section 1.6: what kind of item it is, whether it is clothing or an accessory we list, blur, lighting, whether the whole piece is in the frame, whether someone is wearing it, and whether the photo matches another listing (768-vector image fingerprint compared on the server).
+    - Removed all mentions of detecting faces or detecting watermarks.
+  - Email addresses:
+    - Standardized exclusively to `support@dzirent.com` across all legal pages, contact cards, and descriptions. Removed all instances of `privacy@`, `security@`, and `copyright@`.
+    - On `/copyright`, DMCA takedown notices are directed to `support@dzirent.com` with the subject "Copyright notice"; the DMCA agent contact details remain a placeholder for official Copyright Office filing data.
+  - Delivery cache disclosure:
+    - Added disclosure to both `/privacy` (sections 10 & 11) and `/delete-account` (section 4) that deleted photos may stay in a content delivery cache for a short time after deletion (exact time: placeholder `<LegalPlaceholder name="DATA_RETENTION" label="content delivery cache retention duration" />`).
+  - Owner decisions applied:
+    - Photos of the item being worn are allowed: Updated photo standards across `/community-guidelines` and `/terms` (hanger, mannequin, flat-lay, or worn are all fine; public photo note; no other people without their permission; no text, prices, phone numbers, social handles or watermarks). Removed the "No Human Faces" table row and replaced with the worn photos rule.
+    - Counterfeits/replicas and damaged/dirty garments kept in the prohibited list.
+    - Category name updated to "Everyday" exactly as in the app; removed "Everyday Special Pieces" and renamed "Approved Accessories" to "Accessories".
+    - Root `README.md` updated under "## Product rules" adding the worn photo allowance, counterfeit/replica prohibition, and damaged/dirty item prohibition.
+    - Appended decisions to `pranalika/decisions.md` under `## Listing rules (2026-11-06)`.
+    - Updated `pranalika/BOARD.md` marking P1A fix-up as Done.
+
+- Fallbacks removed:
+  1. `apps/web/src/components/legal-layout.tsx`: Removed `fallback` parameter and fallback rendering from `LegalPlaceholder`.
+  2. `apps/web/src/app/community-guidelines/page.tsx`:
+     - `fallback="November 6, 2026"` on `EFFECTIVE_DATE_RULES`
+     - `fallback="Listing prohibited items may result in immediate listing deletion and account penalties."` on `PROHIBITED_ITEMS`
+  3. `apps/web/src/app/copyright/page.tsx`:
+     - `fallback="November 6, 2026"` on `EFFECTIVE_DATE_COPYRIGHT`
+     - `fallback="Dzirent"` on `COMPANY_LEGAL_NAME`
+     - `fallback="copyright@dzirent.com"` on `DMCA_AGENT_EMAIL`
+     - `fallback="In appropriate circumstances and at our sole discretion..."` on `REPEAT_INFRINGER_RULE`
+  4. `apps/web/src/app/delete-account/page.tsx`:
+     - `fallback="No personal advertising identifiers or marketing profiles are ever created or retained."` on `WHAT_STAYS_AFTER_DELETION`
+     - `fallback="30 days"` on `SUPPORT_RESPONSE_TIME`
+  5. `apps/web/src/app/privacy/page.tsx`:
+     - `fallback={LEGAL_CONFIG.SUPPORT_EMAIL}` on `PRIVACY_EMAIL`
+     - `fallback="support@dzirent.com"` on `SUPPORT_EMAIL`
+     - `fallback={LEGAL_CONFIG.SUPPORT_EMAIL}` on `PRIVACY_EMAIL`
+  6. `apps/web/src/app/safety/page.tsx`:
+     - `fallback="Always trust your intuition..."` on `SAFETY_TIPS`
+     - `fallback="For pieces of significant retail value..."` on `DEPOSIT_RECOMMENDATION`
+  7. `apps/web/src/app/support/page.tsx`:
+     - `fallback="within 1–2 business days"` on `SUPPORT_RESPONSE_TIME`
+     - `fallback="support@dzirent.com"` on `ACCESSIBILITY_CONTACT`
+  8. `apps/web/src/app/terms/page.tsx`:
+     - `fallback="18"` on `MINIMUM_AGE`
+     - `fallback="The Dzirent platform and all content are provided on an 'as is' and 'as available' basis..."` on `MARKETPLACE_ROLE`
+     - `fallback="To the fullest extent permitted by applicable law..."` on `LIABILITY_CAP`
+  9. `apps/web/src/content/legal/config.ts`: Set all unconfirmed placeholder values to empty string `""` so they render strictly as `[To be completed: <label>]`.
+
+- What was actually run & verified:
+  - `npm ci`, `npm run lint` (ESLint 9): passed clean with 0 errors and 0 warnings.
+  - `npm run build` (Next.js 16.4.3 Turbopack): passed clean, all 21 pages compiled.
+  - Built pages source scan (`.next/server` and `src/app`):
+    - `30-day`: 0 matches.
+    - `30 days`: 0 matches in `src/app`; only 2 matches in `.next/server` within `src/components/listing-editor.tsx` ("Next 30 days" calendar picker button for availability). Zero log claims.
+    - `privacy@`: 0 matches.
+    - `security@`: 0 matches.
+    - `copyright@`: 0 matches.
+    - `faces`: 0 matches in `src/app`.
+    - `watermark`: 2 matches in `src/app` solely in the photo content rule ("no text, prices, phone numbers, social media handles, or watermarks on photos").
+    - `Everyday Special`: 0 matches.
+  - Local HTTP verification (`npx next start -p 3004`): all 7 legal routes returned HTTP 200 with the draft banner and all footer links.
+
+- Open issues:
+  - None.
+
+## P1A part 2 - 2026-11-06 - website legal pages
+
+- What was done:
+  - Centralized legal configuration (`apps/web/src/content/legal/config.ts`):
+    - Encapsulates every fill-in key from `pranalika/legal-placeholders.md` (company name, registered address, DMCA agent details, dispute resolution, governing law, taxes, response times, versions).
+    - Sets `legalDraft: true`, `TERMS_VERSION: "1.0.0"`, and `PRIVACY_VERSION: "1.0.0"`.
+    - Every missing placeholder renders in the UI as a highlighted `[To be completed: <label>]` badge with a tooltip, avoiding invented legal claims.
+  - Reusable layout & components (`apps/web/src/components/legal-layout.tsx`):
+    - `LegalDraftBanner`: Renders `"Draft. These terms are being finalized."` across all legal pages while `legalDraft` is active.
+    - Breadcrumbs: `Home > Legal & Help > <Page Title>`.
+    - Jump-link Table of Contents sticky sidebar on desktop, clean top navigation on mobile.
+    - Responsive 2-column legal grid, readable typography, dark/light theme support.
+  - Seven public legal and help pages created:
+    1. `/privacy` (written from `pranalika/compliance.md` sections 1–6): Data inventory, 2-decimal location rounding to ~1 km, photo EXIF stripping and 768-vector image fingerprints, private body measurements, first-party cookie table, outside services disclosure, no ads/tracking/selling, retention, cascade deletion on account removal, display name fallback, user privacy rights, 18+ policy, RLS database security.
+    2. `/terms`: Marketplace discovery role, age eligibility (18+), listing rules, content licensing, zero tolerance abuse policy, in-person meetings, deposits for high-value pieces, lender tax obligations, copyright, disclaimers, liability cap, governing law/venue/disputes placeholders, termination, and contact.
+    3. `/community-guidelines`: Allowed categories (Career, Occasion, Cultural, Everyday Special, Outerwear, Approved Accessories), prohibited items (Everyday basics, intimates, footwear, headwear, smartwatches, fakes, soiled garments), photo standards (clean light background, hanger/mannequin, no faces, no watermarks), photo scanning workflow (Marqo-FashionSigLIP, outcomes: Allowed, Not allowed, Under review), in-person etiquette, reporting & enforcement.
+    4. `/copyright`: DMCA takedown notice requirements (1–6), designated DMCA agent block with placeholders, counter-notice procedure and 10–14 business day statutory waiting period, repeat infringer policy.
+    5. `/safety`: In-person meetup tips (public, daylight, tell a friend), joint garment inspection checklist, keeping communication in-app, deposit recommendations for high-value items, stain/damage direct settlement, reporting & blocking, emergency 911 guidance.
+    6. `/delete-account`: Public Google Play requirement, step-by-step app & web deletion instructions, support contact for locked accounts, immediate deletion vs retained records (signed declarations, 30-day logs), active rental prerequisite, and shared chat cascade warning.
+    7. `/support`: Contact directory (`support@`, `privacy@`, `security@`, `copyright@`), response time placeholder, quick links to all legal pages, FAQ, accessibility inquiry contact.
+  - Footer on every page updated in `apps/web/src/components/shell.tsx`:
+    - Exactly 8 links: Privacy, Terms, Community guidelines, Copyright, Safety, Delete account, Support, About.
+  - Sitemap created at `apps/web/src/app/sitemap.ts`:
+    - Covers `/`, `/about`, `/privacy`, `/terms`, `/community-guidelines`, `/copyright`, `/safety`, `/delete-account`, `/support`, `/studios`.
+- Files changed:
+  - `apps/web/src/content/legal/config.ts`
+  - `apps/web/src/components/legal-layout.tsx`
+  - `apps/web/src/app/privacy/page.tsx`
+  - `apps/web/src/app/terms/page.tsx`
+  - `apps/web/src/app/community-guidelines/page.tsx`
+  - `apps/web/src/app/copyright/page.tsx`
+  - `apps/web/src/app/safety/page.tsx`
+  - `apps/web/src/app/delete-account/page.tsx`
+  - `apps/web/src/app/support/page.tsx`
+  - `apps/web/src/app/sitemap.ts`
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/components/shell.tsx`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+- Commands run & verified:
+  - `npm run lint` (ESLint 9 / next lint): passed clean (0 errors, 0 warnings).
+  - `npm run build` (Next.js 16.4.3 Turbopack): passed clean, all 21 static/dynamic pages compiled.
+  - `npx next start -p 3004`: verified all 7 legal routes returned HTTP 200, draft banner rendered, TOC rendered, all footer links rendered.
+  - Verified `sitemap.xml` returned HTTP 200 with all 8 public footer routes.
+- Placeholders still open:
+  - The business legal details in `apps/web/src/content/legal/config.ts` (and `pranalika/legal-placeholders.md`) to be filled by Owner/Attorney: `COMPANY_LEGAL_NAME`, `COMPANY_ENTITY_TYPE`, `COMPANY_STATE_OF_FORMATION`, `REGISTERED_ADDRESS`, `GOVERNING_LAW_STATE`, `VENUE`, `DISPUTE_PROCESS`, `LIABILITY_CAP`, `DMCA_AGENT_*`, `LENDER_TAX_STATEMENT`, `SALES_TAX_STATEMENT`, etc. Once provided, filling them in `config.ts` automatically updates all legal pages without changing page copy.
+- Open issues:
+  - None.
+- Requests:
+  - None.
+
 ## Photo fix - 2026-11-04
 
 - Which photos were broken:

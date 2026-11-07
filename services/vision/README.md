@@ -7,6 +7,9 @@ The Supabase Edge Function `scan-listing` is its only caller (see `pranalika/con
 
 Model: [Marqo/marqo-fashionSigLIP](https://huggingface.co/Marqo/marqo-fashionSigLIP)
 (Apache 2.0), pinned to commit `c56244cc94f92419e8369fa71efdaf403b124ce8`, on CPU PyTorch.
+Image safety model (P2A): [Marqo/nsfw-image-detection-384](https://huggingface.co/Marqo/nsfw-image-detection-384)
+(Apache 2.0, a ViT-Tiny fine-tuned from `timm/vit_tiny_patch16_384.augreg_in21k_ft_in1k`), pinned
+to commit `0c26ec22111b83f106d72a55f611ec35962bcb65` and built into the image under `/opt/model/safety`.
 
 ## API
 
@@ -22,8 +25,8 @@ lender), `suggestions` (category, item type and garment type from the database's
 colors, pattern, fabric, styles, title, description; none when rejected), `quality` (a summary)
 and, per photo: `blur_score` (0 sharp to 1 blurry), `brightness_score` (0 black to 1 white),
 `framing_score` (0 = the whole piece is in frame; higher = more of its outline runs along the
-edge), `worn_by_person` (probability), `warnings`, `decision`, `labels` (the label scores) and
-`fingerprint` (768 numbers).
+edge), `worn_by_person` (probability, recorded only), `warnings`, `decision`, `labels` (the label
+scores, with `hooded` and `safety.nsfw`) and `fingerprint` (768 numbers).
 
 ## How it decides
 
@@ -40,8 +43,14 @@ edge), `worn_by_person` (probability), `warnings`, `decision`, `labels` (the lab
   general check. Everything in between is unsure, and unsure is never allowed: the listing goes
   to review. Photos that disagree also go to review. Size tag and close-up photos never decide
   the verdict, but a not-allowed item in one still sends the listing to review.
+- Content safety (P2A, `app/safety.py` and `app/verdict.py`): a photo the safety model gives a
+  nudity or sexual-content probability of 0.90 or more is rejected ("This photo isn't allowed on
+  Dzirent."), before any other rule; 0.40 or more sends the listing to review unless it is already
+  rejected. A photo the `hooded` prompt bank reads as hooded (0.60 or more) turns allowed into
+  review. Every photo counts, size tags and close-ups too. Tests use synthetic images only.
 - Photo quality (`app/quality.py`, a port of the app's `PhotoQuality.kt`) never changes the
-  verdict; it only adds warnings worded as on the phone.
+  verdict; it only adds warnings worded as on the phone. A piece being worn never changes the
+  verdict and never adds a warning.
 - Colors come from the garment's pixels, not the model (`app/colors.py`, a port of the app's
   `ItemColor.kt`). Titles follow the app's template: "Emerald velvet cocktail dress".
 
@@ -52,6 +61,7 @@ see the Step 8A handoff for the numbers.
 
     python -m venv .venv && .venv/Scripts/pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt pytest
     .venv/Scripts/python -m pytest tests          # pure logic, no model needed
+    # with VISION_SAFETY_DIR set to a folder holding the safety model, its load test runs too
 
 Deploy (from the repo root):
 

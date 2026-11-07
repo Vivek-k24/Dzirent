@@ -75,8 +75,6 @@ object DzirentPolicy {
         "Safety tip: meet in a public place and never send money before you see the item. " +
             "We recommend washing anything worn against the skin before wearing."
 
-    const val SIGN_UP_CONSENT = "I understand Dzirent only connects people"
-
     // Retail value at or above which Create/Edit Listing suggests a refundable deposit.
     // Placeholder: the owner will confirm the final number.
     const val DEPOSIT_SUGGESTION_USD = 150.0

@@ -29,6 +29,34 @@ import kotlinx.coroutines.launch
 /** What is being reported; [targetType] is 'listing' | 'user' | 'message'. */
 data class ReportTarget(val targetType: String, val targetId: String, val title: String)
 
+/**
+ * My suspension notice (P2B), read fresh from my profile: null while loading, when signed out or
+ * when not suspended. Shown where I'd publish, message or report; the database refuses those
+ * actions anyway, with the same words.
+ */
+@Composable
+fun rememberSuspensionNotice(repository: DzirentRepository): String? {
+    val notice by produceState<String?>(null, repository) {
+        value = runCatching { repository.getCurrentProfile()?.suspensionNotice }.getOrNull()
+    }
+    return notice
+}
+
+/** A clear card with the suspension notice. */
+@Composable
+fun SuspensionNotice(text: String, modifier: Modifier = Modifier) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Block, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(text, color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
 /** Reason picker with optional details. Inserts into reports, then thanks the user. */
 @Composable
 fun ReportDialog(
@@ -43,6 +71,18 @@ fun ReportDialog(
     var isSending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var sent by remember { mutableStateOf(false) }
+    val suspended = rememberSuspensionNotice(repository)
+
+    if (suspended != null) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            icon = { Icon(Icons.Default.Flag, contentDescription = null) },
+            title = { Text(target.title) },
+            text = { SuspensionNotice(suspended) },
+            confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } }
+        )
+        return
+    }
 
     if (sent) {
         AlertDialog(

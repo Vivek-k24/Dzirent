@@ -165,6 +165,8 @@ fun DetailsStep(state: ListingEditorState, onOpenDeclaration: () -> Unit) {
         onValueChange = { state.editTitle(it) },
         label = { Text("Title") },
         placeholder = { Text("e.g. Maroon lehenga") },
+        isError = state.textErrors["title"] != null,
+        supportingText = state.textErrors["title"]?.let { { Text(it) } },
         singleLine = true,
         trailingIcon = clearIcon("title", state.title.text.isNotEmpty()) { state.clear(SuggestField.TITLE) },
         modifier = Modifier.fillMaxWidth()
@@ -190,7 +192,12 @@ fun DetailsStep(state: ListingEditorState, onOpenDeclaration: () -> Unit) {
         onValueChange = { state.editDescription(it) },
         label = { Text("Description") },
         // The tip is a hint only; it's never part of the description.
-        supportingText = { Text(DESCRIPTION_TIP, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)) },
+        isError = state.textErrors["description"] != null,
+        supportingText = {
+            val refusal = state.textErrors["description"]
+            if (refusal != null) Text(refusal)
+            else Text(DESCRIPTION_TIP, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+        },
         minLines = 4,
         trailingIcon = clearIcon("description", state.description.text.isNotEmpty()) { state.clear(SuggestField.DESCRIPTION) },
         modifier = Modifier.fillMaxWidth()
@@ -335,8 +342,8 @@ fun PhotoCheckBanner(banner: CheckBanner?, onRetry: () -> Unit, onReplacePhotos:
                     Text(PHOTOS_LOOK_GOOD, color = text)
                 }
                 is CheckBanner.Review -> {
-                    Text(REVIEW_LINE, color = text, fontWeight = FontWeight.Medium)
-                    banner.reason?.let { Text(it, color = text, style = MaterialTheme.typography.bodySmall) }
+                    // The check's own reason (a hood, photo safety, a copied photo) when it gives one.
+                    Text(banner.reason ?: REVIEW_LINE, color = text, fontWeight = FontWeight.Medium)
                 }
                 is CheckBanner.Rejected -> {
                     Text(banner.reason, color = text, fontWeight = FontWeight.Medium)

@@ -26,10 +26,16 @@ data class Profile(
     @SerialName("studio_handle") val studioHandle: String? = null,
     @SerialName("studio_bio") val studioBio: String? = null,
     @SerialName("style_tags") val styleTags: List<String> = emptyList(),
-    @SerialName("pickup_area") val pickupArea: String? = null
+    @SerialName("pickup_area") val pickupArea: String? = null,
+    /** Set by Dzirent (admin suspension; "infinity" for a ban). Only on my own profile row. */
+    @SerialName("suspended_until") val suspendedUntil: String? = null,
+    @SerialName("suspension_reason") val suspensionReason: String? = null
 ) {
     val hasLocation: Boolean get() = approxLat != null && approxLng != null
     val studioTitle: String get() = studioName?.ifBlank { null } ?: displayName.ifBlank { "Studio" }
+
+    /** The notice to show where I'd publish, message or report while suspended, or null. */
+    val suspensionNotice: String? get() = com.dzirent.shared.util.suspensionNotice(suspendedUntil, suspensionReason)
 }
 
 /**
@@ -46,9 +52,12 @@ data class PrivateProfile(
     @SerialName("inseam_cm") val inseamCm: Double? = null,
     @SerialName("activity_seen_at") val activitySeenAt: String? = null,
     @SerialName("fit_profile") val fitProfile: String? = null,
-    @SerialName("style_interests") val styleInterests: List<String> = emptyList()
+    @SerialName("style_interests") val styleInterests: List<String> = emptyList(),
+    /** When I agreed to my measurements being saved (null: not given; the database refuses new ones). */
+    @SerialName("measurements_consent_at") val measurementsConsentAt: String? = null
 ) {
     val fit: FitProfile? get() = FitProfile.fromDb(fitProfile)
+    val hasMeasurementsConsent: Boolean get() = measurementsConsentAt != null
 
     fun bodyCm(measurement: BodyMeasurement): Double? = when (measurement) {
         BodyMeasurement.CHEST -> chestCm
@@ -266,6 +275,8 @@ data class ListingScan(
     val suggestions: JsonObject? = null,
     @SerialName("photo_set_hash") val photoSetHash: String? = null,
     @SerialName("admin_decision") val adminDecision: String? = null,
+    /** Why an admin approved or rejected the photos (P2B). */
+    @SerialName("admin_reason") val adminReason: String? = null,
     @SerialName("created_at") val createdAt: String? = null
 ) {
     val finished: Boolean get() = status == "done" || status == "failed"
@@ -541,5 +552,14 @@ object AppLinks {
     const val TERMS_URL = "https://dzirent.com/terms"
     const val PRIVACY_URL = "https://dzirent.com/privacy"
     const val SUPPORT_EMAIL = "support@dzirent.com"
+    const val HELP_URL = "https://dzirent.com/help"
+    const val SAFETY_URL = "https://dzirent.com/safety"
+    const val COMMUNITY_GUIDELINES_URL = "https://dzirent.com/community-guidelines"
+    const val COPYRIGHT_URL = "https://dzirent.com/copyright"
+    const val DELETE_ACCOUNT_URL = "https://dzirent.com/delete-account"
+    const val SUPPORT_URL = "https://dzirent.com/support"
 }
+
+/** The shortest password the server accepts (Supabase Auth `password_min_length`). */
+const val PASSWORD_MIN_LENGTH = 8
 

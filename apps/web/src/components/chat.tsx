@@ -14,6 +14,7 @@ import {
   dateRange,
   dateChip,
   workflow,
+  WorkflowClientError,
   reportReasons,
   safetyTip,
   isoToday,
@@ -33,11 +34,14 @@ export function Chat({
   const [data, setData] = useState(initial);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
+  const [sendError, setSendError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [modal, setModal] = useState<"dates" | "rental" | "report" | null>(
-    null,
-  );
+  const [modal, setModal] = useState<
+    "dates" | "rental" | "report" | "block" | "cancel_deal" | null
+  >(null);
   const [reportId, setReportId] = useState("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportDetailsError, setReportDetailsError] = useState("");
   const [notice, setNotice] = useState("");
   const [safety, setSafety] = useState(true);
   const bottom = useRef<HTMLDivElement>(null);
@@ -45,6 +49,13 @@ export function Chat({
   const id = initial.conversation.id;
   const renter = data.conversation.renter_id === data.me;
   const other = data.card?.other_name || "Dzirent member";
+  function openReport(msgId: string) {
+    setReportId(msgId);
+    setReportDetails("");
+    setReportDetailsError("");
+    setError("");
+    setModal("report");
+  }
   const read = useCallback(async () => {
     try {
       await workflow("chat/" + id + "/read", {});
@@ -152,6 +163,7 @@ export function Chat({
     const message = draft.trim();
     setBusy(true);
     setError("");
+    setSendError("");
     try {
       const m = await workflow<Message>("chat/" + id + "/send", { message });
       setData((old) => ({
@@ -176,7 +188,7 @@ export function Chat({
         }
       }
     } catch (e) {
-      setError((e as Error).message);
+      setSendError((e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -204,8 +216,7 @@ export function Chat({
             <button
               onClick={() => {
                 menuRef.current?.removeAttribute("open");
-                setReportId("");
-                setModal("report");
+                openReport("");
               }}
             >
               Report user
@@ -214,13 +225,11 @@ export function Chat({
               disabled={busy}
               onClick={() => {
                 menuRef.current?.removeAttribute("open");
-                if (
-                  data.blocked ||
-                  window.confirm(
-                    "Block user? You won’t be able to message each other.",
-                  )
-                )
-                  void action("block", { blocked: !data.blocked });
+                if (data.blocked) {
+                  void action("block", { blocked: false });
+                } else {
+                  setModal("block");
+                }
               }}
             >
               {data.blocked ? "Unblock user" : "Block user"}
@@ -325,8 +334,7 @@ export function Chat({
                   className="text-button message-report"
                   aria-label="Report message"
                   onClick={() => {
-                    setReportId(m.id);
-                    setModal("report");
+                    openReport(m.id);
                   }}
                 >
                   <Icon name="more" />
@@ -392,24 +400,42 @@ export function Chat({
           </button>
         </div>
       ) : (
-        <form className="message-composer" onSubmit={send}>
-          <label className="sr-only" htmlFor="message-body">
-            Message
-          </label>
-          <textarea
-            id="message-body"
-            placeholder="Message..."
-            maxLength={2000}
-            rows={2}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            disabled={busy}
-          />
-          <button className="button" disabled={busy || !draft.trim()}>
-            <Icon name="arrow" />
-            <span>Send</span>
-          </button>
-        </form>
+        <>
+          <form className="message-composer" onSubmit={send}>
+            <label className="sr-only" htmlFor="message-body">
+              Message
+            </label>
+            <textarea
+              id="message-body"
+              placeholder="Message..."
+              maxLength={2000}
+              rows={2}
+              value={draft}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                if (sendError) setSendError("");
+              }}
+              disabled={busy}
+            />
+            <button className="button" disabled={busy || !draft.trim()}>
+              <Icon name="arrow" />
+              <span>Send</span>
+            </button>
+          </form>
+          {sendError && (
+            <p
+              role="alert"
+              className="form-message error"
+              style={{
+                margin: "6px 0 0",
+                fontSize: "13px",
+                color: "var(--danger, #d32f2f)",
+              }}
+            >
+              {sendError}
+            </p>
+          )}
+        </>
       )}
       <div className="rental-actions">
         <button
@@ -434,10 +460,7 @@ export function Chat({
           <button
             className="text-button"
             disabled={busy}
-            onClick={() => {
-              if (window.confirm("Deal didn't happen?"))
-                void action("rental", { status: "cancelled" });
-            }}
+            onClick={() => setModal("cancel_deal")}
           >
             Deal didn&apos;t happen
           </button>
@@ -509,14 +532,32 @@ export function Chat({
             onSubmit={async (e) => {
               e.preventDefault();
               const f = new FormData(e.currentTarget);
-              if (
-                await action("report", {
+              setBusy(true);
+              setError("");
+              setReportDetailsError("");
+              try {
+                await workflow("chat/" + id + "/report", {
                   messageId: reportId,
                   reason: f.get("reason"),
-                  details: f.get("details"),
-                })
-              )
+                  details: reportDetails,
+                });
+                await refresh();
+                setModal(null);
                 setNotice("Report sent. Thanks. We'll review this.");
+              } catch (err) {
+                const errorObj =
+                  err instanceof WorkflowClientError ? err : (err as Error);
+                if (
+                  err instanceof WorkflowClientError &&
+                  err.field === "details"
+                ) {
+                  setReportDetailsError(err.message);
+                } else {
+                  setError(errorObj.message);
+                }
+              } finally {
+                setBusy(false);
+              }
             }}
           >
             <label className="field">
@@ -533,14 +574,96 @@ export function Chat({
                 name="details"
                 maxLength={500}
                 rows={4}
+                value={reportDetails}
+                onChange={(e) => {
+                  setReportDetails(e.target.value);
+                  if (reportDetailsError) setReportDetailsError("");
+                }}
                 disabled={busy}
               />
+              {reportDetailsError && (
+                <p
+                  role="alert"
+                  className="form-message error"
+                  style={{
+                    margin: "4px 0 0",
+                    fontSize: "13px",
+                    color: "var(--danger, #d32f2f)",
+                  }}
+                >
+                  {reportDetailsError}
+                </p>
+              )}
             </label>
             <Notice message={error} error />
             <button className="button full" disabled={busy}>
               Send report
             </button>
           </form>
+        </WorkflowModal>
+      )}
+      {modal === "block" && (
+        <WorkflowModal
+          title="Block user?"
+          busy={busy}
+          onClose={() => setModal(null)}
+        >
+          <p>
+            You won’t be able to message each other, and pending deals will be
+            canceled.
+          </p>
+          <Notice message={error} error />
+          <div className="button-row">
+            <button
+              className="button danger-button"
+              disabled={busy}
+              onClick={async () => {
+                await action("block", { blocked: true });
+              }}
+            >
+              Block user
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy}
+              onClick={() => setModal(null)}
+            >
+              Cancel
+            </button>
+          </div>
+        </WorkflowModal>
+      )}
+      {modal === "cancel_deal" && (
+        <WorkflowModal
+          title="Deal didn't happen?"
+          busy={busy}
+          onClose={() => setModal(null)}
+        >
+          <p>
+            Mark this deal as cancelled. You and the other member will still be
+            able to message each other.
+          </p>
+          <Notice message={error} error />
+          <div className="button-row">
+            <button
+              className="button"
+              disabled={busy}
+              onClick={async () => {
+                await action("rental", { status: "cancelled" });
+              }}
+            >
+              Cancel deal
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy}
+              onClick={() => setModal(null)}
+            >
+              Keep deal
+            </button>
+          </div>
         </WorkflowModal>
       )}
     </div>

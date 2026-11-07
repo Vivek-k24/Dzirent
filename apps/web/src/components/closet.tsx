@@ -131,8 +131,19 @@ export function Closet({ initial }: { initial: ClosetData }) {
                       alt={l.title}
                       sizes="(max-width: 600px) 45vw, 280px"
                     />
-                    <span className={"status-badge " + l.status}>
-                      {l.status === "active" ? "Active" : "Paused"}
+                    <span
+                      className={
+                        "status-badge " +
+                        (l.status === "paused" && l.title === "New listing (draft)"
+                          ? "draft"
+                          : l.status)
+                      }
+                    >
+                      {l.status === "paused" && l.title === "New listing (draft)"
+                        ? "Draft"
+                        : l.status === "active"
+                          ? "Active"
+                          : "Paused"}
                     </span>
                   </Link>
                   <div className="closet-card-body">
@@ -140,6 +151,18 @@ export function Closet({ initial }: { initial: ClosetData }) {
                     <p className="muted">
                       {l.category} · {l.size_label}
                     </p>
+                    {l.status === "paused" && l.auto_paused_reason && (
+                      <p
+                        className="form-message error"
+                        style={{
+                          margin: "4px 0",
+                          fontSize: "12px",
+                          color: "var(--danger, #d32f2f)",
+                        }}
+                      >
+                        {l.auto_paused_reason}
+                      </p>
+                    )}
                     <strong>{price(l.price_usd)}</strong>
                     {data.inbox.rentals.some(
                       (r) =>
@@ -148,13 +171,15 @@ export function Closet({ initial }: { initial: ClosetData }) {
                         r.lender_id === data.inbox.me,
                     ) && <p className="accent">Rented out</p>}
                     <div className="closet-actions">
-                      <button
-                        className="text-button"
-                        disabled={busy}
-                        onClick={() => void changeStatus(l)}
-                      >
-                        {l.status === "active" ? "Pause" : "Activate"}
-                      </button>
+                      {!(l.status === "paused" && l.title === "New listing (draft)") && (
+                        <button
+                          className="text-button"
+                          disabled={busy}
+                          onClick={() => void changeStatus(l)}
+                        >
+                          {l.status === "active" ? "Pause" : "Activate"}
+                        </button>
+                      )}
                       <Link
                         className="text-button"
                         href={"/app/list-a-piece/" + l.id}

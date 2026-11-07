@@ -22,6 +22,7 @@ export type PrivateProfile = {
   fit_profile: "man" | "woman" | null;
   style_interests: string[];
   activity_seen_at: string | null;
+  measurements_consent_at: string | null;
 };
 export type OwnPhoto = {
   id: string;
@@ -45,6 +46,7 @@ export type OwnListing = {
   deposit_note: string | null;
   listing_styles: string[];
   status: "active" | "paused";
+  auto_paused_reason?: string | null;
   city: string;
   created_at: string;
   photos: OwnPhoto[];
@@ -298,6 +300,15 @@ export function activity(data: InboxData) {
   }
   return updates.sort((a, b) => b.time.localeCompare(a.time));
 }
+export class WorkflowClientError extends Error {
+  constructor(
+    message: string,
+    public field?: string,
+  ) {
+    super(message);
+    this.name = "WorkflowClientError";
+  }
+}
 export async function workflow<T>(path: string, body?: unknown): Promise<T> {
   const response = await fetch("/api/workflows/" + path, {
     method: body === undefined ? "GET" : "POST",
@@ -307,7 +318,8 @@ export async function workflow<T>(path: string, body?: unknown): Promise<T> {
     cache: "no-store",
   });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Please try again.");
+  if (!response.ok)
+    throw new WorkflowClientError(result.error || "Please try again.", result.field);
   return result as T;
 }
 

@@ -16,6 +16,7 @@ import { chatMutation, accountMutation, dates } from "@/lib/workflow-mutations";
 import {
   saveListing,
   finishListing,
+  scanListing,
   uploadPhoto,
   removePhoto,
   edgeDelete,
@@ -31,6 +32,7 @@ function failure(error: unknown) {
     {
       error:
         error instanceof WorkflowError ? error.message : "Please try again.",
+      field: error instanceof WorkflowError ? error.field : undefined,
     },
     {
       status: error instanceof WorkflowError ? error.status : 500,
@@ -134,6 +136,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     if (path[0] === "listings") {
       if (path[1] === "save") return reply(await saveListing(body));
       if (path[1] === "finish") return reply(await finishListing(body));
+      if (path[1] === "scan") return reply(await scanListing(body));
       const listing = await ownListing(path[1]);
       if (path[2] === "delete")
         return reply(

@@ -13,6 +13,7 @@ import torch
 from PIL import Image
 
 from . import config
+from .safety import SafetyModel
 from .scan import TextBank
 from .vocab import BANKS, Vocab, load as load_vocab
 
@@ -66,7 +67,8 @@ class Model:
         if self.banks["items"].keys != [i.key for i in self.vocab.items]:
             raise RuntimeError("text embeddings don't match the policy items")
         self.visual = create_vision_tower(model_dir)
-        log.info("model ready: %d item labels", len(self.vocab.items))
+        self.safety = SafetyModel(model_dir / config.SAFETY_SUBDIR)
+        log.info("model ready: %d item labels, safety model %s", len(self.vocab.items), config.SAFETY_MODEL_ID)
 
     @torch.inference_mode()
     def embed_images(self, images: list[Image.Image]) -> np.ndarray:

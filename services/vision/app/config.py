@@ -26,7 +26,17 @@ VISUAL_WEIGHTS_FILE = "visual.safetensors"  # the vision tower only: all a scan 
 POLICY_FILE = APP_DIR / "policy.json"
 VOCAB_FILE = APP_DIR / "vocab.json"
 
-SERVICE_VERSION = "8a.1"
+# The image safety check (P2A): Marqo/nsfw-image-detection-384 (Apache 2.0), a small ViT
+# fine-tuned from timm/vit_tiny_patch16_384.augreg_in21k_ft_in1k. Pinned and built into the
+# image like the main model; it says how likely a photo shows nudity or sexual content.
+SAFETY_MODEL_ID = "Marqo/nsfw-image-detection-384"
+SAFETY_MODEL_REVISION = "0c26ec22111b83f106d72a55f611ec35962bcb65"
+SAFETY_MODEL_LICENSE = "Apache-2.0"
+SAFETY_MODEL_FILES = ["config.json", "model.safetensors"]
+SAFETY_SUBDIR = "safety"  # under MODEL_DIR
+SAFETY_IMAGE_SIZE = 384
+
+SERVICE_VERSION = "p2a.1"
 
 # The model card's zero-shot recipe: softmax(100 * cosine similarity).
 LOGIT_SCALE = 100.0

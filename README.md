@@ -37,6 +37,8 @@ One account can be both renter and lender.
 - Accessories allowed: sunglasses, handbags, ties, watches, belt buckles and costume jewelry (necklaces, earrings, bracelets, rings, brooches). Costume jewelry, like every accessory, needs the accessory declaration. Not allowed: smartwatches, caps, hats, boots, shoes, socks, pantyhose.
 - Not offered: everyday basics such as T-shirts, tank tops, hoodies, sweatshirts, track pants, sweatpants, joggers, shorts, jean shorts and plain everyday jeans.
 - Not allowed: lingerie, underwear and swimwear.
+- Not allowed: counterfeits, replicas, or damaged or dirty items.
+- Photos of the item being worn are allowed (hanger, mannequin, flat-lay, or worn are all fine). If a user appears in a photo, it is public like every listing photo; users must not include other people without their permission. No text, prices, phone numbers, social handles or watermarks on photos.
 - Listing photos are checked automatically. A check comes back allowed, not allowed (with the reason), or for review by a person at Dzirent. When the photos of a live listing change, they are checked again.
 - Location shows as "City, ST". Exact locations are never shown; only distance.
 - Listing cards show only the photo, title and "$price · distance". Never the word "free". No save button on cards.
@@ -62,6 +64,16 @@ Dzirent is built with the open-source projects below, each under its own license
 |---|---|---|---|
 | Marqo-FashionSigLIP | Reads listing photos on Dzirent's own photo-check service: what the piece is, whether it can be listed, and suggested details for the listing | Apache 2.0 | [Marqo/marqo-fashionSigLIP](https://huggingface.co/Marqo/marqo-fashionSigLIP) |
 | ViT-B-16-SigLIP (WebLI), Google's SigLIP model | The base model Marqo-FashionSigLIP was fine-tuned from | Apache 2.0 | [timm/ViT-B-16-SigLIP](https://huggingface.co/timm/ViT-B-16-SigLIP), [google-research/big_vision](https://github.com/google-research/big_vision) |
+| nsfw-image-detection-384 | The photo check's image safety model: how likely a photo shows nudity or sexual content | Apache 2.0 | [Marqo/nsfw-image-detection-384](https://huggingface.co/Marqo/nsfw-image-detection-384) |
+| ViT-Tiny (vit_tiny_patch16_384, AugReg) | The base model nsfw-image-detection-384 was fine-tuned from | Apache 2.0 | [timm/vit_tiny_patch16_384.augreg_in21k_ft_in1k](https://huggingface.co/timm/vit_tiny_patch16_384.augreg_in21k_ft_in1k) |
+
+### Text filter
+
+| Data | What Dzirent uses it for | License | Project |
+|---|---|---|---|
+| List of Dirty, Naughty, Obscene, and Otherwise Bad Words (English list) | The words the database refuses in listings, profiles, chat and reports | CC BY 4.0 | [LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words) |
+
+Changes to the list: Dzirent uses the English list as of commit `5faf2ba`, leaves out its one emoji entry, and switches off a few entries that are ordinary words on a clothing marketplace (for example "nude" as a color and "pussy bow" as a blouse style).
 
 ### Photo-check service
 
@@ -123,6 +135,7 @@ The Android app also uses Google Play services Location (the approximate locatio
 |---|---|---|---|
 | PostgreSQL 17 | The database | PostgreSQL License | [postgresql.org](https://www.postgresql.org) |
 | pg_trgm | Search that matches similar words in titles and descriptions | PostgreSQL License | [pg_trgm](https://www.postgresql.org/docs/17/pgtrgm.html) |
+| unaccent | Reads accented letters as plain ones for the text filter | PostgreSQL License | [unaccent](https://www.postgresql.org/docs/17/unaccent.html) |
 | pgcrypto | Random secrets | PostgreSQL License | [pgcrypto](https://www.postgresql.org/docs/17/pgcrypto.html) |
 | pg_net | Lets the database call the photo-check and push-notification functions | Apache 2.0 | [supabase/pg_net](https://github.com/supabase/pg_net) |
 | pgvector | Photo fingerprints, to spot the same photo in another listing | PostgreSQL License | [pgvector/pgvector](https://github.com/pgvector/pgvector) |
@@ -130,7 +143,7 @@ The Android app also uses Google Play services Location (the approximate locatio
 
 ### Notices
 
-- Marqo-FashionSigLIP and ViT-B-16-SigLIP ship no NOTICE file.
+- Marqo-FashionSigLIP and ViT-B-16-SigLIP ship no NOTICE file, and neither do nsfw-image-detection-384 and its ViT-Tiny base model.
 - PyTorch ships a NOTICE file with the copyright notices of the code it includes: [NOTICE (PyTorch 2.7.1)](https://github.com/pytorch/pytorch/blob/v2.7.1/NOTICE). A copy is inside the photo-check service.
 - Requests (Apache 2.0), part of the photo-check service as a dependency of the Hugging Face libraries, ships this NOTICE:
 

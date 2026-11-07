@@ -76,6 +76,9 @@ async def health() -> dict:
         "model": config.MODEL_ID,
         "revision": config.MODEL_REVISION,
         "license": config.MODEL_LICENSE,
+        "safety_model": config.SAFETY_MODEL_ID,
+        "safety_revision": config.SAFETY_MODEL_REVISION,
+        "safety_license": config.SAFETY_MODEL_LICENSE,
         "policy_items": len(model.vocab.items),
         "policy_digest": model.vocab.digest[:16],
         "service_version": config.SERVICE_VERSION,
@@ -100,8 +103,9 @@ def _run(listing_id: str, photos: list[PhotoIn], payloads: list) -> dict:
         images.append(image)
     ok = [i for i, im in enumerate(images) if im is not None]
     embeddings = model.embed_images([images[i] for i in ok]) if ok else []
-    for i, embedding in zip(ok, embeddings):
-        analyze_photo(results[i], embedding, working_image(images[i]), model.banks, model.vocab)
+    nsfw = model.safety.nsfw([images[i] for i in ok]) if ok else []
+    for i, embedding, p in zip(ok, embeddings, nsfw):
+        analyze_photo(results[i], embedding, working_image(images[i]), model.banks, model.vocab, nsfw=p)
     return scan(listing_id, results, model.banks, model.vocab)
 
 

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { workflow, fullPolicy, type SettingsData } from "@/lib/workflows";
+import { workflow, type SettingsData } from "@/lib/workflows";
 import { cityLabel } from "@/lib/types";
 import { signOut } from "@/app/actions";
 import { StudioEditor } from "./studio-editor";
@@ -28,9 +28,9 @@ export function Settings({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [modal, setModal] = useState<"role" | "password" | "delete" | null>(
-    null,
-  );
+  const [modal, setModal] = useState<
+    "role" | "password" | "delete" | "withdraw_consent" | null
+  >(null);
   const [confirmation, setConfirmation] = useState("");
   async function role(next: string, confirm = false) {
     setBusy(true);
@@ -207,6 +207,102 @@ export function Settings({
                   : "Not set yet"}
               </p>
               <UpdateLocation />
+
+              <h3>Privacy &amp; safety</h3>
+              <div className="account-section">
+                <strong>Measurements consent</strong>
+                <p className="muted">
+                  {data.privateProfile?.measurements_consent_at
+                    ? "Given. Click to withdraw it and delete your saved measurements."
+                    : "Not given. You'll be asked when you save measurements."}
+                </p>
+                {data.privateProfile?.measurements_consent_at && (
+                  <button
+                    type="button"
+                    className="button secondary compact danger-text"
+                    disabled={busy}
+                    onClick={() => {
+                      setError("");
+                      setModal("withdraw_consent");
+                    }}
+                  >
+                    Withdraw consent
+                  </button>
+                )}
+              </div>
+
+              <h3>Help &amp; legal</h3>
+              <div className="profile-links">
+                <Link href="/help">
+                  <span>
+                    <strong>Help</strong>
+                    <small>FAQs, guides, and support</small>
+                  </span>
+                  <Icon name="chevron" />
+                </Link>
+                <Link href="/safety">
+                  <span>
+                    <strong>Safety</strong>
+                    <small>Trust and safety tips for meetups</small>
+                  </span>
+                  <Icon name="chevron" />
+                </Link>
+                <Link href="/community-guidelines">
+                  <span>
+                    <strong>Community guidelines</strong>
+                    <small>Rules for respectful sharing</small>
+                  </span>
+                  <Icon name="chevron" />
+                </Link>
+                <Link href="/terms">
+                  <span>
+                    <strong>Terms</strong>
+                    <small>Terms of Use</small>
+                  </span>
+                  <Icon name="chevron" />
+                </Link>
+                <Link href="/privacy">
+                  <span>
+                    <strong>Privacy</strong>
+                    <small>Privacy Policy</small>
+                  </span>
+                  <Icon name="chevron" />
+                </Link>
+                <Link href="/copyright">
+                  <span>
+                    <strong>Copyright</strong>
+                    <small>DMCA and intellectual property policy</small>
+                  </span>
+                  <Icon name="chevron" />
+                </Link>
+                <Link href="/delete-account">
+                  <span>
+                    <strong>Delete account</strong>
+                    <small>Permanently delete your profile and data</small>
+                  </span>
+                  <Icon name="chevron" />
+                </Link>
+                <Link href="/support">
+                  <span>
+                    <strong>Support</strong>
+                    <small>Contact our team</small>
+                  </span>
+                  <Icon name="chevron" />
+                </Link>
+                <button
+                  type="button"
+                  className="profile-link-btn"
+                  onClick={() =>
+                    window.dispatchEvent(new Event("dzirent-start-tour"))
+                  }
+                >
+                  <span>
+                    <strong>App tour</strong>
+                    <small>Take the interactive tour of Dzirent</small>
+                  </span>
+                  <Icon name="chevron" />
+                </button>
+              </div>
             </>
           ) : section === "blocked" ? (
             <>
@@ -257,13 +353,6 @@ export function Settings({
           ) : null}
           <Notice message={error} error />
           <Notice message={notice} />
-          <details className="account-policy">
-            <summary>How Dzirent works</summary>
-            <p>{fullPolicy}</p>
-            <Link href="/about#rental-guidelines" className="text-link accent">
-              Rental guidelines →
-            </Link>
-          </details>
         </section>
       </div>
       {modal === "role" && (
@@ -328,7 +417,7 @@ export function Settings({
                   type="password"
                   name="current"
                   autoComplete="current-password"
-                  minLength={6}
+                  minLength={8}
                   required
                 />
               </label>
@@ -338,7 +427,7 @@ export function Settings({
                   type="password"
                   name="password"
                   autoComplete="new-password"
-                  minLength={6}
+                  minLength={8}
                   required
                 />
               </label>
@@ -426,6 +515,66 @@ export function Settings({
               </div>
             </form>
           )}
+        </WorkflowModal>
+      )}
+      {modal === "withdraw_consent" && (
+        <WorkflowModal
+          title="Withdraw consent?"
+          busy={busy}
+          onClose={() => setModal(null)}
+        >
+          <p>
+            Your saved body measurements will be deleted, and &ldquo;Likely to
+            fit you&rdquo; stops until you add them again.
+          </p>
+          <Notice message={error} error />
+          <div className="button-row">
+            <button
+              className="button danger-button"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setError("");
+                try {
+                  await workflow("account/withdraw_measurements_consent");
+                  setData((old) => ({
+                    ...old,
+                    privateProfile: old.privateProfile
+                      ? {
+                          ...old.privateProfile,
+                          chest_cm: null,
+                          waist_cm: null,
+                          hips_cm: null,
+                          shoulder_cm: null,
+                          height_cm: null,
+                          inseam_cm: null,
+                          measurements_consent_at: null,
+                        }
+                      : null,
+                  }));
+                  setModal(null);
+                  setNotice(
+                    "Consent withdrawn. Your measurements were deleted.",
+                  );
+                  router.refresh();
+                } catch (e) {
+                  setError((e as Error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Deleting..." : "Withdraw and delete"}
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy}
+              onClick={() => setModal(null)}
+            >
+              Cancel
+            </button>
+          </div>
         </WorkflowModal>
       )}
     </div>

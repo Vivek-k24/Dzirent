@@ -8,6 +8,10 @@
     {"key": "worn", "prompts": ["a person wearing the clothes", "a model wearing an outfit", "a woman wearing a dress", "a man wearing a suit"]},
     {"key": "not_worn", "prompts": ["clothing on a hanger", "a garment laid flat on a surface", "clothing on a mannequin", "a product photo of clothing with no person"]}
   ],
+  "hooded": [
+    {"key": "hooded", "prompts": ["a garment with a hood", "a hooded jacket", "a hooded coat", "a jacket with an attached hood", "a hooded cape", "a hoodie"]},
+    {"key": "not_hooded", "prompts": ["a garment without a hood", "a jacket with a collar and no hood", "a coat with a collar and no hood", "a dress", "a shirt", "a suit", "a handbag, sunglasses, a watch or jewelry"]}
+  ],
   "details": [
     {"key": "label", "prompts": ["a clothing size tag", "a garment care label", "a brand label sewn into clothing"]},
     {"key": "closeup", "prompts": ["a close-up of fabric texture", "a close-up of embroidery detail", "a close-up of a garment's stitching and buttons"]}

@@ -98,3 +98,28 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - Costume jewelry (necklaces, earrings, bracelets, rings, brooches) is allowed, with the accessory declaration.
 - A copied photo of a banned item stays rejected: a photo matching another listing sends the listing to review, but never turns a rejection into a review.
 - Changed photos are checked again: any change to the photos of an active listing queues a new check on the server, and the listing stays active while it runs. While `vision_required` is on, a result that isn't allowed pauses the listing with a plain reason (`listings.auto_paused_reason`), cleared when the owner republishes. While the flag is off, photos are re-checked only, never paused.
+
+## Listing rules (2026-11-06)
+
+- Photos of the item being worn are allowed: hanger, mannequin, flat-lay or worn are all fine. If you appear in a photo, it is public like every listing photo. Do not include other people without their permission. Keep no text, prices, phone numbers, social handles or watermarks on photos.
+- Counterfeits and replicas, and damaged or dirty items, are prohibited. Keep them in the prohibited list.
+- The category name is "Everyday" exactly as in the app. Remove "Everyday Special Pieces" and any other renamed category; every category name must match the app.
+
+## Content safety (2026-11-07)
+
+- The text filter lives in the database, so the website, Android and iPhone get the same rules. It matches whole words only, after normalizing case, accents, repeated letters and common character swaps; a listed word inside another word ("cocktail") never matches. The word list is LDNOOBW English (CC BY 4.0), with a small allowlist for words that are ordinary on a clothing marketplace.
+- Language that isn't allowed (slurs, hate terms, sexually explicit terms) is refused everywhere people write: listing title, description, price and deposit notes; display name, studio name, handle, bio and pickup area; chat messages; report reason and details.
+- Contact details and outside links (phone numbers, email addresses, URLs, @handles) are refused in public text only (listings and profiles). Chat allows them.
+- Refusals say why in plain words without repeating the word: "This text includes language that isn't allowed on Dzirent." or "Please remove contact details from your listing; people can message you in Dzirent." (profile: "…from your profile…"). Existing rows are not changed.
+- Photos: clear nudity or sexual content is rejected ("This photo isn't allowed on Dzirent."); uncertain goes to review. The safety model is open source with a permissive license (Marqo/nsfw-image-detection-384, Apache 2.0), built into the vision service.
+- A photo the model reads as a hooded garment goes to review instead of allowed (a rejection stays a rejection).
+- A piece being worn is never penalized: it never adds a warning and never changes the verdict.
+
+## Admin (2026-11-07)
+
+- Admin tools require two-step sign-in: an admin is an account in `admin_users` signed in with Supabase MFA (TOTP, `aal2`). Every admin function checks both first and refuses otherwise. Admins are added and removed only through `ADMIN_EMAILS` and the seed script.
+- Every admin action, reads included, is written to an append-only admin log that nobody can change or delete.
+- Every report saves an evidence snapshot when it is made (a message with up to 5 messages before and after it, a listing, or a profile). The snapshot never changes. Reports and their evidence survive either person's account deletion for a retention period (a placeholder of 2 years until the attorney sets it).
+- Report details are not filtered, so people can quote abuse; everything else stays filtered. This replaces "report reason and details" in "Content safety" for details only.
+- Feature flags are switched by admins (`set_flag`, logged), no longer only by migrations. This replaces "They change only through migrations" in "Photo scanning (2026-11-05)".
+- A suspended account can't publish, message, start chats or report, and its listings leave the shop window until the suspension ends. A ban is an Auth ban plus an open-ended suspension.

@@ -163,12 +163,88 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 - `unregister_push_token(p_token text)`: Signed-in only. Removes the token if it is the caller's. Call before signing out. Returns nothing.
 - Settings are the caller's own `notification_settings` row (table below). No row means Messages on and message text hidden.
 
+### Terms acceptance and measurements consent (P1B part 1)
+- `needs_legal_acceptance()`: Signed-in only. Returns `boolean`: true while the caller hasn't accepted the current version (`legal_documents`) of the Terms of Use or the Privacy Policy. Runs as the caller. The apps ask it after sign-in and when a saved session opens; while true they show only the "We've updated our terms" step (Agree or Sign out).
+- `accept_legal(p_platform text)`: Signed-in only. Records that the caller accepts the current version of both documents; `p_platform` is `'web'`, `'android'` or `'ios'`. Accepting a version twice keeps the first row. Returns nothing. Call right after sign-up (the sign-up tick) and from the terms step.
+- `give_measurements_consent()`: Signed-in only. Returns the consent time (`timestamptz`); keeps the first time if consent was already given. Needed before the first body measurement is saved.
+- `withdraw_measurements_consent()`: Signed-in only. Deletes the caller's six body measurements and the consent time; fit profile and style interests stay. Returns nothing.
+- Saving a body measurement (`chest_cm`, `waist_cm`, `hips_cm`, `shoulder_cm`, `height_cm`, `inseam_cm` set to a new value, by insert, update or upsert) without consent is refused: `P0001` "Give consent before saving your measurements." Clearing a measurement, and saving only `fit_profile` or `style_interests`, is always allowed. Apps can't write `measurements_consent_at` (a trigger keeps the stored value).
+- Publishing a new terms or privacy version means a migration that updates its `legal_documents` row (the same version as `apps/web/src/content/legal/config.ts`); every user then accepts again.
+
+### Text filter (P2A)
+- Triggers check text when it is inserted or changes (a column that doesn't change is never checked, so old rows never block other updates):
+  - `listings`: `title`, `description`, `price_note`, `deposit_note` (public text);
+  - `profiles`: `display_name`, `studio_name`, `studio_handle`, `studio_bio`, `pickup_area` (public text);
+  - `messages`: `body`; `reports`: `reason`, `details`.
+- Language that isn't allowed (LDNOOBW English list, whole words after normalizing case, accents, repeated letters and swaps such as 0/o, 1/i or l, @/a, $/s) is refused everywhere. Contact details and outside links (phone numbers, email addresses, URLs, `@handles`) are refused only in listings and profiles; chat allows them.
+- A refusal is `P0001` with one of these messages, and `hint` = the column name (for example `title`, `body`, `studio_bio`), so apps can show it under the right field:
+  - "This text includes language that isn't allowed on Dzirent."
+  - "Please remove contact details from your listing; people can message you in Dzirent."
+  - "Please remove contact details from your profile; people can message you in Dzirent."
+- `check_text(p_text text, p_where text)`: Guest and signed-in. `p_where` is `'listing'`, `'profile'`, `'message'` or `'report'` (else `22023`); text up to 5000 characters. Returns the refusal message, or null when the text is fine. Saving runs the same check; this is for asking first, mainly sign-up's display name (the Auth API hides the database's message when the profile insert at sign-up is refused).
+
+### Admin (P2B part 1)
+Admins are the accounts in `app_private.admin_users` (closed to every API role). Every admin function below is callable by `authenticated` but starts with `app_private.require_admin()`: it refuses with `42501` "Admins only" unless the caller is in `admin_users`, and "Sign in with two-step verification to use admin tools" unless the JWT is `aal2` (Supabase MFA, TOTP). Every call, reads included, writes one row to the append-only admin log. Functions return `jsonb` unless noted.
+
+- **Adding or removing an admin:** list the admin emails in `ADMIN_EMAILS` (comma-separated) in `H:\DziRent\secrets\providers.env`, then an agent runs `node supabase/seed/admins.mjs` from the repo root. It makes `admin_users` match the list exactly: listed accounts are added, unlisted admins removed, each change logged as `admin_added` / `admin_removed`. An empty list is refused. An email with no Dzirent account is skipped (sign up first, then run it again). The admin then enrolls a TOTP factor (Supabase MFA) and signs in with it.
+- `is_admin()` → `boolean`: true only for an admin at `aal2`. Any signed-in user may call it.
+- **Queues:**
+  - `admin_queues()`: counts `open_reports`, `scans_in_review` (latest scan `done` + `review`, no admin decision), `open_takedowns` (`received` or `countered`), `id_verification_reviews` (always 0 until P6A).
+  - `admin_list_reports(p_status text default 'open', p_limit int default 30, p_offset int default 0)`: reports (`p_status` null = all) with reporter and target names and handles, outcome, and the evidence snapshot (`evidence`).
+  - `admin_list_scan_reviews(p_limit, p_offset)`: scans waiting for a person, with the listing title, lender handle and each photo's storage path, slot, decision, warnings, `looks_like`, `nsfw` and `hooded`.
+  - `admin_list_takedowns(p_status text default null, p_limit, p_offset)`: takedown requests; null = the open ones.
+  - `admin_list_id_reviews()`: `[]` until ID verification (P6A).
+- **Reports** (each closes an open report when given one; a closed report can't be closed again):
+  - `admin_dismiss_report(p_report_id, p_reason)`: outcome `dismissed`.
+  - `admin_warn_user(p_user_id, p_note, p_report_id default null)`: adds a `user_warnings` row (the user can read their own); outcome `warned`.
+  - `admin_remove_reported_content(p_report_id, p_reason)`: a message is deleted, a listing is hidden (hold), a profile loses its studio name, bio and pickup area; outcome `content_removed`. The evidence keeps the original.
+  - `admin_suspend_user(p_user_id, p_days 1-3650, p_reason, p_report_id default null)`: sets `profiles.suspended_until` / `suspension_reason` and holds the user's active listings; outcome `suspended`. An admin can't suspend themselves.
+  - `admin_unsuspend_user(p_user_id, p_reason)`: clears the suspension and restores the held listings.
+  - Ban / unban: through the `admin-actions` Edge Function (below), which calls `admin_record_ban(p_user_id, p_banned, p_reason, p_report_id default null)` after the Auth step. That function makes a ban an open-ended suspension (`suspended_until = 'infinity'`, listings held), with outcome `banned`; unban clears it.
+- **Photo checks:** `admin_decide_scan(p_scan_id, p_decision 'approved'|'rejected', p_reason)`: sets `admin_decision`, `admin_decided_at` and `admin_reason` (shown to the lender) on a finished scan. Under the vision gate an approved scan of the current photos makes the listing publishable; rejected blocks it.
+- **Listings:** `admin_hide_listing(p_listing_id, p_reason)` / `admin_unhide_listing(p_listing_id, p_reason)`: the hold below.
+- **Takedowns** (`app_private.takedown_requests`: claimant, contact, work, URLs, listing ids, received date, status `received` / `actioned` / `rejected` / `countered` / `restored`, notes, counter-notice):
+  - `admin_create_takedown(p_claimant_name, p_claimant_contact, p_work, p_urls text[] default '{}', p_listing_ids uuid[] default '{}', p_received_at default now, p_note default null)` → `uuid`.
+  - `admin_takedown_remove_listing(p_takedown_id, p_listing_id, p_reason)`: hides the listing; status `actioned`.
+  - Removing photos: through the `admin-actions` Edge Function (`remove_photos`), which calls `admin_remove_photos(p_listing_id, p_photo_ids uuid[], p_reason, p_takedown_id default null)` (deletes the photo rows, returns their `storage_paths`), then deletes the files. Called directly, the rows go but the files stay in the bucket.
+  - `admin_record_counter_notice(p_takedown_id, p_notice, p_received_at default now)`: status `countered`.
+  - `admin_set_takedown_status(p_takedown_id, p_status, p_note)`: for `rejected`, `restored` and corrections. Restoring a listing is `admin_unhide_listing`.
+- **Feature flags:** `set_flag(p_key, p_enabled)`: switches an `app_settings` flag (`vision_required`, `verification_required`, `payments_enabled`). This replaces switching flags with migrations.
+- **Metrics:** `admin_metrics()`: `users`, `new_users_week`, `active_listings`, `scans_week` (count by verdict, or status while unfinished), `open_reports`, `messages_week`, `suspended_users`.
+- **Lookup:** `admin_find_user(p_query)`: by exact email, studio handle (with or without `@`) or account id, up to 10 matches. Returns profile fields, email, last sign-in, `banned_until`, suspension, `is_admin`, reports made, against and open against, warnings, and listings total, active and held.
+- **The log:** `admin_audit_log(p_limit default 50 (max 200), p_offset)`: newest first, with the admin's handle.
+
+`admin-actions` Edge Function (`POST /functions/v1/admin-actions`, `verify_jwt = false`):
+- **Checks:** validates the caller's token (`auth.getUser`), then calls `is_admin()` with the caller's own token. Anything else gets HTTP 403. A reason of at least 3 characters is required.
+- `{ "action": "ban" | "unban", "user_id", "reason", "report_id"? }`: Supabase Auth ban (`ban_duration` about 100 years, or `none`) with the server key from the function's environment, then `admin_record_ban` as the caller. A banned account can't sign in or refresh. An admin can't ban themselves.
+- `{ "action": "remove_photos", "listing_id", "photo_ids": [...], "reason", "takedown_id"? }`: `admin_remove_photos` as the caller, then deletes the files from `listing-photos` with the server key.
+- Returns `{ ok, action, ... }`. An Auth failure is HTTP 502 (nothing recorded). If the record step fails after the Auth change, it is HTTP 500 with `auth_changed: true`.
+
+Suspension and holds (any client):
+- **Suspended accounts:** messages, new chats and reports by a suspended account are refused with `P0001`: "Your account is suspended until Nov 8, 2026. Reason: …." For a ban: "Your account is suspended. Reason: …." Reading one's own data still works. Apps can't change `suspended_until` or `suspension_reason` (a trigger keeps them).
+- **Holds** (`listings.hold` `'hidden'` | `'suspended'`, `hold_reason`, `hold_restores`; written only by admin functions):
+  - A held listing is `paused`, so it is hidden from the shop window, and `auto_paused_reason` says "Hidden by Dzirent: …." or "Paused while your account is suspended.".
+  - Apps can't set a hold and can't make a held listing active. That is refused with "This listing is hidden by Dzirent: …. Contact support if you think this is a mistake.", or with the suspension message.
+  - A suspended owner can't publish any listing.
+  - Lifting the hold restores `active` if the listing was active before. An admin hide stays when a suspension ends.
+
+Reports (P2B changes):
+- **New columns:** `target_user_id` (who the report is about, set by the server), `status` (`open` / `closed`), `outcome`, `outcome_note`, `closed_at`, `closed_by`. Apps always insert `open`.
+- **Message reports:** a reporter can only report messages in their own chats ("You can only report messages in your own chats.").
+- **Evidence:** at insert, the server saves a snapshot in `app_private.report_evidence`, which never changes and is readable only through `admin_list_reports`:
+  - a message with up to 5 messages before and after it in that chat, each with sender id, name, handle and time;
+  - a listing's title, description, notes, category, status and photo paths;
+  - a profile's public fields.
+- **Text filter:** `details` is no longer filtered, so people can quote what was said; `reason` still is.
+- **Retention:** reports and evidence survive either account's deletion (`reporter_id` becomes null). They are kept for `report_retention_days` after closing (`app_private.settings`, 730 = a placeholder until the attorney decides); `app_private.purge_expired_reports()` deletes the older ones (scheduling: P3B).
+
 ### Photo checks (Step 8A, Step 8B)
 - `request_scan(p_listing_id uuid)`: Signed-in listing owner only. Returns the `uuid` of the photo check (a `listing_scans` row) for the listing's current photos. The check runs on the server and usually finishes within a minute (longer when the vision service starts cold). Watch the row until `status` is `done` or `failed`: Realtime `UPDATE` events on `listing_scans` filtered by `id`, with polling by ID as the fallback (Step 8B).
   - One scan at a time per listing: asking again while one is `queued` or `running` returns that scan's ID. Since Step 8B, when the latest check is `done` and covers the current photos (`photo_set_hash`), that check's ID comes back instead of a new one. A scan that hasn't finished after 10 minutes is marked `failed` and a new one can start.
   - Refused: `42501` "Not signed in" / "Not your listing"; `22023` "Add a photo first"; `P0001` "Too many photo checks. Try again in an hour." (20 per lender per hour).
 - Automatic re-check (Step 8B): any insert or delete on `listing_photos` of an `active` listing, or a change of a photo's `storage_path`, `slot` or `listing_id`, queues a check the same way as `request_scan` (same 20-an-hour limit). Apps don't call anything for it. The listing stays `active` while the check runs.
 - Automatic pause (Step 8B), only while `vision_required` is on: when that check of an `active` listing ends with a result that isn't `allowed`, or fails, the server sets the listing to `paused` and writes a plain sentence to `listings.auto_paused_reason`: "Paused: <reason>" for a rejection, otherwise "Paused: the new photos need a check before this listing can go live again." If the photos changed again while the check ran, the server checks again instead. If the 20-an-hour limit stops a re-check, the listing is paused with "Paused: the photos changed too often to check right now. Check them again in an hour." While the flag is off, photos are re-checked only and nothing is ever paused.
+- Content safety (P2A), in the vision service: any photo (size tags and close-ups included) that the safety model reads as clear nudity or sexual content makes the verdict `rejected` with "This photo isn't allowed on Dzirent."; an uncertain one makes it `review` ("Someone at Dzirent will check these photos before this listing can go live.") unless it is already rejected; a photo read as a hooded garment turns `allowed` into `review` ("This piece has a hood, so someone at Dzirent will check it."). A piece being worn never changes the verdict and never adds a warning. Each photo's `labels` (in `photo_scans`) now also carry `hooded` and `safety.nsfw`.
 - `listings.auto_paused_reason` (text, at most 300 characters, Step 8B): why the server paused the listing; apps show it on paused listings. Written only by the server: apps can't update it, and a listing inserted by an app always starts without one. A successful republish (`status` set to `active`, flag on or off) clears it.
 - `policy_item_types` (table below): what can be listed, readable by everyone, guests included. Allowed rows give the listing's own `category`, `item_type` (accessories), `garment_type` and `style`; the others give the `reason` shown to the lender.
 - `app_settings` (table below): feature flags, readable by everyone, changed only by migrations. `vision_required`, `verification_required` and `payments_enabled` are all off.
@@ -222,6 +298,7 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 
 ### Vision service (Cloud Run, server only)
 - Service `vision` in Google Cloud project `dzirent`, `us-west1`. Callable only by signed-in Google accounts with `roles/run.invoker` on it (`vision-invoker`, and the owner for the eval). Holds no keys and never calls Supabase. Fetches photos only from the public `listing-photos` bucket. Details: `services/vision/README.md`.
+- Since P2A it also runs the image safety model `Marqo/nsfw-image-detection-384` (Apache 2.0, pinned revision, built into the image). The scan response names it in `safety_model`; `/health` in `safety_model`, `safety_revision`, `safety_license`.
 
 ---
 
@@ -231,9 +308,9 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 
 | Table | Operations | RLS Rule |
 | --- | --- | --- |
-| `profiles` | SELECT, UPDATE | `id = auth.uid()` |
-| `private_profiles` | ALL | `user_id = auth.uid()` |
-| `listings` | SELECT, INSERT, UPDATE, DELETE | `lender_id = auth.uid()`. INSERT requires lender/both role. UPDATE restricted to safe columns. DELETE requires empty Storage folder. `auto_paused_reason` (Step 8B) is read-only for apps. |
+| `profiles` | SELECT, UPDATE | `id = auth.uid()`. `suspended_until` and `suspension_reason` (P2B) are readable by the owner and written only by admin functions. |
+| `private_profiles` | ALL | `user_id = auth.uid()`. `measurements_consent_at` (P1B) is written only by `give_measurements_consent` / `withdraw_measurements_consent`; body measurements need it (see "Terms acceptance and measurements consent"). |
+| `listings` | SELECT, INSERT, UPDATE, DELETE | `lender_id = auth.uid()`. INSERT requires lender/both role. UPDATE restricted to safe columns. DELETE requires empty Storage folder. `auto_paused_reason` (Step 8B) is read-only for apps. `hold`, `hold_reason`, `hold_restores` (P2B) are server-only (see "Admin"). |
 | `listing_photos` | ALL | Owned listing only (`l.lender_id = auth.uid()`). |
 | `listing_measurements` | ALL | Owned listing only (`l.lender_id = auth.uid()`). |
 | `availability` | ALL | Owned listing only (`l.lender_id = auth.uid()`). |
@@ -245,7 +322,8 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `saved_listings` | ALL | `user_id = auth.uid()` |
 | `saved_studios` | ALL | `user_id = auth.uid()` |
 | `blocks` | ALL | `blocker_id = auth.uid()` |
-| `reports` | SELECT, INSERT | `reporter_id = auth.uid()` |
+| `reports` | SELECT, INSERT | `reporter_id = auth.uid()`. Since P2B: server-set `target_user_id`, `status`, `outcome`, `outcome_note`, `closed_at`, `closed_by`; evidence in `app_private.report_evidence` (admins only); kept after either account is deleted. |
+| `user_warnings` | SELECT | `user_id = auth.uid()` (P2B). Written only by `admin_warn_user`. Columns `id`, `user_id`, `note`, `report_id`, `created_by`, `created_at`. Removed with the account. |
 | `listing_events` | SELECT, INSERT | `user_id = auth.uid()` |
 | `suggestion_events` | SELECT, INSERT | `user_id = auth.uid()` |
 | `accessory_declarations`| SELECT | `user_id = auth.uid()` |
@@ -257,3 +335,5 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `photo_scans` | SELECT | Owned listing only. Written only by the server. One row per scanned photo: `scan_id`, `listing_id`, `photo_id`, `storage_path`, `slot`, `blur_score` (0 sharp to 1 blurry), `brightness_score` (0 black to 1 white), `framing_score` (0 = whole piece in frame; higher = more of its outline on the edge), `worn_probability`, `fingerprint` (`vector(768)`), `labels` (JSON label scores), `warnings` (text[], worded as on the phone), `decision` (`allowed`, `not_allowed`, `not_clothing`, `detail`, `unsure`), `scanned_at`. Removed with the photo or listing. |
 | `policy_item_types` | SELECT | Everyone, guests included (`using (true)`); no writes through the API. Columns `key`, `label`, `kind` (`garment`, `accessory`, `other`), `allowed`, `category`, `item_type`, `garment_type`, `style`, `policy_group`, `noun`, `looks_like`, `reason`, `prompts`, `position`. |
 | `app_settings` | SELECT | Everyone, guests included; changed only by migrations. Columns `key`, `enabled`, `description`, `updated_at`. |
+| `legal_documents` | SELECT | Everyone, guests included; changed only by migrations (P1B). One row per document: `document` (`terms`, `privacy`), `version` (seeded `1.0.0` and `1.0.0`, from the website's `TERMS_VERSION` and `PRIVACY_VERSION`), `url`, `updated_at`. |
+| `legal_acceptances` | SELECT | `user_id = auth.uid()`. Written only by `accept_legal` (P1B). Columns `id`, `user_id`, `document`, `version`, `platform` (`web`, `android`, `ios`), `accepted_at`; one row per user, document and version. Removed with the account. |

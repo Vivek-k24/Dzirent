@@ -18,15 +18,25 @@ export class WorkflowError extends Error {
   constructor(
     message: string,
     public status = 400,
+    public field?: string,
   ) {
     super(message);
   }
 }
 export function must<T>(
   result: { data: T; error: unknown },
-  message = "Please try again.",
+  fallbackMessage = "Please try again.",
 ): T {
-  if (result.error) throw new WorkflowError(message);
+  if (result.error) {
+    const pgError = result.error as {
+      message?: string;
+      hint?: string;
+      code?: string;
+      details?: string;
+    };
+    const msg = pgError.message || fallbackMessage;
+    throw new WorkflowError(msg, 400, pgError.hint);
+  }
   return result.data;
 }
 export async function session() {

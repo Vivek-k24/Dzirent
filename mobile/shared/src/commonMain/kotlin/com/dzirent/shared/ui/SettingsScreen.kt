@@ -24,6 +24,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.dzirent.shared.platform.SettingsStorage
 import com.dzirent.shared.model.NotificationSettings
+import com.dzirent.shared.model.PASSWORD_MIN_LENGTH
 import com.dzirent.shared.model.Profile
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.util.DISTANCE_STEPS
@@ -33,13 +34,13 @@ import com.dzirent.shared.util.RENTAL_LENGTH_OPTIONS
 import com.dzirent.shared.util.ThemeMode
 import kotlinx.coroutines.launch
 
-/** The shortest password Supabase accepts by default; sign-up asks for the same. */
-private const val PASSWORD_MIN = 6
+/** The shortest password the server accepts; sign-up asks for the same. */
+private const val PASSWORD_MIN = PASSWORD_MIN_LENGTH
 
 /**
  * Sidebar > Settings, as a grouped list: Appearance, Preferences (saved on the device and
  * applied at once), Notifications (saved to the account), Location, Privacy & safety,
- * Account, About, then Sign out.
+ * Account, Help & legal (website pages), About, then Sign out.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -160,6 +161,7 @@ fun SettingsScreen(
 
             SettingsGroup("Privacy & safety")
             if (profile != null) SettingsRow("Blocked users", null, Icons.Default.Block, onClick = onOpenBlockedUsers)
+            if (profile != null) MeasurementsConsentSetting(repository)
             SettingsRow("Clear search history", null, Icons.Default.History, showChevron = false) {
                 onClearSearchHistory()
                 device.toast("Search history cleared")
@@ -171,6 +173,8 @@ fun SettingsScreen(
                 SettingsRow("Change password", null, Icons.Default.Lock, onClick = { showChangePassword = true })
                 SettingsRow("Delete account", null, Icons.Default.DeleteForever, onClick = { showDeleteAccount = true })
             }
+
+            HelpAndLegalSection()
 
             SettingsGroup("About")
             SettingsRow("App tour", "A quick look at where things are", Icons.Default.Explore, onClick = onAppTour)

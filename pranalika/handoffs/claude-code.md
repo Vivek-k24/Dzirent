@@ -2,6 +2,403 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P2B part 1 - 2026-11-07 - admin backend
+
+Done:
+- Before starting: working tree clean. `git pull --rebase` fast-forwarded `Preview` from `a69f158` to `fbf8b7c` (website catch-up).
+- `supabase/migrations/20261107100000_p2b_admin_core.sql`:
+  - **Admins:** `app_private.admin_users` (account, added time, added by), closed to every API role. `public.is_admin()` is true only for an admin whose JWT is `aal2`. `app_private.require_admin()` is the first statement of every admin function.
+  - **Admin log:** `app_private.admin_actions` (admin, action, target type and id, reason, before and after, time). Triggers refuse every update, delete and truncate. Written by `app_private.log_admin_action`.
+  - **Settings:** `app_private.settings` with `report_retention_days` = 730, a placeholder for the attorney.
+  - **Suspensions:**
+    - `profiles.suspended_until` and `suspension_reason`; a trigger keeps them for app roles.
+    - Messages, new chats and reports by a suspended account are refused: "Your account is suspended until Nov 8, 2026. Reason: …." For a ban (`infinity`): "Your account is suspended. Reason: …."
+  - **Holds:** `listings.hold` (`hidden` or `suspended`), `hold_reason` and `hold_restores`.
+    - A held listing is paused (out of the shop window) with `auto_paused_reason` ("Hidden by Dzirent: …." or "Paused while your account is suspended."). Apps can't set or clear a hold or republish a held listing, and a suspended owner can't publish.
+    - Lifting a hold restores `active` if the listing was active. An admin hide survives the end of a suspension.
+    - I chose holds over editing every shop-window function: the shop window already shows only active listings.
+  - **Reports:**
+    - The reporter's foreign key is now `on delete set null`.
+    - New columns: `target_user_id` (server-set), `status`, `outcome`, `outcome_note`, `closed_at`, `closed_by`. Apps always insert `open`.
+    - Message reports must be in the reporter's own chats.
+    - `app_private.report_evidence`: a snapshot at insert (message plus 5 before and after with sender ids, names, handles and times; listing text and photo paths; profile public fields). It is closed to API roles and an update trigger refuses changes.
+    - Report details skip the text filter; reason is still checked.
+    - `app_private.purge_expired_reports()` exists but isn't scheduled (P3B).
+  - **Other tables and columns:**
+    - `public.user_warnings`: owner-readable warnings.
+    - `app_private.takedown_requests`.
+    - `listing_scans.admin_reason`.
+- `supabase/migrations/20261107101000_p2b_admin_functions.sql`: the admin functions listed below. Each checks `require_admin()` first and writes one log row, reads included.
+- **Edge Function `admin-actions`** (deployed, `verify_jwt = false` in `config.toml`):
+  - Validates the token, then asks `is_admin()` with the caller's own token.
+  - Only then uses the server key: Auth ban or unban (`ban_duration` about 100 years / `none`), or deleting photo files. The database side (`admin_record_ban` / `admin_remove_photos`) runs as the caller.
+  - Self-ban is refused.
+- **`supabase/seed/admins.mjs`:** syncs `admin_users` to `ADMIN_EMAILS` (adds listed accounts, removes unlisted ones, logs each change, refuses an empty list, prints counts only). It runs the CLI binary directly, so the SQL isn't mangled by a shell.
+- **Apps** (shared code):
+  - The review banner shows the check's own reason when there is one (hood, photo safety, copied photo, or "not sure what this piece is"), otherwise "Someone at Dzirent will check these photos."
+  - An admin's rejection shows `admin_reason`.
+  - **Suspension notice:** `Profile.suspendedUntil` / `suspensionReason` and `util/Suspension.kt` give the same wording as the database plus "Contact support if you think this is a mistake." A `SuspensionNotice` card shows:
+    - at the top of the listing editor;
+    - instead of the chat message box;
+    - instead of the report form.
+    - Each screen reads the profile fresh, so a suspension that started after sign-in still shows.
+  - The suspension, hidden-listing and own-chat refusals reach the screens word for word (`DATABASE_MESSAGES`).
+- **Docs:** `contract.md` ("Admin"), `security-log.md` ("Admin role", Advisor findings, `admin-actions`), `compliance.md` (gap 11 closed, gap 12's backend done, report retention and admin data in 1.9, column map), `decisions.md` ("Admin (2026-11-07)"), `BOARD.md`.
+
+Every admin function (all need admin + two-step sign-in, all logged):
+- **Status:**
+  - `is_admin()`: true for an admin at `aal2` (any signed-in user may ask).
+- **Queues:**
+  - `admin_queues()`: counts of open reports, scans in review, open takedowns, and ID reviews (0 until P6A).
+  - `admin_list_reports(p_status, p_limit, p_offset)`: reports with reporter and target names and the evidence snapshot.
+  - `admin_list_scan_reviews(p_limit, p_offset)`: photo checks waiting for a person, with each photo's path, decision, warnings, nudity and hood scores.
+  - `admin_list_takedowns(p_status, p_limit, p_offset)`: takedown requests (open ones by default).
+  - `admin_list_id_reviews()`: an empty list until ID verification (P6A).
+- **Reports:**
+  - `admin_dismiss_report(p_report_id, p_reason)`: closes a report as dismissed.
+  - `admin_warn_user(p_user_id, p_note, p_report_id)`: stores a warning the user can read; closes the report as warned.
+  - `admin_remove_reported_content(p_report_id, p_reason)`: deletes a reported message, hides a reported listing, or clears a profile's studio name, bio and pickup area; closes the report as content_removed.
+- **Suspensions and bans:**
+  - `admin_suspend_user(p_user_id, p_days, p_reason, p_report_id)`: suspends for 1 to 3650 days and holds the user's active listings.
+  - `admin_unsuspend_user(p_user_id, p_reason)`: lifts the suspension and restores the held listings.
+  - `admin_record_ban(p_user_id, p_banned, p_reason, p_report_id)`: the database side of a ban or unban (open-ended suspension); called by `admin-actions`.
+- **Photo checks:**
+  - `admin_decide_scan(p_scan_id, p_decision, p_reason)`: approves or rejects a finished photo check, with a reason the lender sees.
+- **Listings:**
+  - `admin_hide_listing(p_listing_id, p_reason)` / `admin_unhide_listing(p_listing_id, p_reason)`: hides a listing from everyone, then restores it.
+- **Takedowns:**
+  - `admin_create_takedown(...)`: records a copyright takedown request from a support email.
+  - `admin_takedown_remove_listing(p_takedown_id, p_listing_id, p_reason)`: hides the listing and marks the request actioned.
+  - `admin_remove_photos(p_listing_id, p_photo_ids, p_reason, p_takedown_id)`: removes photo rows and returns their storage paths. Use it through `admin-actions`, which also deletes the files.
+  - `admin_record_counter_notice(p_takedown_id, p_notice, p_received_at)`: records a counter-notice.
+  - `admin_set_takedown_status(p_takedown_id, p_status, p_note)`: sets rejected or restored, or corrects the status.
+- **Flags, metrics, lookup, the log:**
+  - `set_flag(p_key, p_enabled)`: switches a feature flag.
+  - `admin_metrics()`: users, new users this week, active listings, scans this week by verdict, open reports, messages this week, suspended users.
+  - `admin_find_user(p_query)`: looks up an account by email, handle or id, with suspension, ban, report, warning and listing counts.
+  - `admin_audit_log(p_limit, p_offset)`: the admin log, newest first.
+- **Edge Function `admin-actions`:** `ban`, `unban` and `remove_photos`, the steps that need the server key.
+
+How to add an admin (also in `contract.md`):
+1. The person signs up on Dzirent with their email.
+2. The owner adds that email to `ADMIN_EMAILS` in `H:\DziRent\secrets\providers.env` (comma-separated).
+3. An agent runs `node supabase/seed/admins.mjs` from the repo root.
+4. The admin enrolls TOTP and signs in with it; the admin website does this in P2B part 2.
+
+To remove an admin, take the email out of `ADMIN_EMAILS` and run the script again.
+
+What I ran:
+1. Read the hosted Auth MFA settings (GET, non-secret fields): TOTP enroll and verify on, `mfa_allow_low_aal = false`. Edge Function secret names: the default key variables are present.
+2. `supabase db push --linked` (dry run first) for both migrations. `supabase functions deploy admin-actions --no-verify-jwt`.
+3. `node supabase/tests/p2b_admin.mjs`: PASSED on the first run, and again after I extended it.
+   - I extended it because test user 3 has no active listings, so the hold path wasn't exercised. It now also hides and unhides a listing and briefly suspends test user 2.
+   - Refusals:
+     - Test user 3 (not an admin): all 23 admin functions and `is_admin()` refused (`42501`, "Admins only"); `admin-actions` refused (403).
+     - Test user 1 in `admin_users` at `aal1`: all refused with "two-step"; `admin-actions` refused.
+   - TOTP: enrolled through `/auth/v1/factors`, with the code computed in the script. After verify, `is_admin()` is true at `aal2`.
+   - Queues: all four counts.
+   - Report evidence:
+     - Test user 3 reported a message from test user 1, with a filtered word in the details, and the report was accepted.
+     - The evidence held the message plus 5 before and 1 after.
+     - `admin_remove_reported_content` deleted the message and closed the report as `content_removed`; the evidence was byte-for-byte unchanged.
+   - A listing report: its evidence held the title and 2 photo paths, and it was dismissed.
+   - Suspending test user 3 for 1 day: sending a message was refused ("Your account is suspended until Nov 8, 2026. Reason: P2B test suspension."), and so was reporting. Unsuspending made sending work again.
+   - Hiding one of test user 1's listings:
+     - guests couldn't see it;
+     - the owner's republish was refused ("This listing is hidden by Dzirent: P2B test hide. Contact support if you think this is a mistake.");
+     - My closet showed "Hidden by Dzirent: P2B test hide.";
+     - unhiding made it active again.
+   - Suspending test user 2: active listings went 6 → 0, all held with "Paused while your account is suspended."; unsuspending brought back all 6.
+   - Ban through `admin-actions`: test user 3's sign-in was refused (400); after unban it worked.
+   - `payments_enabled` was switched on, then off.
+   - Metrics, and lookup by `@handle`, worked.
+   - Admin log: 19 rows by test user 1 in the run, covering every action. A SQL update on the log was refused.
+   - Clean-up: TOTP factor deleted, test user 1 removed from `admin_users`, 0 flags on, test user 3 neither suspended nor banned (checked by SQL).
+4. Security Advisor (2026-11-07 04:01 UTC): new are `is_admin` and the 23 admin functions (signed-in, elevated) and 5 INFO entries for the closed `app_private` tables. No new guest-callable function. All logged.
+5. `node supabase/seed/admins.mjs`: "Listed: 1, accounts found: 0, added: 0, removed: 0". The email in `ADMIN_EMAILS` has no Dzirent account yet, so nobody is an admin.
+6. `gradlew :shared:compileCommonMainKotlinMetadata :androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded silently): BUILD SUCCESSFUL. 21 shared unit tests, 0 failures, 0 skipped; new: `suspensionNoticeMatchesTheDatabaseWording` and banner cases. No warnings in the changed files.
+7. No emulator, device or screenshots.
+
+Debug APK: `H:\DziRent\Dzirent_dev\mobile\androidApp\build\outputs\apk\debug\androidApp-debug.apk` (22.2 MB, 2026-11-06 22:04 local).
+
+Owner phone test (after an admin has suspended your test account, or using the P2B part 2 website):
+- While suspended: the listing editor shows the notice at the top, the chat shows it instead of the message box, and Report shows it instead of the form.
+- A hidden listing in My closet shows "Hidden by Dzirent: …".
+- A photo check in review shows its own reason, for example "This piece has a hood, …".
+
+iOS-facing changes for a Mac check (all `commonMain`):
+- `Models.kt` (`Profile` suspension fields and `suspensionNotice`, `ListingScan.adminReason`)
+- `util/Suspension.kt` (new), `util/PhotoScan.kt`
+- `Moderation.kt` (`rememberSuspensionNotice`, `SuspensionNotice`, the report dialog), `ListingEditor.kt`, `ChatScreens.kt`, `ListingStepPhotos.kt`
+- `DzirentRepository.kt` (messages list)
+
+Open issues:
+- **`ADMIN_EMAILS` has no matching account yet.** Sign up with that email, then re-run the seed script.
+- **No admin website yet** (P2B part 2), so there is no way to enroll TOTP except through the API.
+- **Retention:** the 730-day report period is a placeholder for the attorney, and nothing deletes expired reports yet (`purge_expired_reports`, P3B). The admin log and takedown requests have no retention period either.
+- **A ban keeps working sessions alive for a while.** It stops sign-in and token refresh, but an access token already issued works until it expires (up to 1 hour). The database refuses messaging, chats, reports and publishing at once, through the open-ended suspension.
+- **Calling `admin_remove_photos` directly leaves the files** in the public bucket. The website should always use the Edge Function.
+- **Test data stays:** messages and reports from the test, and the admin log rows (append-only by design).
+- **Removing a profile's content** clears the studio name, bio and pickup area, but not the display name; use suspend or warn for that.
+
+Requests (website, P2B part 2):
+- Admin sign-in with TOTP: enroll (QR code from `/auth/v1/factors`), challenge, verify, then call the functions above with the `aal2` session. `is_admin()` tells whether to show the admin area.
+- Ban, unban and photo removal go through `POST /functions/v1/admin-actions` with the admin's token.
+- Show the scan's `admin_reason` and the listing's `auto_paused_reason` (holds) to the lender, and the suspension message where a suspended user would publish, message or report. The refusals already carry these words.
+- Show the review reason from the scan (as the apps now do).
+
+## P2A - 2026-11-07 - content safety
+
+Done:
+- Before starting: working tree clean. `git pull --rebase` fast-forwarded `Preview` from `ea240b7` to `c1be438` (P1B part 2, website).
+
+Part 1, text filter, in the database:
+- `supabase/migrations/20261107010000_p2a_text_filter.sql`, applied with `supabase db push` after a dry run.
+  - **Lists:**
+    - `app_private.text_filter_terms`: the LDNOOBW English list, 402 entries. The one emoji entry is left out.
+    - `app_private.text_filter_allowed`: 20 phrases that are ordinary on a clothing marketplace, each with a note. Examples: "nude", "sexy", "tied up", "tight white", "big black", "girl on", "xx"/"xxx", "s&m" (it normalizes to "s m", as in sizes S M L), "pussy bow", "bondage pants", "poof sleeve(s)".
+    - Both tables have RLS and no grants for any API role.
+  - **Matching:**
+    - Normalizes lower case and accents (`unaccent`), and reads 0 1 3 4 5 7 @ $ ! as o i e a s t a s i. Anything else becomes a space.
+    - Each term is a whole-word pattern in which every letter may repeat. So "fuuuck" is found, but "cocktail", "classic" or "as" never match.
+    - Allowlisted phrases are masked out first.
+  - **Contact details** (public text only): phone numbers in US formats, 10 or more digits in a row, email addresses, links, bare domains on common endings, and `@handles`.
+  - **Triggers** on `listings` (title, description, price note, deposit note), `profiles` (display name, studio name, handle, bio, pickup area), `messages` (body) and `reports` (reason, details). A column is checked only when it is inserted or changes.
+  - **Refusals** are `P0001` with the plain-words message, and `hint` is the column name.
+  - **`check_text(p_text, p_where)`** lets guests and signed-in users check text before saving. Sign-up needs it because the Auth API hides the database's message.
+- `20261107012000_p2a_text_filter_one_as_l.sql`: my first check showed "bu11sh!t" getting through, because people write 1 for l too. The language check now reads the text both ways.
+- **Apps** (shared code):
+  - `DzirentException.field` carries the hint. The two refusal messages are passed through as they are.
+  - Sign-up checks the display name first (`checkText`) and shows the refusal under the field.
+  - My studio shows it under the studio name, handle, bio or pickup area.
+  - The listing editor goes back to the form instead of the "publish failed" view. It opens the step with the field, shows the message under the title, description, price details or deposit note, and keeps what was typed. The message clears when the field is edited.
+  - Chat shows it under the chat box, keeps the text and drops the Retry button.
+  - The report dialog already showed errors under the details field.
+
+Part 2, photos, in the vision service:
+- `app/safety.py` (new): `Marqo/nsfw-image-detection-384`, pinned to `0c26ec22111b83f106d72a55f611ec35962bcb65`.
+  - Preprocessing as in its model card: 384 center crop, bicubic, mean and std 0.5.
+  - Loaded strictly with timm (already a dependency). `build_assets.py` downloads it into `/opt/model/safety` and loads it during the build, so a broken download fails the build.
+- `app/verdict.py`, rules around the existing ones:
+  - Any photo (size tags and close-ups included) with P(nudity or sexual content) of at least 0.90: rejected, "This photo isn't allowed on Dzirent.", before any other rule.
+  - At least 0.40: review, unless already rejected.
+  - A hooded reading (new `hooded` prompt bank in `vocab.json`) of at least 0.60 turns allowed into review: "This piece has a hood, so someone at Dzirent will check it."
+- Worn: no warning ever mentioned it, and it was never a verdict input; tests now pin both. The per-photo labels in `photo_scans.labels` now also carry `hooded` and `safety.nsfw`.
+- `policy.json` and `policy_item_types` are unchanged and still in sync (`test_policy_sync` passes).
+- Redeployed with the Step 8A settings. Revision **`vision-00005-9cg`** serves 100%. `describe` shows max 1 instance, 2 CPU, 4 GiB, 120 s, concurrency 4, runs as `vision-runtime`; the only IAM binding is `roles/run.invoker` for `vision-invoker`. Health reports `service_version` `p2a.1`, both models with their revisions and licenses, and a 23.6 s start-up.
+- Docs:
+  - root `README.md` (open-source section: the safety model and its base, a "Text filter" table for the word list with its changes, the `unaccent` extension, NOTICE note);
+  - `services/vision/README.md`;
+  - `decisions.md` (appended "Content safety (2026-11-07)");
+  - `contract.md`, `security-log.md` (four new Advisor findings, logged);
+  - `compliance.md` (gap 22 closed; gap 23's nudity check closed, the fingerprint question still with the attorney);
+  - `BOARD.md`.
+
+Licenses checked (Hugging Face and GitHub APIs, at the pinned revisions):
+- Word list: LDNOOBW, CC BY 4.0, commit `5faf2ba42d7b1c0977169ec3611df25a3c08eb13` (2020-07-13). Attribution and changes are in the README.
+- Safety classifier: `Marqo/nsfw-image-detection-384`, Apache 2.0 (model card and API metadata). Its base model `timm/vit_tiny_patch16_384.augreg_in21k_ft_in1k` is Apache 2.0.
+- Neither ships a NOTICE file. The card says it was trained on a proprietary dataset; the license is still Apache 2.0.
+- Not used: the card's own example image, `beignets-task-guide.png`. It comes from the `huggingface/documentation-images` dataset, which is CC BY-NC-SA 4.0 (non-commercial). An openly licensed beignets photo stood in for it.
+
+What I ran:
+1. `supabase db push --linked` (dry run first) for both migrations.
+2. Read-only `text_refusal` checks on 22 example texts. These cover leetspeak, repeated letters, spaced letters, words inside words, allowlisted words, sizes, phones, emails, links, domains, handles and accents. The one miss ("bu11sh!t") led to the second migration, then passed.
+3. Existing rows that would fail: **none**. 13 listings × 4 fields, 5 profiles × 5 fields, 14 messages, 0 reports.
+4. `node supabase/tests/p2a_text_filter.mjs` (test users 1 and 3): PASSED on the first run.
+   - A phone number in a listing title was refused (400, hint `title`) and the title stayed unchanged.
+   - The same number in a chat message was accepted.
+   - A slur in a chat message was refused (hint `body`).
+   - "cocktail", "classic" and "nude heels" were accepted.
+   - `check_text` as a guest: "Jane Doe" passes; a name with an email is refused.
+   - Two test messages stay in the test chat between users 1 and 3.
+5. Security Advisor (2026-11-07 02:47 UTC): new are `check_text` (guest and signed-in elevated) and two INFO entries for the closed `app_private` filter tables. All are logged in `security-log.md`.
+6. Vision service tests in the Step 8B scratch venv (Python 3.12.10, the pinned torch/timm/open_clip), with `VISION_SAFETY_DIR` set to the downloaded safety model: **54 passed**. 14 are new:
+   - nudity rules: reject, review, support photos count, a rejection is never softened, low scores change nothing;
+   - hood rules: review, a rejection is never softened, below the threshold stays allowed;
+   - worn: never a verdict input, and no warning mentions wearing;
+   - safety model: preprocessing, a strict load, and synthetic plain images scoring below the review line.
+   - No real or explicit images were used.
+7. Local run of the service's own code on the built assets (main model from the Step 8B scratch copy, text embeddings rebuilt for the new prompts). It matched the deployed results below exactly.
+8. `services/vision/eval/run_eval.py` against the deployed service:
+   - **Sample photos:** all 22 allowed one by one; all 12 sample listings allowed. Highest nudity score 0.054, highest hood score 0.340.
+   - **Worn dresses** (openly licensed photos in my scratch): the red-carpet gown is allowed with only "Bottom of the item is cut off"; the runway maxi dress is allowed with no warning; a head-and-shoulders portrait goes to review because the item is unclear. No warning anywhere mentions wearing.
+   - **Hoodie and sweatshirt set:** 4 rejected, 3 review. `hoodie/4` is allowed, as in Step 8B: that photo is the back of a long-sleeve print dress with no hood visible (I looked).
+   - **Beignets** (the openly licensed stand-in): rejected as not clothing, nudity score 0.054.
+   - **Step 8B Commons sets:** accept set 12 allowed, 2 review, 2 rejected; reject set 32 rejected, 10 review, 0 allowed. Both are the same as in Step 8B.
+   - The script exits 1 only because of `hoodie/4`.
+   - Highest nudity score over all 92 photos: 0.148, against the 0.40 review line.
+   - Single-photo scans: median 1.1 s.
+9. **Hood rule, end to end:** two openly licensed down-jacket photos (CC BY-SA 4.0) on the deployed service both went to review with "This piece has a hood…" (hood scores 0.95, nudity scores 0.05).
+10. `gradlew :shared:compileCommonMainKotlinMetadata :androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded silently):
+    - The first run failed: `decodeAs<String?>()` isn't allowed. I fixed it by decoding a `JsonElement`.
+    - Second run: BUILD SUCCESSFUL. 20 shared unit tests, 0 failures, 0 skipped. No warnings in the changed files.
+11. No emulator, device or app screenshots. The only images I viewed were a contact sheet of the three dress photos and the `hoodie/4` thumbnail; all test images stay in my scratch folder.
+
+Vision revision: `vision-00005-9cg`.
+
+Debug APK: `H:\DziRent\Dzirent_dev\mobile\androidApp\build\outputs\apk\debug\androidApp-debug.apk` (22.2 MB, 2026-11-06 20:06 local).
+
+Owner phone test:
+- Put a phone number in a listing's description and publish. You should go back to the details step, with the message under Description and your text kept.
+- In the price or deposit note: More options opens with the message under that field.
+- In My studio's bio: the message appears under Bio.
+- Send a phone number in chat: it is sent. Send a listed word: the message shows under the chat box, with no Retry, and the text stays.
+- Sign up with a display name that has an email in it: the message appears under Display Name.
+- Upload a photo of a hooded jacket: the review banner shows.
+
+iOS-facing changes for a Mac check (all `commonMain`):
+- `DzirentRepository.kt` (`DzirentException.field`, `checkText`, the messages list)
+- `AuthScreens.kt`, `MyStudioScreen.kt`, `ChatScreens.kt`
+- `ListingEditor.kt` (`DepositFields` has a new optional parameter), `ListingEditorState.kt`, `ListingStepPhotos.kt`, `ListingStepDetails.kt`
+
+Open issues:
+- **The list is mostly sexual terms;** it covers only some slurs and hate terms. More terms can be added with a migration (`source` column).
+- **Left blocked, though also ordinary words:** "lolita" (a Japanese fashion style) and "negro" (Spanish for black). The owner should decide; the BOARD has a row for it.
+- **Report details are filtered too, as the task asked.** Someone reporting abuse can't quote a slur in the details; the reason picker still works.
+- **Not checked:** listing measurement labels (free text up to 40 characters), and the accessory declaration's legal name.
+- **The thresholds were calibrated only on the photos I had:** nudity 0.90 / 0.40, hood 0.60. No explicit images were used, so the reject line has no positive examples locally; the unit tests cover it with synthetic scores.
+- **The apps' review banner** shows its own generic wording ("Someone at Dzirent will check these photos."), not the new hood or safety reason.
+- **Two test chat messages stay in the database** (between test users 1 and 3).
+
+Requests (website, `apps/web` not touched):
+- Show the two text-filter refusals next to the field, and keep what was typed. Refusals carry the column name in `hint`.
+- Check the sign-up display name with `check_text(name, 'profile')`, as the apps do, because the Auth API hides the database's message.
+- Reuse the photo-check reasons as they are ("This photo isn't allowed on Dzirent.", "This piece has a hood, …").
+
+## P1B part 1 - 2026-11-06 - terms acceptance and consent
+
+Done:
+- Before starting: working tree clean. `git pull --rebase` fast-forwarded `Preview` from `03df5fe` to `cbd6ce5` (P1A part 2 and its fix-up). `TERMS_VERSION` and `PRIVACY_VERSION` in `apps/web/src/content/legal/config.ts` are both `1.0.0`.
+- Migration `supabase/migrations/20261106120000_p1b_legal_and_consent.sql`, applied with `supabase db push` (dry run first: only this migration was pending):
+  - `legal_documents`: `terms` 1.0.0 and `privacy` 1.0.0, with their URLs. Readable by everyone; no API role can write it.
+  - `legal_acceptances`: user, document, version, platform (`web`, `android`, `ios`), time. Unique per user, document and version. Owner reads; written only by `accept_legal`; removed with the account.
+  - `accept_legal(p_platform)` (elevated, signed-in only) records the current version of both documents. `needs_legal_acceptance()` (runs as the caller) is true while either is missing. No user had accepted anything, so every existing user gets the terms step.
+  - `private_profiles.measurements_consent_at`. The trigger `app_private.require_measurements_consent`:
+    - keeps the stored consent time when an app writes the row (apps can't set or clear it);
+    - refuses a new body measurement without consent (`P0001` "Give consent before saving your measurements."), on insert, update and upsert. An upsert reaches the INSERT trigger first, so the trigger reads the consent from the existing row.
+    - Clearing a measurement, and saving only fit profile or styles, stays allowed.
+  - `give_measurements_consent()` returns the consent time, keeping the first one. `withdraw_measurements_consent()` deletes the six measurements and the consent time.
+  - All existing body measurements were deleted, so everyone is asked fresh.
+- Mobile shared code (Android builds it here; iOS shares it):
+  - **Sign-up:** the tick is now "I agree to the Terms of Use and Privacy Policy". Both names are links (`LinkAnnotation`) that open dzirent.com/terms and /privacy in the browser. It is required, and `accept_legal` runs right after sign-up (`AuthScreens.kt`). "Read how Dzirent works" stays below it.
+  - **Terms step:** a new `AuthScreenState.NeedsTerms`. After sign-in, and when a saved session opens at app start, `needs_legal_acceptance()` decides. While it's true, the app shows only `TermsUpdateScreen` ("We've updated our terms", both links, Agree, Sign out). Agree calls `accept_legal` with `"android"` or `"ios"` (the push service's platform name). Sign out unregisters push first, as Settings does (`DzirentApp.kt`, `Legal.kt`).
+  - **Measurements:** before the first save that includes a measurement, a dialog shows "Your measurements are private. We use them only to suggest pieces likely to fit you. They are never shown to anyone." with Agree / Not now. Agree calls `give_measurements_consent`, then saves (`BodyMeasurementsScreen.kt`).
+  - **Settings > Privacy & safety > Measurements consent:** shows "Given" or "Not given". When given, tapping it asks "Withdraw consent?" ("Your saved body measurements will be deleted…") and then calls `withdraw_measurements_consent`.
+  - **Passwords:** `PASSWORD_MIN_LENGTH = 8` (`Models.kt`) is used by the sign-up check, the sign-up field's hint, Change password, and the "too weak" server message.
+  - **Settings > Help & legal:** Help (/help), Safety tips, Community guidelines, Terms of Use, Privacy Policy, Copyright, Delete account (/delete-account), Contact support (/support). All open in the browser; guests see them too. `LinkRow` from About is now shared, and About says "Terms of Use" instead of "Terms of Service".
+  - Removed the unused `DzirentPolicy.SIGN_UP_CONSENT`.
+- New test `supabase/tests/p1b_legal_consent.mjs`.
+- `contract.md`, `security-log.md` (three new Advisor findings, logged), `compliance.md` (gaps 8, 9 and 21 closed for the database and apps, with the website remainder named; inventory rows and the column map updated) and `BOARD.md`.
+
+What I ran:
+1. `supabase db push --linked --dry-run`, then `supabase db push --linked`: applied.
+2. `node supabase/tests/p1b_legal_consent.mjs` as test user 1: PASSED on the first run.
+   - `legal_documents` shows privacy 1.0.0 and terms 1.0.0. `needs_legal_acceptance()` was true; after `accept_legal('android')` it is false. The two rows are privacy 1.0.0 and terms 1.0.0 on android. A guest call to `accept_legal` was refused (401).
+   - A chest measurement upsert without consent was refused (400, P0001, "Give consent before saving your measurements."). A direct PATCH of `measurements_consent_at` was ignored.
+   - After `give_measurements_consent()` the upsert saved 92 cm. `withdraw_measurements_consent()` then cleared the measurement and the consent time.
+3. Read-only queries afterwards:
+   - 1 of 5 users has acceptances (test user 1, from the test).
+   - 0 rows with a body measurement, 0 with consent.
+   - `has_function_privilege`: `anon` can't run any of the four functions; `authenticated` can't run the trigger function.
+   - `has_table_privilege`: `authenticated` can't insert acceptances or change documents; `service_role` can't insert documents; `anon` can read documents, not acceptances.
+4. Security Advisor (2026-11-07 01:03 UTC): new are `accept_legal`, `give_measurements_consent` and `withdraw_measurements_consent` (signed-in elevated functions, logged with reasons). Nothing else changed.
+5. `gradlew :shared:compileCommonMainKotlinMetadata :androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, both env files and `GOOGLE_SERVICES_JSON` loaded silently): BUILD SUCCESSFUL. 20 shared unit tests, 0 failures, 0 skipped (`SmokeTest` ran with the test-user env). No compiler warnings in the changed files.
+6. No emulator, device or screenshots.
+
+Debug APK: `H:\DziRent\Dzirent_dev\mobile\androidApp\build\outputs\apk\debug\androidApp-debug.apk` (22.2 MB, 2026-11-06 19:07 local).
+
+Owner phone test:
+- Sign in as test user 2 or 3. Test user 1 already accepted through the API test, so it won't see the terms step. You should see "We've updated our terms"; both links should open the website; Agree should enter the app; signing out and in again shouldn't show the step again.
+- Sign out from the terms step: it should land in guest browsing.
+- Sign up a new account: the tick needs ticking; the links open the pages; there should be no terms step afterwards.
+- My measurements: enter a measurement and Save. The consent dialog shows; Not now saves nothing; Agree saves. Then Settings > Privacy & safety > Measurements consent > Withdraw: My measurements is empty again.
+- Settings > Help & legal: each row opens the right page. Help (/help) has no page on the website yet.
+- Sign-up with a 7-character password: refused with "at least 8".
+
+iOS-facing changes for a Mac check (all in `commonMain`, no `iosMain` change):
+- `Legal.kt` (new): `LinkAnnotation.Clickable` / `withLink` in `buildAnnotatedString`, `LocalUriHandler`, `AlertDialog`, Material icons `QuestionAnswer`, `Groups`, `Copyright`, `SupportAgent`, `Straighten`, `Description`, `PrivacyTip`.
+- `DzirentApp.kt`: the `NeedsTerms` state and its check at start and sign-in.
+- `AuthScreens.kt`, `SettingsScreen.kt`, `BodyMeasurementsScreen.kt`, `AboutScreen.kt` (`LinkRow` no longer private), `Models.kt`, `DzirentRepository.kt`.
+- On iPhone, `accept_legal` gets `"ios"` from `IosPushService.platform`.
+
+Open issues:
+- **Website (out of scope here, `apps/web` not touched):**
+  - It still uses the old "only connects people" tick, doesn't call `accept_legal` and doesn't check `needs_legal_acceptance`.
+  - Its measurements form (`lib/workflow-mutations.ts`) has no consent step, so the database now refuses website measurement saves.
+  - It still says 6-character passwords.
+  - There is no `/help` page, which the apps link to.
+  - Listed on `BOARD.md`.
+- If `needs_legal_acceptance()` can't be reached (no connection), the app opens anyway and checks again at the next start or sign-in. The database doesn't block other actions for users who haven't accepted.
+- With email confirmation turned on later (P8C), sign-up returns no session, so `accept_legal` can't run then. The terms step asks at the first sign-in instead, with the heading "We've updated our terms".
+- A new terms or privacy version needs a migration that updates `legal_documents` together with the website's config.
+
+## P1A part 1 - 2026-11-06 - data inventory
+
+Done:
+- Before starting: working tree clean, `Preview` up to date with `origin/Preview` at `62f50b5` (Step 8B); `git pull --rebase` was a no-op.
+- New `pranalika/compliance.md`:
+  1. data inventory, one row per data item across web, mobile, Supabase, the vision service and push, with a live table-and-column map;
+  2. outside services;
+  3. tracking and ads;
+  4. how 18+ works today;
+  5. security measures in place;
+  6. Google Play Data safety and Apple privacy label drafts, with the items that change at P6A and P6B;
+  7. rules to features, with phases;
+  8. 32 numbered gaps, each with a fix and a phase from the handoff plan.
+- New `pranalika/legal-placeholders.md`: every fill-in the legal pages need, with who fills it (owner, attorney, engineering) and a retention table to decide. All values blank.
+- `BOARD.md`: new section "Handoff plan" with P1A to P8C; P1A part 1 Done.
+- No code, database or settings changed.
+
+What I ran (all read-only):
+1. `supabase db query --linked` on `dzirent-server`:
+   - columns of `public` and `storage`;
+   - foreign-key delete rules (`information_schema` and `pg_constraint`, which also shows the keys into `auth.users`);
+   - the bucket and its object count;
+   - tables in the other schemas, and extensions;
+   - RLS and policy counts, Storage policies, the Realtime publication;
+   - `pg_net.ttl` and the age of its stored replies;
+   - row counts of the tables in the inventory;
+   - the key names (not values) in `auth.users.raw_user_meta_data`, and Vault secret names (not values);
+   - `has_column_privilege` on `profiles` and `listings`.
+2. Supabase Management API `GET /v1/projects/<ref>/config/auth`: printed selected non-secret fields only; SMTP only as set or not set.
+3. Supabase log queries (read only): sources, field names, retention window, user-agent shapes with letters and digits masked. No IP, email or user agent was printed.
+4. `gradlew :androidApp:dependencies --configuration releaseRuntimeClasspath` (JDK 21, env loaded silently): BUILD SUCCESSFUL. The first try stopped at the release guard (the configuration name contains "release"), so I set `ANDROID_VERSION_CODE_OFFSET=0` in that process only; one try through `cmd` couldn't find `gradlew.bat`. No build output was produced.
+5. Read the merged manifest of the last debug build, and the Vercel project (MCP, read only).
+6. `gcloud` (Cloud Logging buckets, sinks, audit config, Cloud Run describe): failed, it needs an interactive `gcloud auth login`. Cloud Logging retention, Cloud Run settings and the billing kill switch are marked unconfirmed.
+7. Phase 2:
+   - Schema: a script compared the live schema with `compliance.md`. All 26 tables were named. Many columns were only described in words, so I added the exact column map to 1.16. On re-run, all 193 columns are named.
+   - EXIF: re-read the upload paths. The website has one upload call (`listing-editor.tsx`, blobs only from `compressPhoto` or the IndexedDB draft of them). The phones have one (`ListingPublisher.syncPhotos` through `compressImage` on Android and iPhone). All three re-encode the photo; none strips on the server.
+   - Tracking: 0 matches in the release dependency tree for 15 analytics, ads and crash SDK names. 0 in `apps/web/package-lock.json` for 11 web analytics names; the 18 `gtag` hits are all inside `tostringtag`. `apps/web/package.json` and `mobile/iosApp/project.yml` have no such dependency.
+   - Fixes made from these checks: support email exists (`support@dzirent.com` in About and the website menu); style interests come from the measurements screen; push tokens are registered on every sign-in and app start, notification permission or not.
+8. No emulator, device or screenshots.
+
+Gap list summary (`compliance.md` section 8):
+- Kept after deletion:
+  - accessory declarations keep legal name, email, IP, user agent and city (gap 1, P3B);
+  - listing declarations keep the IP (gap 2, P3B).
+- Wrong data: website declarations record Vercel's IP and user agent, not the person's (gap 3, P5A).
+- Photo metadata: removed by all three apps, but not on the server (gap 4, P5A). Phones keep the original photos with EXIF in app storage until pruned (gap 5, P3B).
+- Location: the database doesn't round coordinates after sign-up (gap 6, P5A).
+- Age: 18+ is a tick the user can undo through the API (gap 7, P2C).
+- Consent: terms acceptance is not recorded (gap 8, P1B); no consent step before body measurements are saved (gap 9, P1B).
+- Deletion effects: an account deletion removes the other person's chat and rental history (gap 10, disclose in P1A); reports lose their evidence (gap 11, P2B).
+- Missing tools: no review tool (gap 12, P2B); no data download (gap 13, P3A).
+- Retention: history that never expires, including scans, `listing_events` (nothing reads it), stale tokens, sessions and `pg_net` replies (gap 14, P3B); log retention unknown (gap 15, P3B, P5B, P7B).
+- Logs: `send-push` puts the account ID and the push token in URL query strings, which the API logs record (gap 16, P5A).
+- iPhone: no privacy manifest (gap 17, P8B).
+- Android: backup includes the session and drafts (gap 18, P5A).
+- Email: confirmation off, Auth `site_url` is localhost, no custom SMTP (gap 19, P6C, P8C).
+- Security: no bot check, no message or report rate limits, no security headers (gap 20, P5A); clients still say 6-character passwords while the server needs 8 (gap 21, P5A).
+- Content: chat text is unfiltered (gap 22, P2A); photos of people with no nudity check (gap 23, P2A).
+- Disclosures: gaps 24 to 30.
+- Not checked this session: gap 31, P7B.
+- Sample listings in production: gap 32, P3B.
+
+Requests:
+- Owner: run `gcloud auth login` on this PC, so an agent can confirm Cloud Logging retention, the Cloud Run settings and the billing kill switch.
+- Owner and attorney: fill `legal-placeholders.md`, including the retention periods, before P1A part 2 publishes the pages.
+- This entry's title follows the task prompt (`P1A part 1 - ...`), not the `Step <number>` pattern in `README.md` rule 10.
+
 ## Step 8B - 2026-11-05 - photo scanning in the app
 
 Done:

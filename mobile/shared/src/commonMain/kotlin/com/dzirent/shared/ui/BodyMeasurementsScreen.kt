@@ -104,6 +104,8 @@ private fun MeasurementsForm(
     var showErrors by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
     var saveError by remember { mutableStateOf<String?>(null) }
+    var hasConsent by remember { mutableStateOf(saved.hasMeasurementsConsent) }
+    var askConsent by remember { mutableStateOf(false) }
 
     fun errorFor(measurement: BodyMeasurement): String? {
         val text = texts[measurement].orEmpty()
@@ -127,22 +129,44 @@ private fun MeasurementsForm(
             showErrors = true
             return
         }
+        val valuesCm = BodyMeasurement.entries.associateWith { bodyInputToCm(texts[it].orEmpty(), unit) }
+        // Measurements need consent first (the database refuses them without it); "I'm a" and styles don't.
+        if (!hasConsent && valuesCm.values.any { it != null }) {
+            askConsent = true
+            return
+        }
         scope.launch {
             isSaving = true
             saveError = null
             try {
-                repository.saveBodyMeasurements(
-                    userId,
-                    BodyMeasurement.entries.associateWith { bodyInputToCm(texts[it].orEmpty(), unit) },
-                    fit,
-                    styles
-                )
+                repository.saveBodyMeasurements(userId, valuesCm, fit, styles)
                 onSaved()
             } catch (e: Exception) {
                 saveError = e.userMessage("Couldn't save your measurements. Please try again.")
             }
             isSaving = false
         }
+    }
+
+    if (askConsent) {
+        MeasurementsConsentDialog(
+            onAgree = {
+                askConsent = false
+                scope.launch {
+                    isSaving = true
+                    saveError = null
+                    try {
+                        repository.giveMeasurementsConsent()
+                        hasConsent = true
+                    } catch (e: Exception) {
+                        saveError = e.userMessage("Couldn't save your consent. Please try again.")
+                    }
+                    isSaving = false
+                    if (hasConsent) save()
+                }
+            },
+            onNotNow = { askConsent = false }
+        )
     }
 
     Column(

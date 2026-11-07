@@ -17,6 +17,7 @@ from safetensors.torch import save_file
 
 from . import config
 from .model import create_open_clip
+from .safety import SafetyModel
 from .vocab import load as load_vocab
 
 
@@ -33,6 +34,8 @@ def download(model_dir) -> None:
 
     snapshot_download(config.MODEL_ID, revision=config.MODEL_REVISION, local_dir=str(model_dir),
                       allow_patterns=config.MODEL_FILES)
+    snapshot_download(config.SAFETY_MODEL_ID, revision=config.SAFETY_MODEL_REVISION,
+                      local_dir=str(model_dir / config.SAFETY_SUBDIR), allow_patterns=config.SAFETY_MODEL_FILES)
 
 
 @torch.inference_mode()
@@ -67,6 +70,8 @@ def build(model_dir=config.MODEL_DIR, fetch: bool = True) -> None:
         total += len(flat)
     np.savez(model_dir / config.TEXT_EMBEDDINGS_FILE, **arrays)
     save_file({k: v.contiguous() for k, v in model.visual.state_dict().items()}, str(model_dir / config.VISUAL_WEIGHTS_FILE))
+    # The safety model must load (strictly) now, not at the first cold start.
+    SafetyModel(model_dir / config.SAFETY_SUBDIR)
     print(f"embedded {total} prompts for {len(vocab.items)} policy items in {time.monotonic() - started:.0f} s")
 
 

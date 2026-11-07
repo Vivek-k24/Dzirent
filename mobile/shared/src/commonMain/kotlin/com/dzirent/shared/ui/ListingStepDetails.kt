@@ -150,17 +150,20 @@ fun SizePriceDatesStep(
 
     // ---- More options (collapsed) ----
     val retailError = accessoryValueError(state.isAccessory, state.retailValueText)
+    val noteRefused = state.textErrors["price_note"] != null || state.textErrors["deposit_note"] != null
     var moreOpen by remember { mutableStateOf(retailError != null) }
     TextButton(onClick = { moreOpen = !moreOpen }, contentPadding = PaddingValues(horizontal = 4.dp)) {
         Text("More options")
         Icon(if (moreOpen) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null)
     }
-    if (moreOpen || retailError != null) {
+    if (moreOpen || retailError != null || noteRefused) {
         OutlinedTextField(
             value = state.priceNote,
-            onValueChange = { if (it.length <= PRICE_NOTE_MAX) state.priceNote = it },
+            onValueChange = { if (it.length <= PRICE_NOTE_MAX) { state.priceNote = it; state.clearTextError("price_note") } },
             label = { Text("Price details - optional") },
             placeholder = { Text("e.g. for 3 days, cleaning included") },
+            isError = state.textErrors["price_note"] != null,
+            supportingText = state.textErrors["price_note"]?.let { { Text(it) } },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -169,8 +172,9 @@ fun SizePriceDatesStep(
             retailValueText = state.retailValueText,
             onRetailValueChange = { state.retailValueText = it },
             depositNote = state.depositNote,
-            onDepositNoteChange = { state.depositNote = it },
-            retailError = retailError
+            onDepositNoteChange = { state.depositNote = it; state.clearTextError("deposit_note") },
+            retailError = retailError,
+            depositNoteError = state.textErrors["deposit_note"]
         )
     }
     TextButton(onClick = onWhatCanIList, contentPadding = PaddingValues(horizontal = 4.dp)) { Text(DzirentPolicy.WHAT_CAN_I_LIST_TITLE) }
