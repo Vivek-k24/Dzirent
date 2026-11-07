@@ -106,7 +106,7 @@ export default function SupportPage() {
           <Link href="/community-guidelines" className="legal-card" style={{ textDecoration: "none" }}>
             <h4 style={{ color: "var(--brand-primary)" }}>Community Guidelines &rarr;</h4>
             <p style={{ color: "var(--text-secondary)", margin: 0 }}>
-              Allowed categories, prohibited items, photo standards, and AI scanning checks.
+              Allowed categories, prohibited items, photo standards, and how photo checks work.
             </p>
           </Link>
 

@@ -60,13 +60,11 @@ export default function PrivacyPage() {
           and statement accessories.
         </p>
         <p>
-          Our technical architecture is built around data minimization: we do
-          not track you across the web, we do not run third-party advertising,
-          we do not sell your personal information, and we do not use third-party
-          analytics trackers. Guests can freely browse the shop window without
-          creating an account. When you choose to sign up or list an item, we
-          collect only what is genuinely needed to provide the service safely and
-          reliably.
+          We collect as little as we can. We do not track you across the web, we
+          do not show advertising, we do not sell your personal information, and
+          we do not use analytics trackers. Guests can browse everything without
+          creating an account. When you sign up or list an item, we collect only
+          what is needed to run the service safely.
         </p>
       </section>
 
@@ -84,18 +82,21 @@ export default function PrivacyPage() {
             in, and deliver essential account emails such as password resets.
           </li>
           <li>
-            <strong>Password:</strong> Encrypted and hashed using modern cryptographic
-            algorithms by our authentication provider (Supabase Auth). We never
-            see or store your plain-text password.
+            <strong>Password:</strong> Stored in a scrambled form that can&apos;t
+            be read back by anyone, including us.
           </li>
           <li>
-            <strong>Adult confirmation:</strong> An attestation confirming you are
-            at least 18 years of age.
+            <strong>Adult confirmation:</strong> Your confirmation that you are
+            at least 18 years old.
           </li>
           <li>
-            <strong>Session records:</strong> Technical records of active sign-in
-            sessions, including IP address, browser or client user agent, and
-            timestamps, to keep you signed in securely.
+            <strong>Terms acceptance:</strong> Which version of the Terms of Use
+            and Privacy Policy you agreed to, and when.
+          </li>
+          <li>
+            <strong>Sign-in records:</strong> When you sign in, we keep your IP
+            address, the browser or app you used, and the time, to keep you
+            signed in and to spot misuse.
           </li>
         </ul>
 
@@ -121,10 +122,10 @@ export default function PrivacyPage() {
         <h3>Messages and Rentals</h3>
         <ul>
           <li>
-            <strong>In-app conversations:</strong> Messages sent between renters
-            and lenders to discuss sizing, dates, pickup, and return. Messages
-            are stored as plain text on the server to deliver them to both
-            participants.
+            <strong>In-app conversations:</strong> Messages between renters and
+            lenders about sizing, dates, pickup, and return. They are stored on
+            our server so both people can read them, and Dzirent staff can read
+            them when handling a report.
           </li>
           <li>
             <strong>Rental records:</strong> Requested date ranges, status
@@ -140,45 +141,49 @@ export default function PrivacyPage() {
         <h3>Accessory and Listing Attestations</h3>
         <ul>
           <li>
-            <strong>Legal declarations:</strong> When lenders list items in our
-            approved accessory categories (such as fine watches, sunglasses, or
-            costume jewelry), we record an attestation including full legal name,
-            email address, city, IP address, user agent, and session ID to deter
+            <strong>Accessory declarations:</strong> Before listing accessories
+            (such as watches, sunglasses, or costume jewelry), lenders sign a
+            declaration. We record your full legal name, email address, city, IP
+            address, the browser or app you used, and the time, to deter
             counterfeits and confirm lawful ownership.
           </li>
         </ul>
 
-        <h3>Push Notification Tokens & Firebase SDKs</h3>
+        <h3>Reports You Make</h3>
         <ul>
           <li>
-            <strong>Device tokens:</strong> If you use our Android mobile app, a
-            Firebase Cloud Messaging (FCM) device token is registered so our server
-            can notify you of new messages or date adjustments.
-          </li>
-          <li>
-            <strong>Firebase SDK data:</strong> The Android app includes the
-            Google Firebase Messaging, Firebase Installations, and Firebase
-            DataTransport SDKs. These SDKs collect anonymous app installation
-            identifiers and message delivery metadata required to route push
-            notifications reliably.
-          </li>
-          <li>
-            <strong>Safe notification text:</strong> Our notification delivery
-            pipeline automatically scrubs phone numbers, email addresses, street
-            addresses, map links, and coordinates from push notification
-            payloads.
+            <strong>Reports:</strong> When you report a listing, a person, or a
+            message, we keep your reason and details, and we save a copy of what
+            you reported as it was at that moment. For a message, that copy
+            includes a few messages before and after it in that chat, so the
+            report still makes sense if the original is edited or deleted.
           </li>
         </ul>
 
-        <h3>Server Access Logs</h3>
+        <h3>Notifications (Android app)</h3>
         <ul>
           <li>
-            Like almost all internet services, our infrastructure providers
-            (Supabase, Vercel, and Cloudflare) automatically record standard
-            HTTP request logs. These logs capture your IP address, browser user
-            agent, request path, timestamp, and status code. These logs are used
-            strictly for system security, fraud detection, and diagnosing
-            operational errors.
+            <strong>Notification registration:</strong> If you use our Android
+            app, your phone is registered for notifications so we can tell you
+            about new messages and date changes. Google Firebase delivers them
+            for us, and its software in the app sends Google an identifier for
+            the app installation and delivery details.
+          </li>
+          <li>
+            <strong>Safe notification text:</strong> Notifications never include
+            phone numbers, email addresses, street addresses, map links, or
+            coordinates, even if a message contains them.
+          </li>
+        </ul>
+
+        <h3>Server Logs</h3>
+        <ul>
+          <li>
+            Like almost all internet services, the providers that host Dzirent
+            automatically record standard access logs: your IP address, the
+            browser or app you used, the page or action requested, and the
+            time. We use these logs only for security, fraud prevention, and
+            fixing problems.
           </li>
         </ul>
       </section>
@@ -192,29 +197,28 @@ export default function PrivacyPage() {
         </p>
         <div className="legal-callout">
           <p>
-            <strong>Location is always rounded before storage:</strong> Whenever
-            you grant device location permission or pick a city, your coordinates
-            are rounded to 2 decimal places (about 0.01&deg;, or roughly 1 km /
-            0.6 miles). The point saved on the server is up to 2,400 feet away
-            from your real position.
+            <strong>Location is always rounded before it is saved:</strong> If
+            you allow your phone&apos;s or browser&apos;s location service, we
+            round your position to about 1 kilometer (0.6 miles) before saving
+            it. The point we keep can be up to about half a mile from where you
+            really are.
           </p>
         </div>
         <ul>
           <li>
-            <strong>Distance only:</strong> Other users never see your coordinates
-            or an exact pin on a map. They see only the city name (&ldquo;City,
-            ST&rdquo;) and calculated distance in whole miles (e.g. &ldquo;3
-            miles away&rdquo;).
+            <strong>Distance only:</strong> Other people never see your location
+            or a pin on a map. They see only your city (&ldquo;City, ST&rdquo;)
+            and a distance in whole miles (for example &ldquo;3 miles
+            away&rdquo;).
           </li>
           <li>
-            <strong>City selection without GPS:</strong> You do not need to share
-            your device GPS. You can always type your city name to select the
-            geographic center of that city from our public US cities directory.
+            <strong>No location service needed:</strong> You can type your city
+            instead, and we use the center of that city.
           </li>
           <li>
-            <strong>Coarse permissions:</strong> Our mobile apps request only
-            coarse / approximate location permissions from Android and iOS. We
-            never request precise, background, or continuous GPS tracking.
+            <strong>Approximate only:</strong> Our apps ask your phone only for
+            an approximate location, only while you use them. We never ask for
+            precise or background location.
           </li>
         </ul>
       </section>
@@ -226,155 +230,101 @@ export default function PrivacyPage() {
           cut, and condition. Here is how photos are processed:
         </p>
 
-        <h3>Automatic Removal of EXIF and GPS Metadata</h3>
+        <h3>Hidden Photo Information Is Removed</h3>
         <p>
-          When you pick or take a photo inside the {LEGAL_CONFIG.BRAND_NAME} web
-          or mobile apps, our client-side software redraws the image (via web
-          canvas, Android Bitmap, or iOS UIGraphics) before upload. This process
-          completely strips camera metadata, including embedded GPS latitude and
-          longitude coordinates and device serial numbers.
+          Photos carry hidden information from the camera, such as the GPS
+          location where they were taken. When you pick or take a photo in the{" "}
+          {LEGAL_CONFIG.BRAND_NAME} website or apps, we make a fresh copy of
+          the image before it is uploaded, and that copy carries none of it.
         </p>
 
-        <h3>Public Photo Storage</h3>
+        <h3>Listing Photos Are Public</h3>
         <p>
-          Listing photos are stored in our public storage bucket with randomly
-          generated file names (e.g. <code>listing-id/random-uuid.jpg</code>).
-          Anyone with the direct web link can view the photo, which allows fast
-          browsing for guests without server bottlenecks. Photo file names never
-          contain your account ID, email, or real name.
+          Listing photos are public: anyone with the direct web link can view
+          them, which is what lets guests browse quickly. Photo links are
+          random and never contain your account, email, or name.
         </p>
 
-        <h3>Automated Photo Checks & Mathematical Fingerprints</h3>
+        <h3>Automatic Photo Checks</h3>
         <p>
-          To maintain catalog standards and protect against scams, uploaded
-          photos are evaluated by our vision service running the open-source
-          Marqo-FashionSigLIP model on Google Cloud Run:
+          To keep the catalog to our rules and protect against scams, every
+          listing photo is checked automatically by our photo-check service,
+          which uses open-source image models:
         </p>
         <ul>
           <li>
-            <strong>Policy checking:</strong> The model checks whether the garment
-            belongs to an approved category and is not a prohibited item (such as
-            everyday loungewear or underwear).
+            <strong>What it is:</strong> Whether the piece is clothing or an
+            accessory we list, and not a prohibited item (such as everyday
+            basics or underwear).
           </li>
           <li>
-            <strong>Quality checks:</strong> The model evaluates lighting, blur,
-            and framing to offer helpful listing suggestions to the lender.
+            <strong>Photo safety:</strong> Nudity or sexual content is not
+            allowed. A photo of someone wearing the piece is fine.
           </li>
           <li>
-            <strong>Mathematical image fingerprint:</strong> The service computes
-            a 768-number numerical vector representing visual garment features.
-            This fingerprint is compared against other listings to detect duplicate
-            or stolen photos.{" "}
+            <strong>Photo quality:</strong> Lighting, blur, and framing, to
+            suggest improvements to the lender. Quality never rejects a listing.
+          </li>
+          <li>
+            <strong>Copied photos:</strong> The check keeps a numerical summary
+            of what each photo looks like and compares it with other listings to
+            catch copied or stolen photos.{" "}
             <strong>
-              This is a visual product descriptor, not biometric data or a facial
-              recognition template.
-            </strong>{" "}
-            The vision service runs in temporary memory and does not retain photo
-            files on disk.
+              This describes the garment, not a person. It is not biometric data
+              or a facial recognition template.
+            </strong>
           </li>
         </ul>
+        <p>
+          The photo-check service keeps no copies of your photos. When the
+          check isn&apos;t sure, a person at Dzirent looks at the photos.
+        </p>
       </section>
 
       <section id="measurements">
         <h2>5. Private Body Measurements</h2>
         <p>
-          To help renters find clothes that actually fit, you may optionally save
-          your body measurements (chest, waist, hips, shoulder, height, and
-          inseam) and fit preferences in your private profile.
+          To help you find clothes that fit, you may save your body measurements
+          (chest, waist, hips, shoulder, height, and inseam) and fit
+          preferences. We ask for your consent before the first save.
         </p>
         <div className="legal-callout">
           <p>
             <strong>Your measurements are strictly private:</strong> They are
-            never visible to lenders, never shown on your public profile, and
-            never returned in browse queries. They are processed on our server
-            solely to compute personalized fit match tags (&ldquo;Likely to fit
-            you&rdquo;) by comparing your numbers with garment measurements
-            provided by lenders.
+            never shown to lenders, never on your public profile, and never
+            included when others browse. We use them only to mark pieces
+            &ldquo;Likely to fit you&rdquo; by comparing them with the garment
+            measurements lenders provide.
           </p>
         </div>
         <p>
-          You can edit, update, or clear your body measurements at any time in
-          your Profile &amp; Settings.
+          You can change or clear your measurements at any time in Profile
+          &amp; Settings. Withdrawing your consent there deletes them.
         </p>
       </section>
 
       <section id="cookies">
         <h2>6. Cookies & Browser Storage</h2>
         <p>
-          We use only first-party cookies and standard browser storage mechanisms
-          necessary to keep you signed in, remember your preferences, and save
-          local drafts. We do not use third-party advertising cookies or cross-site
-          tracking scripts.
+          The website stores a few things in your browser. All of them are ours
+          and are used only to make the site work for you. There are no
+          advertising cookies and no tracking across other sites.
         </p>
-
-        <div className="legal-table-wrapper">
-          <table className="legal-table">
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Type</th>
-                <th>Purpose</th>
-                <th>Duration</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>sb-*-auth-token</code></td>
-                <td>Cookie (Secure)</td>
-                <td>Keeps you securely signed in to your account.</td>
-                <td>Session / Login duration</td>
-              </tr>
-              <tr>
-                <td><code>dzirent-location</code></td>
-                <td>Cookie (HttpOnly)</td>
-                <td>Remembers your approximate city and rounded coordinates for browsing.</td>
-                <td>1 year</td>
-              </tr>
-              <tr>
-                <td><code>dzirent-dates</code></td>
-                <td>Cookie (HttpOnly)</td>
-                <td>Remembers chosen rental dates while browsing pieces.</td>
-                <td>1 year</td>
-              </tr>
-              <tr>
-                <td><code>dzirent-welcome</code></td>
-                <td>Cookie (HttpOnly)</td>
-                <td>Ensures the introductory welcome modal is shown only once.</td>
-                <td>1 year</td>
-              </tr>
-              <tr>
-                <td><code>dzirent-auth-next</code></td>
-                <td>Cookie (HttpOnly)</td>
-                <td>Remembers destination page during email sign-up confirmation.</td>
-                <td>1 hour</td>
-              </tr>
-              <tr>
-                <td><code>dzirent-web-settings</code></td>
-                <td>Cookie &amp; LocalStorage</td>
-                <td>Saves theme preference (Light/Dark) and unit preferences (in/cm, mi/km).</td>
-                <td>1 year</td>
-              </tr>
-              <tr>
-                <td><code>dzirent-desktop-filter-panel</code></td>
-                <td>LocalStorage</td>
-                <td>Remembers whether the desktop filter sidebar is open or docked.</td>
-                <td>Until cleared</td>
-              </tr>
-              <tr>
-                <td><code>dzirent-safety-*</code></td>
-                <td>LocalStorage</td>
-                <td>Dismisses in-chat safety reminders once read.</td>
-                <td>Until cleared</td>
-              </tr>
-              <tr>
-                <td><code>dzirent-listing-drafts</code></td>
-                <td>IndexedDB</td>
-                <td>Saves unsubmitted listing drafts locally so you don&apos;t lose work if you refresh.</td>
-                <td>Until cleared</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <ul>
+          <li>
+            <strong>Essential:</strong> Keep you signed in and keep the site
+            secure. Needed for the site to work. They last until you sign out.
+          </li>
+          <li>
+            <strong>Preferences:</strong> Remember your choices, such as theme,
+            units, your city, and your rental dates. They last up to a year.
+          </li>
+          <li>
+            <strong>Drafts and reminders:</strong> Save an unfinished listing on
+            this device, and remember messages you&apos;ve dismissed, such as the
+            welcome note and safety tips. They last until you clear your browser.
+          </li>
+        </ul>
       </section>
 
       <section id="who-sees-what">
@@ -399,10 +349,11 @@ export default function PrivacyPage() {
             chat.
           </li>
           <li>
-            <strong>Platform Administrators:</strong> Designated staff can view
-            user reports, moderation queues, and database records via secure
-            administrative tools strictly for customer support, safety, and
-            platform operation.
+            <strong>Dzirent staff:</strong> A few people at Dzirent can see
+            reports (with the messages, listing, or profile they are about),
+            photos waiting for review, and account details, to handle reports and
+            keep the service running. They must sign in with two-step
+            verification, and every action they take is recorded.
           </li>
         </ul>
       </section>
@@ -410,49 +361,18 @@ export default function PrivacyPage() {
       <section id="outside-services">
         <h2>8. Outside Service Providers</h2>
         <p>
-          We rely on reputable cloud and technology infrastructure providers to
-          run {LEGAL_CONFIG.BRAND_NAME}. Each provider processes data on our
-          behalf under strict security commitments:
+          A few companies help us run {LEGAL_CONFIG.BRAND_NAME}:
         </p>
-
-        <div className="legal-table-wrapper">
-          <table className="legal-table">
-            <thead>
-              <tr>
-                <th>Service Provider</th>
-                <th>Role &amp; Data Received</th>
-                <th>Location</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Supabase</strong></td>
-                <td>Primary database, authentication service, and photo file storage. Receives account records, listings, and encrypted passwords.</td>
-                <td>AWS US West (Oregon, <code>us-west-2</code>) with Cloudflare global CDN</td>
-              </tr>
-              <tr>
-                <td><strong>Vercel</strong></td>
-                <td>Website hosting and serverless web rendering. Receives web requests, visitor IP addresses, and uploaded web assets in transit.</td>
-                <td>Functions in Portland (<code>pdx1</code>) with global edge network</td>
-              </tr>
-              <tr>
-                <td><strong>Google Cloud Run</strong></td>
-                <td>Hosts our private photo-scanning service. Downloads public listing photo URLs into temporary memory to evaluate clothing categories and quality.</td>
-                <td>Google Cloud US West (Oregon, <code>us-west1</code>)</td>
-              </tr>
-              <tr>
-                <td><strong>Firebase Cloud Messaging (Google)</strong></td>
-                <td>Delivers push notifications to Android devices. Receives push device tokens, notification titles, and conversation identifiers.</td>
-                <td>United States (Google Cloud)</td>
-              </tr>
-              <tr>
-                <td><strong>Google Play / Apple Location Services</strong></td>
-                <td>On-device operating system location frameworks that provide approximate coordinates when permitted by the user.</td>
-                <td>Processed locally on user device</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <ul>
+          <li><strong>Supabase:</strong> our database, sign-in, and photo storage.</li>
+          <li><strong>Vercel:</strong> hosts the website.</li>
+          <li><strong>Google Cloud:</strong> runs our photo checks.</li>
+          <li><strong>Google Firebase:</strong> sends app notifications.</li>
+        </ul>
+        <p>
+          These providers process data only to run Dzirent for us, and our data
+          is stored in the United States.
+        </p>
       </section>
 
       <section id="no-tracking-no-ads">
@@ -466,7 +386,7 @@ export default function PrivacyPage() {
           <li>We do <strong>not</strong> sell your personal data to anyone.</li>
           <li>We do <strong>not</strong> rent or trade personal information with data brokers.</li>
           <li>We do <strong>not</strong> partner with advertising networks or participate in cross-context behavioral tracking.</li>
-          <li>We do <strong>not</strong> embed third-party tracking pixels, social media widgets, or marketing analytics scripts.</li>
+          <li>We do <strong>not</strong> put tracking pixels, social media buttons, or marketing analytics on our pages or in our apps.</li>
         </ul>
       </section>
 
@@ -482,32 +402,41 @@ export default function PrivacyPage() {
             until you remove them.
           </li>
           <li>
-            <strong>Deleted listings:</strong> When you delete a listing, its
-            database entry, garment measurements, availability dates, and photo
-            files in storage are permanently removed. Deleted photos may stay in a
-            content delivery cache for a short time after deletion (exact time:{" "}
+            <strong>Deleted listings:</strong> When you delete a listing, the
+            listing, its garment measurements, its dates, and its photo files
+            are permanently removed. A deleted photo may stay reachable at its
+            old link for a short time afterwards (how long:{" "}
             <LegalPlaceholder
               name="DATA_RETENTION"
-              label="content delivery cache retention duration"
+              label="how long a deleted photo can stay reachable"
             />
             ).
           </li>
           <li>
-            <strong>Server logs:</strong> Technical access logs (including
-            IP addresses and request paths) are retained for operational
-            troubleshooting and security auditing for a limited period{" "}
+            <strong>Reports:</strong> A report and the copy of what was reported
+            are kept after the report is closed for{" "}
             <LegalPlaceholder
               name="DATA_RETENTION"
-              label="server log retention period (Supabase keeps logs for at least 7 days; other providers unconfirmed)"
+              label="report retention period (currently 2 years, pending attorney review)"
             />
-            , after which they expire automatically.
+            , even if the reporter or the reported person deletes their account.
           </li>
           <li>
-            <strong>Backup archives:</strong> Encrypted system database backups
-            are maintained for disaster recovery for a standard rotation window{" "}
+            <strong>Server logs:</strong> Access logs (including IP addresses and
+            what was requested) are kept for security and troubleshooting for a
+            limited period{" "}
             <LegalPlaceholder
               name="DATA_RETENTION"
-              label="database backup retention period"
+              label="server log retention period"
+            />
+            , then expire automatically.
+          </li>
+          <li>
+            <strong>Backups:</strong> Copies of our database are kept for
+            disaster recovery for{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="backup retention period"
             />
             .
           </li>
@@ -527,21 +456,21 @@ export default function PrivacyPage() {
           When you confirm account deletion:
         </p>
         <ul>
-          <li>Your user account, email address, and authentication credentials are deleted.</li>
+          <li>Your account, email address, and sign-in details are deleted.</li>
           <li>Your profile, display name, handle, bio, and studio information are deleted.</li>
           <li>Your private body measurements and style interests are deleted.</li>
-          <li>All your listings, garment measurements, and availability schedules are deleted.</li>
+          <li>All your listings, garment measurements, and availability dates are deleted.</li>
           <li>
-            All photo files you uploaded to Supabase Storage are permanently
-            removed from storage (deleted photos may stay in a content delivery
-            cache for a short time after deletion; exact time:{" "}
+            All photos you uploaded are permanently removed (a deleted photo may
+            stay reachable at its old link for a short time afterwards; how long:{" "}
             <LegalPlaceholder
               name="DATA_RETENTION"
-              label="content delivery cache retention duration"
+              label="how long a deleted photo can stay reachable"
             />
             ).
           </li>
-          <li>Your push notification device tokens are revoked and deleted.</li>
+          <li>Your phone is no longer registered for notifications.</li>
+          <li>Your saved pieces and studios, your terms acceptance, and any warnings on your account are deleted.</li>
         </ul>
 
         <div className="legal-callout">
@@ -556,21 +485,37 @@ export default function PrivacyPage() {
         <h3>What Remains After Deletion</h3>
         <ul>
           <li>
-            <strong>Legal Declarations:</strong> If you listed items requiring an
-            accessory declaration or listing attestation, that legal record (legal
-            name, email, timestamp, and IP address) is retained to comply with
-            fraud prevention and legal audit requirements, with your user ID
-            disassociated.
-          </li>
-          <li>
-            <strong>Server Infrastructure Logs:</strong> Technical server access
-            logs recorded prior to your deletion remain in operational logs for a
-            limited period{" "}
+            <strong>Accessory declarations:</strong> If you signed an accessory
+            declaration, that record (your legal name, email, city, IP address,
+            and the time) is kept to deter counterfeits and for legal purposes,
+            no longer linked to an account, for{" "}
             <LegalPlaceholder
               name="DATA_RETENTION"
-              label="server log retention period (Supabase keeps logs for at least 7 days; other providers unconfirmed)"
+              label="declaration retention period"
             />
-            {" "}before expiring.
+            .
+          </li>
+          <li>
+            <strong>Reports:</strong> Reports you made, and reports about you,
+            are kept with the copy of what was reported for{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="report retention period (currently 2 years, pending attorney review)"
+            />{" "}
+            after they are closed. Your name is removed from them.
+          </li>
+          <li>
+            <strong>Server logs:</strong> Access logs recorded before your
+            deletion stay for a limited period{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="server log retention period"
+            />{" "}
+            before expiring.
+          </li>
+          <li>
+            <strong>Records of Dzirent&apos;s own actions:</strong> If Dzirent
+            staff acted on a report about you, the record of that action is kept.
           </li>
         </ul>
       </section>
@@ -665,29 +610,29 @@ export default function PrivacyPage() {
       <section id="security">
         <h2>15. Security Safeguards</h2>
         <p>
-          We employ robust technical and organizational security controls to
-          protect your personal information:
+          We take care of your information in these ways:
         </p>
         <ul>
           <li>
-            <strong>Database Row Level Security (RLS):</strong> Every table in
-            our database is protected with PostgreSQL Row Level Security. Users
-            can only read and write their own data; guests have zero access to
-            raw database tables.
+            <strong>Your data is yours:</strong> Each person can see and change
+            only their own data. Guests see only what listings show publicly.
           </li>
           <li>
-            <strong>Encryption in Transit:</strong> All web traffic and mobile API
-            calls use industry-standard Transport Layer Security (TLS / HTTPS).
+            <strong>Encrypted connections:</strong> Everything between your
+            browser or app and Dzirent travels over an encrypted connection.
           </li>
           <li>
-            <strong>Encryption at Rest:</strong> Database tables, storage buckets,
-            and backup volumes are encrypted at rest by our cloud infrastructure
-            providers.
+            <strong>Encrypted storage:</strong> Our providers encrypt the stored
+            data, photos, and backups.
           </li>
           <li>
-            <strong>Access Restrictions:</strong> Administrative keys and vision
-            service secrets are isolated in secure Vault storage with principle of
-            least privilege access.
+            <strong>Passwords:</strong> Stored in a scrambled form that can&apos;t
+            be read back by anyone, including us.
+          </li>
+          <li>
+            <strong>Limited staff access:</strong> Only a few people at Dzirent
+            have admin access. They must sign in with two-step verification, and
+            every action they take is recorded.
           </li>
         </ul>
       </section>

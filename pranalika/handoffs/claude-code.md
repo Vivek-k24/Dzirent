@@ -2,6 +2,71 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Plain-language legal pages - 2026-11-07
+
+Done:
+- Before starting: working tree clean. `git pull --rebase` fast-forwarded `Preview` from `f25087d` to `380c82e` (website fixes, P2B part 2).
+- Website content only (`apps/web`), no database or app code. Nothing in `compliance.md` changed.
+
+What changed, per page:
+- **Privacy** (`app/privacy/page.tsx`), the biggest change:
+  - Cookies: the nine-row table with cookie names and storage types is now three categories (Essential: until you sign out; Preferences: up to a year; Drafts and reminders: until you clear your browser), plus "no advertising cookies, no tracking across other sites".
+  - Outside providers: the table with regions and data received is now a four-line list (Supabase, Vercel, Google Cloud, Google Firebase) and the sentence "These providers process data only to run Dzirent for us, and our data is stored in the United States." "Under strict security commitments" is gone. The phone's location service moved to the location section ("your phone's or browser's location service, if you allow it").
+  - Passwords: "stored in a scrambled form that can't be read back by anyone, including us", in the data list and in Security. No more "encrypted and hashed", "Supabase Auth" or "encrypted passwords".
+  - Location: "rounded to about 1 kilometer (0.6 miles)" and "up to about half a mile" instead of decimal places and degrees; the city-centre explanation no longer names a directory.
+  - Photos: "hidden photo information (such as GPS location) is removed" instead of EXIF and the drawing methods; photos public with random links instead of a bucket and path pattern; the photo check named as "our photo-check service, which uses open-source image models" instead of the model name and Cloud Run; "a numerical summary of what each photo looks like" instead of a 768-number vector. Added the nudity check and that a person looks when the check isn't sure.
+  - New disclosures that compliance.md asked for (gaps 11, 12): what a report keeps (a copy of what was reported, with a few messages around a reported message), that reports and that copy survive account deletion for the 2-year placeholder period, that Dzirent staff see reports, photos for review and account details, sign in with two-step verification and have every action recorded, and that terms acceptance and warnings are stored.
+  - Sign-in records, declarations and server logs: "the browser or app you used" instead of "user agent"; "the page or action requested" instead of "request path, status code"; no provider names, no "HTTP".
+  - Security: the Row Level Security, TLS, bucket and Vault items are now "your data is yours", "encrypted connections", "encrypted storage", "passwords" and "limited staff access".
+  - Retention: the server-log placeholder label no longer says "Supabase keeps logs for at least 7 days"; "content delivery cache" is now "may stay reachable at its old link for a short time"; the declaration retention got its own placeholder.
+- **Community guidelines**: the model name and the 768-number fingerprint are gone; the "worn detection" item is now "photo safety: nudity not allowed, a worn piece is fine and never penalized"; the under-review outcome names the hood case; "the server automatically checks" is now "checked again automatically".
+- **Help**: the photo-check results now match the app's words (Allowed, Under review, Not allowed, with the hood and nudity cases) instead of Approved, Flagged and "potential safety trigger"; "legal acceptances" and "from our database" reworded.
+- **Delete account**: "backend triggers an immediate database cascade deletion" is now "deleted immediately"; "Supabase Auth login, phone number, and password hashes" is now sign-in details with the scrambled-password wording; "visual search embeddings" is now "photo-check results". Items Dzirent never had are removed: phone numbers, avatars, usernames, saved searches, reviews and ratings. Added what is deleted (notification registration, terms acceptance, warnings, chats and rentals for both people) and what stays (declarations with a retention placeholder, reports for the placeholder period, server logs). "Request endpoints" is now "what was requested".
+- **Support**: "AI scanning checks" is now "how photo checks work".
+- **Config**: `SERVICE_AREA` is "United States" (it mentioned the city selection).
+- **Unchanged after reading:** terms, copyright, safety, about. They had nothing on the list.
+- `BOARD.md` updated.
+
+What I ran:
+1. Baseline scan of the nine public pages, the legal config and `legal-layout.tsx` for the task's terms plus provider and model names: 41 hits, all in the privacy page.
+2. Scan after the rewrite, for `sb-`, `dzirent-`, `LocalStorage`, `IndexedDB`, `HttpOnly`, `us-west`, `pdx1`, `Oregon`, `Portland`, `Cloudflare`, `edge`, `encrypted password`, `.tsx`, `rpc`, `bucket`, `revision`, and also `Supabase`, `Vercel`, `Firebase`, `Marqo`, `SigLIP`, `768`, `EXIF`, `cascade`, `SDK`, `hash`. Every remaining hit:
+   - `.tsx`: the first-line path comment in eight files (`// apps/web/src/app/privacy/page.tsx` and the like). Code comments, never rendered.
+   - `edge`: safety page, "lining edges" in the garment inspection table. An ordinary word.
+   - `cascade`: delete-account page, the section id `cascade-warning` (an anchor in code; the visible heading is "Impact on Shared Chats & Records").
+   - `Supabase`, `Vercel`, `Firebase`: the provider list in the privacy page, company names only, as the task asked; "Google Firebase delivers them for us" in the notifications item.
+   - No hit for `sb-`, `dzirent-`, `LocalStorage`, `IndexedDB`, `HttpOnly`, `us-west`, `pdx1`, `Oregon`, `Portland`, `Cloudflare`, `encrypted password`, `rpc`, `bucket`, `revision`, `Marqo`, `SigLIP`, `768`, `EXIF`, `SDK` or `hash` anywhere.
+3. `npm ci`, `npm run lint`, `npm run build` in `apps/web`: all three pass. Lint reports one warning in `components/admin/action-dialog.tsx` (an unused `_reason`), which was there before and isn't mine. The build compiled all nine public routes.
+   - The PC's Node is 18.20.7 with npm 6.14.18, which can't read the lockfile and is below the `engines` requirement (Node 22+). `npm ci` failed with it. I downloaded the official Node v22.23.4 Windows zip into my scratch folder (checksum verified against nodejs.org) and ran the three commands with it. Nothing was installed on the PC. BOARD has a row for the owner.
+4. No emulator, device or app screenshots.
+
+Disclosure check (compliance.md items and where each still appears):
+- What we collect and why: Privacy §2 (account, profile, messages and rentals, declarations, reports, notifications, server logs), §3 location, §4 photos, §5 measurements.
+- Who helps process it, where data is stored: Privacy §8 (four providers, United States).
+- Retention and its placeholders: Privacy §10 (deleted photos, reports 2-year placeholder, server logs, backups) and §11 (declarations, reports, logs); Delete account §4 and §5 (same placeholders).
+- Chats and rentals deleted for both people: Privacy §11 callout; Delete account §4 and §6.
+- What declarations keep after deletion (legal name, email, city, IP address, time): Privacy §11; Delete account §5.
+- Report evidence kept after deletion, staff-only: Privacy §2 "Reports you make", §7, §10, §11; Delete account §5.
+- Staff access with two-step sign-in and a record of every action: Privacy §7 and §15.
+- Deleted photos may stay reachable for a short time: Privacy §10 and §11; Delete account §4.
+- Photos are public with random links: Privacy §4.
+- Photo check, fingerprints not biometric, nudity check: Privacy §4; Community guidelines §5; Help "What are photo checks".
+- Location rounded to about 1 km, distance in whole miles only, approximate permission only: Privacy §3.
+- Hidden photo information (GPS) removed on all platforms: Privacy §4.
+- Display name shown to guests when there is no studio name: Privacy §2 and §12.
+- Measurements private, consent before saving, withdrawal deletes them: Privacy §5; Help "Fit & measurements".
+- Firebase in the Android app and what it sends Google: Privacy §2 "Notifications".
+- Server logs with IP addresses: Privacy §2 and §10; Delete account §5.
+- Rights (access, correction, deletion, download on request, notifications, appeals): Privacy §13; Help "Account & privacy".
+- 18+: Privacy §14; Terms §2; Help "Why is Dzirent 18+ only?".
+- No ads, no tracking, no selling, no analytics: Privacy §1, §6, §9.
+- Terms acceptance stored and deleted with the account: Privacy §2 and §11; Delete account §4.
+
+Open issues:
+- The `DATA_RETENTION` placeholder is used for five different periods (deleted photos, reports, server logs, backups, declarations) with different labels. When the attorney fills the config, one value would show for all five; the config needs separate keys first (`legal-placeholders.md` lists the periods).
+- The report retention label says "currently 2 years, pending attorney review", matching the 730-day setting in the database.
+- The website build needs Node 22 on this PC (BOARD).
+- Terms, copyright, safety and about were read and left as they were.
+
 ## P2B part 1 - 2026-11-07 - admin backend
 
 Done:

@@ -210,21 +210,23 @@ export default function HelpPage() {
             </summary>
             <div className="faq-answer">
               <p>
-                Every uploaded photo is reviewed by our automated vision verification service to
-                ensure catalog quality, safety, and authenticity. The possible statuses are:
+                Every uploaded photo is checked automatically for catalog quality, safety, and
+                authenticity. The check gives one of three results:
               </p>
               <ul>
                 <li>
-                  <strong>Approved:</strong> The photo meets all catalog guidelines and clearly
-                  displays an allowable garment or accessory. The piece is ready to publish.
+                  <strong>Allowed:</strong> The photos show an item we list. The piece can be
+                  published.
                 </li>
                 <li>
-                  <strong>Flagged:</strong> The image was identified for closer review (for instance,
-                  low resolution, ambiguous item, or potential safety trigger).
+                  <strong>Under review:</strong> The check wasn&apos;t sure, the photo matches another
+                  listing, or the piece has a hood. A person at Dzirent looks at it, and the app
+                  tells you why.
                 </li>
                 <li>
-                  <strong>Rejected:</strong> The image contains prohibited content, violates catalog
-                  rules, or is not an acceptable fashion item. It cannot be used in a listing.
+                  <strong>Not allowed:</strong> The item is one we don&apos;t list (such as everyday
+                  basics or footwear), or the photo shows nudity or sexual content. The app tells you
+                  the reason, and you can replace the photos.
                 </li>
               </ul>
             </div>
@@ -333,9 +335,9 @@ export default function HelpPage() {
                 <li>Confirm &ldquo;Withdraw and delete&rdquo;.</li>
               </ol>
               <p>
-                Withdrawing consent immediately and permanently erases all stored body measurements
-                from our database, and pauses &ldquo;Likely to fit you&rdquo; recommendations until
-                you choose to enter measurements again.
+                Withdrawing consent immediately and permanently deletes your saved body
+                measurements, and pauses &ldquo;Likely to fit you&rdquo; until you choose to enter
+                measurements again.
               </p>
             </div>
           </details>
@@ -387,7 +389,7 @@ export default function HelpPage() {
               </p>
               <p>
                 Account deletion permanently removes your profile, listings, saved items,
-                measurement data, and legal acceptances in accordance with our{" "}
+                measurements, and your record of agreeing to the terms, as described in our{" "}
                 <Link href="/privacy" className="accent">
                   Privacy Policy
                 </Link>
