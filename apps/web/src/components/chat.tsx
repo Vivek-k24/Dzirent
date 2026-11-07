@@ -14,6 +14,7 @@ import {
   dateRange,
   dateChip,
   workflow,
+  WorkflowClientError,
   reportReasons,
   safetyTip,
   isoToday,
@@ -33,11 +34,14 @@ export function Chat({
   const [data, setData] = useState(initial);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
+  const [sendError, setSendError] = useState("");
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState<"dates" | "rental" | "report" | null>(
     null,
   );
   const [reportId, setReportId] = useState("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportDetailsError, setReportDetailsError] = useState("");
   const [notice, setNotice] = useState("");
   const [safety, setSafety] = useState(true);
   const bottom = useRef<HTMLDivElement>(null);
@@ -45,6 +49,13 @@ export function Chat({
   const id = initial.conversation.id;
   const renter = data.conversation.renter_id === data.me;
   const other = data.card?.other_name || "Dzirent member";
+  function openReport(msgId: string) {
+    setReportId(msgId);
+    setReportDetails("");
+    setReportDetailsError("");
+    setError("");
+    setModal("report");
+  }
   const read = useCallback(async () => {
     try {
       await workflow("chat/" + id + "/read", {});
@@ -152,6 +163,7 @@ export function Chat({
     const message = draft.trim();
     setBusy(true);
     setError("");
+    setSendError("");
     try {
       const m = await workflow<Message>("chat/" + id + "/send", { message });
       setData((old) => ({
@@ -176,7 +188,7 @@ export function Chat({
         }
       }
     } catch (e) {
-      setError((e as Error).message);
+      setSendError((e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -204,8 +216,7 @@ export function Chat({
             <button
               onClick={() => {
                 menuRef.current?.removeAttribute("open");
-                setReportId("");
-                setModal("report");
+                openReport("");
               }}
             >
               Report user
@@ -325,8 +336,7 @@ export function Chat({
                   className="text-button message-report"
                   aria-label="Report message"
                   onClick={() => {
-                    setReportId(m.id);
-                    setModal("report");
+                    openReport(m.id);
                   }}
                 >
                   <Icon name="more" />
@@ -392,24 +402,42 @@ export function Chat({
           </button>
         </div>
       ) : (
-        <form className="message-composer" onSubmit={send}>
-          <label className="sr-only" htmlFor="message-body">
-            Message
-          </label>
-          <textarea
-            id="message-body"
-            placeholder="Message..."
-            maxLength={2000}
-            rows={2}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            disabled={busy}
-          />
-          <button className="button" disabled={busy || !draft.trim()}>
-            <Icon name="arrow" />
-            <span>Send</span>
-          </button>
-        </form>
+        <>
+          <form className="message-composer" onSubmit={send}>
+            <label className="sr-only" htmlFor="message-body">
+              Message
+            </label>
+            <textarea
+              id="message-body"
+              placeholder="Message..."
+              maxLength={2000}
+              rows={2}
+              value={draft}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                if (sendError) setSendError("");
+              }}
+              disabled={busy}
+            />
+            <button className="button" disabled={busy || !draft.trim()}>
+              <Icon name="arrow" />
+              <span>Send</span>
+            </button>
+          </form>
+          {sendError && (
+            <p
+              role="alert"
+              className="form-message error"
+              style={{
+                margin: "6px 0 0",
+                fontSize: "13px",
+                color: "var(--danger, #d32f2f)",
+              }}
+            >
+              {sendError}
+            </p>
+          )}
+        </>
       )}
       <div className="rental-actions">
         <button
@@ -509,14 +537,32 @@ export function Chat({
             onSubmit={async (e) => {
               e.preventDefault();
               const f = new FormData(e.currentTarget);
-              if (
-                await action("report", {
+              setBusy(true);
+              setError("");
+              setReportDetailsError("");
+              try {
+                await workflow("chat/" + id + "/report", {
                   messageId: reportId,
                   reason: f.get("reason"),
-                  details: f.get("details"),
-                })
-              )
+                  details: reportDetails,
+                });
+                await refresh();
+                setModal(null);
                 setNotice("Report sent. Thanks. We'll review this.");
+              } catch (err) {
+                const errorObj =
+                  err instanceof WorkflowClientError ? err : (err as Error);
+                if (
+                  err instanceof WorkflowClientError &&
+                  err.field === "details"
+                ) {
+                  setReportDetailsError(err.message);
+                } else {
+                  setError(errorObj.message);
+                }
+              } finally {
+                setBusy(false);
+              }
             }}
           >
             <label className="field">
@@ -533,8 +579,26 @@ export function Chat({
                 name="details"
                 maxLength={500}
                 rows={4}
+                value={reportDetails}
+                onChange={(e) => {
+                  setReportDetails(e.target.value);
+                  if (reportDetailsError) setReportDetailsError("");
+                }}
                 disabled={busy}
               />
+              {reportDetailsError && (
+                <p
+                  role="alert"
+                  className="form-message error"
+                  style={{
+                    margin: "4px 0 0",
+                    fontSize: "13px",
+                    color: "var(--danger, #d32f2f)",
+                  }}
+                >
+                  {reportDetailsError}
+                </p>
+              )}
             </label>
             <Notice message={error} error />
             <button className="button full" disabled={busy}>

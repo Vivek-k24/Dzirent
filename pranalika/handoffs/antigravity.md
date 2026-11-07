@@ -2,6 +2,43 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## Website catch-up - 2026-11-06 - photo scanning and content safety
+
+- What was done:
+  - Photo scanning in listing editor (Step 8C):
+    - Redesigned listing editor into 3 steps: 1. Photos, 2. Details, 3. Size, price and dates (`apps/web/src/components/listing-editor.tsx`).
+    - Photos step: slot management, reordering, deleting, and camera/file uploads. Displays server warnings from `photo_scans` under each photo slot tile.
+    - Advance from Photos to Details: validates at least one photo; saves initial draft row (`listings/save` with title "New listing (draft)", placeholder category "Everyday", status "paused"); uploads pending photos; calls `request_scan` via `workflow("listings/scan", { id })`; advances immediately without blocking.
+    - Details step: non-blocking `PhotoCheckBanner` ("Checking your photos…") allows lender to type while scan runs.
+    - Realtime watcher + 3-second polling fallback on `listing_scans` (with 3-minute timeout):
+      - Allowed: suggestions fill empty/untouched fields only (`title`, `category`, `item_type` for Accessories, `garment_type`, `description`, `styles`). Provided accept/clear controls (per-field `✕` button and "Accept all").
+      - Rejected: displays red banner with refusal reason and "Replace photos" button (returns to Step 1).
+      - Review: displays the scan's specific reason when present (e.g. hood or safety reason), otherwise "Someone at Dzirent will check these photos."
+      - Failed / Timed out: displays "We couldn't check the photos right now." with "Check again" button.
+    - Publish gate: checks `app_settings.vision_required` both on server and via database trigger `vision_publish_gate`. Refusal message displayed directly without losing typed form data.
+  - My closet:
+    - In `apps/web/src/components/closet.tsx`, paused listings display `auto_paused_reason` when set.
+    - Paused draft listings (`title === "New listing (draft)"`) display a "Draft" badge with no activate switch (Edit and Delete only).
+  - Content safety (P2A text filter):
+    - Surfaced database trigger `P0001` refusal messages and column hints from Postgres error hints through `must()` in `apps/web/src/lib/workflow-server.ts` and `WorkflowClientError` in `apps/web/src/lib/workflows.ts`.
+    - Listings: `title`, `description`, `price_note`, `deposit_note` catch refusals, show the database message next to that specific field, and keep what was typed. Refusal message clears upon input change.
+    - Profiles / Studio: in `apps/web/src/components/studio-editor.tsx`, `studio_name`, `studio_handle`, `studio_bio`, `pickup_area` catch refusals, show messages under each input, and keep typed text.
+    - Chat: in `apps/web/src/components/chat.tsx`, message send errors are displayed under the message composer with no Retry button, keeping draft text. Report dialog errors are displayed under the details field and keep what was typed.
+    - Sign-up: in `apps/web/src/app/actions.ts`, calls `check_text(name, 'profile')` RPC before creating the account. If refused, redirects to `/auth` with `name_error`, displayed directly under the name field while preserving entered name and email in `apps/web/src/app/auth/page.tsx`.
+  - API & backend workflow handlers:
+    - Added `POST /api/workflows/listings/scan` endpoint calling `scanListing` (`client.rpc("request_scan")`) in `apps/web/src/lib/listing-mutations.ts` and `apps/web/src/app/api/workflows/[...path]/route.ts`.
+    - API failure responses include `{ error, field }`.
+  - Board updated: marked Step 8C website photo scanning and P2A website text filter as Done in `pranalika/BOARD.md`.
+
+- What was run and verified:
+  1. `npm run lint` in `apps/web`: 0 errors, 0 warnings.
+  2. `npx tsc --noEmit` in `apps/web`: 0 errors across all TypeScript files.
+  3. `node supabase/tests/p2a_text_filter.mjs`: all database text filter checks PASSED (title phone refusal with hint, message phone accepted, message slur refused, allowlisted words accepted, check_text RPC clean vs refusal).
+  4. Tested `request_scan` RPC on draft listings (returns scan ID, completes within 2s with allowed verdict and suggestions).
+
+- Requests:
+  - None.
+
 ## P1B part 2 - 2026-11-06 - help center and consent on the website
 
 - What was done:

@@ -12,22 +12,34 @@ export async function authenticate(form: FormData) {
   const next = safeNext(field(form, "next"));
   const email = field(form, "email");
   const password = String(form.get("password") || "");
-  const fail = (message: string) =>
-    redirect(
-      "/auth?mode=" +
-        mode +
-        "&next=" +
-        encodeURIComponent(next) +
-        "&error=" +
-        encodeURIComponent(message),
-    );
+  const name = field(form, "name");
+  const fail = (message: string, nameError?: string) => {
+    const params = new URLSearchParams();
+    params.set("mode", mode);
+    params.set("next", next);
+    if (nameError) {
+      params.set("name_error", nameError);
+    } else {
+      params.set("error", message);
+    }
+    if (email) params.set("email", email);
+    if (name) params.set("name", name);
+    redirect("/auth?" + params.toString());
+  };
   if (!email || !password) fail("Enter your email and password.");
   if (mode === "signup") {
     if (password.length < 8) fail("Password must be at least 8 characters.");
     if (form.get("adult") !== "on") fail("Please confirm you are at least 18.");
     if (form.get("legal") !== "on")
       fail("Please agree to the Terms of Use and Privacy Policy.");
-    if (!field(form, "name")) fail("Enter your name.");
+    if (!name) fail("Enter your name.");
+    const { data: nameRefusal } = await client.rpc("check_text", {
+      p_text: name,
+      p_where: "profile",
+    });
+    if (nameRefusal) {
+      fail("", String(nameRefusal));
+    }
     const origin = (await headers()).get("origin") || "https://dzirent.com";
     const location = await context();
     (await cookies()).set("dzirent-auth-next", next, {

@@ -15,10 +15,12 @@ import {
   isoToday,
   declarationTexts,
   workflow,
+  WorkflowClientError,
 } from "@/lib/workflows";
 import { type ListingForm, validateListing } from "@/lib/listing-form";
 import { compressPhoto, draftRead, draftWrite, draftClear } from "@/lib/drafts";
 import { photoUrl } from "@/lib/supabase/config";
+import { browserClient } from "@/lib/supabase/client";
 import { WorkflowModal, Notice } from "./workflow-ui";
 import {
   SizeFields,
@@ -28,6 +30,25 @@ import {
   type MeasurementRow,
 } from "./listing-fields";
 import { Icon } from "./icon";
+
+type ScanSuggestions = {
+  title?: string;
+  category?: string;
+  item_type?: string;
+  garment_type?: string;
+  description?: string;
+  styles?: string[];
+};
+
+type ListingScan = {
+  id: string;
+  status: string;
+  verdict?: string | null;
+  reason?: string | null;
+  admin_decision?: string | null;
+  suggestions?: ScanSuggestions | null;
+};
+
 type EditorPhoto = {
   token: string;
   slot: string;
@@ -35,6 +56,7 @@ type EditorPhoto = {
   id?: string;
   storage_path?: string;
 };
+
 type Snapshot = {
   form: ListingForm;
   rows: MeasurementRow[];
@@ -44,6 +66,7 @@ type Snapshot = {
   created: boolean;
   originalStatus: "active" | "paused";
 };
+
 type Props = {
   me: string;
   profile: Profile;
@@ -56,6 +79,7 @@ type Props = {
     listing_measurements: Measurement[];
   }[];
 };
+
 function initialForm(listing: OwnListing | null): ListingForm {
   const start = isoToday();
   const end = new Date(start + "T12:00:00");
@@ -79,13 +103,14 @@ function initialForm(listing: OwnListing | null): ListingForm {
     accessory_confirmed: false,
   };
 }
+
 function EditorPhotoPreview({ photo }: { photo: EditorPhoto }) {
   const [url, setUrl] = useState(photoUrl(photo.storage_path || null));
   useEffect(() => {
     if (!photo.blob) return;
-    const url = URL.createObjectURL(photo.blob);
-    Promise.resolve().then(() => setUrl(url));
-    return () => URL.revokeObjectURL(url);
+    const objectUrl = URL.createObjectURL(photo.blob);
+    Promise.resolve().then(() => setUrl(objectUrl));
+    return () => URL.revokeObjectURL(objectUrl);
   }, [photo.blob]);
   return url ? (
     <Image
@@ -99,6 +124,119 @@ function EditorPhotoPreview({ photo }: { photo: EditorPhoto }) {
     <Icon name="hanger" />
   );
 }
+
+function PhotoCheckBanner({
+  phase,
+  scan,
+  onRetry,
+  onReplacePhotos,
+}: {
+  phase: string;
+  scan: ListingScan | null;
+  onRetry: () => void;
+  onReplacePhotos: () => void;
+}) {
+  if (phase === "checking" || phase === "uploading") {
+    return (
+      <div
+        className="policy-note"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          margin: "16px 0",
+        }}
+      >
+        <span
+          className="spinner"
+          style={{
+            display: "inline-block",
+            width: "14px",
+            height: "14px",
+            border: "2px solid #ccc",
+            borderTopColor: "var(--accent, #666)",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+          }}
+        />
+        <span>Checking your photos…</span>
+      </div>
+    );
+  }
+  if (phase === "failed") {
+    return (
+      <div className="policy-note notice error" style={{ margin: "16px 0" }}>
+        <p>We couldn&apos;t check the photos right now.</p>
+        <button
+          type="button"
+          className="text-button"
+          onClick={onRetry}
+          style={{ marginTop: "4px" }}
+        >
+          Check again
+        </button>
+      </div>
+    );
+  }
+  if (scan) {
+    const isApproved = scan.admin_decision === "approved";
+    const isRejected =
+      scan.admin_decision === "rejected" ||
+      (!scan.admin_decision && scan.verdict === "rejected");
+    const isAllowed =
+      isApproved || (!scan.admin_decision && scan.verdict === "allowed");
+
+    if (isAllowed) {
+      return (
+        <div
+          className="policy-note"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            margin: "16px 0",
+            color: "#15803d",
+          }}
+        >
+          <span style={{ fontSize: "16px", fontWeight: "bold" }}>✓</span>
+          <strong>Your photos look good.</strong>
+        </div>
+      );
+    }
+    if (isRejected) {
+      const reason = scan.reason || "These photos can't be listed.";
+      return (
+        <div className="policy-note notice error" style={{ margin: "16px 0" }}>
+          <p>
+            <strong>{reason}</strong>
+          </p>
+          <button
+            type="button"
+            className="text-button"
+            onClick={onReplacePhotos}
+            style={{ marginTop: "4px" }}
+          >
+            Replace photos
+          </button>
+        </div>
+      );
+    }
+    // Review verdict
+    const hasSpecificReason =
+      scan.reason &&
+      scan.reason !== "We're not sure what this piece is.";
+    return (
+      <div className="policy-note" style={{ margin: "16px 0" }}>
+        <strong>Someone at Dzirent will check these photos.</strong>
+        {hasSpecificReason && (
+          <p style={{ fontSize: "12px", margin: "4px 0 0" }}>{scan.reason}</p>
+        )}
+      </div>
+    );
+  }
+  return null;
+}
+
 export function ListingEditor({
   me,
   profile,
@@ -135,6 +273,7 @@ export function ListingEditor({
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState("");
   const [error, setError] = useState("");
+  const [textErrors, setTextErrors] = useState<Record<string, string>>({});
   const [failed, setFailed] = useState(false);
   const [signed, setSigned] = useState(initialSigned);
   const [signing, setSigning] = useState(false);
@@ -143,20 +282,23 @@ export function ListingEditor({
   const [pendingDraft, setPendingDraft] = useState<Snapshot | null>(null);
   const [ready, setReady] = useState(false);
   const [draftNotice, setDraftNotice] = useState("");
+
+  // Scan & suggestions state
+  const [scanId, setScanId] = useState<string | null>(null);
+  const [scanPhase, setScanPhase] = useState<
+    "none" | "uploading" | "checking" | "finished" | "failed"
+  >("none");
+  const [latestScan, setLatestScan] = useState<ListingScan | null>(null);
+  const [photoWarnings, setPhotoWarnings] = useState<Record<string, string[]>>({});
+  const [suggestedFields, setSuggestedFields] = useState<Record<string, boolean>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+
   const finished = useRef(false);
   const picker = useRef<HTMLInputElement>(null);
   const camera = useRef<HTMLInputElement>(null);
   const targetSlot = useRef("front");
   const key = "listing:" + me + ":" + (listing?.id || "new");
-  const snapshot: Snapshot = {
-    form,
-    rows,
-    photos,
-    removed,
-    id,
-    created,
-    originalStatus,
-  };
+
   useEffect(() => {
     let live = true;
     draftRead<Snapshot>(key)
@@ -185,6 +327,7 @@ export function ListingEditor({
       live = false;
     };
   }, [key, listing]);
+
   useEffect(() => {
     if (!ready || busy || finished.current) return;
     const timer = setTimeout(() => {
@@ -217,6 +360,182 @@ export function ListingEditor({
     created,
     originalStatus,
   ]);
+
+  // Watch listing_scans with Realtime and polling fallback
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    const client = browserClient();
+
+    async function loadPhotoWarnings(sId: string) {
+      try {
+        const { data: pScans } = await client
+          .from("photo_scans")
+          .select("photo_id,slot,warnings,decision")
+          .eq("scan_id", sId);
+        if (pScans && !cancelled) {
+          const map: Record<string, string[]> = {};
+          for (const ps of pScans) {
+            if (ps.warnings && ps.warnings.length) {
+              if (ps.photo_id) map[ps.photo_id] = ps.warnings;
+              if (ps.slot) map[ps.slot] = ps.warnings;
+            }
+          }
+          setPhotoWarnings(map);
+        }
+      } catch {}
+    }
+
+    function applySuggestions(s: ScanSuggestions | null | undefined) {
+      if (!s || typeof s !== "object") return;
+      setForm((prev) => {
+        const next = { ...prev };
+        const newlySuggested: Record<string, boolean> = {};
+
+        const currentTitle = prev.title.trim();
+        if (
+          (!currentTitle || currentTitle === "New listing (draft)") &&
+          !touchedFields.title &&
+          s.title
+        ) {
+          next.title = String(s.title).slice(0, 80);
+          newlySuggested.title = true;
+        }
+
+        const currentCat = prev.category.trim();
+        if (
+          (!currentCat || currentCat === "Everyday") &&
+          !touchedFields.category &&
+          s.category &&
+          categories.includes(s.category)
+        ) {
+          next.category = s.category;
+          newlySuggested.category = true;
+          if (s.category === "Accessories") {
+            if (!prev.item_type && !touchedFields.item_type && s.item_type) {
+              next.item_type = s.item_type;
+              newlySuggested.item_type = true;
+            }
+          }
+        }
+
+        if (
+          (!prev.garment_type || prev.garment_type === "top") &&
+          !touchedFields.garment_type &&
+          s.garment_type
+        ) {
+          next.garment_type = s.garment_type;
+          newlySuggested.garment_type = true;
+          setRows(measurementRows(s.garment_type, next.item_type || ""));
+        }
+
+        if (
+          !prev.description.trim() &&
+          !touchedFields.description &&
+          s.description
+        ) {
+          next.description = String(s.description).slice(0, 1000);
+          newlySuggested.description = true;
+        }
+
+        if (
+          (!prev.listing_styles || !prev.listing_styles.length) &&
+          !touchedFields.listing_styles &&
+          Array.isArray(s.styles) &&
+          s.styles.length
+        ) {
+          const validStyles = s.styles
+            .filter((st: string) => styles.includes(st))
+            .slice(0, 3);
+          if (validStyles.length) {
+            next.listing_styles = validStyles;
+            newlySuggested.listing_styles = true;
+          }
+        }
+
+        setSuggestedFields((old) => ({ ...old, ...newlySuggested }));
+        return next;
+      });
+    }
+
+    function handleScan(scan: Partial<ListingScan> | null | undefined) {
+      if (!scan || !scan.id || !scan.status || cancelled) return;
+      const validScan = scan as ListingScan;
+      setLatestScan(validScan);
+      if (validScan.status === "queued" || validScan.status === "running") {
+        setScanPhase("checking");
+      } else if (validScan.status === "failed") {
+        setScanPhase("failed");
+      } else if (validScan.status === "done") {
+        setScanPhase("finished");
+        void loadPhotoWarnings(validScan.id);
+        const isAllowed =
+          validScan.admin_decision === "approved" ||
+          (!validScan.admin_decision && validScan.verdict === "allowed");
+        if (isAllowed && validScan.suggestions) {
+          applySuggestions(validScan.suggestions);
+        }
+      }
+    }
+
+    const channel = client
+      .channel("listing-scan-" + id)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "listing_scans",
+          filter: "listing_id=eq." + id,
+        },
+        (payload) => {
+          handleScan(payload.new);
+        },
+      )
+      .subscribe();
+
+    let pollInterval: NodeJS.Timeout | null = null;
+    let elapsedMs = 0;
+
+    async function poll() {
+      try {
+        const { data: rows } = await client
+          .from("listing_scans")
+          .select("*")
+          .eq("listing_id", id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (rows && rows.length && !cancelled) {
+          const scan = rows[0];
+          handleScan(scan);
+          if (scan.status === "done" || scan.status === "failed") {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = null;
+          }
+        }
+      } catch {}
+    }
+
+    void poll();
+
+    pollInterval = setInterval(() => {
+      elapsedMs += 3000;
+      if (elapsedMs > 180000) {
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = null;
+        setScanPhase((prev) => (prev === "checking" ? "failed" : prev));
+        return;
+      }
+      void poll();
+    }, 3000);
+
+    return () => {
+      cancelled = true;
+      if (pollInterval) clearInterval(pollInterval);
+      void client.removeChannel(channel);
+    };
+  }, [id, scanId, touchedFields]);
+
   function change(changes: Partial<ListingForm>) {
     if (changes.garment_type && changes.garment_type !== form.garment_type)
       setRows(measurementRows(changes.garment_type, form.item_type));
@@ -237,6 +556,7 @@ export function ListingEditor({
     setForm((old) => ({ ...old, ...changes }));
     setError("");
   }
+
   async function addFiles(files: FileList | null) {
     if (!files) return;
     setBusy(true);
@@ -273,19 +593,164 @@ export function ListingEditor({
       if (camera.current) camera.current.value = "";
     }
   }
+
   function removePhoto(index: number) {
     const old = photos[index];
     if (old.id) setRemoved((v) => [...v, old.id!]);
     setPhotos((p) => p.filter((_, i) => i !== index));
   }
+
   function movePhoto(index: number, delta: number) {
     const next = [...photos];
     [next[index], next[index + delta]] = [next[index + delta], next[index]];
     setPhotos(next);
   }
-  async function keepDraft(s: Snapshot) {
-    await draftWrite(key, s).catch(() => {});
+
+  // Upload all pending photos and remove deleted ones
+  async function syncPhotos(targetId: string, currentPhotos: EditorPhoto[], deleted: string[]) {
+    for (const photoId of deleted) {
+      await workflow("photo/" + targetId + "/delete", { id: photoId });
+    }
+    setRemoved([]);
+
+    const nextPhotos = [...currentPhotos];
+    for (let i = 0; i < nextPhotos.length; i++) {
+      const p = nextPhotos[i];
+      if (p.id) continue;
+      if (!p.blob) continue;
+      const body = new FormData();
+      body.set("photo", p.blob, "photo.jpg");
+      body.set("slot", p.slot);
+      body.set("token", p.token);
+      const response = await fetch("/api/workflows/photo/" + targetId + "/upload", {
+        method: "POST",
+        body,
+      });
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(result.error || "Could not upload this photo.");
+      const saved = result as OwnPhoto;
+      nextPhotos[i] = {
+        ...p,
+        id: saved.id,
+        storage_path: saved.storage_path,
+      };
+    }
+    setPhotos(nextPhotos);
+    return nextPhotos;
   }
+
+  // Step 1 -> Step 2
+  async function advanceToDetails() {
+    if (!photos.length) {
+      setError("Add at least one photo before continuing.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setPhase("Preparing your listing");
+    try {
+      // 1. If draft row doesn't exist yet on server, save paused draft
+      if (!created) {
+        await workflow("listings/save", {
+          id,
+          form: {
+            ...form,
+            title: form.title.trim() || "New listing (draft)",
+            category: form.category || "Everyday",
+            status: "paused",
+          },
+        });
+        setCreated(true);
+      }
+
+      // 2. Upload pending photos and delete removed ones
+      setPhase("Uploading photos");
+      await syncPhotos(id, photos, removed);
+
+      // 3. Request scan
+      setPhase("Checking photos");
+      setScanPhase("checking");
+      const scanResult = await workflow<{ scan_id: string }>("listings/scan", {
+        id,
+      });
+      setScanId(scanResult.scan_id);
+
+      // 4. Advance immediately to Step 2!
+      setStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+      setPhase("");
+    }
+  }
+
+  // Step 2 -> Step 3
+  async function advanceToStep3() {
+    if (form.title.trim().length < 3 || form.title.trim().length > 80) {
+      setError("Title must be 3 to 80 characters.");
+      return;
+    }
+    if (!categories.includes(form.category)) {
+      setError("Choose a category.");
+      return;
+    }
+    if (
+      form.category === "Accessories" &&
+      !itemTypes.includes(form.item_type)
+    ) {
+      setError("Choose an item type for Accessories.");
+      return;
+    }
+    if (form.description.length > 1000) {
+      setError("Description can be up to 1000 characters.");
+      return;
+    }
+    if (form.category === "Accessories" && !signed) {
+      setSigning(true);
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setTextErrors({});
+    try {
+      // Save details to server (which also checks text-safety triggers)
+      await workflow("listings/save", { id, form });
+      setStep(3);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e) {
+      const err = e instanceof WorkflowClientError ? e : (e as Error);
+      if (
+        e instanceof WorkflowClientError &&
+        e.field &&
+        ["title", "description"].includes(e.field)
+      ) {
+        setTextErrors({ [e.field]: e.message });
+      } else {
+        setError(err.message || "Could not save details.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function checkAgain() {
+    setBusy(true);
+    setError("");
+    try {
+      setScanPhase("checking");
+      const res = await workflow<{ scan_id: string }>("listings/scan", { id });
+      setScanId(res.scan_id);
+    } catch (e) {
+      setError((e as Error).message);
+      setScanPhase("failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function publish() {
     const nextForm = { ...form, measurements: usedMeasurements(rows) };
     const validation = validateListing(nextForm);
@@ -312,84 +777,79 @@ export function ListingEditor({
     setBusy(true);
     setError("");
     setFailed(false);
-    const progress = {
-      ...snapshot,
-      form: nextForm,
-      photos: [...photos],
-      removed: [...removed],
-    };
+    setTextErrors({});
     try {
       setPhase("Saving listing details");
       await workflow("listings/save", { id, form: nextForm });
       setCreated(true);
-      progress.created = true;
-      await keepDraft(progress);
-      setPhase("Removing photos");
-      for (const photoId of [...progress.removed]) {
-        await workflow("photo/" + id + "/delete", { id: photoId });
-        progress.removed = progress.removed.filter((p) => p !== photoId);
-        setRemoved([...progress.removed]);
-        await keepDraft(progress);
-      }
-      setPhase("Uploading photos");
-      for (let i = 0; i < progress.photos.length; i++) {
-        const p = progress.photos[i];
-        if (p.id) continue;
-        if (!p.blob) throw new Error("Choose this photo again.");
-        const body = new FormData();
-        body.set("photo", p.blob, "photo.jpg");
-        body.set("slot", p.slot);
-        body.set("token", p.token);
-        const response = await fetch("/api/workflows/photo/" + id + "/upload", {
-          method: "POST",
-          body,
-        });
-        const result = await response.json();
-        if (!response.ok)
-          throw new Error(result.error || "Could not upload this photo.");
-        const saved = result as OwnPhoto;
-        progress.photos[i] = {
-          ...p,
-          id: saved.id,
-          storage_path: saved.storage_path,
-        };
-        setPhotos([...progress.photos]);
-        await keepDraft(progress);
-      }
+
+      setPhase("Syncing photos");
+      const currentPhotos = await syncPhotos(id, photos, removed);
+
       setPhase("Saving size, price and dates");
       await workflow("listings/finish", {
         id,
         form: nextForm,
-        photos: progress.photos.map((p) => ({ id: p.id, slot: p.slot })),
+        photos: currentPhotos.map((p) => ({ id: p.id, slot: p.slot })),
         status: originalStatus,
       });
+
       finished.current = true;
       await draftClear(key).catch(() => {});
       router.push("/app/closet");
       router.refresh();
     } catch (e) {
-      setError((e as Error).message);
+      const err = e instanceof WorkflowClientError ? e : (e as Error);
+      if (e instanceof WorkflowClientError && e.field) {
+        if (["title", "description"].includes(e.field)) {
+          setTextErrors({ [e.field]: e.message });
+          setStep(2);
+        } else if (["price_note", "deposit_note"].includes(e.field)) {
+          setTextErrors({ [e.field]: e.message });
+          setStep(3);
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError(err.message);
+      }
       setFailed(true);
       setPhase("");
     } finally {
       setBusy(false);
     }
   }
+
   async function startOver() {
     setBusy(true);
     setError("");
     try {
-      if (pendingDraft?.created && !listing)
-        await workflow("listings/" + pendingDraft.id + "/delete", {});
+      const deleteId = pendingDraft?.id || (created && !listing ? id : null);
+      if (deleteId && !listing) {
+        await workflow("listings/" + deleteId + "/delete", {}).catch(() => {});
+      }
       await draftClear(key);
       setPendingDraft(null);
       setReady(true);
+      setForm(initialForm(null));
+      setPhotos([]);
+      setRows(measurementRows("top", ""));
+      setId(crypto.randomUUID());
+      setCreated(false);
+      setScanId(null);
+      setScanPhase("none");
+      setLatestScan(null);
+      setPhotoWarnings({});
+      setSuggestedFields({});
+      setTouchedFields({});
+      setStep(1);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setBusy(false);
     }
   }
+
   function continueDraft() {
     if (!pendingDraft) return;
     setForm({ ...pendingDraft.form, accessory_confirmed: false });
@@ -402,25 +862,10 @@ export function ListingEditor({
     setPendingDraft(null);
     setReady(true);
   }
+
   const other = otherListings.find(
     (l) =>
       l.garment_type === form.garment_type && l.listing_measurements.length > 0,
-  );
-  const field = (
-    name: keyof ListingForm,
-    label: string,
-    maxLength?: number,
-    placeholder?: string,
-  ) => (
-    <label className="field">
-      <span>{label}</span>
-      <input
-        value={String(form[name])}
-        maxLength={maxLength}
-        placeholder={placeholder}
-        onChange={(e) => change({ [name]: e.target.value })}
-      />
-    </label>
   );
 
   if (profile.role === "renter")
@@ -434,6 +879,7 @@ export function ListingEditor({
         </Link>
       </div>
     );
+
   return (
     <div className="page-width workflow-page editor-page">
       <div className="workflow-heading">
@@ -445,8 +891,8 @@ export function ListingEditor({
           My Closet <Icon name="chevron" />
         </Link>
       </div>
-      <div className="editor-progress" aria-label={"Step " + step + " of 2"}>
-        {["Photos and details", "Size, price and dates"].map((title, i) => (
+      <div className="editor-progress" aria-label={"Step " + step + " of 3"}>
+        {["Photos", "Details", "Size, price and dates"].map((title, i) => (
           <button
             type="button"
             key={title}
@@ -465,76 +911,72 @@ export function ListingEditor({
         onSubmit={(e) => {
           e.preventDefault();
           if (step === 1) {
-            if (form.title.trim().length < 3 || form.title.trim().length > 80) {
-              setError("Title must be 3 to 80 characters.");
-              return;
-            }
-            if (!categories.includes(form.category)) {
-              setError("Choose a category.");
-              return;
-            }
-            if (
-              form.category === "Accessories" &&
-              !itemTypes.includes(form.item_type)
-            ) {
-              setError("Choose an item type for Accessories.");
-              return;
-            }
-            if (form.description.length > 1000) {
-              setError("Description can be up to 1000 characters.");
-              return;
-            }
-            if (!photos.length) {
-              setError("Add at least one photo before publishing.");
-              return;
-            }
-            if (form.category === "Accessories" && !signed) {
-              setSigning(true);
-              return;
-            }
-            setError("");
-            setStep(2);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          } else void publish();
+            void advanceToDetails();
+          } else if (step === 2) {
+            void advanceToStep3();
+          } else {
+            void publish();
+          }
         }}
       >
         <fieldset disabled={busy || !ready} className="workflow-fieldset">
-          {step === 1 ? (
-            <>
-              <section className="editor-section">
-                <div className="section-title">
-                  <div>
-                    <h2>Photos</h2>
-                    <p className="muted">
-                      Show the piece as it is. Add up to 6 photos.
-                    </p>
-                  </div>
+          {step === 1 && (
+            <section className="editor-section">
+              <div className="section-title">
+                <div>
+                  <h2>Photos</h2>
+                  <p className="muted">
+                    Show the piece as it is. Add up to 6 photos.
+                  </p>
                 </div>
-                <input
-                  className="sr-only"
-                  ref={picker}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  aria-label="Choose listing photos"
-                  onChange={(e) => void addFiles(e.target.files)}
-                />
-                <input
-                  className="sr-only"
-                  ref={camera}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  aria-label="Take a listing photo"
-                  onChange={(e) => void addFiles(e.target.files)}
-                />
-                <div className="editor-photos">
-                  {photos.map((p, i) => (
+              </div>
+              <input
+                className="sr-only"
+                ref={picker}
+                type="file"
+                accept="image/*"
+                multiple
+                aria-label="Choose listing photos"
+                onChange={(e) => void addFiles(e.target.files)}
+              />
+              <input
+                className="sr-only"
+                ref={camera}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                aria-label="Take a listing photo"
+                onChange={(e) => void addFiles(e.target.files)}
+              />
+              <div className="editor-photos">
+                {photos.map((p, i) => {
+                  const warnings =
+                    (p.id && photoWarnings[p.id]) ||
+                    photoWarnings[p.slot] ||
+                    [];
+                  return (
                     <article className="editor-photo" key={p.token}>
                       <div className="editor-photo-image">
                         <EditorPhotoPreview photo={p} />
                         <span>{slotNames[slots.indexOf(p.slot)]}</span>
                       </div>
+                      {warnings.length > 0 && (
+                        <div style={{ padding: "4px 8px" }}>
+                          {warnings.map((w, idx) => (
+                            <p
+                              key={idx}
+                              style={{
+                                color: "#d97706",
+                                fontSize: "11px",
+                                lineHeight: "1.3",
+                                margin: "2px 0",
+                              }}
+                            >
+                              ⚠️ {w}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                       <div className="photo-controls">
                         <button
                           type="button"
@@ -573,54 +1015,177 @@ export function ListingEditor({
                         </button>
                       </div>
                     </article>
+                  );
+                })}
+                {slots
+                  .filter((s) => !photos.some((p) => p.slot === s))
+                  .map((slot) => (
+                    <div className="empty-photo-slot" key={slot}>
+                      <Icon name="plus" />
+                      <strong>{slotNames[slots.indexOf(slot)]}</strong>
+                      <button
+                        type="button"
+                        className="text-button"
+                        onClick={() => {
+                          targetSlot.current = slot;
+                          picker.current?.click();
+                        }}
+                      >
+                        Choose photo
+                      </button>
+                      <button
+                        type="button"
+                        className="text-button"
+                        onClick={() => {
+                          targetSlot.current = slot;
+                          camera.current?.click();
+                        }}
+                      >
+                        Take photo
+                      </button>
+                    </div>
                   ))}
-                  {slots
-                    .filter((s) => !photos.some((p) => p.slot === s))
-                    .map((slot) => (
-                      <div className="empty-photo-slot" key={slot}>
-                        <Icon name="plus" />
-                        <strong>{slotNames[slots.indexOf(slot)]}</strong>
-                        <button
-                          type="button"
-                          className="text-button"
-                          onClick={() => {
-                            targetSlot.current = slot;
-                            picker.current?.click();
-                          }}
-                        >
-                          Choose photo
-                        </button>
-                        <button
-                          type="button"
-                          className="text-button"
-                          onClick={() => {
-                            targetSlot.current = slot;
-                            camera.current?.click();
-                          }}
-                        >
-                          Take photo
-                        </button>
-                      </div>
-                    ))}
+              </div>
+              <p className="muted small">
+                Your first photo is the cover. Use the arrows to reorder.
+              </p>
+            </section>
+          )}
+
+          {step === 2 && (
+            <>
+              <PhotoCheckBanner
+                phase={scanPhase}
+                scan={latestScan}
+                onRetry={() => void checkAgain()}
+                onReplacePhotos={() => setStep(1)}
+              />
+              {Object.values(suggestedFields).some(Boolean) && (
+                <div
+                  className="policy-note"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <span>
+                    Filled from your photos. Tap ✕ on any field if anything&apos;s
+                    off.
+                  </span>
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={() => setSuggestedFields({})}
+                  >
+                    Accept all
+                  </button>
                 </div>
-                <p className="muted small">
-                  Your first photo is the cover. Use the arrows to reorder.
-                </p>
-              </section>
+              )}
               <section className="editor-section">
                 <h2>Details</h2>
-                {field("title", "Title", 80, "e.g. Navy linen blazer")}
+                <label className="field">
+                  <span>Title</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <input
+                      value={form.title}
+                      maxLength={80}
+                      placeholder="e.g. Navy linen blazer"
+                      onChange={(e) => {
+                        change({ title: e.target.value });
+                        setTouchedFields((prev) => ({ ...prev, title: true }));
+                        if (textErrors.title)
+                          setTextErrors((prev) => ({ ...prev, title: "" }));
+                      }}
+                    />
+                    {form.title && (
+                      <button
+                        type="button"
+                        className="icon-button"
+                        aria-label="Clear title"
+                        onClick={() => {
+                          change({ title: "" });
+                          setSuggestedFields((prev) => ({
+                            ...prev,
+                            title: false,
+                          }));
+                          setTouchedFields((prev) => ({
+                            ...prev,
+                            title: true,
+                          }));
+                        }}
+                      >
+                        <Icon name="close" />
+                      </button>
+                    )}
+                  </div>
+                  <small>{form.title.length}/80</small>
+                  {textErrors.title && (
+                    <p
+                      role="alert"
+                      className="form-message error"
+                      style={{
+                        margin: "4px 0 0",
+                        fontSize: "13px",
+                        color: "var(--danger, #d32f2f)",
+                      }}
+                    >
+                      {textErrors.title}
+                    </p>
+                  )}
+                </label>
                 <label className="field">
                   <span>Category</span>
-                  <select
-                    value={form.category}
-                    onChange={(e) => change({ category: e.target.value })}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
                   >
-                    <option value="">Choose a category</option>
-                    {categories.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
+                    <select
+                      value={form.category}
+                      onChange={(e) => {
+                        change({ category: e.target.value });
+                        setTouchedFields((prev) => ({
+                          ...prev,
+                          category: true,
+                        }));
+                      }}
+                    >
+                      <option value="">Choose a category</option>
+                      {categories.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                    {form.category && (
+                      <button
+                        type="button"
+                        className="icon-button"
+                        aria-label="Clear category"
+                        onClick={() => {
+                          change({ category: "" });
+                          setSuggestedFields((prev) => ({
+                            ...prev,
+                            category: false,
+                          }));
+                          setTouchedFields((prev) => ({
+                            ...prev,
+                            category: true,
+                          }));
+                        }}
+                      >
+                        <Icon name="close" />
+                      </button>
+                    )}
+                  </div>
                 </label>
                 {form.category === "Accessories" && (
                   <>
@@ -628,7 +1193,13 @@ export function ListingEditor({
                       <span>Item type</span>
                       <select
                         value={form.item_type}
-                        onChange={(e) => change({ item_type: e.target.value })}
+                        onChange={(e) => {
+                          change({ item_type: e.target.value });
+                          setTouchedFields((prev) => ({
+                            ...prev,
+                            item_type: true,
+                          }));
+                        }}
                       >
                         <option value="">Choose an item type</option>
                         {itemTypes.map((t) => (
@@ -657,17 +1228,89 @@ export function ListingEditor({
                 )}
                 <label className="field">
                   <span>Description (optional)</span>
-                  <textarea
-                    maxLength={1000}
-                    rows={4}
-                    value={form.description}
-                    onChange={(e) => change({ description: e.target.value })}
-                  />
+                  <div style={{ position: "relative" }}>
+                    <textarea
+                      maxLength={1000}
+                      rows={4}
+                      value={form.description}
+                      onChange={(e) => {
+                        change({ description: e.target.value });
+                        setTouchedFields((prev) => ({
+                          ...prev,
+                          description: true,
+                        }));
+                        if (textErrors.description)
+                          setTextErrors((prev) => ({
+                            ...prev,
+                            description: "",
+                          }));
+                      }}
+                    />
+                    {form.description && (
+                      <button
+                        type="button"
+                        className="icon-button"
+                        aria-label="Clear description"
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          right: "8px",
+                        }}
+                        onClick={() => {
+                          change({ description: "" });
+                          setSuggestedFields((prev) => ({
+                            ...prev,
+                            description: false,
+                          }));
+                          setTouchedFields((prev) => ({
+                            ...prev,
+                            description: true,
+                          }));
+                        }}
+                      >
+                        <Icon name="close" />
+                      </button>
+                    )}
+                  </div>
                   <small>{form.description.length}/1000</small>
+                  {textErrors.description && (
+                    <p
+                      role="alert"
+                      className="form-message error"
+                      style={{
+                        margin: "4px 0 0",
+                        fontSize: "13px",
+                        color: "var(--danger, #d32f2f)",
+                      }}
+                    >
+                      {textErrors.description}
+                    </p>
+                  )}
                 </label>
-                <h3>
-                  Styles <small className="muted">(up to 3)</small>
-                </h3>
+                <div className="section-title" style={{ marginTop: "16px" }}>
+                  <h3>
+                    Styles <small className="muted">(up to 3)</small>
+                  </h3>
+                  {form.listing_styles.length > 0 && (
+                    <button
+                      type="button"
+                      className="text-button"
+                      onClick={() => {
+                        change({ listing_styles: [] });
+                        setSuggestedFields((prev) => ({
+                          ...prev,
+                          listing_styles: false,
+                        }));
+                        setTouchedFields((prev) => ({
+                          ...prev,
+                          listing_styles: true,
+                        }));
+                      }}
+                    >
+                      Clear styles
+                    </button>
+                  )}
+                </div>
                 <div className="choice-chips">
                   {styles.map((s) => (
                     <button
@@ -678,13 +1321,17 @@ export function ListingEditor({
                         !form.listing_styles.includes(s) &&
                         form.listing_styles.length >= 3
                       }
-                      onClick={() =>
+                      onClick={() => {
                         change({
                           listing_styles: form.listing_styles.includes(s)
                             ? form.listing_styles.filter((t) => t !== s)
                             : [...form.listing_styles, s],
-                        })
-                      }
+                        });
+                        setTouchedFields((prev) => ({
+                          ...prev,
+                          listing_styles: true,
+                        }));
+                      }}
                     >
                       {s}
                     </button>
@@ -692,8 +1339,16 @@ export function ListingEditor({
                 </div>
               </section>
             </>
-          ) : (
+          )}
+
+          {step === 3 && (
             <>
+              <PhotoCheckBanner
+                phase={scanPhase}
+                scan={latestScan}
+                onRetry={() => void checkAgain()}
+                onReplacePhotos={() => setStep(1)}
+              />
               <section className="editor-section">
                 <h2>Size</h2>
                 <SizeFields form={form} onChange={change} />
@@ -799,26 +1454,94 @@ export function ListingEditor({
                     </span>
                   </label>
                 )}
-                <details className="more-options">
+                <details
+                  className="more-options"
+                  open={Boolean(
+                    textErrors.price_note ||
+                      textErrors.deposit_note ||
+                      form.price_note ||
+                      form.retail_value ||
+                      form.deposit_note,
+                  )}
+                >
                   <summary>More options</summary>
-                  {field("price_note", "Price details (optional)", 60)}
-                  {field("retail_value", "Retail value (USD, optional)")}
+                  <label className="field">
+                    <span>Price details (optional)</span>
+                    <input
+                      value={form.price_note}
+                      maxLength={60}
+                      placeholder="e.g. Dry cleaning included"
+                      onChange={(e) => {
+                        change({ price_note: e.target.value });
+                        if (textErrors.price_note)
+                          setTextErrors((prev) => ({
+                            ...prev,
+                            price_note: "",
+                          }));
+                      }}
+                    />
+                    {textErrors.price_note && (
+                      <p
+                        role="alert"
+                        className="form-message error"
+                        style={{
+                          margin: "4px 0 0",
+                          fontSize: "13px",
+                          color: "var(--danger, #d32f2f)",
+                        }}
+                      >
+                        {textErrors.price_note}
+                      </p>
+                    )}
+                  </label>
+                  <label className="field">
+                    <span>Retail value (USD, optional)</span>
+                    <input
+                      inputMode="numeric"
+                      value={form.retail_value}
+                      onChange={(e) => change({ retail_value: e.target.value })}
+                    />
+                  </label>
                   {Number(form.retail_value) >= 150 && (
                     <p className="policy-note">
                       This is a valuable piece. Consider asking renters for a
                       refundable deposit.
                     </p>
                   )}
-                  {field(
-                    "deposit_note",
-                    "Deposit note (optional)",
-                    120,
-                    "e.g. $40 refundable deposit, cash at pickup",
-                  )}
+                  <label className="field">
+                    <span>Deposit note (optional)</span>
+                    <input
+                      value={form.deposit_note}
+                      maxLength={120}
+                      placeholder="e.g. $40 refundable deposit, cash at pickup"
+                      onChange={(e) => {
+                        change({ deposit_note: e.target.value });
+                        if (textErrors.deposit_note)
+                          setTextErrors((prev) => ({
+                            ...prev,
+                            deposit_note: "",
+                          }));
+                      }}
+                    />
+                    {textErrors.deposit_note && (
+                      <p
+                        role="alert"
+                        className="form-message error"
+                        style={{
+                          margin: "4px 0 0",
+                          fontSize: "13px",
+                          color: "var(--danger, #d32f2f)",
+                        }}
+                      >
+                        {textErrors.deposit_note}
+                      </p>
+                    )}
+                  </label>
                 </details>
               </section>
             </>
           )}
+
           <Notice message={error} error />
           {phase && (
             <p role="status" className="saving-state">
@@ -852,12 +1575,13 @@ export function ListingEditor({
               {draftNotice}
             </span>
             <div className="button-row">
-              {step === 2 && (
+              {step > 1 && (
                 <button
                   type="button"
                   className="button secondary"
+                  disabled={busy}
                   onClick={() => {
-                    setStep(1);
+                    setStep((s) => s - 1);
                     setError("");
                   }}
                 >
@@ -868,10 +1592,12 @@ export function ListingEditor({
                 {busy
                   ? "Saving..."
                   : step === 1
-                    ? "Next"
-                    : listing
-                      ? "Save changes"
-                      : "Publish listing"}
+                    ? "Next: Details"
+                    : step === 2
+                      ? "Next: Size & price"
+                      : listing
+                        ? "Save changes"
+                        : "Publish listing"}
                 <Icon name="arrow" />
               </button>
             </div>

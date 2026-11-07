@@ -92,12 +92,36 @@ export default async function Auth({
           {signup && (
             <label className="field">
               <span>Your name</span>
-              <input name="name" autoComplete="name" maxLength={80} required />
+              <input
+                name="name"
+                autoComplete="name"
+                maxLength={80}
+                defaultValue={value(q, "name")}
+                required
+              />
+              {value(q, "name_error") && (
+                <p
+                  role="alert"
+                  className="notice error"
+                  style={{
+                    margin: "4px 0 0",
+                    fontSize: "13px",
+                  }}
+                >
+                  {value(q, "name_error")}
+                </p>
+              )}
             </label>
           )}
           <label className="field">
             <span>Email</span>
-            <input name="email" type="email" autoComplete="email" required />
+            <input
+              name="email"
+              type="email"
+              autoComplete="email"
+              defaultValue={value(q, "email")}
+              required
+            />
           </label>
           <label className="field">
             <span>Password</span>

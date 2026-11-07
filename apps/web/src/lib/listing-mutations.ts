@@ -173,15 +173,57 @@ export async function finishListing(body: Body) {
       }),
       "Could not record this item’s declaration.",
     );
+  const targetStatus = body.status === "paused" ? "paused" : "active";
+  if (targetStatus === "active") {
+    const { data: setting } = await client
+      .from("app_settings")
+      .select("enabled")
+      .eq("key", "vision_required")
+      .maybeSingle();
+    if (setting?.enabled) {
+      const { data: latestScan } = await client
+        .from("listing_scans")
+        .select("status,verdict,reason,admin_decision")
+        .eq("listing_id", id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!latestScan || latestScan.status !== "done") {
+        throw new WorkflowError("Check the photos before publishing this listing.");
+      }
+      if (
+        latestScan.verdict === "rejected" &&
+        latestScan.admin_decision !== "approved"
+      ) {
+        throw new WorkflowError(
+          latestScan.reason
+            ? `This listing can't be published yet: ${latestScan.reason}`
+            : "Check the photos before publishing this listing.",
+        );
+      }
+    }
+  }
   must(
     await client
       .from("listings")
-      .update({ status: body.status === "paused" ? "paused" : "active" })
+      .update({ status: targetStatus })
       .eq("id", id)
       .eq("lender_id", user.id),
     "Could not publish this listing.",
   );
   return { id };
+}
+export async function scanListing(body: Body) {
+  const { client } = await session();
+  const id = String(body.id || "");
+  if (!uuid(id)) throw new WorkflowError("Listing not found.");
+  const { data, error } = await client.rpc("request_scan", {
+    p_listing_id: id,
+  });
+  if (error) {
+    throw new WorkflowError(error.message || "Could not check photos.");
+  }
+  return { scan_id: data };
 }
 export async function uploadPhoto(request: Request, id: string) {
   const { client } = await session();
