@@ -2,6 +2,135 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P5A - 2026-11-10 - security hardening
+
+**Before starting:** the working tree was clean. I pulled `Preview` up to `1b200d1` (P4A).
+
+**Done:**
+- **Database audit:**
+  - Every table has RLS, and every function has a fixed search path.
+  - Guests reach only the shop window and public reference data. No elevated function was found that shouldn't be.
+  - I added indexes for the 11 foreign keys the Performance Advisor listed.
+  - Details are in `security-log.md` under "Security hardening (P5A)".
+- **Migration `20261110230000_p5a_security_hardening.sql`:**
+  - **Current terms required:** publishing, starting a chat, sending a message, saving a piece or studio, and reporting are refused until the caller accepts the current terms. Drafts and reading stay allowed.
+  - **Rate limits:** messages 30 a minute, new chats 30 a day, reports 20 a day, new listings 20 a day, photo checks 30 an hour.
+    - Built from one helper, the closed `app_private.rate_counters` table and `rate_limit_*` rows in `app_private.settings`.
+    - The photo-check guard (was 20 an hour) now uses the same helper.
+  - **Chat filter removed:** the trigger and its function are dropped, and `check_text(…,'message')` returns null.
+  - **Uploads:** the `listing-photos` bucket now has type and size limits, and its policies accept only `{listing_id}/{random}.jpg`.
+- **Migration `20261110231000_p5a_admin_code_24h.sql`:** `require_admin()` and `is_admin()` need a TOTP check from the last 24 hours, read from the JWT's `amr` claim.
+  - The website shows the code step for the new refusal and then reloads the requested page (`proxy.ts`, `admin/layout.tsx`, `mfa-gate.tsx`, `lib/admin-code.ts`).
+- **Edge Functions:**
+  - `_shared/input.ts` checks every body: one JSON object, a size limit, no unknown fields, required fields present, and plain errors.
+  - All 7 functions use it and are redeployed.
+  - `admin-actions` no longer returns the database's reply in errors.
+- **Website:**
+  - Security headers in `next.config.ts`.
+  - The terms and rate-limit refusals now show in the database's words on the listing and studio pages (`lib/refusals.ts`). Every other place already passed the database's sentence through `must()`.
+  - Storage type and size refusals are shown in plain words.
+  - Privacy policy section 15 has the 30-day sentence. Nowhere else does.
+- **Apps (shared code):**
+  - The new refusals are in `DATABASE_MESSAGES`, and Storage type and size refusals are shown in plain words.
+  - Uploads now send `Content-Type: image/jpeg`. Before, nothing was set.
+  - The session moved to encrypted storage (`platform/SecureSession.kt`, `AndroidSecureStore.kt`, `IosSecureStore.kt`, `DzirentApplication.kt`). A session left in plain storage moves over once, so nobody is signed out.
+  - `android:allowBackup="false"`.
+- **Report and Block in chat:** already two taps on all three platforms. On the website it's the conversation menu, then Report user or Block user. On Android and iPhone it's the top-bar ⋮ menu, then the same two items (shared `ChatScreens.kt`). Nothing changed.
+- **Public text about chat checking:** no website or app page said chat messages are checked. The root `README.md` does (see Requests).
+- **Auth:** the inactivity timeout is now 30 days (`sessions_inactivity_timeout` = 720 hours, set with the management API). No other Auth setting changed.
+- **GitHub:**
+  - Turned on vulnerability alerts, Dependabot security updates, and CodeQL default setup (actions, JavaScript/TypeScript, Python, Java/Kotlin; Swift is left out because it needs a macOS build).
+  - Secret scanning and push protection were already on.
+  - Added `.github/dependabot.yml`.
+- **Docs:**
+  - `security-log.md`: audit, everything above, bot-check research, accepted risks.
+  - `compliance.md`: 1.1, 1.14, section 5. Gaps 16, 18, 20, 21 and 22 updated.
+  - `contract.md`: terms and rate limits, uploads, Edge Function input rules, the admin 24 hours, the text filter.
+  - `decisions.md`: "Security (2026-11-10)" and "Chat (2026-11-10)".
+  - `BOARD.md`: the P5A rows, the P5C row, the P8C rows.
+
+**What I ran:**
+1. **Security and Performance Advisors and catalog queries** before the change, for the audit.
+2. **`supabase db push --linked`** for each migration, dry run first. The second migration failed once with a syntax error (`pg_catalog.extract(epoch from …)` isn't valid). Nothing was applied that time; I fixed it and pushed again.
+   - `SUPABASE_DB_PASSWORD` from the env file was refused. The CLI's access-token login worked instead.
+   - The env files are written as `KEY = value`, so loaders must trim the space after `=`.
+3. **`supabase functions deploy <name> --no-verify-jwt --use-api`** for all 7 functions.
+4. **API tests (Node 22, test users 1, 3 and 4): 12 of 12 passed.**
+   - User 4 hadn't accepted the current terms. A message and a save were refused with "Please accept the updated Terms of Use and Privacy Policy to continue.". After `accept_legal('web')`, the message went through.
+   - User 3: 30 messages were sent and the 31st was refused with "You're doing that too often. Try again in a bit.". The first of those messages contained a word from the filter list and was accepted.
+   - User 1: the same word in a listing title was refused, and the title didn't change.
+   - Uploads to user 1's own listing:
+     - `image/gif` was refused by Storage (415);
+     - 10 MB + 1 KB was refused (413);
+     - a `.png` name was refused (403).
+     - Nothing was stored.
+   - Edge Functions refused unknown fields, non-JSON bodies and bad ids with plain messages, and a non-admin got 403. The secret-protected functions gave 401 without the secret.
+   - All 31 database calls to `send-push` returned 200.
+   - The admin 24-hour check was tested with simulated JWT claims: a TOTP entry 1 hour old passes; 25 hours old and password-only are refused. It wasn't tested with a real admin session (I have none).
+5. **Auth settings read back with a GET:**
+   - `jwt_exp` 3600, refresh-token rotation on, reuse interval 10 s;
+   - `sessions_inactivity_timeout` 720, `sessions_timebox` 0, single session off;
+   - captcha off, TOTP enroll and verify on, `password_min_length` 8, leaked-password check on.
+6. **Mobile build:** `:androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded, `GOOGLE_SERVICES_JSON` set): **BUILD SUCCESSFUL**, 28 tests, 0 failures. I then added `SecureSessionTest` (4 tests: secure save and load, the one-time move from plain storage, unreadable value signs out, Storage refusal wording). Re-run: 32 tests, 0 failures.
+7. **Website:** `npm ci` first, because P4A's `eslint-plugin-jsx-a11y` wasn't installed. Then `npm run lint`: no warnings. `npm run build`: passed. All with Node 22.23.3 from `.tools`.
+8. **`next start` of the build:**
+   - **Headers on `/` and a listing page:**
+     - `Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://pwfzkyjeivadbtkfkdxr.supabase.co; font-src 'self'; connect-src 'self' https://pwfzkyjeivadbtkfkdxr.supabase.co wss://pwfzkyjeivadbtkfkdxr.supabase.co; media-src 'self' blob:; frame-src 'none'; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests`
+     - `Strict-Transport-Security: max-age=63072000; includeSubDomains`
+     - `X-Frame-Options: DENY`
+     - `Referrer-Policy: strict-origin-when-cross-origin`
+     - `X-Content-Type-Options: nosniff`
+     - `Permissions-Policy: camera=(self), geolocation=(self), microphone=(), payment=(), usb=(), display-capture=()`
+     - On Vercel preview deployments, the Vercel toolbar's addresses are added.
+   - **Listing page:** its 3 photos loaded (200, `image/jpeg`) from the allowed Supabase address.
+   - **Sign-in:** through the site's own form, it returned 303 with the auth cookie, and the inbox then showed test user 3's chats.
+9. **Security Advisor after both migrations (22:36 UTC):** 67 findings, all fixed or logged.
+   - 10 INFO "RLS, no policies": the 9 already logged, plus the new closed `rate_counters` table.
+   - 4 WARN for guest-callable shop-window functions.
+   - 53 WARN for signed-in-callable functions, already logged.
+   - Performance: no unindexed foreign keys left. 18 unused-index INFO (new indexes not read yet) and the Auth connection INFO (not changed: no other Auth settings).
+10. No emulator, device, browser or screenshots.
+
+**Where tokens are stored:**
+- **Android:** AES-256-GCM. The key is generated inside the Android Keystore (`dzirent_session_key`) and can't be read out. Only the ciphertext is kept, in private SharedPreferences `dzirent_secure_session`. Backup is off.
+- **iPhone:** the Keychain (service `com.dzirent.app.session`), through `KeychainSettings` from multiplatform-settings 1.3.0, which supabase-kt already brings in.
+- **Before P5A:** both phones kept the session in plain storage (SharedPreferences / NSUserDefaults).
+
+**APK (built 2026-11-10 16:29):**
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, which replaced the P4B copy. Both exist, same size and SHA-256.
+
+**Phone test for the owner (Android):**
+1. Install over the old app while signed in. You should **stay signed in**: the session moves to encrypted storage.
+2. Sign out, then sign in again, then close and reopen the app. You should still be signed in.
+3. Send many messages very fast in one chat. After 30 in a minute you'll see "You're doing that too often. Try again in a bit." under the chat box.
+4. A message with a rude word now sends. The same word in a listing title is still refused.
+5. Add and publish a listing with photos. Uploads and the photo check should work as before.
+
+**iPhone, for the Mac session:**
+- Build the shared framework. `IosSecureStore.kt` is the only new iOS file, and it has never been compiled. It imports `com.russhwolf.settings.KeychainSettings` with `@OptIn(ExperimentalSettingsImplementation::class)`. If the iOS targets don't see `multiplatform-settings`, add `com.russhwolf:multiplatform-settings:1.3.0` to `iosMain`.
+- On the Simulator:
+  - sign in with the old build, install the new one, and check you stay signed in;
+  - then sign out, sign in, and restart;
+  - the session should be in the Keychain, and the old NSUserDefaults key gone.
+- Keychain items survive deleting the app on iOS, so after reinstalling the app may find the old session. Decide whether to clear it on first launch.
+
+**Open issues:**
+- **Not checked in a browser:** live chat over Realtime, photo uploads and the admin area under the new CSP. They use only the allowed addresses, but check them on Preview after the deploy. The CSP includes `upgrade-insecure-requests`, so a local `next start` over plain http isn't a fair browser test; use Preview.
+- **Admin 24-hour code:** tested only with simulated claims, not with a real admin TOTP session.
+- **`'unsafe-inline'` scripts** are accepted in the CSP (Next.js inline scripts); nonces would make every page dynamic.
+- **Photo metadata:** a direct API upload can keep it. Accepted risk, in `security-log.md`.
+- **Test data this run wrote:**
+  - 32 messages by test users 3 and 4 (users can't delete messages);
+  - test user 4 accepted the current terms;
+  - one rate-limit counter row each for users 3 and 4.
+- **`send-push`** still puts the recipient id and dead tokens in URLs (compliance gap 16). Moved to P5B.
+- **Bot check** stays off: hCaptcha is recommended, planned for P8C.
+- **Dependabot** pull requests will target `main`, the default branch.
+
+**Requests (outside my folders):**
+- Root `README.md`, "Text filter" table: "The words the database refuses in listings, profiles, chat and reports" should become "…in listings, profiles and report reasons".
+
 ## P4B - 2026-11-07 - app accessibility
 
 Done (shared code, so Android and iPhone both get it; no redesign):

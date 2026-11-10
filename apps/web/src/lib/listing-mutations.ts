@@ -225,6 +225,15 @@ export async function scanListing(body: Body) {
   }
   return { scan_id: data };
 }
+/** Storage's own refusals (listing-photos bucket: JPEG, PNG or WebP, at most 10 MB) in plain words. */
+function uploadRefusal(error: { message?: string; statusCode?: string | number }) {
+  const said = (error.message || "").toLowerCase();
+  if (String(error.statusCode) === "413" || said.includes("maximum allowed size"))
+    return "This photo is too big. Choose one under 10 MB.";
+  if (said.includes("mime type") || said.includes("invalid_mime_type"))
+    return "Choose a JPEG, PNG or WebP photo.";
+  return "Could not upload this photo.";
+}
 export async function uploadPhoto(request: Request, id: string) {
   const { client } = await session();
   const listing = await ownListing(id);
@@ -249,12 +258,10 @@ export async function uploadPhoto(request: Request, id: string) {
   if (prior) return prior;
   if (listing.photos.length >= 6)
     throw new WorkflowError("You can add up to 6 photos.");
-  must(
-    await client.storage
-      .from("listing-photos")
-      .upload(path, bytes, { contentType: "image/jpeg", upsert: true }),
-    "Could not upload this photo.",
-  );
+  const uploaded = await client.storage
+    .from("listing-photos")
+    .upload(path, bytes, { contentType: "image/jpeg", upsert: true });
+  if (uploaded.error) throw new WorkflowError(uploadRefusal(uploaded.error));
   const result = await client
     .from("listing_photos")
     .insert({

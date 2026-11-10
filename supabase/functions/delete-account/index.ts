@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { readInput } from "../_shared/input.ts";
 
 const BUCKET = "listing-photos";
 const PAGE_SIZE = 1000;
@@ -27,6 +28,12 @@ Deno.serve(async (req) => {
   const token = /^Bearer\s+(.+)$/i.exec(authorization)?.[1]?.trim();
   if (!token) {
     return json(401, { error: "not_signed_in", message: "Please sign in again." });
+  }
+
+  // Takes no input: the account comes only from the verified token.
+  const input = await readInput(req, { allowed: [], maxBytes: 1024, emptyIsObject: true });
+  if (!input.ok) {
+    return json(input.status, { error: input.error, message: input.message });
   }
 
   const url = Deno.env.get("SUPABASE_URL");

@@ -14,8 +14,11 @@
     <!-- The camera is optional: devices without one can still list with gallery photos. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
+    <!-- No backup (P5A, compliance gap 18): the encrypted session can't be read on another
+         phone anyway, and drafts and photos stay on this phone. -->
     <application
-        android:allowBackup="true"
+        android:name=".DzirentApplication"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"

@@ -1,0 +1,40 @@
+# P5A: weekly dependency updates, one grouped pull request per ecosystem. Security updates
+# (turned on in the repository settings) still open on their own as soon as an alert appears.
+# Dependabot opens its pull requests against main; the owner decides what to merge.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      web:
+        patterns: ["*"]
+
+  - package-ecosystem: gradle
+    directory: /mobile
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      mobile:
+        patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /services/vision
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      vision:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ["*"]

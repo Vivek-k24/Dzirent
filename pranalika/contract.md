@@ -175,16 +175,41 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 - Triggers check text when it is inserted or changes (a column that doesn't change is never checked, so old rows never block other updates):
   - `listings`: `title`, `description`, `price_note`, `deposit_note` (public text);
   - `profiles`: `display_name`, `studio_name`, `studio_handle`, `studio_bio`, `pickup_area` (public text);
-  - `messages`: `body`; `reports`: `reason`, `details`.
-- Language that isn't allowed (LDNOOBW English list, whole words after normalizing case, accents, repeated letters and swaps such as 0/o, 1/i or l, @/a, $/s) is refused everywhere. Contact details and outside links (phone numbers, email addresses, URLs, `@handles`) are refused only in listings and profiles; chat allows them.
+  - `reports`: `reason` (`details` unfiltered since P2B).
+  - `messages.body` is **not checked since P5A** (owner decision): no check and no logging. A chat message is never refused for its words.
+- Language that isn't allowed (LDNOOBW English list, whole words after normalizing case, accents, repeated letters and swaps such as 0/o, 1/i or l, @/a, $/s) is refused in the fields above (not in chat messages since P5A). Contact details and outside links (phone numbers, email addresses, URLs, `@handles`) are refused only in listings and profiles; chat allows them.
 - A refusal is `P0001` with one of these messages, and `hint` = the column name (for example `title`, `body`, `studio_bio`), so apps can show it under the right field:
   - "This text includes language that isn't allowed on Dzirent."
   - "Please remove contact details from your listing; people can message you in Dzirent."
   - "Please remove contact details from your profile; people can message you in Dzirent."
-- `check_text(p_text text, p_where text)`: Guest and signed-in. `p_where` is `'listing'`, `'profile'`, `'message'` or `'report'` (else `22023`); text up to 5000 characters. Returns the refusal message, or null when the text is fine. Saving runs the same check; this is for asking first, mainly sign-up's display name (the Auth API hides the database's message when the profile insert at sign-up is refused).
+- `check_text(p_text text, p_where text)`: Guest and signed-in. `p_where` is `'listing'`, `'profile'`, `'message'` or `'report'` (else `22023`); text up to 5000 characters. Returns the refusal message, or null when the text is fine. `'message'` always returns null since P5A (kept so installed apps don't fail). Saving runs the same check; this is for asking first, mainly sign-up's display name (the Auth API hides the database's message when the profile insert at sign-up is refused).
+
+### Current terms and rate limits (P5A)
+- **Current terms required.** These writes are refused with `P0001` "Please accept the updated Terms of Use and Privacy Policy to continue." until the caller has accepted the current version of both documents (`needs_legal_acceptance()` false; `accept_legal` fixes it):
+  - publishing a listing (`listings.status` becoming `active`, insert or update; private drafts are allowed);
+  - starting a chat (`start_conversation` or a `conversations` insert; reopening an existing chat is allowed);
+  - sending a message (`messages` insert);
+  - saving a piece (`saved_listings` insert) or a studio (`save_studio`);
+  - filing a report (`reports` insert, `report_user`).
+  - Reading, deleting, unsaving, blocking and everything else stay allowed.
+- **Rate limits.** Refused with `P0001` "You're doing that too often. Try again in a bit." A refused write isn't counted. Settings in `app_private.settings` (`rate_limit_<action>`, changed only by migrations); a window starts at the first write after the previous window ended:
+
+| Action | Limit | Counted on |
+| --- | --- | --- |
+| `message` | 30 a minute | `messages` insert |
+| `new_chat` | 30 a day | a new chat (`start_conversation` reopening an existing chat isn't counted) |
+| `report` | 20 a day | `reports` insert (direct or `report_user`) |
+| `new_listing` | 20 a day | `listings` insert (drafts included) |
+| `photo_scan` | 30 an hour per lender | a new photo check, asked for (`request_scan`) or automatic |
+
+- Both rules key on the signed-in caller writing their own row: server jobs and admins acting on someone else's row aren't stopped. Trigger `terms_and_limits` on `messages`, `conversations`, `reports`, `saved_listings`, `saved_studios` and `listings`.
+
+### Listing photo uploads (P5A)
+- Bucket `listing-photos` (public reads): Storage accepts only `image/jpeg`, `image/png` and `image/webp`, at most 10 MB (10,485,760 bytes). Otherwise Storage answers HTTP 400 with `statusCode` `415` ("mime type … is not supported") or `413` ("The object exceeded the maximum allowed size"). The apps and website show "Choose a JPEG, PNG or WebP photo." and "This photo is too big. Choose one under 10 MB.".
+- Upload and update are allowed only at `{listing_id}/{random}.jpg`, where `{random}` is 16 to 64 letters, digits, `_` or `-`, and only for a listing the caller owns (else 403, row-level security). Both apps and the website upload compressed JPEG with `Content-Type: image/jpeg`.
 
 ### Admin (P2B part 1)
-Admins are the accounts in `app_private.admin_users` (closed to every API role). Every admin function below is callable by `authenticated` but starts with `app_private.require_admin()`: it refuses with `42501` "Admins only" unless the caller is in `admin_users`, and "Sign in with two-step verification to use admin tools" unless the JWT is `aal2` (Supabase MFA, TOTP). Every call, reads included, writes one row to the append-only admin log. Functions return `jsonb` unless noted.
+Admins are the accounts in `app_private.admin_users` (closed to every API role). Every admin function below is callable by `authenticated` but starts with `app_private.require_admin()`: it refuses with `42501` "Admins only" unless the caller is in `admin_users`, and "Sign in with two-step verification to use admin tools" unless the JWT is `aal2` (Supabase MFA, TOTP). Since P5A it also refuses with "Enter a new two-step code to keep using admin tools" when the session's last TOTP check (the JWT's `amr` entry) is more than 24 hours old, and `is_admin()` is false then. The website shows the code step for both messages and then continues to the page that was asked for. Every call, reads included, writes one row to the append-only admin log. Functions return `jsonb` unless noted.
 
 - **Adding or removing an admin:** list the admin emails in `ADMIN_EMAILS` (comma-separated) in `H:\DziRent\secrets\providers.env`, then an agent runs `node supabase/seed/admins.mjs` from the repo root. It makes `admin_users` match the list exactly: listed accounts are added, unlisted admins removed, each change logged as `admin_added` / `admin_removed`. An empty list is refused. An email with no Dzirent account is skipped (sign up first, then run it again). The admin then enrolls a TOTP factor (Supabase MFA) and signs in with it.
 - `is_admin()` → `boolean`: true only for an admin at `aal2`. Any signed-in user may call it.
@@ -218,7 +243,7 @@ Admins are the accounts in `app_private.admin_users` (closed to every API role).
 - **Checks:** validates the caller's token (`auth.getUser`), then calls `is_admin()` with the caller's own token. Anything else gets HTTP 403. A reason of at least 3 characters is required.
 - `{ "action": "ban" | "unban", "user_id", "reason", "report_id"? }`: Supabase Auth ban (`ban_duration` about 100 years, or `none`) with the server key from the function's environment, then `admin_record_ban` as the caller. A banned account can't sign in or refresh. An admin can't ban themselves.
 - `{ "action": "remove_photos", "listing_id", "photo_ids": [...], "reason", "takedown_id"? }`: `admin_remove_photos` as the caller, then deletes the files from `listing-photos` with the server key.
-- Returns `{ ok, action, ... }`. An Auth failure is HTTP 502 (nothing recorded). If the record step fails after the Auth change, it is HTTP 500 with `auth_changed: true`.
+- Returns `{ ok, action, ... }`. An Auth failure is HTTP 502 (nothing recorded). If the record step fails after the Auth change, it is HTTP 500 with `auth_changed: true`. Since P5A errors carry a plain `message` and no longer a `detail` with the database's reply.
 
 Suspension and holds (any client):
 - **Suspended accounts:** messages, new chats and reports by a suspended account are refused with `P0001`: "Your account is suspended until Nov 8, 2026. Reason: …." For a ban: "Your account is suspended. Reason: …." Reading one's own data still works. Apps can't change `suspended_until` or `suspension_reason` (a trigger keeps them).
@@ -289,8 +314,8 @@ Reports (P2B changes):
 ### Photo checks (Step 8A, Step 8B)
 - `request_scan(p_listing_id uuid)`: Signed-in listing owner only. Returns the `uuid` of the photo check (a `listing_scans` row) for the listing's current photos. The check runs on the server and usually finishes within a minute (longer when the vision service starts cold). Watch the row until `status` is `done` or `failed`: Realtime `UPDATE` events on `listing_scans` filtered by `id`, with polling by ID as the fallback (Step 8B).
   - One scan at a time per listing: asking again while one is `queued` or `running` returns that scan's ID. Since Step 8B, when the latest check is `done` and covers the current photos (`photo_set_hash`), that check's ID comes back instead of a new one. A scan that hasn't finished after 10 minutes is marked `failed` and a new one can start.
-  - Refused: `42501` "Not signed in" / "Not your listing"; `22023` "Add a photo first"; `P0001` "Too many photo checks. Try again in an hour." (20 per lender per hour).
-- Automatic re-check (Step 8B): any insert or delete on `listing_photos` of an `active` listing, or a change of a photo's `storage_path`, `slot` or `listing_id`, queues a check the same way as `request_scan` (same 20-an-hour limit). Apps don't call anything for it. The listing stays `active` while the check runs.
+  - Refused: `42501` "Not signed in" / "Not your listing"; `22023` "Add a photo first"; `P0001` "You're doing that too often. Try again in a bit." (30 new checks per lender per hour since P5A; was "Too many photo checks. Try again in an hour." at 20).
+- Automatic re-check (Step 8B): any insert or delete on `listing_photos` of an `active` listing, or a change of a photo's `storage_path`, `slot` or `listing_id`, queues a check the same way as `request_scan` (same 30-an-hour limit since P5A). Apps don't call anything for it. The listing stays `active` while the check runs.
 - Automatic pause (Step 8B), only while `vision_required` is on: when that check of an `active` listing ends with a result that isn't `allowed`, or fails, the server sets the listing to `paused` and writes a plain sentence to `listings.auto_paused_reason`: "Paused: <reason>" for a rejection, otherwise "Paused: the new photos need a check before this listing can go live again." If the photos changed again while the check ran, the server checks again instead. If the 20-an-hour limit stops a re-check, the listing is paused with "Paused: the photos changed too often to check right now. Check them again in an hour." While the flag is off, photos are re-checked only and nothing is ever paused.
 - Content safety (P2A), in the vision service: any photo (size tags and close-ups included) that the safety model reads as clear nudity or sexual content makes the verdict `rejected` with "This photo isn't allowed on Dzirent."; an uncertain one makes it `review` ("Someone at Dzirent will check these photos before this listing can go live.") unless it is already rejected; a photo read as a hooded garment turns `allowed` into `review` ("This piece has a hood, so someone at Dzirent will check it."). A piece being worn never changes the verdict and never adds a warning. Each photo's `labels` (in `photo_scans`) now also carry `hooded` and `safety.nsfw`.
 - `listings.auto_paused_reason` (text, at most 300 characters, Step 8B): why the server paused the listing; apps show it on paused listings. Written only by the server: apps can't update it, and a listing inserted by an app always starts without one. A successful republish (`status` set to `active`, flag on or off) clears it.
@@ -311,6 +336,16 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 ---
 
 ## 2. Edge Functions
+
+**Input rules (P5A, every function, `supabase/functions/_shared/input.ts`):** the body must be one JSON object, within the function's size limit, with only the fields listed for it and every required one present. Otherwise HTTP 400 (413 when too large) with a plain `message` ("Send a JSON object.", "This request has fields that aren't accepted.", "This request is missing required fields.", "This request is too large."). Errors never include database or library details.
+
+| Function | Fields | Size limit |
+| --- | --- | --- |
+| `delete-listing` | `listing_id` (required) | 1 KB |
+| `delete-account`, `export-my-data`, `cleanup-files` | none (`{}` or an empty body) | 1 KB |
+| `admin-actions` | `action`, `reason` (required, at most 500 characters), `user_id`, `report_id`, `listing_id`, `photo_ids` (at most 20), `takedown_id` | 16 KB |
+| `send-push` | `kind`, `conversation_id`, `recipient_id`, `title` (required), `body` | 8 KB |
+| `scan-listing` | `scan_id` (required) | 1 KB |
 
 ### `delete-listing`
 - **Who can call:** Signed-in listing owner (`POST /functions/v1/delete-listing`).

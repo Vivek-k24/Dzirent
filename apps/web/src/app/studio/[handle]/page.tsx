@@ -7,6 +7,7 @@ import { Gate, PieceGrid } from "@/components/cards";
 import { Icon } from "@/components/icon";
 import { studioAction } from "@/app/actions";
 import { ConfirmSubmit } from "@/components/submit";
+import { refusalText } from "@/lib/refusals";
 export const metadata: Metadata = {
   title: "Meet the studio",
   robots: { index: false, follow: false },
@@ -91,6 +92,11 @@ export default async function StudioPage({
       {value(q, "notice") === "action-error" && (
         <p className="notice" role="status">
           That didn’t go through. Please try again.
+        </p>
+      )}
+      {refusalText(value(q, "notice")) && (
+        <p className="notice" role="status">
+          {refusalText(value(q, "notice"))}
         </p>
       )}
       <div className="section-heading">

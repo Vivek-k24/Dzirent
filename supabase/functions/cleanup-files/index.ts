@@ -12,6 +12,7 @@
 // 4. Each job's run (mode, counts, errors) is recorded with cleanup_record_run.
 // Storage rows are never deleted directly.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { readInput } from "../_shared/input.ts";
 
 const BUCKET = "listing-photos";
 const PAGE_SIZE = 1000;
@@ -41,6 +42,9 @@ Deno.serve(async (req) => {
   if (!secret || !sameSecret(req.headers.get("x-cleanup-secret") ?? "", secret)) {
     return json(401, { error: "not_allowed" });
   }
+  // The database sends {}; the plan comes from cleanup_file_plan(), never from the request.
+  const input = await readInput(req, { allowed: [], maxBytes: 1024, emptyIsObject: true });
+  if (!input.ok) return json(input.status, { error: input.error });
   const url = Deno.env.get("SUPABASE_URL");
   const serverKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !serverKey) return json(500, { error: "not_configured" });

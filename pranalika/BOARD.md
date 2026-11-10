@@ -142,7 +142,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages, P2C, P3A, P3B, P4B), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
+| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages, P2C, P3A, P3B, P4B, P5A), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
 
 | P1A part 1: data inventory and `compliance.md`; legal fill-ins in `legal-placeholders.md` | Done |
 | P1A part 2: website legal pages (privacy policy, terms, community rules and prohibited items, copyright/DMCA, safety tips, delete-account page, support/contact), fill-ins in one config | Done |
@@ -191,7 +191,12 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | P4B (Claude Code): headings on every screen and dialog title and section header, errors and photo-check progress announced, listing cards read as one item, row photos and avatars decorative, labelled closet switch and Edit/Delete/Remove buttons, selectable sidebar categories, 48 dp targets (photo remove, date chips, categories), buttons grow with large text, theme contrast fixes (outline, dark accent), Lint accessibility checks as errors (shared module included), two Lint errors fixed (Android 8 crash in MainActivity, Fragment version for the save picker) | Done |
 | Owner: TalkBack and largest-font test of P4B on Android (list in the P4B handoff) | To do |
 | Mac: VoiceOver pass of the shared screens with VoiceOver actually on (P4B handoff), and build-check the P4B shared-code changes | To do |
-| P5A Security hardening: database rule audit, rate limits, bot check on sign-up, website security headers, input checks on every server function, dependency and secret scanning | To do |
+| P5A Security hardening: database rule audit, rate limits, bot check on sign-up, website security headers, input checks on every server function, dependency and secret scanning | Done (Claude Code); bot check researched, stays off until P8C |
+| P5A (Claude Code): database audit (nothing to fix; 11 foreign-key indexes added), current terms enforced in the database, rate limits (messages, chats, reports, listings, photo checks), upload rules (JPEG/PNG/WebP, 10 MB, `{listing_id}/{random}.jpg`), input checks in all 7 Edge Functions, website security headers, GitHub alerts/Dependabot/CodeQL, 30-day inactivity sign-out, admin code every 24 hours, phone sessions in the Keystore/Keychain and Android backup off, chat filter removed, privacy policy sentence | Done |
+| Mac: build-check the P5A shared code, especially `IosSecureStore.kt` (Keychain) and that a signed-in iPhone stays signed in after the update (see the P5A handoff) | To do |
+| Owner: phone test of P5A on Android (see the P5A handoff); check the website's headers, sign-in, live chat, uploads and admin area on Preview after the deploy | To do |
+| Owner: root `README.md` still says the text filter covers chat (see Requests in the P5A handoff) | To do |
+| P5C Share listings and studios: share button on all three platforms, rich link previews with the studio handle, app links (Android now, iPhone with the paid Apple account) | To do |
 | P5B Logs and monitoring: error tracking, uptime checks, alerts, backup restore drill, incident plan | To do |
 | P6A ID verification (Didit) on all three platforms; flag off, keys blank | To do |
 | P6B Payments backend: Stripe Connect test mode, deposits, "confirm rental" step, sales tax hook off | To do |
@@ -201,3 +206,6 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | P8A Google Play: organization account, new package, upload key, store forms, first upload, release pipeline | To do |
 | P8B Apple: organization enrollment, App Store Connect, privacy labels, age rating, push key, TestFlight, submission | To do |
 | P8C Go-live: flags on, email confirmation on, monitoring live, launch checklist | To do |
+| P8C: sign-up bot check (hCaptcha recommended, see `security-log.md` "Bot check"; all three clients send the token before it's switched on) | To do |
+| P8C: official App Store and Google Play badges on the About page, once each listing is live | To do |
+| P8C: first-sign-in wording for brand-new users | To do |

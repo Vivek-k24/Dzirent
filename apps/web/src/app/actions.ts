@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { serverClient, currentUser } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/types";
 import { context } from "@/lib/data";
+import { refusalNotice } from "@/lib/refusals";
 const field = (f: FormData, n: string) => String(f.get(n) || "").trim();
 export async function authenticate(form: FormData) {
   const client = await serverClient();
@@ -135,7 +136,8 @@ export async function savePiece(form: FormData) {
             { user_id: user.id, listing_id: id },
             { onConflict: "user_id,listing_id" },
           );
-  if (result.error) redirect(next + "?notice=save-error");
+  if (result.error)
+    redirect(next + "?notice=" + (refusalNotice(result.error.message) ?? "save-error"));
   revalidatePath("/saved");
   revalidatePath(next);
   redirect(next);
@@ -167,7 +169,9 @@ export async function studioAction(form: FormData) {
       : { p_handle: handle },
   );
   if (error)
-    redirect("/studio/" + encodeURIComponent(handle) + "?notice=action-error");
+    redirect(
+      "/studio/" + encodeURIComponent(handle) + "?notice=" + (refusalNotice(error.message) ?? "action-error"),
+    );
   revalidatePath("/", "layout");
   redirect(
     action === "block"

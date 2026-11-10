@@ -3,10 +3,11 @@
 // checked blocks, the recipient's settings and the wording. The database proves it is the
 // caller with the shared secret in x-send-push-secret. Apps never call this function.
 
+import { readInput, UUID } from "../_shared/input.ts";
+
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const KINDS = new Set(["message", "new_chat", "dates"]);
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // A chat notification that couldn't be delivered for a day is stale; the inbox has it.
 const TTL = "86400s";
 
@@ -204,7 +205,12 @@ Deno.serve(async (req) => {
     return json(500, { error: "not_configured" });
   }
 
-  const push = parseRequest(await req.json().catch(() => null));
+  const input = await readInput(req, {
+    allowed: ["kind", "conversation_id", "recipient_id", "title", "body"],
+    required: ["kind", "conversation_id", "recipient_id", "title"],
+    maxBytes: 8192,
+  });
+  const push = input.ok ? parseRequest(input.body) : null;
   if (!push) {
     return json(400, { error: "bad_request" });
   }

@@ -700,6 +700,7 @@ export default function PrivacyPage() {
             every action they take is recorded.
           </li>
         </ul>
+        <p>For your security, you are signed out after 30 days without using Dzirent.</p>
       </section>
 
       <section id="changes">

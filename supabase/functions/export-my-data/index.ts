@@ -8,6 +8,7 @@
 //    returns the file (Content-Disposition: dzirent-data-<date>.json).
 // Errors are JSON { error, message } with the same plain sentence in both fields.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { readInput } from "../_shared/input.ts";
 
 const BUCKET = "listing-photos";
 const corsHeaders = {
@@ -79,6 +80,10 @@ Deno.serve(async (req) => {
 
   const token = /^Bearer\s+(.+)$/i.exec(req.headers.get("Authorization") ?? "")?.[1]?.trim();
   if (!token) return fail(401, "not_signed_in", "Please sign in again.");
+
+  // Takes no input ({} or nothing): the export comes only from the caller's token.
+  const input = await readInput(req, { allowed: [], maxBytes: 1024, emptyIsObject: true });
+  if (!input.ok) return fail(input.status, input.error, input.message);
 
   const url = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
   const key = publishableKey();

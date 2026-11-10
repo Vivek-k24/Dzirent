@@ -5,8 +5,9 @@
 // database functions. Any failure marks the scan failed and the listing goes to review.
 // Apps never call this function.
 
+import { readInput, UUID } from "../_shared/input.ts";
+
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // The vision service's own limit (services/vision/app/config.py MAX_PHOTOS).
 const MAX_PHOTOS = 8;
 // Cloud Run stops a request at 120 s. This leaves time to save the result within the function's
@@ -229,7 +230,8 @@ Deno.serve(async (req) => {
     return json(401, { error: "not_allowed" });
   }
 
-  const scanId = (await req.json().catch(() => null))?.scan_id;
+  const input = await readInput(req, { allowed: ["scan_id"], required: ["scan_id"], maxBytes: 1024 });
+  const scanId = input.ok ? input.body.scan_id : null;
   if (typeof scanId !== "string" || !UUID.test(scanId)) {
     return json(400, { error: "bad_request" });
   }

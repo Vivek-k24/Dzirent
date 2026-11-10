@@ -5,11 +5,13 @@
 // token, so it checks again and writes the admin log. The server key comes from the function's
 // environment only and is used for the Auth and Storage calls, nothing else.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { readInput, UUID } from "../_shared/input.ts";
 
 const BUCKET = "listing-photos";
 // About 100 years: Supabase Auth's way of saying "until unbanned".
 const BAN_DURATION = "876000h";
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// A listing has at most 6 photos; anything longer is not a real request.
+const MAX_PHOTO_IDS = 20;
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -85,9 +87,20 @@ Deno.serve(async (req) => {
     return json(403, { error: "admins_only", message: "Admins only, signed in with two-step verification." });
   }
 
-  const body = await req.json().catch(() => null) as Record<string, unknown> | null;
-  const action = body?.action;
-  const reason = reasonOf(body?.reason);
+  const input = await readInput(req, {
+    allowed: ["action", "reason", "user_id", "report_id", "listing_id", "photo_ids", "takedown_id"],
+    required: ["action", "reason"],
+    maxBytes: 16_384,
+  });
+  if (!input.ok) {
+    return json(input.status, { error: input.error, message: input.message });
+  }
+  const body = input.body;
+  const action = body.action;
+  if (typeof body.reason !== "string" || body.reason.length > 500) {
+    return json(400, { error: "bad_request", message: "Give a reason of at most 500 characters." });
+  }
+  const reason = reasonOf(body.reason);
   if (!reason) {
     return json(400, { error: "bad_request", message: "Give a reason (at least 3 characters)." });
   }
@@ -114,7 +127,11 @@ Deno.serve(async (req) => {
         p_user_id: userId, p_banned: action === "ban", p_reason: reason, p_report_id: reportId,
       });
       if (!record.ok) {
-        return json(500, { error: "record_failed", auth_changed: true, detail: record.body });
+        return json(500, {
+          error: "record_failed",
+          auth_changed: true,
+          message: "The account was changed in Supabase Auth, but the record couldn't be saved. Try again.",
+        });
       }
       console.log(JSON.stringify({ action, ok: true }));
       return json(200, { ok: true, action, result: record.body as Record<string, unknown> });
@@ -125,7 +142,7 @@ Deno.serve(async (req) => {
       const photoIds = body?.photo_ids;
       const takedownId = body?.takedown_id ?? null;
       if (typeof listingId !== "string" || !UUID.test(listingId) || !Array.isArray(photoIds) || photoIds.length === 0 ||
-        !photoIds.every((id) => typeof id === "string" && UUID.test(id)) ||
+        photoIds.length > MAX_PHOTO_IDS || !photoIds.every((id) => typeof id === "string" && UUID.test(id)) ||
         (takedownId !== null && (typeof takedownId !== "string" || !UUID.test(takedownId)))) {
         return json(400, { error: "bad_request" });
       }
@@ -134,7 +151,14 @@ Deno.serve(async (req) => {
         p_listing_id: listingId, p_photo_ids: photoIds, p_reason: reason, p_takedown_id: takedownId,
       });
       if (!removed.ok) {
-        return json(removed.status === 400 ? 400 : 500, { error: "remove_failed", detail: removed.body });
+        // The database's own plain sentence (for example "Photo not found on this listing") is
+        // safe to show; anything else stays generic.
+        const said = (removed.body as { message?: unknown } | null)?.message;
+        const plain = removed.status === 400 && typeof said === "string" && said.length <= 200 ? said : null;
+        return json(removed.status === 400 ? 400 : 500, {
+          error: "remove_failed",
+          message: plain ?? "Couldn't remove the photos. Try again.",
+        });
       }
       const paths = ((removed.body as { storage_paths?: unknown })?.storage_paths ?? []) as string[];
       if (paths.length > 0) {

@@ -4,6 +4,8 @@ import com.dzirent.shared.util.*
 import com.dzirent.shared.config.SupabaseBuildConfig
 import com.dzirent.shared.model.*
 import com.dzirent.shared.platform.ImageCompressor
+import com.dzirent.shared.platform.SecureSessionManager
+import com.dzirent.shared.platform.platformSecureStore
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
@@ -17,6 +19,7 @@ import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.exceptions.RestException
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.isSuccess
 import com.dzirent.shared.util.DataExport
 import io.github.jan.supabase.functions.Functions
@@ -77,8 +80,23 @@ private val DATABASE_MESSAGES = listOf(
     "This listing is hidden by Dzirent",
     "You can only report messages in your own chats",
     // Age gate (P2C).
-    "Dzirent is only for people 18 and older"
+    "Dzirent is only for people 18 and older",
+    // Security hardening (P5A): current terms required, rate limits.
+    "Please accept the updated Terms of Use and Privacy Policy",
+    "You're doing that too often"
 )
+
+/** Storage's own refusals for listing-photos (P5A: JPEG, PNG or WebP, at most 10 MB), in plain words. */
+internal fun storageRefusal(statusCode: Int?, raw: String): String? {
+    val said = raw.lowercase()
+    return when {
+        statusCode == 413 || "maximum allowed size" in said || "payload too large" in said ->
+            "This photo is too big. Choose one under 10 MB."
+        "mime type" in said || "invalid_mime_type" in said ->
+            "Choose a JPEG, PNG or WebP photo."
+        else -> null
+    }
+}
 
 /** How often the editor asks for a scan's state when Realtime hasn't sent it. */
 private const val SCAN_POLL_MS = 4_000L
@@ -147,7 +165,14 @@ fun createDzirentSupabaseClient(
             }
         )
         install(Auth) {
-            this.sessionManager = sessionManager ?: runCatching { SettingsSessionManager() }.getOrElse { MemorySessionManager() }
+            // P5A: the session lives in encrypted storage (Android Keystore, iPhone Keychain), never in
+            // plain app storage. A session saved in plain storage by an earlier version moves over once.
+            // Without secure storage (unit tests) it stays in memory only.
+            this.sessionManager = sessionManager
+                ?: platformSecureStore()?.let { store ->
+                    SecureSessionManager(store, legacy = runCatching { SettingsSessionManager() }.getOrNull())
+                }
+                ?: MemorySessionManager()
             this.codeVerifierCache = runCatching { SettingsCodeVerifierCache() }.getOrElse { MemoryCodeVerifierCache() }
         }
         install(Postgrest)
@@ -1098,8 +1123,13 @@ class DzirentRepository(
             // Filenames are fresh; upsert would need an UPDATE policy the bucket doesn't grant.
             storage.from("listing-photos").upload(path, imageBytes) {
                 upsert = false
+                // The photos are compressed to JPEG on the phone; the bucket checks the type (P5A).
+                contentType = ContentType.Image.JPEG
             }
         } catch (e: Exception) {
+            val rest = e as? RestException
+            storageRefusal(rest?.statusCode, listOfNotNull(rest?.error, rest?.description, e.message).joinToString(" "))
+                ?.let { throw DzirentException(it) }
             throw fail("upload the photo", e)
         }
 

@@ -25,7 +25,7 @@ Account deletion (`supabase/functions/delete-account/index.ts`): refused (HTTP 4
 | Password | Sign-up form | `auth.users.encrypted_password` (hash, by Supabase Auth) | Sign-in | Server (hash only) | Required | Until deletion | Deleted |
 | Sign-up metadata: display name, role, adult confirmation, city, approx lat/lng | Sign-up form; city and coordinates from the browse location (web cookie, already rounded) or a picked city (mobile: city centre from `us_cities`) | `auth.users.raw_user_meta_data` (keys seen live: `display_name`, `role`, `adult_confirmed`, `city`, `approx_lat`, `approx_lng`, plus Supabase's own `email`, `email_verified`, `phone_verified`, `sub`) | Creates the profile (`handle_new_user` trigger) | Server | Name and role required; city optional | Until deletion. It is not updated when the profile changes later | Deleted |
 | Email verified flags, sign-in times | Supabase Auth | `auth.users` (`email_confirmed_at`, `last_sign_in_at`, `created_at`) | Auth bookkeeping | Server | Automatic | Until deletion | Deleted |
-| Sessions: IP address, user agent, times | Every sign-in and token refresh | `auth.sessions` (`ip`, `user_agent`, `created_at`, `refreshed_at`), `auth.refresh_tokens` (52 sessions and 123 refresh tokens for 5 users on 2026-11-06) | Keep users signed in | Server | Automatic | Until sign-out or expiry. Hosted `sessions_timebox` and `sessions_inactivity_timeout` are 0 (no forced end) | Deleted |
+| Sessions: IP address, user agent, times | Every sign-in and token refresh | `auth.sessions` (`ip`, `user_agent`, `created_at`, `refreshed_at`), `auth.refresh_tokens` (52 sessions and 123 refresh tokens for 5 users on 2026-11-06) | Keep users signed in | Server | Automatic | Until sign-out, or 30 days without use (P5A: `sessions_inactivity_timeout` 720 hours; `sessions_timebox` 0, no fixed lifetime). Supabase removes expired sessions about 24 hours later | Deleted |
 | Session ID | Supabase JWT claim | Copied into `accessory_declarations.session_id`, `listing_declarations.session_id` | Audit of a declaration | Owner, Server | Automatic | Until deleted | **Kept** in the declarations |
 | Auth audit events: action, user ID, email, user agent | Supabase Auth | Supabase log stream `auth_audit_logs` only. Not in Postgres: hosted `audit_log_disable_postgres = true`, `auth.audit_log_entries` has 0 rows | Security audit | Server | Automatic | Supabase log retention (see 1.12) | Kept until the logs expire |
 | "I understand Dzirent only connects people" tick (website only since P1B part 1) | Website sign-up form (`policy` checkbox) | **Not stored anywhere** | Required to sign up on the website | - | Required on the website | - | - |
@@ -193,12 +193,12 @@ No third-party cookies, scripts, fonts or trackers: the font is served with the 
 
 | Where | Holds |
 | --- | --- |
-| Supabase session | `SettingsSessionManager` (supabase-kt): sign-in session on the phone |
+| Supabase session | Since P5A: `SecureSessionManager` (`mobile/shared/.../platform/SecureSession.kt`). Android: AES-256-GCM, key in the Android Keystore (`dzirent_session_key`), ciphertext only in SharedPreferences `dzirent_secure_session` (`AndroidSecureStore.kt`). iPhone: Keychain, service `com.dzirent.app.session` (`IosSecureStore.kt`, unbuilt until the Mac check). A session left in plain storage (SharedPreferences / NSUserDefaults) by an earlier version is moved once and deleted there |
 | Android DataStore `settings`; iPhone NSUserDefaults | Theme, units, rental days, distance step |
 | Android SharedPreferences `dzirent_prefs`; iPhone NSUserDefaults | Small flags (photo consent, tips, declaration, as noted in `AndroidDevice.kt`), recent searches per account |
 | Android `filesDir/drafts`, iPhone `Application Support/drafts` | Listing draft JSON per account |
 | Photo folders | Original photos, see 1.5 |
-| Android backup | `android:allowBackup="true"` in `AndroidManifest.xml`: Android may copy app data, including the session and drafts, to the user's Google backup. No backup rules file limits it |
+| Android backup | Off since P5A (`android:allowBackup="false"` in `AndroidManifest.xml`): nothing, including the session and drafts, goes to the user's Google backup |
 
 ### 1.15 Reference data
 
@@ -308,20 +308,24 @@ Today:
 | Shop window functions return safe fields only, no coordinates or other users' IDs, max 30 rows | `20261031010000_shop_window.sql`, `..._shop_window_fix.sql`, `..._parity_shop_window_gaps.sql` |
 | Fixed empty search path on functions; internal helpers in `app_private`, not exposed; EXECUTE revoked by default | Migrations; `security-log.md` |
 | Column-level UPDATE grants on `listings` and `rentals` (IDs and `auto_paused_reason` not writable by apps) | `foundation_access.sql`, `20261106040000_step8b_photo_policy.sql` |
-| Private storage rules: only the listing's owner can list, upload, change or delete its photos; paths are `<listing id>/<random>.<ext>`, never user IDs; listing delete refused while photos remain | `foundation_access.sql`, `20261030232953_photo_cleanup.sql` |
-| Edge Functions check the caller in code: `delete-account` and `delete-listing` verify the JWT; `send-push` and `scan-listing` need a 32-byte shared secret from Vault, compared in constant time | `supabase/functions/*/index.ts`, `supabase/config.toml` |
+| Private storage rules: only the listing's owner can list, upload, change or delete its photos; paths are `<listing id>/<random>.jpg` (P5A; was `.<ext>`), never user IDs; listing delete refused while photos remain. Since P5A the bucket accepts only JPEG, PNG and WebP up to 10 MB | `foundation_access.sql`, `20261030232953_photo_cleanup.sql`, `20261110230000_p5a_security_hardening.sql` |
+| Edge Functions check the caller in code: `delete-account` and `delete-listing` verify the JWT; `send-push` and `scan-listing` need a 32-byte shared secret from Vault, compared in constant time. Since P5A every function checks its input (JSON object, size limit, unknown fields refused) and returns plain errors | `supabase/functions/*/index.ts`, `supabase/functions/_shared/input.ts`, `supabase/config.toml` |
+| Terms in the database (P5A): publishing, starting a chat, sending a message, saving a piece or studio and reporting are refused until the caller accepted the current Terms of Use and Privacy Policy | `20261110230000_p5a_security_hardening.sql` |
+| Sessions (P5A): signed out after 30 days without use (`sessions_inactivity_timeout` 720 hours); admin tools need a two-step code from the last 24 hours | Hosted Auth settings; `20261110231000_p5a_admin_code_24h.sql` |
+| Website security headers (P5A): Content-Security-Policy, HSTS, frame-ancestors none, X-Frame-Options, Referrer-Policy, nosniff, Permissions-Policy | `apps/web/next.config.ts` |
+| GitHub (P5A): vulnerability alerts, Dependabot security updates and weekly grouped updates, secret scanning with push protection, CodeQL default setup | Repository settings, `.github/dependabot.yml` |
 | Keys: apps hold only the publishable key, from build environment variables; server keys only in Edge Function secrets, Vault and `H:\DziRent\secrets\`; `google-services.json` kept out of the repo | `mobile/shared/build.gradle.kts`, `security-log.md`, `.gitignore` |
 | Vision service: no unauthenticated access, one invoker service account, no keys, URL allow-list, size and pixel limits, no redirects, max 1 instance | `services/vision/app/fetch.py`, `config.py`, `security-log.md` |
 | Google Cloud billing kill switch: $20 budget, Pub/Sub `billing-alerts`, function `stop-billing` | Google Cloud project `dzirent`, per `security-log.md`. Its source is in a local folder outside the repo (`H:\DziRent\billing-killswitch\`, not read). Not re-checked this session (`gcloud` needed a new sign-in) |
-| Rate limits that exist: photo checks 20 per lender per hour and one at a time per listing (`request_scan`, `app_private.queue_scan`); Supabase Auth hosted limits `rate_limit_email_sent = 2`, `rate_limit_token_refresh = 150`, `rate_limit_verify = 30`, `rate_limit_otp = 30` (per hour for email, per 5 minutes per IP for the others, as described in `supabase/config.toml`); shop window pages capped at 30 | Step 8A/8B migrations; hosted Auth settings |
-| No rate limit on messages, reports, chats, saves or sign-ups beyond Supabase Auth's own | - |
+| Rate limits (P5A, `app_private.settings` `rate_limit_*`, one helper and the closed `app_private.rate_counters`): messages 30 a minute, new chats 30 a day, reports 20 a day, new listings 20 a day, photo checks 30 an hour per user (was 20); photo checks one at a time per listing; Supabase Auth hosted limits `rate_limit_email_sent = 2`, `rate_limit_token_refresh = 150`, `rate_limit_verify = 30`, `rate_limit_otp = 30` (per hour for email, per 5 minutes per IP for the others, as described in `supabase/config.toml`); shop window pages capped at 30 | `20261110230000_p5a_security_hardening.sql`; hosted Auth settings |
+| No rate limit on saves or sign-ups beyond Supabase Auth's own | - |
 | Passwords: hosted minimum 8 characters; leaked-password protection on per `BOARD.md` Step 0 (not re-read from the API this session); refresh-token rotation on | Hosted Auth settings |
 | Push text filter: no phone numbers, emails, addresses, map links or coordinates in notifications | `app_private.push_safe_text` (`20261104035948_step7a_push_notifications.sql`) |
-| Text filter (P2A): language that isn't allowed is refused in listings, profiles, chat and reports; contact details and links are refused in listings and profiles | Triggers and `app_private.text_refusal` (`20261107010000_p2a_text_filter.sql`, `20261107012000_p2a_text_filter_one_as_l.sql`) |
+| Text filter (P2A): language that isn't allowed is refused in listings, profiles and report reasons; contact details and links are refused in listings and profiles. Chat messages are not filtered since P5A (owner decision: people report, block or ignore) | Triggers and `app_private.text_refusal` (`20261107010000_p2a_text_filter.sql`, `20261107012000_p2a_text_filter_one_as_l.sql`, `20261110230000_p5a_security_hardening.sql`) |
 | Photo safety check (P2A): nudity rejected or reviewed; hooded garments reviewed | `services/vision/app/safety.py`, `verdict.py` |
 | Publish gate and automatic re-check of changed photos (gate off until `vision_required` is on) | Step 8A/8B migrations |
 | Encryption in transit: HTTPS for every service; Supabase, Vercel and Google encrypt stored data at rest (provider default, not configured by Dzirent) | Provider defaults |
-| Not in place: CAPTCHA (`security_captcha_enabled = false`), email confirmation (`mailer_autoconfirm = true`), website security headers (`next.config.ts` sets none), MFA not offered in the apps | Hosted Auth settings, `apps/web/next.config.ts` |
+| Not in place: CAPTCHA (`security_captcha_enabled = false`; P5A research in `security-log.md`, planned for P8C), email confirmation (`mailer_autoconfirm = true`), MFA not offered in the apps | Hosted Auth settings |
 
 ## 6. Store disclosure drafts
 
@@ -487,17 +491,22 @@ Each gap has a suggested fix and the phase from the handoff plan.
      - Device tokens: `stale_device_tokens` deletes tokens not seen for 90 days.
      - Also covered, beyond this gap: suggestion choices (365 days), download records (30 days), and age checks (only the latest, plus the one that decides the age gate).
    - **Still open:** `listing_events` (P3B's job list didn't include it; it needs an owner decision to stop writing it or set a period), `auth.sessions` (a Supabase Auth setting, `sessions_timebox`), and `pg_net` replies (pg_net's own TTL).
+   - **`auth.sessions` handled (P5A, 2026-11-10):** sessions end after 30 days without use (`sessions_inactivity_timeout` 720 hours) and Supabase removes them.
 15. **Log retention and contents are unknown.** Supabase logs keep IP, approximate place, user agent, account ID and query strings for at least 7 days; Vercel and Cloud Logging retention were not checked. Fix: record each provider's retention in the account inventory, set the shortest workable period, and state it in the privacy policy. Phase: P3B (log retention), P5B, P7B.
    - **Still open after P3B:** provider log retention is set in each provider's account, not in this repo, and wasn't checked or changed here. The privacy page keeps its server-log placeholder. Moved to P5B and P7B.
 16. **`send-push` puts IDs and tokens in URLs.** It reads tokens with `user_id=eq.<id>` and deletes dead tokens with `token=eq.<token>` in the query string, which Supabase API logs record (field `request.search`). From code; no such request was in the logs window. Fix: move both to an RPC with the values in the body. Phase: P5A.
+   - **Still open after P5A (2026-11-10):** `send-push` now checks its input, but still reads and deletes tokens with the values in the URL. Moved to P5B.
 17. **No iPhone privacy manifest.** `PrivacyInfo.xcprivacy` is missing; the app uses NSUserDefaults, a required-reason API. Phase: P8B.
    - **Closed (Mac iOS session, 2026-11-07).** `mobile/iosApp/iosApp/PrivacyInfo.xcprivacy` declares user defaults, file timestamp and system boot time, no tracking and the collected data types (section 6.3). When iPhone push is added (P8B), add Device ID there and recheck the libraries.
 18. **Android backup includes the session and drafts.** `android:allowBackup="true"` with no backup rules. Fix: `dataExtractionRules` / `fullBackupContent` that leave out the session, drafts and photos (or `allowBackup="false"`). Phase: P5A.
+   - **Closed (P5A, 2026-11-10).** `android:allowBackup="false"`, and the session is encrypted with a Keystore key that never leaves the phone (1.14).
 19. **Email confirmation off; Auth `site_url` is `http://localhost:3000`; no custom SMTP.** Anyone can sign up with someone else's address, and email links may point to localhost. Fix: set `site_url` to dzirent.com, add an email service, turn confirmation on. Phase: P6C (email service), P8C (confirmation on, `site_url`).
 20. **No bot check, no message or report rate limits, no website security headers.** Phase: P5A.
+   - **Rate limits and headers closed (P5A, 2026-11-10):** section 5. **Bot check still open:** researched in `security-log.md` ("Bot check"), stays off until P8C.
 21. **Password length differs.** Hosted minimum is 8, but the apps say "at least 6" (`auth/page.tsx` `minLength={6}`, `AuthScreens.kt`). Fix: align the clients with 8. Phase: P5A.
    - **Closed for the Android and iPhone apps (P1B part 1, 2026-11-06).** Sign-up, Change password and the "too weak" message all use `PASSWORD_MIN_LENGTH = 8` (`Models.kt`, used in `AuthScreens.kt`, `SettingsScreen.kt`, `DzirentRepository.kt`).
    - **Still open on the website:** `apps/web/src/app/auth/page.tsx` (`minLength={6}`, "At least 6 characters."), `components/settings.tsx` (`minLength={6}`) and `lib/workflow-mutations.ts` ("Use at least 6 characters.").
+   - **Closed on the website too (checked in P5A, 2026-11-10):** sign-up, Settings and the change-password check all use 8 characters (`auth/page.tsx`, `settings.tsx`, `actions.ts`, `workflow-mutations.ts`).
 22. **Chat text is unfiltered.** Phone numbers, emails and addresses are kept out of pushes but not out of messages, listings or profiles. Phase: P2A.
    - **Closed (P2A, 2026-11-07)**, in the database for every platform (`supabase/migrations/20261107010000_p2a_text_filter.sql`, `..._012000_p2a_text_filter_one_as_l.sql`):
      - Language that isn't allowed is refused everywhere: listings, profiles and studios, chat, reports.
@@ -505,6 +514,7 @@ Each gap has a suggested fix and the phase from the handoff plan.
      - Chat keeps allowing contact details on purpose (decisions.md "Content safety"), so people can arrange pickup.
      - The apps show each refusal under the field or the chat box and keep what was typed.
      - No existing row would be refused (checked 2026-11-07).
+   - **Changed (P5A, 2026-11-10, owner decision):** chat messages are no longer filtered at all (no check, no logging). Listings, profiles and report reasons keep the filter. People report, block or ignore; Report and Block are two taps from inside a chat on all three platforms.
 23. **Photos of people.** The vision service estimates whether a person wears the piece, and photos may show faces. There is no nudity check, and fingerprints are stored for every photo. Fix: the P2A nudity check, and attorney confirmation that fingerprints are not biometric data. Phase: P2A, P1A.
    - **Nudity check: closed (P2A, 2026-11-07).** The vision service runs `Marqo/nsfw-image-detection-384` (Apache 2.0) on every photo: clear nudity or sexual content is rejected, uncertain goes to review. A hooded garment goes to review. Being worn never adds a warning or changes the verdict. The per-photo nudity probability is kept in `photo_scans.labels` with the other scores.
    - **Still open:** the attorney's confirmation that the stored image fingerprints are not biometric data (P1A).

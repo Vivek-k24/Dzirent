@@ -1,8 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { readInput, UUID } from "../_shared/input.ts";
 
 const BUCKET = "listing-photos";
 const PAGE_SIZE = 1000;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -49,15 +49,11 @@ Deno.serve(async (req) => {
       return json(401, { error: "not_signed_in", message: "Please sign in again." });
     }
 
-    let body: unknown;
-    try {
-      body = await req.json();
-    } catch {
-      return json(400, { error: "invalid_request", message: "Send a listing_id in a JSON object." });
+    const input = await readInput(req, { allowed: ["listing_id"], required: ["listing_id"], maxBytes: 1024 });
+    if (!input.ok) {
+      return json(input.status, { error: "invalid_request", message: input.message });
     }
-    const listingId = body && typeof body === "object" && "listing_id" in body
-      ? body.listing_id
-      : undefined;
+    const listingId = input.body.listing_id;
     if (typeof listingId !== "string" || !UUID.test(listingId)) {
       return json(400, { error: "invalid_request", message: "A valid listing_id is required." });
     }

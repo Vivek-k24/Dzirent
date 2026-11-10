@@ -12,6 +12,7 @@ import { Gallery } from "@/components/photo";
 import { Icon } from "@/components/icon";
 import { savePiece } from "@/app/actions";
 import { GatedActionTrigger } from "@/components/guest-gate";
+import { refusalText } from "@/lib/refusals";
 export async function generateMetadata({
   params,
 }: {
@@ -171,6 +172,11 @@ export default async function ListingPage({
           {value(q, "notice") === "save-error" && (
             <p className="form-message error" role="status">
               Couldn’t update Saved. Please try again.
+            </p>
+          )}
+          {refusalText(value(q, "notice")) && (
+            <p className="form-message error" role="status">
+              {refusalText(value(q, "notice"))}
             </p>
           )}
         </section>

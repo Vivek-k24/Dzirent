@@ -213,6 +213,149 @@ Advisor run after the migration (2026-11-07 19:41 UTC): two new findings; the ea
 | INFO: RLS on, no policies | `app_private.job_runs` | Closed to every API role (no grants, not in an exposed schema). Written by the job functions, read by admins through `admin_cleanup_status`. |
 | WARN: signed-in users can run elevated function | `admin_cleanup_status` | The admin overview's cleanup card. Its first statement is `require_admin()` (admin + `aal2`), and it writes the admin log. Not callable by guests. |
 
+## Security hardening (P5A)
+
+Migrations `20261110230000_p5a_security_hardening.sql` and `20261110231000_p5a_admin_code_24h.sql`, the shared Edge Function input check `supabase/functions/_shared/input.ts` (all 7 functions redeployed), website headers in `apps/web/next.config.ts`, phone session storage, GitHub settings, Auth inactivity timeout (2026-11-10).
+
+### Database audit
+
+Read live on 2026-11-10 (catalog queries for `anon`, `authenticated` and `service_role`, plus both Advisors):
+- **Every table has RLS:** no table in `public` or `app_private` without it. There are no views.
+- **Every function has a fixed search path:** none in `public` or `app_private` without one (extension functions excluded).
+- **Guests reach only:**
+  - the shop window and public reference functions: `browse_listings`, `get_listing`, `search_cities`, `check_text`;
+  - the three public reference tables: `app_settings`, `legal_documents`, `policy_item_types` (SELECT only).
+- **Signed-in users run elevated functions** only where the lists above already log a reason. Nothing was found to fix.
+- **`app_private` helpers callable by `authenticated`:** `capture_report_evidence`, `check_text_field`, `is_blocked`, `photo_set_hash`, `report_target_user`, `suspension_message`. `app_private` isn't exposed through the API, so none of them can be called directly. They are granted because triggers and RLS policies run as the person writing need them. `is_blocked` (not listed before) is used by the `conversations` and `messages` policies and the chat triggers.
+- **Storage:** four owner policies on `listing-photos`: read, insert, update, delete, each only for a listing the caller owns. Before P5A the bucket had no type or size limit. Fixed below.
+- **Performance Advisor:** 11 foreign keys had no covering index. All 11 got one in this migration. Left as they are:
+  - "unused index" (INFO): the new indexes have simply not been read yet. The two trigram search indexes are kept for search.
+  - "Auth DB connections absolute" (INFO, 10 connections): an Auth setting, and P5A changes no Auth setting except the inactivity timeout.
+
+### Terms and rate limits
+
+- **Trigger `app_private.terms_and_limits`** (elevated, empty search path, EXECUTE revoked from `public`, `anon`, `authenticated`) on `messages`, `conversations`, `reports`, `saved_listings`, `saved_studios` and `listings`.
+  - It acts only when the signed-in caller writes their own row, so server jobs and admins acting on other people's rows are not stopped.
+  - It calls `app_private.require_current_terms`, then `app_private.enforce_rate_limit`. Both are elevated helpers, not callable through the API.
+- **Rate counters:** `app_private.rate_counters` holds one row per person and action: window start and count. It has RLS and no grants to any API role (`service_role` included), and is removed with the account.
+  - The limits are `rate_limit_*` rows in the closed `app_private.settings`.
+  - A refused write rolls back its own count.
+  - `queue_scan` uses the same helper for its photo-check cost guard: 30 an hour, was 20.
+- **API test (2026-11-10):**
+  - Test user 4 hadn't accepted the current terms. A message and a save were refused with the terms sentence. After `accept_legal('web')` the same message went through.
+  - Test user 3 sent 30 messages within a minute, and the 31st was refused with "You're doing that too often. Try again in a bit."
+
+### Chat messages
+
+- The `messages_filter_text` trigger and `app_private.filter_message_text` are dropped. Nothing checks or logs chat text.
+- `check_text(…, 'message')` answers null.
+- Listings, profiles and report reasons are filtered exactly as before. The API test showed a filter-list word accepted in a chat message and refused in a listing title.
+
+### Uploads
+
+- `listing-photos` now has `allowed_mime_types` (`image/jpeg`, `image/png`, `image/webp`) and `file_size_limit` 10 MB.
+- The insert and update policies accept only `{listing_id}/{random}.jpg` (16 to 64 of `A-Za-z0-9_-`), and still only for the uploader's own listing.
+- **API test:**
+  - `image/gif` was refused (Storage 415);
+  - 10 MB + 1 KB was refused (Storage 413);
+  - a `.png` name was refused (RLS 403).
+  - Nothing was stored.
+- **Accepted risk: photo metadata.** Both apps and the website re-encode photos before upload, which drops metadata such as location. A direct API upload isn't re-encoded and can keep it, because Storage doesn't strip metadata. Only a listing's owner can upload to its folder, so this can only expose the uploader's own data, through their own choice. Re-encoding on the server would need a processing step on every upload; not done.
+
+### Edge Functions
+
+- All 7 read their body through `readInput`. It accepts one JSON object, within a size limit (1 to 16 KB per function), and refuses unknown fields and missing required ones. The error is HTTP 400 or 413 with a plain sentence.
+- `admin-actions` no longer returns the database's reply (`detail`) in errors. It also caps `reason` at 500 characters and `photo_ids` at 20.
+- **Test:**
+  - `delete-listing` refused an unknown field, a non-JSON body and a non-uuid id.
+  - `export-my-data` and `delete-account` refused an unknown field.
+  - `admin-actions` refused a non-admin (403).
+  - `send-push`, `scan-listing` and `cleanup-files` refused a request without the secret (401).
+  - The 31 database calls to `send-push` during the API test were all accepted (HTTP 200).
+
+### Sessions (Supabase Auth, read back from the management API 2026-11-10)
+
+| Setting | Value |
+| --- | --- |
+| Access token (JWT) lifetime `jwt_exp` | 3600 s (1 hour) |
+| Refresh token rotation | on |
+| Refresh token reuse interval | 10 s |
+| Inactivity timeout `sessions_inactivity_timeout` | 720 hours (30 days). Set in P5A; was 0 (off). The only Auth setting changed |
+| Time-box `sessions_timebox` | 0 (no fixed lifetime) |
+| Single session per user | off |
+
+Supabase checks the timeout when a session refreshes, so a session ends at most 30 days plus one access-token lifetime after its last use.
+
+**Admin code every 24 hours:**
+- `app_private.admin_code_fresh()` reads the session JWT's `amr` claim and is true when a TOTP check happened in the last 24 hours. The claim's format was checked on a real test-user token. Supabase updates the TOTP entry on each verify.
+- `require_admin()` refuses with "Enter a new two-step code to keep using admin tools", and `is_admin()` is false, when the check is older.
+- So the website, its server actions, `admin-actions` and direct API calls all follow the same rule. The website shows the code step and then reloads the page that was asked for.
+- Checked with simulated claims: a TOTP entry 1 hour old passes; 25 hours old and password-only are refused.
+
+### Phone session storage
+
+- **Before P5A:** supabase-kt's default `SettingsSessionManager` kept the session in plain app storage: Android SharedPreferences and iPhone NSUserDefaults. Android backup was on.
+- **Now:** `SecureSessionManager` in shared code, behind the `SecureStore` interface.
+  - **Android:** AES-256-GCM, with the key generated in and never leaving the Android Keystore (alias `dzirent_session_key`). Only the ciphertext is in the private SharedPreferences `dzirent_secure_session`. The new `DzirentApplication` sets it up before any activity or the push service runs. `android:allowBackup="false"` (compliance gap 18).
+  - **iPhone:** the Keychain through multiplatform-settings' `KeychainSettings`, service `com.dzirent.app.session`. **Not built yet:** iOS code can't compile on Windows; it's on the list for the Mac check.
+- A session that an earlier version left in plain storage is moved over on first launch and deleted there, so nobody is signed out by the update.
+- If the encrypted value can't be read, for example after a phone reset, it is deleted and the person signs in again.
+- Unit tests run without secure storage and keep sessions in memory only.
+
+### Website security headers (served by `next start` of the production build, 2026-11-10)
+
+On every path (home and a listing page checked):
+- `Content-Security-Policy`:
+  - `default-src 'self'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`, `frame-src 'none'`, `upgrade-insecure-requests`.
+  - Scripts and styles: `'self' 'unsafe-inline'`.
+  - Images: `'self' blob: data:` and the Supabase project.
+  - Connections: `'self'`, the Supabase project and its `wss:` Realtime address.
+  - Fonts, manifest, media and workers: self (media and workers also `blob:`).
+  - On Vercel preview deployments only, the Vercel toolbar's addresses are added (`vercel.live`, `vercel.com`, `assets.vercel.com`, `ws-us3.pusher.com`).
+- `Strict-Transport-Security: max-age=63072000; includeSubDomains`, with no `preload`: that's a separate decision for the owner.
+- `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`.
+- `Permissions-Policy: camera=(self), geolocation=(self), microphone=(), payment=(), usb=(), display-capture=()`.
+
+**Accepted:** `'unsafe-inline'` for scripts. Next.js streams pages with inline scripts. Nonces would make every page dynamic, including the static legal pages. The rest of the policy still stops outside scripts, framing, plugins and form posts to other sites.
+
+**Checked locally:**
+- the listing page's photo links load from the allowed Supabase origin;
+- sign-in through the site's own form returned 303 with the auth cookie, and the inbox then showed the user's chats.
+
+**Not checked in a browser** (no browser was used): live chat over Realtime, uploads, the admin area. They use only the origins above.
+
+### GitHub (`Vivek-k24/Dzirent`, set with `gh` 2026-11-10)
+
+- Vulnerability alerts on (were off) and Dependabot security updates on (were off).
+- Secret scanning and push protection were already on.
+- CodeQL default setup configured for `actions`, `javascript-typescript`, `python` and `java-kotlin`. Swift is left out because it needs a macOS build of the shared framework.
+- `.github/dependabot.yml`: npm (`apps/web`), Gradle (`mobile`), pip (`services/vision`) and GitHub Actions, weekly, one group each. Its pull requests target `main`, the default branch; the owner merges.
+
+### Bot check (research only; no Auth setting changed)
+
+- **What Supabase Auth supports:** hCaptcha and Cloudflare Turnstile. When captcha is on, Auth requires a captcha token on sign-up, password sign-in and password reset, for every client at once.
+- **Website:** both work: the widget runs in the page and its token goes with sign-up.
+  - It needs the provider's script and frame address added to the CSP above.
+  - The privacy page would need to name the provider.
+- **Android and iPhone:**
+  - **hCaptcha** has official native SDKs: `hcaptcha-android-sdk` (Android) and `HCaptcha` (iOS, Swift Package or CocoaPods). The shared code would ask the platform for a token through an interface, like the age signals, and send it with sign-up.
+  - **Turnstile** has no native mobile SDK. It would need a WebView hosting the widget on each phone.
+- **Recommendation: hCaptcha.** It is the one service with native SDKs on both phones and support in Supabase Auth.
+- **Why it stays off for now:**
+  - Turning it on in Auth applies to all clients immediately, and the installed Android test app sends no token, so sign-up and sign-in would break there until the update reaches everyone.
+  - The iPhone part needs the Mac session.
+  - The provider must be added to the privacy policy and the store data forms.
+  - The rate limits above and Auth's own IP limits cover the current preview audience.
+- **Planned for P8C:** all three clients ship the token first, then captcha is switched on.
+
+### Advisor run after both migrations (2026-11-10 22:36 UTC)
+
+- **Security:** 67 findings, all intended:
+  - 10 INFO "RLS on, no policies": the 9 already logged, plus `app_private.rate_counters`, closed to every API role and used only by the elevated rate-limit helpers.
+  - 4 WARN guest-callable elevated functions: `browse_listings`, `get_listing`, `search_cities`, `check_text`, logged above.
+  - 53 WARN signed-in-callable elevated functions, all logged above. No new function is in the list.
+- **Performance:** no unindexed foreign keys left. 18 INFO "unused index" (the 11 new ones among them) and the Auth connection INFO, both explained above.
+
 ## Google Cloud (Step 8A)
 
 Project `dzirent`, region `us-west1`. The $20 billing kill switch (budget, Pub/Sub topic `billing-alerts`, function `stop-billing`) was not touched.
@@ -242,6 +385,7 @@ Vault also holds `scan_listing_url`, the function's address (public, not a secre
 | `delete-account` | Gateway JWT check off. Code verifies caller with Auth (`auth.getUser`), refuses if active rentals exist (409), removes caller's listing photo folders through Storage API, then deletes user via service-role key from function environment only. | Deployed (1B) |
 | `send-push` | Gateway JWT check off: only the database calls it. Code requires the shared secret in `x-send-push-secret` (constant-time compare, 401 otherwise), validates the payload, reads and deletes `device_tokens` with the project's secret key from the function environment, and logs counts only (never tokens or message text). | Deployed (7A) |
 | `admin-actions` | Gateway JWT check off. Code validates the caller with Auth, then requires `is_admin()` (admin + two-step sign-in) asked with the caller's own token (403 otherwise). Uses the service role key from the function environment only for the Auth ban/unban and deleting photo files; the database step runs as the caller and writes the admin log. | Deployed (P2B) |
+| All 7 functions | Since P5A each checks its input with `_shared/input.ts` (one JSON object, size limit, unknown fields refused, plain errors without internal details); see "Security hardening (P5A)" | Deployed (P5A) |
 | `scan-listing` | Gateway JWT check off: only the database calls it. Code requires the shared secret in `x-scan-listing-secret` (constant-time compare, 401 otherwise) and a scan ID that is `queued` (else 409). Uses the project's secret key only for the three server-only `vision_*` functions, and the `vision-invoker` key only to get an ID token for the vision service. Sends the vision service public photo URLs only. Any failure marks the scan failed (verdict review). Logs counts, verdicts and error codes only. Not changed in Step 8B; the automatic re-check calls it the same way. | Deployed (8A) |
 
 ## Secrets (Step 7A)
