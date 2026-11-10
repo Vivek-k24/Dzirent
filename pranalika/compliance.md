@@ -193,12 +193,21 @@ No third-party cookies, scripts, fonts or trackers: the font is served with the 
 
 | Where | Holds |
 | --- | --- |
-| Supabase session | Since P5A: `SecureSessionManager` (`mobile/shared/.../platform/SecureSession.kt`). Android: AES-256-GCM, key in the Android Keystore (`dzirent_session_key`), ciphertext only in SharedPreferences `dzirent_secure_session` (`AndroidSecureStore.kt`). iPhone: Keychain, service `com.dzirent.app.session` (`IosSecureStore.kt`, unbuilt until the Mac check). A session left in plain storage (SharedPreferences / NSUserDefaults) by an earlier version is moved once and deleted there |
+| Supabase session | Since P5A: `SecureSessionManager` (`mobile/shared/.../platform/SecureSession.kt`). Android: AES-256-GCM, key in the Android Keystore (`dzirent_session_key`), ciphertext only in SharedPreferences `dzirent_secure_session` (`AndroidSecureStore.kt`). iPhone: Keychain, service `com.dzirent.app.session` (`IosSecureStore.kt`, unbuilt until the Mac check). A session left in plain storage (SharedPreferences / NSUserDefaults) by an earlier version is moved once and deleted there. Since P5C the iPhone clears this app's Keychain items on the first launch of a new install (marker `dzirent_keychain_ready` in NSUserDefaults), so a reinstalled app starts signed out |
 | Android DataStore `settings`; iPhone NSUserDefaults | Theme, units, rental days, distance step |
 | Android SharedPreferences `dzirent_prefs`; iPhone NSUserDefaults | Small flags (photo consent, tips, declaration, as noted in `AndroidDevice.kt`), recent searches per account |
 | Android `filesDir/drafts`, iPhone `Application Support/drafts` | Listing draft JSON per account |
 | Photo folders | Original photos, see 1.5 |
 | Android backup | Off since P5A (`android:allowBackup="false"` in `AndroidManifest.xml`): nothing, including the session and drafts, goes to the user's Google backup |
+
+### 1.14a Shared links and link previews (P5C)
+
+| What | Who gets it | Holds | Personal data |
+| --- | --- | --- | --- |
+| A shared listing link | Whoever the person sends it to, through the app they pick in the share sheet (WhatsApp, Messages and so on) | "`<title>` on Dzirent: https://dzirent.com/listing/`<id>`" | None beyond the listing's public title; no tracking parameters |
+| A shared studio link | Same | "`<studio name>` on Dzirent: https://dzirent.com/studio/`<handle>`" | The studio name and handle, which guests already see on every listing |
+| Link preview (Open Graph / X card and the 1200 × 630 image) | Any app or site that fetches a dzirent.com listing or studio link, and its users | Listing: title, "$price · City, ST", first photo, handle. Studio: name, handle, up to 4 listing photos | Only guest shop-window data, read with an anonymous client. Studio previews make the studio's name, handle and photos visible to people who aren't signed in. The same fields already appear on that studio's listing cards for guests (decisions.md "Guest browsing"), but now in one place under the studio's address. Owner to confirm this is fine with the attorney; the privacy policy doesn't mention link previews yet |
+| Android app links | Android, which fetches `https://dzirent.com/.well-known/assetlinks.json` | The debug app's package name and signing key fingerprint | None |
 
 ### 1.15 Reference data
 

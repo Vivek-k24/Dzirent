@@ -32,6 +32,7 @@ import com.dzirent.shared.ui.theme.DzirentAccent
 import com.dzirent.shared.ui.theme.OnDzirentAccent
 import com.dzirent.shared.util.GuideTarget
 import com.dzirent.shared.util.HomeRow
+import com.dzirent.shared.util.LinkTarget
 import com.dzirent.shared.util.SetupItem
 import com.dzirent.shared.util.SetupStatus
 import com.dzirent.shared.util.datesQuestion
@@ -74,7 +75,10 @@ fun MainAppScaffold(
     onGatedAction: (GatedAction) -> Unit,
     /** A chat to open now (a tapped notification); [onOpenChatHandled] once it is opened. */
     openChatId: String? = null,
-    onOpenChatHandled: () -> Unit = {}
+    onOpenChatHandled: () -> Unit = {},
+    /** A dzirent.com link to open now (P5C); [onOpenLinkHandled] once it is opened. */
+    openLink: LinkTarget? = null,
+    onOpenLinkHandled: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
@@ -236,6 +240,18 @@ fun MainAppScaffold(
     fun openStudio(lenderId: String) {
         if (isGuest) return onGatedAction(GatedAction.OPEN_STUDIO)
         if (lenderId.isNotBlank()) navController.navigate("studio/$lenderId")
+    }
+
+    // A dzirent.com link opened in the app (P5C), once the NavHost has its graph. The studio
+    // route takes the studio handle (get_studio), so a link's handle opens it directly.
+    LaunchedEffect(openLink) {
+        val link = openLink ?: return@LaunchedEffect
+        snapshotFlow { backStackEntry }.first { it != null }
+        when (link) {
+            is LinkTarget.Listing -> navController.navigate("detail/${link.id}")
+            is LinkTarget.Studio -> openStudio(link.handle)
+        }
+        onOpenLinkHandled()
     }
 
     fun closeDrawer() {

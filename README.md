@@ -71,7 +71,7 @@ Dzirent is built with the open-source projects below, each under its own license
 
 | Data | What Dzirent uses it for | License | Project |
 |---|---|---|---|
-| List of Dirty, Naughty, Obscene, and Otherwise Bad Words (English list) | The words the database refuses in listings, profiles, chat and reports | CC BY 4.0 | [LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words) |
+| List of Dirty, Naughty, Obscene, and Otherwise Bad Words (English list) | The words the database refuses in listings, profiles and report reasons | CC BY 4.0 | [LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words) |
 
 Changes to the list: Dzirent uses the English list as of commit `5faf2ba`, leaves out its one emoji entry, and switches off a few entries that are ordinary words on a clothing marketplace (for example "nude" as a color and "pussy bow" as a blouse style).
 

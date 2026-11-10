@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.dzirent.app.debug",
+      "sha256_cert_fingerprints": ["A7:AF:02:EA:F1:8C:67:72:05:A4:FC:75:BF:48:3E:D8:E4:B4:5D:AB:DE:DC:DA:F1:B2:1E:05:D9:66:EE:95:7C"]
+    }
+  }
+]

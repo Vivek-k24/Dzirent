@@ -435,3 +435,47 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `age_checks` | SELECT | `user_id = auth.uid()` (P2C). Written only by `record_age_check`. Columns `id` (bigint), `user_id`, `source` (`store_signal`, `self_declared`), `result` (`adult`, `minor`, `unknown`), `platform` (`web`, `android`, `ios`), `checked_at`. No birthdate. Removed with the account. |
 | `legal_documents` | SELECT | Everyone, guests included; changed only by migrations (P1B). One row per document: `document` (`terms`, `privacy`), `version` (seeded `1.0.0` and `1.0.0`, from the website's `TERMS_VERSION` and `PRIVACY_VERSION`), `url`, `updated_at`. |
 | `legal_acceptances` | SELECT | `user_id = auth.uid()`. Written only by `accept_legal` (P1B). Columns `id`, `user_id`, `document`, `version`, `platform` (`web`, `android`, `ios`), `accepted_at`; one row per user, document and version. Removed with the account. |
+
+---
+
+## 4. Links, sharing and previews (P5C)
+
+**Shared links** are always the production address, with no tracking parameters:
+- a listing: `https://dzirent.com/listing/<listing id>`;
+- a studio: `https://dzirent.com/studio/<studio handle>` (URL-encoded).
+
+**Share text** is the same on all three platforms:
+- "`<title>` on Dzirent: `<link>`" for a listing;
+- "`<studio name>` on Dzirent: `<link>`" for a studio (studio name, else display name).
+
+Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.kt`.
+
+**Share buttons:**
+- **Website:** on listing and studio pages. It opens the browser's share menu where there is one, otherwise "Copy link" with "Link copied".
+- **Android and iPhone:** the top bar of a listing (live pieces only) and of a studio opens the system share sheet (`DeviceServices.share`).
+
+**Link previews** (Open Graph and X/Twitter card tags, built by the website):
+- **Read as a guest:** an anonymous client with no cookies (`apps/web/src/lib/preview.ts`), so a preview shows only what the shop window shows a guest. Never coordinates, email, account ids or anything private.
+- **Listing** `/listing/<id>`:
+  - `og:title` is the title;
+  - `og:description` is "$price · City, ST";
+  - `og:url` is the clean link;
+  - `og:image` / `twitter:image` is `/listing/<id>/opengraph-image` (and `/twitter-image`): a 1200 × 630 PNG with the first photo in a Dzirent frame, the wordmark, title, "$price · City, ST" and `@handle`.
+  - Next.js adds a short `?<hash>` to the image address; that's its cache key, not a tracking parameter.
+- **Studio** `/studio/<handle>`:
+  - The tags are served to everyone, guests and preview bots included: "`<studio name>` (@`<handle>`)", and an image with up to 4 of the studio's listing photos.
+  - The page itself still asks guests to sign up.
+  - The data comes from `browse_listings` (`get_studio` is signed-in only). It reads at most 10 pages of 30 newest pieces.
+  - A studio with no active pieces there gets the generic Dzirent preview.
+- **A listing that is paused, deleted or hidden** (`get_listing` returns nothing), or not a listing id:
+  - HTTP 200, a plain "This piece is no longer available" page with up to 8 newer pieces and "Browse all pieces";
+  - the generic Dzirent preview; `noindex`.
+
+**Android app links:**
+- `MainActivity` has an `autoVerify` intent filter for `https://dzirent.com/listing/…` and `/studio/…`, and is `singleTask`.
+- Android checks `https://dzirent.com/.well-known/assetlinks.json`, served by the website from `apps/web/public/.well-known/assetlinks.json` (`application/json`).
+- **The file lists only the debug app for now:** package `com.dzirent.app.debug`, SHA-256 `A7:AF:02:EA:F1:8C:67:72:05:A4:FC:75:BF:48:3E:D8:E4:B4:5D:AB:DE:DC:DA:F1:B2:1E:05:D9:66:EE:95:7C`. That is the standard Android debug key on the build PC, which signs the APKs copied to OneDrive.
+- **Placeholders:**
+  - **P8A** adds the release package (`com.dzirent.app`) with the release (Play app signing) fingerprint to this file.
+  - **P8B** adds the iPhone file `apple-app-site-association` (universal links).
+- **In the app:** an opened link goes straight to that listing (guests too). A studio link opens the studio for a signed-in person, and the usual sign-up pop-up for a guest. A link that arrives during sign-in or the terms step waits until Home shows.

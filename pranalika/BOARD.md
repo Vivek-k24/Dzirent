@@ -142,7 +142,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages, P2C, P3A, P3B, P4B, P5A), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
+| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages, P2C, P3A, P3B, P4B, P5A, P5C), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
 
 | P1A part 1: data inventory and `compliance.md`; legal fill-ins in `legal-placeholders.md` | Done |
 | P1A part 2: website legal pages (privacy policy, terms, community rules and prohibited items, copyright/DMCA, safety tips, delete-account page, support/contact), fill-ins in one config | Done |
@@ -195,8 +195,12 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | P5A (Claude Code): database audit (nothing to fix; 11 foreign-key indexes added), current terms enforced in the database, rate limits (messages, chats, reports, listings, photo checks), upload rules (JPEG/PNG/WebP, 10 MB, `{listing_id}/{random}.jpg`), input checks in all 7 Edge Functions, website security headers, GitHub alerts/Dependabot/CodeQL, 30-day inactivity sign-out, admin code every 24 hours, phone sessions in the Keystore/Keychain and Android backup off, chat filter removed, privacy policy sentence | Done |
 | Mac: build-check the P5A shared code, especially `IosSecureStore.kt` (Keychain) and that a signed-in iPhone stays signed in after the update (see the P5A handoff) | To do |
 | Owner: phone test of P5A on Android (see the P5A handoff); check the website's headers, sign-in, live chat, uploads and admin area on Preview after the deploy | To do |
-| Owner: root `README.md` still says the text filter covers chat (see Requests in the P5A handoff) | To do |
-| P5C Share listings and studios: share button on all three platforms, rich link previews with the studio handle, app links (Android now, iPhone with the paid Apple account) | To do |
+| Owner: root `README.md` still says the text filter covers chat (see Requests in the P5A handoff) | Done (P5C, Claude Code) |
+| P5C Share listings and studios: share button on all three platforms, rich link previews with the studio handle, app links (Android now, iPhone with the paid Apple account) | Done on website and Android (Claude Code); iPhone share sheet written, needs the Mac build; iPhone universal links with the paid Apple account (P8B) |
+| P5C (Claude Code): link previews (listing and studio Open Graph/X tags, 1200 × 630 preview images, "no longer available" page), Share on listing and studio pages (website share menu or Copy link; Android and iPhone system share sheet), Android verified app links (`assetlinks.json` for the debug app), opened links go to the listing or studio; Dependabot version updates target `Preview`; root README text filter line; iPhone Keychain cleared on a fresh install | Done |
+| Mac: build-check P5C on iPhone: `IosDevice.share` (UIActivityViewController) and the Keychain first-launch marker in `IosSecureStore.kt` (see the P5C handoff) | To do |
+| Owner: phone test of P5C (see the P5C handoff), after the website with `/.well-known/assetlinks.json` is live on dzirent.com (it is served from `main`) | To do |
+| P8A: add the release package and Play signing fingerprint to `assetlinks.json` | To do |
 | P5B Logs and monitoring: error tracking, uptime checks, alerts, backup restore drill, incident plan | To do |
 | P6A ID verification (Didit) on all three platforms; flag off, keys blank | To do |
 | P6B Payments backend: Stripe Connect test mode, deposits, "confirm rental" step, sales tax hook off | To do |

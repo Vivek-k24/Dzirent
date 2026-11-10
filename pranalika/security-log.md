@@ -356,6 +356,37 @@ On every path (home and a listing page checked):
   - 53 WARN signed-in-callable elevated functions, all logged above. No new function is in the list.
 - **Performance:** no unindexed foreign keys left. 18 INFO "unused index" (the 11 new ones among them) and the Auth connection INFO, both explained above.
 
+## Sharing and link previews (P5C)
+
+Website routes `/listing/<id>/opengraph-image`, `/twitter-image` and the same under `/studio/<handle>`; `apps/web/src/lib/preview.ts`, `og.tsx`; `apps/web/public/.well-known/assetlinks.json`; Android app links; share buttons (2026-11-10).
+
+- **Content-Security-Policy: not changed.**
+  - The preview images are drawn on the server: Next.js `ImageResponse`, with the photo and the wordmark passed in as data URIs.
+  - The browser never loads anything new for them, and preview bots (WhatsApp, iMessage, X) fetch the image address directly, where page CSP doesn't apply.
+  - The Share button uses `navigator.share` and `navigator.clipboard`, which CSP doesn't govern.
+  - The listing page's own images still come from the Supabase origin the policy already allows.
+- **Guest data only:**
+  - Every preview is built with an anonymous Supabase client (publishable key, no cookies). So it can show only what `get_listing` and `browse_listings` give a guest: title, price, city, studio name, handle and listing photos.
+  - A signed-in sharer's view (their saved state, a blocked studio, their own paused listing) never reaches a preview.
+  - No coordinates, email, account ids, measurements or messages are read.
+- **Photos in the preview images:**
+  - Fetched only from this project's public `listing-photos` URLs (the same check as `photoUrl`), with no redirects, a 5-second timeout and a 10 MB limit.
+  - Only JPEG or PNG, by the file's first bytes. Anything else is left out and the image is drawn without it.
+- **Studio previews for guests:**
+  - They read the guest shop window (`browse_listings`, up to 10 pages of 30) and keep the cards whose handle matches.
+  - That is the same data a guest already sees on Home. `get_studio` stays signed-in only, and no database change was made.
+  - Cost: up to 10 small RPC calls per studio preview request.
+- **"No longer available":** a paused, deleted, hidden or blocked listing, or a made-up id, returns the same plain page. It doesn't say which, so it reveals nothing about blocks or holds.
+- **`/.well-known/assetlinks.json`:**
+  - A static public file, served with `application/json` and kept out of the sign-in proxy (`proxy.ts` matcher), so it is never redirected and does no session work.
+  - It lists only `com.dzirent.app.debug` with the debug key's SHA-256 (in `contract.md`). The debug key gives no access to anything: it only proves to Android which app may open dzirent.com links.
+  - The release entry comes in P8A, the iPhone file in P8B.
+- **Android:** the link filter accepts only `https://dzirent.com/listing/…` and `/studio/…`. The app reads only a UUID listing id or a handle of `A-Za-z0-9._-` from them and ignores any other link (`ShareLinks.parse`, unit-tested).
+- **iPhone Keychain after a reinstall:**
+  - Keychain items survive deleting the app.
+  - On the first launch of an install, there's no marker in NSUserDefaults, which iOS deletes with the app. Then everything this app keeps in the Keychain is cleared before the session is read, and the marker is set.
+  - So a reinstalled app starts signed out, and an old session isn't picked up. Not compiled yet; it's in the Mac check list.
+
 ## Google Cloud (Step 8A)
 
 Project `dzirent`, region `us-west1`. The $20 billing kill switch (budget, Pub/Sub topic `billing-alerts`, function `stop-billing`) was not touched.

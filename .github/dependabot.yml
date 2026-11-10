@@ -1,10 +1,12 @@
 # P5A: weekly dependency updates, one grouped pull request per ecosystem. Security updates
 # (turned on in the repository settings) still open on their own as soon as an alert appears.
-# Dependabot opens its pull requests against main; the owner decides what to merge.
+# P5C: version-update pull requests target Preview (all work goes there first). GitHub always
+# opens security-update pull requests against the default branch (main); the owner decides.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /apps/web
+    target-branch: Preview
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -14,6 +16,7 @@ updates:
 
   - package-ecosystem: gradle
     directory: /mobile
+    target-branch: Preview
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -23,6 +26,7 @@ updates:
 
   - package-ecosystem: pip
     directory: /services/vision
+    target-branch: Preview
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -32,6 +36,7 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
+    target-branch: Preview
     schedule:
       interval: weekly
     open-pull-requests-limit: 5

@@ -414,3 +414,10 @@ a.icon-button {
 
 
 
+
+/* P5C Share button: the status line ("Link copied") sits under the button. */
+.share-status{display:block;min-height:1.2em;margin-top:6px;font-size:12px;color:var(--muted)}
+.share-status:empty{min-height:0;margin:0}
+.studio-share{display:flex;flex-direction:column;align-items:flex-start}
+.studio-share .button{white-space:nowrap}
+@media (max-width:760px){.studio-share{width:100%}.studio-share .button{width:100%}}

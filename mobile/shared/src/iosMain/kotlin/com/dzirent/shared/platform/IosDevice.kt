@@ -27,6 +27,8 @@ import platform.Foundation.dataWithContentsOfFile
 import platform.Foundation.stringWithContentsOfFile
 import platform.Foundation.writeToFile
 import platform.UIKit.NSTextAlignmentCenter
+import platform.UIKit.UIActivityViewController
+import platform.UIKit.popoverPresentationController
 import platform.UIKit.UIApplication
 import platform.UIKit.UIColor
 import platform.UIKit.UIFont
@@ -77,6 +79,27 @@ class IosDeviceServices : DeviceServices {
         val nsUrl = NSURL.URLWithString(url) ?: return
         UIApplication.sharedApplication.openURL(nsUrl, options = emptyMap<Any?, Any>(), completionHandler = null)
     }
+
+    override fun share(text: String) {
+        dispatch_async(dispatch_get_main_queue()) { showShareSheet(text) }
+    }
+}
+
+/** The system share sheet (UIActivityViewController) over whatever is on screen (P5C). */
+@OptIn(ExperimentalForeignApi::class)
+private fun showShareSheet(text: String) {
+    @Suppress("DEPRECATION")
+    val window = UIApplication.sharedApplication.keyWindow ?: return
+    var top = window.rootViewController ?: return
+    while (true) top = top.presentedViewController ?: break
+    val sheet = UIActivityViewController(activityItems = listOf(text), applicationActivities = null)
+    // iPad shows the sheet as a popover, which needs an anchor: the middle of the screen.
+    sheet.popoverPresentationController?.let { popover ->
+        popover.sourceView = window
+        val (width, height) = window.bounds.useContents { size.width to size.height }
+        popover.sourceRect = CGRectMake(width / 2, height / 2, 0.0, 0.0)
+    }
+    top.presentViewController(sheet, animated = true, completion = null)
 }
 
 private class UserDefaultsStore(private val defaults: NSUserDefaults) : KeyValueStore {

@@ -40,6 +40,7 @@ import coil3.compose.AsyncImage
 import com.dzirent.shared.model.*
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.util.ClosetSort
+import com.dzirent.shared.util.ShareLinks
 import com.dzirent.shared.util.sortCloset
 import com.dzirent.shared.util.formatDateRange
 import com.dzirent.shared.util.DistanceUnit
@@ -185,6 +186,12 @@ fun ListingDetailScreen(
             actions = {
                 // Editing is for the owner only (RLS enforces this too); others can report.
                 val loaded = (uiState as? UiState.Success)?.data
+                // Share (P5C): only a live piece, so the link never lands on "no longer available".
+                if (loaded != null && loaded.status == "active") {
+                    IconButton(onClick = { device.share(ShareLinks.listingText(loaded.title, loaded.id)) }) {
+                        Icon(Icons.Default.Share, contentDescription = "Share")
+                    }
+                }
                 if (loaded != null && loaded.lenderId == currentUserId) {
                     IconButton(onClick = { onEdit(loaded.id) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit listing")

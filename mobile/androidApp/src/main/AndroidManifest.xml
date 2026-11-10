@@ -24,13 +24,29 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.NoActionBar">
+        <!-- singleTask: a shared link opened from another app comes to this one task (onNewIntent),
+             like a tapped notification, instead of starting a second copy of the app. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@android:style/Theme.Material.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Verified app links (P5C): dzirent.com listing and studio links open the app when it
+                 is installed. Android checks https://dzirent.com/.well-known/assetlinks.json, which
+                 lists this package and its signing key; otherwise the links open the website. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="dzirent.com" />
+                <data android:pathPrefix="/listing/" />
+                <data android:pathPrefix="/studio/" />
             </intent-filter>
 
         </activity>

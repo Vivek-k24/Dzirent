@@ -66,6 +66,12 @@ class AndroidDeviceServices(
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         runCatching { app.startActivity(intent) }
     }
+
+    override fun share(text: String) {
+        val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+        val chooser = Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { app.startActivity(chooser) }
+    }
 }
 
 private class SharedPreferencesStore(private val prefs: SharedPreferences) : KeyValueStore {

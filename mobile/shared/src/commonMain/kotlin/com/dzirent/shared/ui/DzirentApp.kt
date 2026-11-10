@@ -56,7 +56,10 @@ fun DzirentApp(
     settingsStorage: SettingsStorage? = null,
     /** The chat a tapped notification asks for; opened once someone is signed in. */
     openChatId: String? = null,
-    onOpenChatHandled: () -> Unit = {}
+    onOpenChatHandled: () -> Unit = {},
+    /** A dzirent.com listing or studio link the phone opened in the app (P5C); waits until Home shows. */
+    openLink: LinkTarget? = null,
+    onOpenLinkHandled: () -> Unit = {}
 ) {
     var screenState by remember { mutableStateOf<AuthScreenState>(AuthScreenState.Loading) }
     var firstVisitSeen by rememberSaveable { mutableStateOf(false) }
@@ -87,6 +90,11 @@ fun DzirentApp(
         if (openChatId != null && (screenState is AuthScreenState.Guest || screenState is AuthScreenState.AuthFlow)) {
             onOpenChatHandled()
         }
+    }
+
+    // A guest who arrives through a shared link goes straight to it, without the first-visit sheet.
+    LaunchedEffect(openLink) {
+        if (openLink != null) firstVisitSeen = true
     }
 
     DzirentTheme(darkTheme = appSettings.theme.isDark(isSystemInDarkTheme())) {
@@ -142,7 +150,9 @@ fun DzirentApp(
                             },
                             onGatedAction = {},
                             openChatId = openChatId,
-                            onOpenChatHandled = onOpenChatHandled
+                            onOpenChatHandled = onOpenChatHandled,
+                            openLink = openLink,
+                            onOpenLinkHandled = onOpenLinkHandled
                         )
                     }
                     is AuthScreenState.Guest -> {
@@ -158,7 +168,10 @@ fun DzirentApp(
                             },
                             onGatedAction = { action ->
                                 pendingGatedAction = action
-                            }
+                            },
+                            // Studios ask a guest to sign up (the usual pop-up); listings open.
+                            openLink = openLink,
+                            onOpenLinkHandled = onOpenLinkHandled
                         )
 
                         if (!firstVisitSeen) {

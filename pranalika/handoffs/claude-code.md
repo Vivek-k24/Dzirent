@@ -2,6 +2,105 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P5C - 2026-11-10 - sharing
+
+**Before starting:** the working tree was clean, and `Preview` was up to date with `origin/Preview` (`84d0d9b`).
+
+**Done:**
+- **Link previews (website):**
+  - **Listing pages:** Open Graph and X tags.
+    - title, "$price · City, ST", the clean `og:url`, `summary_large_image`;
+    - a 1200 × 630 PNG at the listing's own `opengraph-image` / `twitter-image` route: the first photo in a white Dzirent frame with the wordmark, a maroon rule, title, "$price · City, ST" in maroon, `@handle` and "dzirent.com".
+  - **Studio pages:** the same tags for everyone, guests and bots included, with an image of up to 4 listing photos, the studio name and `@handle`. Guests still get the sign-up gate on the page itself.
+  - **Paused, deleted or hidden listings** (and made-up ids): a plain "This piece is no longer available" page with 8 newer pieces and "Browse all pieces", and a generic Dzirent preview image.
+  - **Guest data only:**
+    - All preview data is read with an anonymous client (`lib/preview.ts`).
+    - Studio data comes from the guest shop window, because `get_studio` is signed-in only and `supabase/` wasn't in this task's folders.
+  - **Content-Security-Policy:** not changed (reason in `security-log.md`).
+- **Share:**
+  - **Website:** a Share button on listing and studio pages (`components/share-button.tsx`). It uses the browser's share menu, else "Copy link" with "Link copied".
+  - **Apps:**
+    - a Share icon in the listing top bar (live pieces only) and the studio top bar;
+    - `DeviceServices.share`: an Android chooser, and on iPhone a `UIActivityViewController`.
+  - **Text** (`lib/share.ts`, `util/ShareLinks.kt`): "`<title>` on Dzirent: https://dzirent.com/listing/`<id>`" and "`<studio name>` on Dzirent: https://dzirent.com/studio/`<handle>`".
+- **Android app links:**
+  - `apps/web/public/.well-known/assetlinks.json` lists `com.dzirent.app.debug` with this PC's debug key fingerprint (the same key that signed the APK, checked with `apksigner`). It is kept out of the sign-in proxy.
+  - The manifest has a verified (`autoVerify`) filter for `https://dzirent.com/listing/` and `/studio/`, and `MainActivity` is now `singleTask`.
+  - `MainActivity` reads the link, and `DzirentApp` / `MainAppScaffold` open the listing, or the studio (guests get the sign-up pop-up).
+  - A guest arriving through a link doesn't see the first-visit sheet.
+- **P5A leftovers:**
+  - `dependabot.yml`: all 4 entries now have `target-branch: Preview`.
+  - Root README text filter line updated.
+  - iPhone: a fresh install clears old Keychain items before reading the session (marker `dzirent_keychain_ready` in NSUserDefaults).
+- **Docs:** `contract.md` section 4 (links, previews, app links, the P8A and P8B placeholders); `security-log.md` "Sharing and link previews (P5C)"; `compliance.md` 1.14 and the new 1.14a; `BOARD.md`.
+
+**What I ran:**
+1. **Mobile build:** `:androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded, `GOOGLE_SERVICES_JSON` set): **BUILD SUCCESSFUL**. 35 tests, 0 failures, including the new `ShareLinksTest` (3): share text, links opened, links ignored.
+2. **APK checks:**
+   - `apksigner`: SHA-256 `a7af02ea…ee957c`, matching `assetlinks.json`.
+   - `aapt2 dump`: package `com.dzirent.app.debug`, `autoVerify=true`, host `dzirent.com`, path prefixes `/listing/` and `/studio/`, `singleTask`.
+3. **`apps/web`:** `npm run lint` (no warnings) and `npm run build` passed (Node 22.23.3 from `.tools`). Both ran twice, because of the studio image fix below.
+4. **HTTP checks** against `next start` of the build, as a guest, with `p5c-http.mjs` in my scratch folder: **17 of 17 passed**.
+   - **Listing page** (a real listing, "Black shirt"):
+     - `og:title` "Black shirt", `og:description` "$15 · Irving, TX";
+     - `og:url` `https://dzirent.com/listing/<id>`; `og:image` and `twitter:image` are its own routes; `summary_large_image`;
+     - no tracking parameters; the share text is in the page;
+     - the image returned 200 `image/png`.
+   - **Studio page as a guest:** "AA cinema (@allu.arjun)" and its own image route, with a PNG.
+   - **Made-up listing id:** 200, "This piece is no longer available", links to other pieces, the generic preview and a PNG.
+   - **`/.well-known/assetlinks.json`:** 200, `application/json; charset=UTF-8`, valid JSON with the debug package and one fingerprint.
+5. **Preview images:** I looked at the two generated images.
+   - The listing image was right.
+   - A studio with one photo showed three empty tiles. Fixed: one photo now fills the panel, two sit side by side, three or four make a grid.
+   - I rebuilt and re-ran the checks, 17 of 17 again. The first re-run hit the old server still holding the port, so I re-ran on a new port against the new build.
+6. **`curl` against the live site:** `https://dzirent.com/` answers 200 with no redirect. `/.well-known/assetlinks.json` is 404 there today, because dzirent.com serves `main`.
+7. No emulator, device or browser.
+
+**APK (built 2026-11-10 17:12):**
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, which replaced the P5A copy. Same size and SHA-256.
+
+**Before the phone test:** shared links, their previews and app-link verification all use `https://dzirent.com`, which serves `main`. Merge `Preview` into `main` first. Until then:
+- `assetlinks.json` is 404, so Android won't verify and links open in the browser;
+- shared links show the old preview (only the first photo, no generated image).
+
+After merging, reinstall the APK (or wait about a day) so Android checks the link again.
+
+**Phone test (Android):**
+1. **Share a listing to WhatsApp.**
+   - Open a piece, tap Share in the top bar, and pick WhatsApp.
+   - The message should read "`<title>` on Dzirent: https://dzirent.com/listing/…".
+   - The chat should show a card with the framed photo, title, price and city.
+2. **Share a studio** the same way. The card shows the studio's photos, name and `@handle`.
+3. **Open a shared link with the app installed.** Tap a listing link in WhatsApp: the Dzirent Debug app opens on that listing.
+   - Tap a studio link while signed in: the studio opens.
+   - Signed out: the sign-up pop-up appears.
+   - With the app already open, the link opens on top of it.
+4. **Open a link without the app.** Uninstall it, or tap the link on another phone: the website opens on that page.
+5. **Share on the website:**
+   - on the phone's browser, Share opens the share menu;
+   - on a desktop browser without one, the button says "Copy link" and shows "Link copied".
+6. **A paused piece:** pause one of your listings and open its link in a browser. You should see "This piece is no longer available" with other pieces.
+
+**iPhone, for the Mac session (none of this has been compiled):**
+- **`IosDevice.kt` `share()` / `showShareSheet()`:**
+  - presents `UIActivityViewController` from the top view controller, anchored to the screen centre on iPad;
+  - check the `platform.UIKit.popoverPresentationController` import resolves (Kotlin/Native may expose it as a member instead of an extension);
+  - test sharing a listing and a studio.
+- **`IosSecureStore.kt`:**
+  - `KeychainSettings.clear()` on the first launch of an install;
+  - check that a fresh install starts signed out, and that an update from a pre-P5A build stays signed in (the NSUserDefaults session moves over).
+  - Someone who had a P5A iPhone build installed will be signed out once by this update.
+- **iPhone universal links** are not done: they need the paid Apple account and `apple-app-site-association` (P8B). Links open the website on iPhone.
+
+**Open issues:**
+- **Studio previews read at most the 300 newest pieces** (10 pages of 30). A studio whose pieces are all older gets the generic preview. Cleaner later: a small shop-window function `studio_preview(p_handle)` returning the name, handle and 4 cover photo paths. That needs a migration, so it was left out (`supabase/` wasn't in this task's folders).
+- **The image routes refetch the photos on every request** (`cache-control: max-age=0`). Preview bots cache them themselves. Watch Vercel function use after launch.
+- **The preview font is Next's built-in one:** the site's Roboto ships only as woff2, which the image renderer can't read. Titles in scripts it lacks (for example Devanagari) would show as boxes.
+- **Security updates:** GitHub opens Dependabot *security* pull requests against the default branch (`main`) whatever `target-branch` says. Only the weekly version updates go to `Preview`. Two version pull requests opened before this change (pillow 13.0.0, torch 2.12.1) target `main`; close them or retarget them.
+- **Privacy policy:** it doesn't yet mention link previews. Studio name, handle and photos now appear together for anyone who has a studio link (compliance 1.14a). Owner and attorney to decide.
+- **Release builds:** `assetlinks.json` lists only the debug app; P8A adds the release package and key. `www.dzirent.com` links open the website, not the app.
+
 ## P5A - 2026-11-10 - security hardening
 
 **Before starting:** the working tree was clean. I pulled `Preview` up to `1b200d1` (P4A).

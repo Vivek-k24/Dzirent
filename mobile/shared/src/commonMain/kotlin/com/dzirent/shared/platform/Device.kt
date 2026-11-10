@@ -75,6 +75,9 @@ interface DeviceServices {
 
     /** Opens a web page or mailto: link outside the app. */
     fun openUrl(url: String)
+
+    /** The system share sheet with [text] ("<title> on Dzirent: <link>", P5C). */
+    fun share(text: String)
 }
 
 val LocalDevice = staticCompositionLocalOf<DeviceServices> { error("DeviceServices not provided") }
