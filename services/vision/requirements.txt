@@ -1,7 +1,7 @@
 # Every package pinned, dependencies included (resolved for Linux, Python 3.12). Installed with
 # --no-deps, then `pip check`. CPU-only PyTorch comes from the PyTorch CPU index.
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.7.1+cpu
+torch==2.12.1+cpu
 torchvision==0.22.1+cpu
 open_clip_torch==2.32.0
 timm==1.0.15
