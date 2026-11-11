@@ -54,8 +54,11 @@ class SecureSessionTest {
 
     @Test
     fun storageRefusalsInPlainWords() {
-        assertEquals("This photo is too big. Choose one under 10 MB.", storageRefusal(400, "413 The object exceeded the maximum allowed size"))
-        assertEquals("Choose a JPEG, PNG or WebP photo.", storageRefusal(400, "415 mime type image/gif is not supported"))
+        // C1: Storage's refusals map to catalog codes; the catalog has the plain words.
+        assertEquals("DZ-E2065", storageRefusal(400, "413 The object exceeded the maximum allowed size"))
+        assertEquals("This photo is too big. Choose one under 10 MB.", com.dzirent.shared.util.ErrorCatalog.message("DZ-E2065"))
+        assertEquals("DZ-E2064", storageRefusal(400, "415 mime type image/gif is not supported"))
+        assertEquals("Choose a JPEG, PNG or WebP photo.", com.dzirent.shared.util.ErrorCatalog.message("DZ-E2064"))
         assertNull(storageRefusal(400, "new row violates row-level security policy"))
     }
 }

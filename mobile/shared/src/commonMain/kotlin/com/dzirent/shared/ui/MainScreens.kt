@@ -46,8 +46,10 @@ import com.dzirent.shared.util.formatDateRange
 import com.dzirent.shared.util.DistanceUnit
 import com.dzirent.shared.util.formatDistance
 import com.dzirent.shared.util.formatMeasurement
-import com.dzirent.shared.util.formatPrice
+import com.dzirent.shared.util.formatPerDay
 import com.dzirent.shared.util.parseDateRange
+import com.dzirent.shared.util.DateRange
+import com.dzirent.shared.util.daysAndTotal
 import kotlinx.coroutines.launch
 import com.dzirent.shared.util.isBefore
 import com.dzirent.shared.util.isDraft
@@ -59,10 +61,10 @@ sealed class UiState<out T> {
     data class Success<T>(val data: T) : UiState<T>()
 }
 
-/** "$25 · 1.5 mi". Listings from before prices were required show the distance only. */
+/** "$25/day · 1.5 mi". Listings from before prices were required show the distance only. */
 fun cardSubtitle(listing: Listing, unit: DistanceUnit): String =
     listOfNotNull(
-        listing.priceUsd?.let { formatPrice(it) },
+        listing.priceUsd?.let { formatPerDay(it) },
         listing.distanceMiles?.let { formatWholeMiles(it, unit) } ?: listing.distanceKm?.let { formatDistance(it, unit) }
     ).joinToString(" · ")
 
@@ -120,7 +122,9 @@ fun ListingDetailScreen(
     onMessageLender: (listingId: String, lenderId: String) -> Unit,
     onOpenStudio: (lenderId: String) -> Unit,
     /** Set for a guest: saving asks them to sign up, and there is nothing to report from. */
-    onGuestAction: ((GatedAction) -> Unit)? = null
+    onGuestAction: ((GatedAction) -> Unit)? = null,
+    /** Home's chosen dates: the page shows "<n> days · $total" for them (C1). */
+    dates: DateRange? = null
 ) {
     val isGuest = onGuestAction != null
     var uiState by remember { mutableStateOf<UiState<Listing>>(UiState.Loading) }
@@ -270,6 +274,15 @@ fun ListingDetailScreen(
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
+                    // C1: the chosen dates' length and total, "5 days · $125".
+                    val perDay = listing.priceUsd
+                    if (perDay != null && dates != null) {
+                        Text(
+                            text = daysAndTotal(perDay, dates),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     // With a price set, the note is extra detail under it.
                     if (listing.priceUsd != null && listing.priceNote.isNotBlank()) {
                         Text(

@@ -9,6 +9,7 @@ import {
   editorData,
   ownListing,
   must,
+  codedError,
   WorkflowError,
   uuid,
 } from "@/lib/workflow-server";
@@ -31,8 +32,9 @@ function failure(error: unknown) {
   return NextResponse.json(
     {
       error:
-        error instanceof WorkflowError ? error.message : "Please try again.",
+        error instanceof WorkflowError ? error.message : "Something went wrong. Please try again. (DZ-E9999)",
       field: error instanceof WorkflowError ? error.field : undefined,
+      code: error instanceof WorkflowError ? error.code : "DZ-E9999",
     },
     {
       status: error instanceof WorkflowError ? error.status : 500,
@@ -48,14 +50,15 @@ async function exportMyData() {
   const { client } = await session();
   const result = await client.functions.invoke("export-my-data", { body: {} });
   if (result.error) {
+    // C1: { code, message }; DZ-E7001 (once a day) carries the time in its message.
     const context = (result.error as { context?: Response }).context;
-    let message = "Couldn't prepare your data. Please try again.";
+    let body: unknown = { code: "DZ-E7002" };
     if (context) {
       try {
-        message = (await context.json()).message || message;
+        body = await context.json();
       } catch {}
     }
-    throw new WorkflowError(message, context?.status === 429 ? 429 : 400);
+    throw codedError(body, context?.status === 429 ? 429 : 400);
   }
   const date = new Date().toISOString().slice(0, 10);
   return new NextResponse(JSON.stringify(result.data, null, 2), {

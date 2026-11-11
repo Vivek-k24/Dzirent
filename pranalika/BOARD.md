@@ -213,3 +213,19 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | P8C: sign-up bot check (hCaptcha recommended, see `security-log.md` "Bot check"; all three clients send the token before it's switched on) | To do |
 | P8C: official App Store and Google Play badges on the About page, once each listing is live | To do |
 | P8C: first-sign-in wording for brand-new users | To do |
+
+## Code completion
+
+| Item | Status |
+| --- | --- |
+| Done by: Claude Code (C1) | |
+| C1 Error and warning codes (one catalog, generated Kotlin/TypeScript, every database refusal and Edge Function error coded), price per day, background job outbox with retries and dead-letter list, client read retries, stray root doc removed | Done (Claude Code) |
+| C2 | To do |
+| C3 | To do |
+| C4 | To do |
+| C5 | To do |
+| C6 | To do |
+| C7 | To do |
+| C8 | To do |
+| Mac: build-check the C1 shared-code changes on iPhone (`ErrorCatalog.kt`, `ReadRetry.kt`, the Ktor `HttpRequestRetry` in `createDzirentSupabaseClient`, price per day), see the C1 handoff | To do |
+| Owner: phone test of C1 (see the C1 handoff) | To do |

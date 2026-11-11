@@ -9,6 +9,7 @@
 // Errors are JSON { error, message } with the same plain sentence in both fields.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import { readInput } from "../_shared/input.ts";
+import { codeOf, errorBody, errorStatus } from "../_shared/errors.ts";
 
 const BUCKET = "listing-photos";
 const corsHeaders = {
@@ -18,9 +19,10 @@ const corsHeaders = {
   "Access-Control-Expose-Headers": "content-disposition",
 };
 
-function fail(status: number, code: string, message: string): Response {
-  return new Response(JSON.stringify({ error: message, code, message }), {
-    status,
+/** C1: an error as { code, message } with the catalog status (contracts/error-codes.json). */
+function fail(code: string, message?: string): Response {
+  return new Response(JSON.stringify(errorBody(code, message)), {
+    status: errorStatus(code),
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
@@ -76,24 +78,24 @@ const ABOUT = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
-  if (req.method !== "POST") return fail(405, "method_not_allowed", "Use POST.");
+  if (req.method !== "POST") return fail("DZ-E9005");
 
   const token = /^Bearer\s+(.+)$/i.exec(req.headers.get("Authorization") ?? "")?.[1]?.trim();
-  if (!token) return fail(401, "not_signed_in", "Please sign in again.");
+  if (!token) return fail("DZ-E1003");
 
   // Takes no input ({} or nothing): the export comes only from the caller's token.
   const input = await readInput(req, { allowed: [], maxBytes: 1024, emptyIsObject: true });
-  if (!input.ok) return fail(input.status, input.error, input.message);
+  if (!input.ok) return fail(input.code, input.message);
 
   const url = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
   const key = publishableKey();
-  if (!url || !key) return fail(500, "not_configured", "Downloading your data is unavailable right now. Please try again later.");
+  if (!url || !key) return fail("DZ-E7003");
 
   try {
     // 1. Who is calling.
     const auth = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
     const { data: caller, error: callerError } = await auth.auth.getUser(token);
-    if (callerError || !caller?.user?.id) return fail(401, "not_signed_in", "Please sign in again.");
+    if (callerError || !caller?.user?.id) return fail("DZ-E1003");
 
     // 2. The export, built by the database as the caller.
     const response = await fetch(`${url}/rest/v1/rpc/export_my_data`, {
@@ -110,9 +112,10 @@ Deno.serve(async (req) => {
     }
     if (!response.ok) {
       const said = (body as { message?: string } | null)?.message ?? "";
-      if (said.startsWith("You can download your data once a day")) return fail(429, "once_a_day", said);
-      if (response.status === 401 || response.status === 403) return fail(401, "not_signed_in", "Please sign in again.");
-      return fail(500, "export_failed", "Couldn't prepare your data. Please try again.");
+      // The database's sentence for once a day carries the time: "DZ-E7001: You can download ...".
+      if (codeOf(said) === "DZ-E7001") return fail("DZ-E7001", said.replace(/^DZ-E7001:\s*/, ""));
+      if (response.status === 401 || response.status === 403) return fail("DZ-E1003");
+      return fail("DZ-E7002");
     }
     const data = (body ?? {}) as Export;
 
@@ -146,6 +149,6 @@ Deno.serve(async (req) => {
       },
     });
   } catch {
-    return fail(500, "export_failed", "Couldn't prepare your data. Please try again.");
+    return fail("DZ-E7002");
   }
 });

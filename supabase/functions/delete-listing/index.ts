@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import { readInput, UUID } from "../_shared/input.ts";
+import { errorBody, errorStatus } from "../_shared/errors.ts";
 
 const BUCKET = "listing-photos";
 const PAGE_SIZE = 1000;
@@ -16,24 +17,29 @@ function json(status: number, body: Record<string, unknown>): Response {
   });
 }
 
+/** C1: an error as { code, message } with the catalog status (contracts/error-codes.json). */
+function refuse(code: string, message?: string): Response {
+  return json(errorStatus(code), errorBody(code, message));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
   if (req.method !== "POST") {
-    return json(405, { error: "method_not_allowed", message: "Use POST." });
+    return refuse("DZ-E9005");
   }
 
   const authorization = req.headers.get("Authorization") ?? "";
   const token = /^Bearer\s+(.+)$/i.exec(authorization)?.[1]?.trim();
   if (!token) {
-    return json(401, { error: "not_signed_in", message: "Please sign in again." });
+    return refuse("DZ-E1003");
   }
 
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_ANON_KEY");
   if (!url || !key) {
-    return json(500, { error: "server_error", message: "Deletion is unavailable. Please try again." });
+    return refuse("DZ-E2005");
   }
 
   // All database and Storage requests run as the verified caller, under RLS.
@@ -46,16 +52,16 @@ Deno.serve(async (req) => {
   try {
     const { data: authData, error: authError } = await client.auth.getUser(token);
     if (authError || !authData.user) {
-      return json(401, { error: "not_signed_in", message: "Please sign in again." });
+      return refuse("DZ-E1003");
     }
 
     const input = await readInput(req, { allowed: ["listing_id"], required: ["listing_id"], maxBytes: 1024 });
     if (!input.ok) {
-      return json(input.status, { error: "invalid_request", message: input.message });
+      return json(input.status, errorBody(input.code, input.message));
     }
     const listingId = input.body.listing_id;
     if (typeof listingId !== "string" || !UUID.test(listingId)) {
-      return json(400, { error: "invalid_request", message: "A valid listing_id is required." });
+      return refuse("DZ-E2003");
     }
 
     const { data: listing, error: listingError } = await client
@@ -64,10 +70,10 @@ Deno.serve(async (req) => {
       .eq("id", listingId)
       .maybeSingle();
     if (listingError) {
-      return json(500, { error: "server_error", message: "Couldn't load the listing. Please try again." });
+      return refuse("DZ-E2004");
     }
     if (!listing || listing.lender_id !== authData.user.id) {
-      return json(404, { error: "listing_not_found", message: "Listing not found." });
+      return refuse("DZ-E2002");
     }
 
     // Remove every file in the listing's folder, including an upload whose
@@ -82,19 +88,19 @@ Deno.serve(async (req) => {
         sortBy: { column: "name", order: "asc" },
       });
       if (listError || !files) {
-        return json(503, { error: "photo_cleanup_failed", message: "Couldn't remove the photos. Please retry." });
+        return refuse("DZ-E2066");
       }
       if (files.length === 0) break;
       // Upload policies allow only {listing_id}/{random}.{ext}; a nested
       // folder is unexpected, so keep the listing rather than skip its files.
       if (files.some((file) => !file.id || file.name.includes("/"))) {
-        return json(409, { error: "photo_cleanup_failed", message: "Couldn't remove all photos. Please retry." });
+        return refuse("DZ-E2067");
       }
       const { error: removeError } = await bucket.remove(
         files.map((file) => `${listing.id}/${file.name}`),
       );
       if (removeError) {
-        return json(503, { error: "photo_cleanup_failed", message: "Couldn't remove the photos. Please retry." });
+        return refuse("DZ-E2066");
       }
     }
 
@@ -102,14 +108,11 @@ Deno.serve(async (req) => {
     // row lock also serializes uploads, so a racing upload cannot be orphaned.
     const { error: deleteError } = await client.from("listings").delete().eq("id", listing.id);
     if (deleteError) {
-      return json(409, {
-        error: "listing_delete_failed",
-        message: "Couldn't delete the listing. Stop uploading photos and retry.",
-      });
+      return refuse("DZ-E2006");
     }
     return json(200, { ok: true });
   } catch {
     // Do not log tokens, request bodies, or upstream error payloads.
-    return json(503, { error: "server_error", message: "Couldn't delete the listing. Please retry." });
+    return refuse("DZ-E2007");
   }
 });

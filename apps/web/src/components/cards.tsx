@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, StudioCardData, price, cityLabel } from "@/lib/types";
+import { Card, StudioCardData, perDay, cityLabel } from "@/lib/types";
 import { photoUrl } from "@/lib/supabase/config";
 import { Photo } from "./photo";
 import { Icon } from "./icon";
@@ -27,7 +27,7 @@ export function PieceCard({
       </div>
       <h3>{card.title}</h3>
       <p>
-        {price(card.price)} <span aria-hidden="true">·</span>{" "}
+        {perDay(card.price)} <span aria-hidden="true">·</span>{" "}
         <Distance miles={card.distance} />
       </p>
     </Link>

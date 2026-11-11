@@ -387,6 +387,28 @@ Website routes `/listing/<id>/opengraph-image`, `/twitter-image` and the same un
   - On the first launch of an install, there's no marker in NSUserDefaults, which iOS deletes with the app. Then everything this app keeps in the Keychain is cleared before the session is read, and the marker is set.
   - So a reinstalled app starts signed out, and an old session isn't picked up. Not compiled yet; it's in the Mac check list.
 
+## Error codes, price per day and background jobs (C1)
+
+Migrations `20261111100000_c1_error_codes.sql`, `20261111101000_c1_price_per_day.sql`, `20261111102000_c1_async_jobs.sql`; all 7 Edge Functions redeployed with `_shared/errors.ts` (2026-11-11).
+
+### What changed for security
+- **Refusal messages:** 66 functions re-created from their live definitions with only the raise lines changed (a code before the same words, the field in the HINT). `create or replace` keeps each function's owner, search path, `SECURITY DEFINER` and grants. Checked live afterwards: every `raise exception` literal starts with a `DZ-` code; the 5 that raise a variable get it from `text_refusal` or `suspension_message`, which now carry the code.
+- **Edge Function errors:** `{ code, message }` only, the catalog's words. A database refusal's code is passed through by `admin-actions` and `export-my-data`; its own words are never echoed except `DZ-E7001` (the export's time, built by the database). Still no database or library details.
+- **`app_private.async_jobs`:** closed to every API role (RLS on, no policies, all privileges revoked). The payload is exactly the body the triggers sent before (push title and body as already checked and worded by `queue_push`; a scan id). The URL and secret are read from Vault at each attempt, never stored in the row or the payload, so a job can only ever go to `send-push` or `scan-listing`. Done jobs are deleted after 1 day, dead jobs after 30 days, so push text doesn't pile up.
+- **Admin job functions:** the dead list returns only what a job was for (push kind and chat id, or scan id), never push titles or text. Retry is logged.
+- **Retries:** reads only (GET/HEAD and a fixed list of read-only database functions), at most 2, with backoff; writes are never sent twice, so a retry can't double a message, chat, report or listing.
+- **`browse_listings` / `get_listing`:** dropped and re-created with the same body plus `price_per_day`, `price_unit`, `days`, `total` (and `p_start_date`/`p_end_date` on `get_listing`); grants restored to `anon`, `authenticated`, `service_role`. Still no coordinates or account ids. `app_private.rental_days` is not callable by API roles.
+
+### Advisor run after the three migrations (2026-11-11 23:28 UTC)
+
+| Finding | Function or table | Why it is intended |
+| --- | --- | --- |
+| INFO: RLS on, no policies | `app_private.async_jobs` | The outbox. Closed to every API role; written by `enqueue_job`, the worker and `admin_retry_job`, read by the admin job functions. |
+| WARN: signed-in users can run elevated function | `admin_jobs_status`, `admin_list_dead_jobs`, `admin_retry_job` | Admin "Background jobs" card and dead-letter list. Each starts with `require_admin()` (admin + `aal2` + a code under 24 hours) and writes the admin log. Not callable by guests. |
+| WARN: guests and signed-in users can run elevated function | `browse_listings`, `get_listing` | Re-created with new return columns (price per day, days, total); the reasons logged in Step 1B still apply. |
+
+Totals: 11 INFO (the 10 known plus `async_jobs`), 4 guest WARN (unchanged), 56 signed-in WARN (the 53 known plus the 3 admin job functions).
+
 ## Google Cloud (Step 8A)
 
 Project `dzirent`, region `us-west1`. The $20 billing kill switch (budget, Pub/Sub topic `billing-alerts`, function `stop-billing`) was not touched.

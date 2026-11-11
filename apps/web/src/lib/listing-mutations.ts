@@ -1,10 +1,12 @@
 import {
   session,
   must,
+  codedError,
   ownListing,
   WorkflowError,
   uuid,
 } from "./workflow-server";
+import { errorText, shown } from "./errors";
 import { validateListing, type ListingForm } from "./listing-form";
 import { slots } from "./workflows";
 type Body = Record<string, unknown>;
@@ -189,17 +191,17 @@ export async function finishListing(body: Body) {
         .limit(1)
         .maybeSingle();
       if (!latestScan || latestScan.status !== "done") {
-        throw new WorkflowError("Check the photos before publishing this listing.");
+        throw codedError({ message: "DZ-E2020: Check the photos before publishing this listing." });
       }
       if (
         latestScan.verdict === "rejected" &&
         latestScan.admin_decision !== "approved"
       ) {
-        throw new WorkflowError(
-          latestScan.reason
-            ? `This listing can't be published yet: ${latestScan.reason}`
-            : "Check the photos before publishing this listing.",
-        );
+        throw codedError({
+          message: latestScan.reason
+            ? `DZ-E2023: This listing can't be published yet: ${latestScan.reason}`
+            : "DZ-E2020: Check the photos before publishing this listing.",
+        });
       }
     }
   }
@@ -220,19 +222,17 @@ export async function scanListing(body: Body) {
   const { data, error } = await client.rpc("request_scan", {
     p_listing_id: id,
   });
-  if (error) {
-    throw new WorkflowError(error.message || "Could not check photos.");
-  }
+  if (error) throw codedError(error);
   return { scan_id: data };
 }
-/** Storage's own refusals (listing-photos bucket: JPEG, PNG or WebP, at most 10 MB) in plain words. */
+/** Storage's own refusals (listing-photos bucket: JPEG, PNG or WebP, at most 10 MB) as catalog codes. */
 function uploadRefusal(error: { message?: string; statusCode?: string | number }) {
   const said = (error.message || "").toLowerCase();
   if (String(error.statusCode) === "413" || said.includes("maximum allowed size"))
-    return "This photo is too big. Choose one under 10 MB.";
+    return errorText(shown("DZ-E2065"));
   if (said.includes("mime type") || said.includes("invalid_mime_type"))
-    return "Choose a JPEG, PNG or WebP photo.";
-  return "Could not upload this photo.";
+    return errorText(shown("DZ-E2064"));
+  return errorText(shown("DZ-E9999"));
 }
 export async function uploadPhoto(request: Request, id: string) {
   const { client } = await session();
@@ -304,19 +304,15 @@ export async function edgeDelete(
   const { client } = await session();
   const result = await client.functions.invoke(name, { body: body || {} });
   if (result.error) {
+    // C1: { code, message } with the catalog status (DZ-E7010: an active rental).
     const context = (result.error as { context?: Response }).context;
-    let active = false;
+    let body: unknown = null;
     if (context) {
       try {
-        active = (await context.json()).error === "active_rental";
+        body = await context.json();
       } catch {}
     }
-    throw new WorkflowError(
-      active
-        ? "You have active rentals. Mark them as returned or say the deal didn’t happen in the chat before deleting your account."
-        : "Could not delete. Please try again.",
-      active ? 409 : 400,
-    );
+    throw codedError(body, context?.status === 409 ? 409 : 400);
   }
   if (name === "delete-account") await client.auth.signOut({ scope: "local" });
   return { ok: true };

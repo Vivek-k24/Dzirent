@@ -2,6 +2,118 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## C1 - 2026-11-11 - error codes, price per day, retries
+
+**Before starting:** the working tree was clean and `Preview` was up to date with `origin/Preview` (`7c83362`). The architecture notes (blueprint Section 8, gaps G1, G20, G21) aren't in `pranalika/`, so I worked from the prompt.
+
+**Done:**
+- **Error and warning codes:**
+  - One source: `contracts/error-codes.json`, 125 codes. `contracts/generate.mjs` writes four outputs: `ErrorCodes.kt` (shared Kotlin), `apps/web/src/lib/error-codes.generated.ts`, `supabase/functions/_shared/error-codes.ts`, and `pranalika/error-codes.md` (the readable table). All four are committed and marked "do not edit".
+  - The generator runs at build time: the website's `prebuild`, and the Android `generateErrorCodes` task, which is skipped with a warning when Node is missing, as on the Mac. Two checks fail on stale files: `npm run lint` runs `generate.mjs --check` first, and `ErrorCodesFreshnessTest` (Kotlin) compares `ErrorCodes.kt` with the JSON.
+  - | Family | Codes |
+    | --- | --- |
+    | 1xxx account, sign-in, terms, age | 22 |
+    | 2xxx listings, photos, photo checks | 28 errors + 8 warnings (`DZ-W2001`-`W2008`) |
+    | 3xxx chat, saving, blocking | 9 |
+    | 4xxx rentals, payments | reserved, 0 |
+    | 5xxx reports, moderation, admin | 36 |
+    | 6xxx ID verification | reserved, 0 |
+    | 7xxx data download, deletion | 9 |
+    | 9xxx system | 13 (incl. `DZ-E9999`) |
+  - **Database** (`20261111100000_c1_error_codes.sql`): I generated this migration from the live definitions (`pg_get_functiondef`) of the 66 functions that refuse. Only the raise lines changed: all 116 refusals now start with their code, with the same words. The field goes in the HINT (`full_legal_name`, `dates`, `reason`, `days`, `platform`; the text filter keeps its column). `text_refusal` (so also `check_text`) and `suspension_message` carry the code inside the sentence. One wording change: "You cannot message this user" is now "You can't message this user.", the words the apps already showed.
+  - **Edge Functions:** all 7 answer `{ code, message }` with the catalog's status (`_shared/errors.ts`; `_shared/input.ts` adds a code to each input refusal), and all 7 are redeployed. Two side effects:
+    - A few statuses moved to the catalog's value. For example "not configured" is now 503 instead of 500, and "Admins can't ban themselves" is 409 instead of 400.
+    - `send-push` now answers 503 when nothing was delivered and a phone failed for a reason other than a dead token, so the outbox tries again.
+  - **Shared Kotlin:**
+    - `util/ErrorCatalog.kt` does the lookups. `fail()` in the repository shows the catalog's words with the code, "Add a photo first (DZ-E2010)", and takes the field from the HINT. A code this build doesn't know shows the server's words; anything without a code shows `DZ-E9999`.
+    - Auth, network and Storage failures get codes in the app: `DZ-E1004`-`E1008`, `E9002`, `E1002`, `E2064`/`E2065`. `DzirentException` has a `code`.
+    - Photo warnings, from the phone and from the server, show their `DZ-W2xxx` code, and `PhotoIssue` has a `code`.
+  - **Website:**
+    - `lib/errors.ts` does the lookups. `must()` and `WorkflowError` carry the code, and so do the API route's error JSON, the admin actions, sign-in and sign-up, the sign-up name check, the redirect notices (`refusals.ts`), Storage refusals and the photo warnings.
+    - The admin two-step detection (`admin-code.ts`, `proxy.ts`, both layouts) now matches codes `DZ-E5002`/`E5003` instead of sentences.
+- **Price per day:**
+  - **Database** (`20261111101000_c1_price_per_day.sql`): `listings.price_unit` (`'per_day'`, default, the only allowed value). `browse_listings` and `get_listing` are dropped and re-created with the same bodies.
+    - Both now also return `price_per_day`, `price_unit`, and with dates `days` (both ends counted) and `total`.
+    - `get_listing` takes `p_start_date`/`p_end_date`.
+    - `price` stays (the same number) so installed apps keep working.
+  - **Apps:** cards "$X/day · distance"; the listing page "$X/day" and "<n> days · $total" for Home's chosen dates (`BrowseSession.dates`); chat header, Saved and filter heading per day; editor label "Price per day ($)".
+  - **Website:**
+    - cards "$X/day · distance"; the listing page "$X/day" and, with dates chosen, "<n> days · $total" from `get_listing`;
+    - closet and chat show per-day prices; the editor field says "Price per day (USD)";
+    - the link-preview line is "$X/day · City, ST".
+- **Retries and dead-letter** (`20261111102000_c1_async_jobs.sql`):
+  - `app_private.async_jobs` is closed to every API role. `queue_push` and `queue_scan` now call `enqueue_job` (the first attempt still goes out on commit) instead of `net.http_post`.
+  - pg_cron `dzirent-async-jobs` runs `run_async_jobs()` every minute:
+    - a 2xx answer marks the job done;
+    - after a failure the next attempt waits 1, 5, 30, then 120 minutes; the 5th failure marks the job dead;
+    - a dead photo-check job runs `vision_fail_scan`, which marks the check failed with verdict review.
+  - Done jobs are kept 1 day, dead jobs 30 days.
+  - Admin functions `admin_jobs_status`, `admin_list_dead_jobs` and `admin_retry_job` (logged as `retry_background_job`). On the website: a "Background jobs" card on the admin overview, and `/admin/jobs` with the dead list and Retry. There is a new nav item.
+- **Client read retries:**
+  - **Rules:** reads only, meaning GET/HEAD and a fixed list of read-only database functions. After a network failure, 408 or 5xx: 2 retries, after 0.5 s then 2 s. Writes are never retried.
+  - **Apps:** Ktor `HttpRequestRetry` in `createDzirentSupabaseClient` (`util/ReadRetry.kt`, needs `@OptIn(SupabaseInternal)` for `httpConfig`).
+  - **Website:** `lib/retry.ts` in the browser, server and preview clients.
+- **Cleanup:** deleted `iOS_Toolchain_and_Packages.md` from the repo root. It was an Oct 31 Antigravity audit that no other file links to.
+- **Docs:**
+  - `contract.md`: new section 5, plus price fields, the outbox and Edge Function errors.
+  - `security-log.md`: "Error codes, price per day and background jobs (C1)", with the Advisor run.
+  - `decisions.md`: "Price (2026-11-11)" and "Errors and retries (2026-11-11)".
+  - Root README product rules; `BOARD.md` "Code completion".
+
+**What I ran:**
+1. `supabase db push --linked`: the 3 migrations applied.
+2. A live check that every `raise exception` literal now starts with a `DZ-` code (118 raises, counting the 2 new ones in `admin_retry_job`), and that the cron job has succeeded runs.
+3. `supabase functions deploy <name> --no-verify-jwt --use-api` for all 7 functions.
+4. `:androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded, `GOOGLE_SERVICES_JSON` set). The first run failed to compile: `httpConfig` needs an opt-in, and `URLBuilder` has no `encodedPath`. The second built, but the P5A `storageRefusalsInPlainWords` test still expected sentences, so I updated it to codes. The third: **BUILD SUCCESSFUL**, 50 tests, 0 failures. The new ones are `ErrorCatalogTest` (9), `PricePerDayTest` (5: 1 day, 5 days, month and year boundaries, cents, read-retry rules) and `ErrorCodesFreshnessTest` (1).
+5. `apps/web` with Node 22.23.3 from `.tools`:
+   - `npm test` (new: catalog lookups and fallbacks, read retries, price lines): 6 of 6, after one fix. The website's existing `price()` prints "$12.5", so I corrected the test, not the format.
+   - `npm run lint`: freshness check passed, then eslint with no warnings.
+   - `npm run build`: passed.
+6. Freshness check proof: I appended a line to the generated TS file. `generate.mjs --check` exited 1 and named the file. I regenerated, and it passed.
+7. `node supabase/tests/c1_codes_price_jobs.mjs` against dzirent-server: **passed on the first run.**
+   - **Refusals:**
+     - `check_text` returned `DZ-E2050: ...` (guest).
+     - `record_accessory_declaration` with a blank name returned 400 `DZ-E2041` with hint `full_legal_name`.
+     - `set_conversation_dates` with the end date before the start returned `DZ-E3006` with hint `dates`.
+     - A non-admin calling `admin_retry_job` got `DZ-E5001`.
+   - **Edge Functions:** `delete-listing` with an unknown field answered 400 `{ code: "DZ-E9011", message }`; `export-my-data` without a token answered 401 `DZ-E1003`.
+   - **Price:** 3 `browse_listings` cards for Dec 30 - Jan 2 all had days 4 and total = price × 4. `get_listing` returned 1 day for one date, 5 days for Feb 26 - Mar 2 2027, and null days and total without dates.
+   - **Job:**
+     - A `send_push` job whose payload `send-push` refuses (required fields missing, HTTP 400) failed 5 times. The measured waits were exactly 1, 5, 30 and 120 minutes; I skipped each wait by setting `next_attempt_at` (SQL, test setup only). It was dead after attempt 5.
+     - I made test user 1 a temporary admin and signed in with TOTP at aal2. `admin_jobs_status` counted the job and `admin_list_dead_jobs` listed it, with no push text.
+     - `admin_retry_job` started it again at attempt 1 (running), and it failed again to pending. A second Retry was refused with `DZ-E5061`, and the admin log has the retry.
+   - **Clean-up:** the test job deleted, the factor deleted, the admin row removed. Afterwards: admin rows 0, factors 0, test jobs 0. The admin log rows stay (append-only by design). No rows were written by the refusal checks.
+8. Security Advisor (MCP `get_advisors`): only expected findings. They are the `async_jobs` INFO and the 3 admin job functions, all logged.
+9. No emulator, device or browser.
+
+**APK (built 2026-11-11 17:22):**
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, which replaced the P5C copy. Same size (23,437,377 bytes) and SHA-256.
+
+**Phone test (Android):**
+1. **Prices:** Home cards read "$X/day · N mi". A listing page shows "$X/day" and, under it, "<n> days · $total" for the dates on Home. Change Home's dates and open the listing again: the days and total follow. The editor's field says "Price per day ($)".
+2. **An error with a code:** in a listing title, type a phone number and save. The field shows "Please remove contact details from your listing; ... (DZ-E2050)".
+3. **Wrong password at sign-in:** "Email or password is incorrect. (DZ-E1004)".
+4. **Photo warnings:** a dark photo shows "Too dark: try daylight (DZ-W2002)".
+5. **Push still arrives:** send a message from another account. It now goes through the outbox, so it should still arrive within seconds.
+6. **Read retry:** with flight mode on, open Home. It waits about 2.5 s (two retries), then shows the error with "(DZ-E9002)" or "(DZ-E9999)". Turn flight mode off and try again.
+7. **Website admin** (after the deploy): the overview has a "Background jobs" card; `/admin/jobs` shows counts and "No dead jobs."
+
+**iPhone, for the Mac session (not compiled on iOS):**
+- `ErrorCatalog.kt` and `ReadRetry.kt` are common code. The Ktor `HttpRequestRetry` and `kotlin.coroutines.cancellation.CancellationException` should compile for iOS too.
+- Without Node, `generateErrorCodes` logs a warning and uses the committed `ErrorCodes.kt`.
+
+**Open issues:**
+- **Uncoded errors:** Postgres check-constraint and unique violations (for example `listings_price_usd_positive`) aren't `raise` statements, so they carry no code and show `DZ-E9999`. The apps validate those fields first. A later step could map constraint names to codes.
+- **Server photo warnings:** the vision service (`services/`, not in this task's folders) still sends warning words. Clients map the exact words to `DZ-W2xxx`, so a reworded warning there would lose its code until the catalog is updated.
+- **Website price format:** the website's existing price format shows "$12.5" where the apps show "$12.50"; not changed here.
+- **Retrying a dead photo check:** a dead photo-check job has already ended its check as review. Retrying it finishes as "skipped", and the lender asks for a new check from the editor.
+- **App listing page totals:** the app has no date picker on the listing page. The days/total line uses Home's chosen dates (Home always has a range), and the app computes it with the same rule the database uses, not from `get_listing`.
+- **Generic fallback:** some website screens that used to say "Couldn't load your inbox." now say "Something went wrong. Please try again. (DZ-E9999)" for an uncoded failure, as the prompt asked.
+- **Installed apps:** older apps that are already installed show server refusals with the code prefix, for example "DZ-E2010: Add a photo first", and fall back to their generic text for the rest. Updating the app fixes this.
+
+**Requests:** none.
+
 ## P5C - 2026-11-10 - sharing
 
 **Before starting:** the working tree was clean, and `Preview` was up to date with `origin/Preview` (`84d0d9b`).

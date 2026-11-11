@@ -23,6 +23,7 @@ import coil3.compose.AsyncImage
 import com.dzirent.shared.config.SupabaseBuildConfig
 import com.dzirent.shared.util.DistanceUnit
 import com.dzirent.shared.util.KM_PER_MILE
+import com.dzirent.shared.util.ErrorCatalog
 import com.dzirent.shared.repository.DzirentException
 import com.dzirent.shared.ui.theme.DzirentAccent
 
@@ -30,8 +31,8 @@ import com.dzirent.shared.ui.theme.DzirentAccent
  * The text to show on screen for an error. Only DzirentException messages are written
  * for users; anything else could carry URLs or tokens, so it falls back to [fallback].
  */
-fun Throwable.userMessage(fallback: String = "Something went wrong. Please try again."): String =
-    if (this is DzirentException) message ?: fallback else fallback
+fun Throwable.userMessage(fallback: String = ErrorCatalog.message(ErrorCatalog.FALLBACK)): String =
+    if (this is DzirentException) message ?: fallback else "$fallback (${ErrorCatalog.FALLBACK})"
 
 /** "AL" for "Ana Lopez", "A" for "Ana", "?" for no name. */
 fun initialsOf(name: String): String {

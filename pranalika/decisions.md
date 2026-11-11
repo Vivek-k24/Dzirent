@@ -147,3 +147,15 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 ## Chat (2026-11-10)
 
 - Chat messages are not filtered: no language check and no logging. People report, block or ignore. This replaces "chat messages" in "Content safety (2026-11-07)"; listings, profiles and studio fields keep the filter.
+
+## Price (2026-11-11)
+
+- A listing's price is its price for one day (`listings.price_usd`, `price_unit` = `per_day`, the only unit for now). Cards show "$X/day · distance"; the listing page shows "$X/day" and, with dates chosen, "<n> days · $total". Editors label the field "Price per day".
+- Days count both the first and the last day (Nov 5 - Nov 8 is 4 days). The total is price per day times days; the database returns both (`browse_listings`, `get_listing`).
+
+## Errors and retries (2026-11-11)
+
+- Every error and warning people can see has a code from one catalog, `contracts/error-codes.json` (`DZ-E####` errors, `DZ-W####` warnings, families 1xxx account to 9xxx system). Kotlin, the website and the Edge Functions use code generated from it; the generated files are committed and a check fails when they are out of date.
+- The database starts every refusal with its code and keeps its words; the field goes in the HINT. Edge Functions answer `{ code, message }` with the catalog's status. Clients show the catalog's words with the code in brackets, else the server's words, else `DZ-E9999` "Something went wrong. Please try again.".
+- Background calls to `send-push` and `scan-listing` go through an outbox (`app_private.async_jobs`): retried after 1, 5, 30 and 120 minutes, dead after 5 attempts. A photo check whose job dies ends as review. Admins see dead jobs and can retry one (logged).
+- Clients retry reads only (2 retries, 0.5 s then 2 s), never writes.

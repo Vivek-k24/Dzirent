@@ -10,7 +10,7 @@ import { StartChat } from "@/components/start-chat";
 import { Distance } from "@/components/distance";
 import { listingNotice } from "@/lib/workflows";
 import { photoUrl } from "@/lib/supabase/config";
-import { Query, value, price, cityLabel } from "@/lib/types";
+import { Query, value, perDay, daysAndTotal, cityLabel } from "@/lib/types";
 import { Gallery } from "@/components/photo";
 import { Icon } from "@/components/icon";
 import { savePiece } from "@/app/actions";
@@ -89,7 +89,7 @@ export default async function ListingPage({
     searchParams,
   ]);
   const [listing, saved] = await Promise.all([
-    getListing(id, ctx.lat, ctx.lng),
+    getListing(id, ctx.lat, ctx.lng, ctx.datesActive ? ctx.start : null, ctx.datesActive ? ctx.end : null),
     isSaved(id),
   ]);
   if (!listing) return <Unavailable />;
@@ -133,9 +133,11 @@ export default async function ListingPage({
             </span>
           </p>
           <div className="listing-price">
-            {price(listing.price)}
-            <span> / rental</span>
+            {perDay(listing.price)}
           </div>
+          {daysAndTotal(listing.days, listing.total) && (
+            <p className="listing-total">{daysAndTotal(listing.days, listing.total)}</p>
+          )}
           {listing.price_note && <p className="muted">{listing.price_note}</p>}
           <div className="listing-tags">
             {listing.size_label && <span>Size {listing.size_label}</span>}

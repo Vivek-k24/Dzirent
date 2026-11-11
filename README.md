@@ -41,7 +41,9 @@ One account can be both renter and lender.
 - Photos of the item being worn are allowed (hanger, mannequin, flat-lay, or worn are all fine). If a user appears in a photo, it is public like every listing photo; users must not include other people without their permission. No text, prices, phone numbers, social handles or watermarks on photos.
 - Listing photos are checked automatically. A check comes back allowed, not allowed (with the reason), or for review by a person at Dzirent. When the photos of a live listing change, they are checked again.
 - Location shows as "City, ST". Exact locations are never shown; only distance.
-- Listing cards show only the photo, title and "$price · distance". Never the word "free". No save button on cards.
+- Prices are per day: a listing's price is its price for one day. Cards show only the photo, title and "$price/day · distance". Never the word "free". No save button on cards.
+- The listing page shows "$price/day" and, with dates chosen, the number of days and the total ("5 days · $125"). Days count both the first and the last day.
+- Every error people see ends with its code in brackets, for example "Add a photo first (DZ-E2010)", so they can quote it to support. Photo warnings carry DZ-W codes the same way.
 - "Saved" (not "Bag"), because there is no checkout.
 - Minimalist look: black and white with a hint of the logo's maroon/pink. As few taps as possible.
 - AI features use only Dzirent's own code or open-source models, never paid AI services.

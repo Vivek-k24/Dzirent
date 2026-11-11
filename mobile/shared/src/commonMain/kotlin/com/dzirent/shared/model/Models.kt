@@ -4,7 +4,7 @@ import com.dzirent.shared.util.BodyMeasurement
 import com.dzirent.shared.util.DateRange
 import com.dzirent.shared.util.FitProfile
 import com.dzirent.shared.util.MeasurementInput
-import com.dzirent.shared.util.formatPrice
+import com.dzirent.shared.util.formatPerDay
 import com.dzirent.shared.util.parseDateRange
 import com.dzirent.shared.util.validateMeasurements
 import kotlinx.serialization.SerialName
@@ -249,7 +249,8 @@ data class Listing(
     val typeLabel: String get() = itemType ?: category
 
     /** "$25" when priced, otherwise the old free-text note. */
-    val priceLabel: String get() = priceUsd?.let { formatPrice(it) } ?: priceNote
+    /** "$25/day" (C1: prices are per day), or the note for listings from before prices were required. */
+    val priceLabel: String get() = priceUsd?.let { formatPerDay(it) } ?: priceNote
 }
 
 @Serializable

@@ -15,46 +15,50 @@ export type InputRule = {
 
 export type InputResult =
   | { ok: true; body: Record<string, unknown> }
-  | { ok: false; status: 400 | 413; error: string; message: string };
+  | { ok: false; status: 400 | 413; code: string; error: string; message: string };
 
-const BAD = (message: string): InputResult => ({ ok: false, status: 400, error: "bad_request", message });
+// C1: each refusal carries its catalog code (contracts/error-codes.json).
+const BAD = (code: string, message: string): InputResult => ({ ok: false, status: 400, code, error: "bad_request", message });
+const TOO_LARGE: InputResult = {
+  ok: false, status: 413, code: "DZ-E9013", error: "too_large", message: "This request is too large.",
+};
 
 /** Reads and checks the body. Never throws. */
 export async function readInput(req: Request, rule: InputRule): Promise<InputResult> {
   const declared = Number(req.headers.get("content-length") ?? "");
   if (Number.isFinite(declared) && declared > rule.maxBytes) {
-    return { ok: false, status: 413, error: "too_large", message: "This request is too large." };
+    return TOO_LARGE;
   }
   let text: string;
   try {
     const bytes = new Uint8Array(await req.arrayBuffer());
     if (bytes.byteLength > rule.maxBytes) {
-      return { ok: false, status: 413, error: "too_large", message: "This request is too large." };
+      return TOO_LARGE;
     }
     text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   } catch {
-    return BAD("This request couldn't be read.");
+    return BAD("DZ-E9014", "This request couldn't be read.");
   }
   if (text.trim() === "") {
-    return rule.emptyIsObject ? { ok: true, body: {} } : BAD("Send a JSON object.");
+    return rule.emptyIsObject ? { ok: true, body: {} } : BAD("DZ-E9010", "Send a JSON object.");
   }
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
-    return BAD("Send a JSON object.");
+    return BAD("DZ-E9010", "Send a JSON object.");
   }
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return BAD("Send a JSON object.");
+    return BAD("DZ-E9010", "Send a JSON object.");
   }
   const body = parsed as Record<string, unknown>;
   const unknown = Object.keys(body).filter((k) => !rule.allowed.includes(k));
   if (unknown.length > 0) {
-    return BAD("This request has fields that aren't accepted.");
+    return BAD("DZ-E9011", "This request has fields that aren't accepted.");
   }
   const missing = (rule.required ?? []).filter((k) => body[k] === undefined);
   if (missing.length > 0) {
-    return BAD("This request is missing required fields.");
+    return BAD("DZ-E9012", "This request is missing required fields.");
   }
   return { ok: true, body };
 }

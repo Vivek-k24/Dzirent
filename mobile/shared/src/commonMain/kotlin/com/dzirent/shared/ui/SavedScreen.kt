@@ -24,7 +24,7 @@ import com.dzirent.shared.model.Listing
 import com.dzirent.shared.model.SavedListing
 import com.dzirent.shared.model.SavedStudio
 import com.dzirent.shared.repository.DzirentRepository
-import com.dzirent.shared.util.formatPrice
+import com.dzirent.shared.util.formatPerDay
 import kotlinx.coroutines.launch
 
 private data class SavedData(val pieces: List<SavedListing>, val studios: List<SavedStudio>)
@@ -207,7 +207,7 @@ private fun SavedPieceRow(saved: SavedListing, onOpen: () -> Unit, onMessage: ()
                     overflow = TextOverflow.Ellipsis
                 )
                 listing?.priceUsd?.let {
-                    Text(formatPrice(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatPerDay(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (listing != null) {
                     TextButton(onClick = onMessage, contentPadding = PaddingValues(horizontal = 0.dp)) {

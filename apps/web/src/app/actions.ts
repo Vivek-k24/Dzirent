@@ -6,6 +6,7 @@ import { serverClient, currentUser } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/types";
 import { context } from "@/lib/data";
 import { refusalNotice } from "@/lib/refusals";
+import { errorText, fromServer, shown } from "@/lib/errors";
 const field = (f: FormData, n: string) => String(f.get(n) || "").trim();
 export async function authenticate(form: FormData) {
   const client = await serverClient();
@@ -39,7 +40,9 @@ export async function authenticate(form: FormData) {
       p_where: "profile",
     });
     if (nameRefusal) {
-      fail("", String(nameRefusal));
+      // C1: "DZ-E1050: ..." shown as the catalog's words with the code.
+      const refusal = fromServer(String(nameRefusal));
+      fail("", refusal ? errorText(refusal) : String(nameRefusal));
     }
     const origin = (await headers()).get("origin") || "https://dzirent.com";
     const location = await context();
@@ -67,9 +70,17 @@ export async function authenticate(form: FormData) {
     });
     if (error)
       fail(
-        error.code === "user_already_exists"
-          ? "An account already exists. Please sign in."
-          : "We could not create your account. Check your details and try again.",
+        errorText(
+          shown(
+            error.code === "user_already_exists"
+              ? "DZ-E1006"
+              : error.code === "weak_password"
+                ? "DZ-E1007"
+                : error.status === 429
+                  ? "DZ-E1008"
+                  : "DZ-E9999",
+          ),
+        ),
       );
     if (data.session) {
       await client.rpc("accept_legal", { p_platform: "web" });
@@ -92,7 +103,18 @@ export async function authenticate(form: FormData) {
       );
   } else {
     const { error } = await client.auth.signInWithPassword({ email, password });
-    if (error) fail("Email or password did not match. Please try again.");
+    if (error)
+      fail(
+        errorText(
+          shown(
+            error.code === "email_not_confirmed"
+              ? "DZ-E1005"
+              : error.status === 429
+                ? "DZ-E1008"
+                : "DZ-E1004",
+          ),
+        ),
+      );
   }
   (await cookies()).set("dzirent-welcome", "seen", {
     path: "/",

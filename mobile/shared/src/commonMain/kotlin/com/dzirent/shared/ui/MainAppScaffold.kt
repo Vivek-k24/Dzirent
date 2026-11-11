@@ -421,7 +421,8 @@ fun MainAppScaffold(
                                 onEdit = { id -> navController.navigate("edit/$id") },
                                 onMessageLender = { targetListingId, lenderId -> startChat(targetListingId, lenderId) },
                                 onOpenStudio = { lenderId -> openStudio(lenderId) },
-                                onGuestAction = if (isGuest) onGatedAction else null
+                                onGuestAction = if (isGuest) onGatedAction else null,
+                                dates = session.dates
                             )
                         }
                         composable("studio/{lenderId}") { entry ->

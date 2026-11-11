@@ -322,7 +322,7 @@ export async function workflow<T>(path: string, body?: unknown): Promise<T> {
   });
   const result = await response.json();
   if (!response.ok)
-    throw new WorkflowClientError(result.error || "Please try again.", result.field);
+    throw new WorkflowClientError(result.error || "Something went wrong. Please try again. (DZ-E9999)", result.field);
   return result as T;
 }
 

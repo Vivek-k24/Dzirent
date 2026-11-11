@@ -9,7 +9,7 @@ import {
 } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { photoUrl } from "@/lib/supabase/config";
-import { price, type BrowseContext } from "@/lib/types";
+import { perDay, type BrowseContext } from "@/lib/types";
 import {
   dateRange,
   dateChip,
@@ -252,7 +252,7 @@ export function Chat({
           <strong>
             {data.card?.listing_title || "Listing no longer available"}
           </strong>
-          <p>{price(data.card?.price ?? null)}</p>
+          <p>{perDay(data.card?.price ?? null)}</p>
         </div>
         <Icon name="chevron" />
       </Link>

@@ -13,6 +13,7 @@
 // Storage rows are never deleted directly.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import { readInput } from "../_shared/input.ts";
+import { errorBody, errorStatus } from "../_shared/errors.ts";
 
 const BUCKET = "listing-photos";
 const PAGE_SIZE = 1000;
@@ -31,23 +32,28 @@ function json(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
+/** C1: an error as { code, message } with the catalog status (contracts/error-codes.json). */
+function refuse(code: string, message?: string): Response {
+  return json(errorStatus(code), errorBody(code, message));
+}
+
 type Plan = {
   abandoned_drafts: { delete: boolean; listings: { id: string; files: number }[] };
   orphan_photos: { delete: boolean; paths: string[] };
 };
 
 Deno.serve(async (req) => {
-  if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
+  if (req.method !== "POST") return refuse("DZ-E9005");
   const secret = Deno.env.get("CLEANUP_FILES_SECRET");
   if (!secret || !sameSecret(req.headers.get("x-cleanup-secret") ?? "", secret)) {
-    return json(401, { error: "not_allowed" });
+    return refuse("DZ-E9004");
   }
   // The database sends {}; the plan comes from cleanup_file_plan(), never from the request.
   const input = await readInput(req, { allowed: [], maxBytes: 1024, emptyIsObject: true });
-  if (!input.ok) return json(input.status, { error: input.error });
+  if (!input.ok) return json(input.status, errorBody(input.code));
   const url = Deno.env.get("SUPABASE_URL");
   const serverKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !serverKey) return json(500, { error: "not_configured" });
+  if (!url || !serverKey) return refuse("DZ-E9003");
   const admin = createClient(url, serverKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const bucket = admin.storage.from(BUCKET);
 
@@ -63,7 +69,7 @@ Deno.serve(async (req) => {
     const message = `plan failed: ${planError?.code ?? "no data"}`;
     await record("abandoned_drafts", "count", null, message, started);
     await record("orphan_photos", "count", null, message, started);
-    return json(500, { error: "plan_failed" });
+    return refuse("DZ-E9999");
   }
   const plan = data as Plan;
   const result: Record<string, unknown> = {};

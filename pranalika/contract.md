@@ -22,8 +22,8 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - `p_styles` (text[], default null): array of listing styles to match (`operator(pg_catalog.&&)` overlap).
   - `p_start_date` (date, default null): start date of requested rental window.
   - `p_end_date` (date, default null): end date of requested rental window (only listings available for the full range).
-  - `p_min_price` (numeric, default null): minimum price USD.
-  - `p_max_price` (numeric, default null): maximum price USD.
+  - `p_min_price` (numeric, default null): minimum price per day, USD.
+  - `p_max_price` (numeric, default null): maximum price per day, USD.
   - `p_new_days` (integer, default null): listings created within last N days (for "New near you").
   - `p_saved_only` (boolean, default false): signed-in only; returns caller's saved pieces.
   - `p_saved_studios_only` (boolean, default false): signed-in only; returns listings from studios the caller saved.
@@ -33,13 +33,15 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 - **Returns:** Table of listing cards:
   - `id` (uuid): listing ID.
   - `title` (text): listing title.
-  - `price` (numeric): rental price in USD.
+  - `price` (numeric): price per day in USD (C1; kept for installed apps, the same as `price_per_day`).
   - `distance` (integer): whole miles from caller, or null.
   - `city` (text): city label.
   - `category` (text): category name.
   - `cover_photo_path` (text): Storage path of lowest position photo.
   - `studio_name` (text): studio name or display name.
   - `studio_handle` (text): studio handle.
+  - `price_per_day` (numeric), `price_unit` (text, always `'per_day'` for now) (C1).
+  - `days` (integer) and `total` (numeric): with both `p_start_date` and `p_end_date`, the days in the range counting both ends (Dec 30 - Jan 2 is 4) and `price_per_day × days`; null otherwise (C1).
 
 ### `get_listing`
 - **Who can call:** Guest and signed-in (`anon`, `authenticated`).
@@ -47,12 +49,14 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - `p_listing_id` (uuid): listing ID.
   - `p_lat` (double precision, default null): caller's latitude.
   - `p_lng` (double precision, default null): caller's longitude.
+  - `p_start_date`, `p_end_date` (date, default null, C1): the dates the person chose.
 - **Returns:** Table with one row (or empty if paused/blocked/not found):
   - `id` (uuid), `title` (text), `category` (text), `item_type` (text), `garment_type` (text), `size_label` (text), `description` (text), `price` (numeric), `price_note` (text), `deposit_note` (text), `retail_value` (numeric), `listing_styles` (text[]), `city` (text), `distance` (integer), `studio_name` (text), `studio_handle` (text).
   - `photos` (jsonb): array of `{ storage_path, position, slot }` in position order.
   - `measurements` (jsonb): array of `{ label, value, unit }`.
   - `availability` (jsonb): array of `{ start_date, end_date }` in date order.
   - `created_at` (timestamptz).
+  - `price_per_day` (numeric), `price_unit` (text), `days` (integer), `total` (numeric): as in `browse_listings` (C1). `price` is the price per day.
 
 ### `get_studio`
 - **Who can call:** Signed-in only (`authenticated`).
@@ -154,7 +158,7 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 ### Audit & Utility RPCs
 - `record_accessory_declaration(p_full_legal_name, p_declaration_version, p_app_version)`: Signed-in only.
 - `record_listing_declaration(p_listing_id, p_declaration_version)`: Signed-in owner only.
-- `set_conversation_dates(p_conversation_id, p_start, p_end)`: Signed-in renter only. Refused (`42501`, "You cannot message this user") when the two people in the chat are blocked in either direction, like sending a message (Step 5B).
+- `set_conversation_dates(p_conversation_id, p_start, p_end)`: Signed-in renter only. Refused (`42501`, `DZ-E3005` "You can't message this user." since C1) when the two people in the chat are blocked in either direction, like sending a message (Step 5B).
 - `mark_conversation_read(p_conversation_id)`: Signed-in participant only.
 - `mark_activity_seen()`: Signed-in only.
 
@@ -324,7 +328,7 @@ Reports (P2B changes):
 - Publish gate: while `vision_required` is on, a listing can become `active` (insert or update) only if its latest scan is `done`, covers its current photos (`photo_set_hash`) and was `allowed` or approved by an admin (`admin_decision = 'approved'`; `rejected` blocks). Otherwise the update is refused with `P0001` and plain words, for example "Check the photos before publishing this listing." or "This listing can't be published yet: <reason>". So when the flag is turned on, apps must insert new listings as `paused`, upload photos, run `request_scan`, then publish (the mobile apps always work this way since Step 8B). While the flag is off nothing is blocked.
 
 ### Push events
-The database (triggers on `messages` and `conversations`) decides; the `send-push` Edge Function delivers. Apps never send pushes.
+The database (triggers on `messages` and `conversations`) decides; the `send-push` Edge Function delivers, through the background job outbox (section 5) since C1. Apps never send pushes.
 - New message: to the other participant. Title "New message from <name>". Body: the message text, only if the recipient turned on "Show message text".
 - New chat on a listing: to the lender. Title "New chat from <name>". Body: listing title and requested dates.
 - Requested dates changed: to the other participant. Title "New dates from <name>". Body: "Nov 5 - 8 · <listing title>".
@@ -338,6 +342,8 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 ## 2. Edge Functions
 
 **Input rules (P5A, every function, `supabase/functions/_shared/input.ts`):** the body must be one JSON object, within the function's size limit, with only the fields listed for it and every required one present. Otherwise HTTP 400 (413 when too large) with a plain `message` ("Send a JSON object.", "This request has fields that aren't accepted.", "This request is missing required fields.", "This request is too large."). Errors never include database or library details.
+
+**Errors (C1, every function, `supabase/functions/_shared/errors.ts`):** every error body is `{ "code": "DZ-E####", "message": "..." }` with the catalog's HTTP status (section 5), for example `delete-listing` 400 `DZ-E9011` for an unknown field, 401 `DZ-E1003` without a token, 409 `DZ-E7010` from `delete-account` for an active rental. The old `error` slugs are gone. `admin-actions` keeps its extra fields (`auth_changed: true` with `DZ-E5025`, `rows_removed` with `DZ-E5036`) and passes a database refusal's code through (`DZ-E5034`, ...).
 
 | Function | Fields | Size limit |
 | --- | --- | --- |
@@ -366,27 +372,27 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 - **Returns:** HTTP 200 `{ "ok": true }`.
 
 ### `send-push`
-- **Who can call:** The database only (`app_private.queue_push`, through `pg_net`). Never apps.
+- **Who can call:** The database only (`app_private.queue_push`, through the `async_jobs` outbox and `pg_net`, C1). Never apps.
 - **Auth:** Header `x-send-push-secret` must equal the function secret `SEND_PUSH_SECRET` (the same value is in Vault as `send_push_secret`); compared in constant time. `verify_jwt = false`. Anything else gets HTTP 401.
 - **Payload:** `{ "kind": "message" | "new_chat" | "dates", "conversation_id": "<uuid>", "recipient_id": "<uuid>", "title": "<text>", "body": "<text>" | null }`, already checked and worded by the database.
 - **Behavior:** Gets a Google access token with the Firebase server key (`FIREBASE_SERVICE_ACCOUNT_BASE64`), sends the data message above through the FCM HTTP v1 API to each of the recipient's Android tokens (TTL one day), then deletes the tokens Firebase reports as unregistered or invalid.
-- **Returns:** HTTP 200 `{ "sent", "failed", "removed", "errors" }`: counts and Firebase error codes only, never tokens or text.
+- **Returns:** HTTP 200 `{ "sent", "failed", "removed", "errors" }`: counts and Firebase error codes only, never tokens or text. Since C1, when nothing was delivered and a phone failed for a reason other than a dead token, HTTP 503 `DZ-E9003` with the same counts, so the outbox tries again.
 
 ### `export-my-data` (P3A)
 - **Who can call:** Signed-in user (`POST /functions/v1/export-my-data`, body `{}`).
 - **Auth:** Bearer token verified in code (`auth.getUser(token)`). `verify_jwt = false`. Holds no server key: it calls `export_my_data()` with the caller's own token.
 - **Returns:** HTTP 200 with the file, as `application/json` and `Content-Disposition: attachment; filename="dzirent-data-<YYYY-MM-DD>.json"`. It starts with `about` (a plain-language explanation of each part, the photo links and the daily limit), then `exported_at`, then the parts above in that order. Each listing photo gets `link`, the public URL of the caller's own photo.
-- **Errors:** JSON `{ error, code, message }`, with the same sentence in `error` and `message`:
-  - 401 `not_signed_in`;
-  - 429 `once_a_day` (the database's sentence);
-  - 500 `export_failed`.
+- **Errors (C1):** JSON `{ code, message }`:
+  - 401 `DZ-E1003`;
+  - 429 `DZ-E7001`, the database's sentence with the time (without its code prefix);
+  - 500 `DZ-E7002`; 503 `DZ-E7003` when the function isn't configured.
 - **Clients:**
   - Website: Settings > Privacy & safety > Download my data, through `/api/workflows/export`.
   - Android: Settings > Privacy & safety > Download my data, saved with the system "save file" picker.
   - iPhone: the same row opens the website's page for now.
 
 ### `scan-listing` (Step 8A)
-- **Who can call:** The database only (`request_scan` and the automatic re-check, through `pg_net`). Never apps.
+- **Who can call:** The database only (`request_scan` and the automatic re-check, through the `async_jobs` outbox and `pg_net`, C1). Never apps.
 - **Auth:** Header `x-scan-listing-secret` must equal the function secret `SCAN_LISTING_SECRET` (the same value is in Vault as `scan_listing_secret`); compared in constant time. `verify_jwt = false`. Anything else gets HTTP 401.
 - **Payload:** `{ "scan_id": "<uuid>" }`.
 - **Behavior:** `vision_start_scan` marks the scan `running` and returns the listing's current photos; the function answers HTTP 202 at once and works in the background. It signs in to Google as the `vision-invoker` service account (`VISION_INVOKER_KEY_BASE64`), sends the photos' public URLs to the vision service (`VISION_URL`, `POST /scan`, 115 s timeout), computes the photo set hash and saves the result with `vision_finish_scan`. Any failure calls `vision_fail_scan`: status `failed`, verdict `review`.
@@ -458,9 +464,9 @@ Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.k
 - **Read as a guest:** an anonymous client with no cookies (`apps/web/src/lib/preview.ts`), so a preview shows only what the shop window shows a guest. Never coordinates, email, account ids or anything private.
 - **Listing** `/listing/<id>`:
   - `og:title` is the title;
-  - `og:description` is "$price · City, ST";
+  - `og:description` is "$price/day · City, ST" (C1);
   - `og:url` is the clean link;
-  - `og:image` / `twitter:image` is `/listing/<id>/opengraph-image` (and `/twitter-image`): a 1200 × 630 PNG with the first photo in a Dzirent frame, the wordmark, title, "$price · City, ST" and `@handle`.
+  - `og:image` / `twitter:image` is `/listing/<id>/opengraph-image` (and `/twitter-image`): a 1200 × 630 PNG with the first photo in a Dzirent frame, the wordmark, title, "$price/day · City, ST" and `@handle`.
   - Next.js adds a short `?<hash>` to the image address; that's its cache key, not a tracking parameter.
 - **Studio** `/studio/<handle>`:
   - The tags are served to everyone, guests and preview bots included: "`<studio name>` (@`<handle>`)", and an image with up to 4 of the studio's listing photos.
@@ -479,3 +485,34 @@ Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.k
   - **P8A** adds the release package (`com.dzirent.app`) with the release (Play app signing) fingerprint to this file.
   - **P8B** adds the iPhone file `apple-app-site-association` (universal links).
 - **In the app:** an opened link goes straight to that listing (guests too). A studio link opens the studio for a signed-in person, and the usual sign-up pop-up for a guest. A link that arrives during sign-in or the terms step waits until Home shows.
+
+---
+
+## 5. Error codes, prices and background jobs (C1)
+
+### Error and warning codes
+- **One source:** `contracts/error-codes.json`. `node contracts/generate.mjs` writes the Kotlin (`mobile/shared/.../util/ErrorCodes.kt`), website (`apps/web/src/lib/error-codes.generated.ts`) and Edge Function (`supabase/functions/_shared/error-codes.ts`) copies and the readable table `pranalika/error-codes.md`. The website build (`prebuild`) and the Android build (`generateErrorCodes`, skipped without Node) run it; `npm run lint` (`--check`) and `ErrorCodesFreshnessTest` fail when a committed copy is out of date. Codes are never reused or renumbered.
+- **Entry:** `code` (`DZ-E####` error, `DZ-W####` warning), `kind`, `area`, `message` (what people see), optional `field`, `status` (HTTP-like), optional `server_detail` (the server's sentence carries a date or reason; show it).
+- **Families:** 1xxx account, sign-in, terms, age; 2xxx listings, photos, photo checks; 3xxx chat, saving, blocking; 4xxx rentals, payments, deposits (reserved); 5xxx reports, moderation, admin; 6xxx ID verification (reserved); 7xxx data download, deletion; 9xxx system (rate limit `DZ-E9001`, unreachable `DZ-E9002`, unavailable `DZ-E9003`, request checks `DZ-E9010`-`E9016`, unexpected `DZ-E9999`).
+- **Database:** every refusal's message starts with its code, `"DZ-E2010: Add a photo first"`; the SQLSTATE (`P0001`, `42501`, `22023`, `P0002`, ...) is unchanged. The field is in the HINT: the text filter's column as before, and the catalog's field otherwise (`full_legal_name`, `dates`, `reason`, `days`, `platform`). `check_text` returns the refusal with its code. The suspension sentence is `DZ-E1040: Your account is suspended ...`. One wording change: "You cannot message this user" is now "You can't message this user." (`DZ-E3005`).
+- **Clients:** show the catalog message for the code (the server's words when `server_detail`), under the field when one is named, then the code in brackets: "Add a photo first (DZ-E2010)". A code the build doesn't know shows the server's words; anything without a code shows `DZ-E9999` "Something went wrong. Please try again.". Auth, network and Storage failures get their codes in the client (`DZ-E1004` wrong password, `DZ-E9002` no connection, `DZ-E2064`/`E2065` photo type and size, ...).
+- **Photo warnings:** the 8 scanner and phone warnings are `DZ-W2001`-`W2008`, matched by their words (the vision service still sends words); the apps and website show the code after the warning.
+
+### Price per day
+- `listings.price_usd` is the price for one day; `listings.price_unit` (`'per_day'`, the only value, default) says so. Apps can't update `price_unit`.
+- `browse_listings` and `get_listing` return `price_per_day`, `price_unit`, and with dates `days` and `total` (above). Other functions' `price` (`my_conversations`, `my_saved_listings`, `get_studio` cards, `fit_listings`) is also per day.
+
+### Background jobs (outbox)
+- `app_private.async_jobs` (closed to every API role): `id`, `kind` (`send_push`, `scan_listing`), `payload` (the Edge Function's body), `status` (`pending`, `running`, `done`, `dead`), `attempts`, `next_attempt_at`, `last_error`, `request_id` (pg_net), `dispatched_at`, `finished_at`, `created_at`, `updated_at`.
+- `queue_push` and `queue_scan` add a job with `app_private.enqueue_job`; its first attempt goes out when the transaction commits, as the direct call did.
+- pg_cron `dzirent-async-jobs` runs `app_private.run_async_jobs()` every minute: a 2xx answer marks the attempt's job `done`; any other answer, a timeout, or no answer 10 minutes later is a failure. After failure 1, 2, 3 and 4 the next attempt is 1, 5, 30 and 120 minutes later; failure 5 marks it `dead`. A dead `scan_listing` job ends its photo check like any failed check (`vision_fail_scan`: `failed`, verdict `review`). A `scan_listing` attempt whose check is no longer `queued` is marked done (skipped).
+- Kept: done jobs 1 day, dead jobs 30 days.
+- **Admin** (two-step sign-in, logged like every admin call):
+  - `admin_jobs_status()` -> `jsonb`: `kinds` (per kind: `pending`, `running`, `done_day`, `dead`, `retrying`), `oldest_waiting_at`, `last_dead_at`, `schedule_minutes` `[1,5,30,120]`, `max_attempts` 5.
+  - `admin_list_dead_jobs(p_limit int default 30 (max 100), p_offset int default 0)` -> `jsonb` array: `id`, `kind`, `attempts`, `last_error`, `created_at`, `died_at`, and `push_kind` + `conversation_id` (push) or `scan_id` (photo check). Never the push title or text.
+  - `admin_retry_job(p_job_id bigint, p_reason text default null)` -> `jsonb` `{ id, kind, status, attempts, last_error }`: starts a dead job again from attempt 1 at once; logged as `retry_background_job`. Refused: `DZ-E5060` not found, `DZ-E5061` not dead.
+  - Website: the overview's "Background jobs" card and `/admin/jobs` (counts, dead jobs, Retry).
+
+### Read retries (clients)
+- Reads only: GET and HEAD, and the read-only database functions (`browse_listings`, `get_listing`, `get_studio`, `fit_listings`, `search_cities`, `my_*`, `needs_legal_acceptance`, `age_blocked`, `is_admin`, `check_text`; the website also the admin status reads). After a network failure, 408 or 5xx (not 501): 2 retries, after 0.5 s and then 2 s. Writes are never retried; their error shows its code.
+- Android/iPhone: Ktor `HttpRequestRetry` in `createDzirentSupabaseClient` (`util/ReadRetry.kt`). Website: `retryingFetch` (`lib/retry.ts`) in all three Supabase clients.

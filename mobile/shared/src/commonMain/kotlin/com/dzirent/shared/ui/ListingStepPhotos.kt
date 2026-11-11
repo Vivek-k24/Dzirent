@@ -48,6 +48,7 @@ import com.dzirent.shared.util.SuggestField
 import com.dzirent.shared.util.UPLOADING_PHOTOS
 import com.dzirent.shared.util.assignSlots
 import com.dzirent.shared.util.extraWarnings
+import com.dzirent.shared.util.ErrorCatalog
 import com.dzirent.shared.util.readyLine
 
 /**
@@ -320,7 +321,7 @@ private fun SlotTile(
         }
         review?.let { PhotoCheckResult(it, onUseAnyway) }
         extraWarnings(review?.messages.orEmpty(), serverWarnings).forEach { warning ->
-            Text(text = warning, style = MaterialTheme.typography.labelSmall, color = DzirentWarn, textAlign = TextAlign.Center)
+            Text(text = ErrorCatalog.warningText(warning), style = MaterialTheme.typography.labelSmall, color = DzirentWarn, textAlign = TextAlign.Center)
         }
     }
 }
@@ -393,7 +394,7 @@ private fun PhotoCheckResult(review: PhotoReview, onUseAnyway: () -> Unit) {
         )
         else -> {
             review.messages.forEach { message ->
-                Text(text = message, style = MaterialTheme.typography.labelSmall, color = color, textAlign = TextAlign.Center)
+                Text(text = ErrorCatalog.warningText(message), style = MaterialTheme.typography.labelSmall, color = color, textAlign = TextAlign.Center)
             }
             when (review.verdict) {
                 PhotoVerdict.WARNING -> TextButton(

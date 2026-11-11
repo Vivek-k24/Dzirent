@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { serverClient } from "@/lib/supabase/server";
+import { JOB_KIND_NAMES, type JobsStatus } from "@/components/admin/jobs-view";
 
 export const dynamic = "force-dynamic";
 
@@ -56,11 +57,13 @@ function countsText(counts: Record<string, number> | null) {
 
 export default async function AdminOverviewPage() {
   const client = await serverClient();
-  const [{ data: metricsRaw }, { data: queuesRaw }, { data: cleanupRaw }] = await Promise.all([
+  const [{ data: metricsRaw }, { data: queuesRaw }, { data: cleanupRaw }, { data: jobsRaw }] = await Promise.all([
     client.rpc("admin_metrics"),
     client.rpc("admin_queues"),
     client.rpc("admin_cleanup_status"),
+    client.rpc("admin_jobs_status"),
   ]);
+  const jobs = (jobsRaw as JobsStatus | null) ?? null;
   const cleanup = (cleanupRaw || []) as CleanupJob[];
 
   const metrics = (metricsRaw || {}) as Metrics;
@@ -160,6 +163,35 @@ export default async function AdminOverviewPage() {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="admin-card" style={{ marginTop: "24px", padding: "20px", border: "1px solid var(--line)", borderRadius: "8px", background: "var(--paper)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "12px", flexWrap: "wrap" }}>
+            <h3 style={{ fontSize: "16px", margin: "0 0 4px" }}>Background jobs</h3>
+            <Link href="/admin/jobs" className="muted" style={{ fontSize: "13px" }}>
+              Dead jobs and Retry
+            </Link>
+          </div>
+          <p className="muted" style={{ fontSize: "13px", margin: "0 0 14px" }}>
+            Push notifications and photo checks, tried again after 1, 5, 30 and 120 minutes, dead after 5 attempts.
+          </p>
+          {!jobs ? (
+            <p className="muted" style={{ margin: 0 }}>Job counts couldn&apos;t be loaded.</p>
+          ) : (
+            <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+              {jobs.kinds.map((k) => (
+                <div key={k.kind}>
+                  <span className="muted" style={{ display: "block", fontSize: "12px" }}>{JOB_KIND_NAMES[k.kind] ?? k.kind}</span>
+                  <strong style={{ fontSize: "20px", color: k.dead > 0 ? "var(--danger, #d32f2f)" : undefined }}>
+                    {k.dead} dead
+                  </strong>
+                  <span className="muted" style={{ display: "block", fontSize: "12px" }}>
+                    {k.pending} waiting · {k.done_day} done in 24 h
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="admin-card" style={{ marginTop: "24px", padding: "20px", border: "1px solid var(--line)", borderRadius: "8px", background: "var(--paper)" }}>

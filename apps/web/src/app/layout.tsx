@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { context } from "@/lib/data";
 import { currentUser, serverClient } from "@/lib/supabase/server";
 import { Shell } from "@/components/shell";
+import { ADMIN_CODE_FIRST } from "@/lib/admin-code";
+import { codeOf } from "@/lib/errors";
 import "@fontsource-variable/roboto";
 import "./globals.css";
 export const metadata: Metadata = {
@@ -63,10 +65,7 @@ export default async function RootLayout({
       isAdmin = true;
     } else {
       const { error: adminErr } = await client.rpc("admin_queues");
-      if (
-        adminErr?.message ===
-        "Sign in with two-step verification to use admin tools"
-      ) {
+      if (codeOf(adminErr?.message) === ADMIN_CODE_FIRST) {
         isAdmin = true;
       }
     }

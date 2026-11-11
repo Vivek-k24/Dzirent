@@ -119,7 +119,7 @@ fun SizePriceDatesStep(
     OutlinedTextField(
         value = state.priceText,
         onValueChange = { input -> state.priceText = input.filter { it.isDigit() || it == '.' } },
-        label = { Text("Price (\$)") },
+        label = { Text("Price per day (\$)") },
         prefix = { Text("\$") },
         supportingText = { Text("Per rental. Required.") },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),

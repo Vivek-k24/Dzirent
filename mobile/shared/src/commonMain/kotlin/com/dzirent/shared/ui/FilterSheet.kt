@@ -98,7 +98,7 @@ fun FilterSheet(
                 }
             }
 
-            SheetHeading("Price per rental")
+            SheetHeading("Price per day")
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PriceField("Min", minText, { minText = it }, Modifier.weight(1f))
                 PriceField("Max", maxText, { maxText = it }, Modifier.weight(1f))

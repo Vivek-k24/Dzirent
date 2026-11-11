@@ -31,6 +31,7 @@ import {
 } from "./listing-fields";
 import { Icon } from "./icon";
 import { suspensionNotice } from "@/lib/suspension";
+import { warningText } from "@/lib/errors";
 
 type ScanSuggestions = {
   title?: string;
@@ -999,7 +1000,7 @@ export function ListingEditor({
                                 margin: "2px 0",
                               }}
                             >
-                              ⚠️ {w}
+                              ⚠️ {warningText(w)}
                             </p>
                           ))}
                         </div>
@@ -1397,7 +1398,7 @@ export function ListingEditor({
               <section className="editor-section">
                 <h2>Price and availability</h2>
                 <label className="field">
-                  <span>Price per rental (USD)</span>
+                  <span>Price per day (USD)</span>
                   <input
                     inputMode="decimal"
                     value={form.price_usd}

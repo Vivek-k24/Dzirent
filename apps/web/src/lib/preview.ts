@@ -1,7 +1,8 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { config, photoUrl } from "./supabase/config";
-import { cityLabel, price, type Card, type Listing } from "./types";
+import { retryingFetch } from "./retry";
+import { cityLabel, perDay, type Card, type Listing } from "./types";
 
 // P5C link previews. Everything here is read as a guest (an anonymous client, no cookies), so a
 // preview can only ever show what the shop window shows a guest: title, price, city, studio name,
@@ -9,7 +10,10 @@ import { cityLabel, price, type Card, type Listing } from "./types";
 
 function guestClient() {
   const { url, key } = config();
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: retryingFetch() },
+  });
 }
 
 /** A route parameter, percent-decoded when it still is encoded; never throws. */
@@ -34,7 +38,7 @@ export async function guestListing(id: string): Promise<Listing | null> {
 /** "$25 · Austin, TX" (the city left out when it isn't known). */
 export function priceAndCity(listing: Pick<Card, "price" | "city">): string {
   const place = cityLabel(listing.city);
-  return place === "City unavailable" ? price(listing.price) : `${price(listing.price)} · ${place}`;
+  return place === "City unavailable" ? perDay(listing.price) : `${perDay(listing.price)} · ${place}`;
 }
 
 export type StudioPreview = { name: string; handle: string; photos: string[] };

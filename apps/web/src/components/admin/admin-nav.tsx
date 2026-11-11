@@ -37,6 +37,7 @@ export function AdminNav({ queues }: { queues: AdminQueueCounts | null }) {
       count: queues?.open_takedowns ?? 0,
     },
     { href: "/admin/flags", label: "Flags", icon: "filter" },
+    { href: "/admin/jobs", label: "Background jobs", icon: "clock" },
     { href: "/admin/id-verification", label: "ID verification", icon: "user" },
     { href: "/admin/audit-log", label: "Audit log", icon: "clock" },
   ];

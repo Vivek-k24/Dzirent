@@ -1,7 +1,7 @@
 import {createServerClient} from '@supabase/ssr';
 import {NextResponse, type NextRequest} from 'next/server';
 import {config as supabaseConfig} from '@/lib/supabase/config';
-import {ADMIN_CODE_NEEDED} from '@/lib/admin-code';
+import {adminCodeNeeded} from '@/lib/admin-code';
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({request});
   const {url,key} = supabaseConfig();
@@ -30,7 +30,7 @@ export async function proxy(request: NextRequest) {
       // An admin without a two-step code in this session, or whose last code is older than
       // 24 hours (P5A), gets the code step on the page they asked for; anyone else gets a 404.
       const { error: queuesErr } = await client.rpc("admin_queues");
-      if (!ADMIN_CODE_NEEDED.includes(queuesErr?.message ?? "")) {
+      if (!adminCodeNeeded(queuesErr?.message)) {
         return NextResponse.rewrite(new URL("/_not-found", request.url), {
           status: 404,
         });

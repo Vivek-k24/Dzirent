@@ -6,10 +6,13 @@
     "node": ">=22"
   },
   "scripts": {
+    "prebuild": "node ../../contracts/generate.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "prelint": "node ../../contracts/generate.mjs --check",
+    "lint": "eslint .",
+    "test": "node --test --experimental-strip-types src/lib/errors.test.ts"
   },
   "dependencies": {
     "@fontsource-variable/roboto": "5.3.0",

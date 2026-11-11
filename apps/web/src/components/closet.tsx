@@ -9,7 +9,7 @@ import {
   type OwnListing,
   type InboxData,
 } from "@/lib/workflows";
-import { price } from "@/lib/types";
+import { perDay } from "@/lib/types";
 import { photoUrl } from "@/lib/supabase/config";
 import { Photo } from "./photo";
 import { Empty } from "./cards";
@@ -163,7 +163,7 @@ export function Closet({ initial }: { initial: ClosetData }) {
                         {l.auto_paused_reason}
                       </p>
                     )}
-                    <strong>{price(l.price_usd)}</strong>
+                    <strong>{perDay(l.price_usd)}</strong>
                     {data.inbox.rentals.some(
                       (r) =>
                         r.listing_id === l.id &&
