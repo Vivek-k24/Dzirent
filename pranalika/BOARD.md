@@ -218,9 +218,13 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (C1, C2) | |
+| Done by: Claude Code (C1, C2, S1) | |
 | C1 Error and warning codes (one catalog, generated Kotlin/TypeScript, every database refusal and Edge Function error coded), price per day, background job outbox with retries and dead-letter list, client read retries, stray root doc removed | Done (Claude Code) |
 | C2 Test foundation: local backend in Docker (migrations from scratch + local seed, stubs for push and vision, functions served locally), pgTAP suite (9 files), integration scripts local by default with one runner, vision model tests marked, CI on every pull request (`.github/workflows/ci.yml`), `pranalika/testing.md` | Done (Claude Code) |
+| S1 Security updates: vision service on Pillow 13.0.0, torch 2.14.1 (CPU), transformers 5.20.2, FastAPI 0.162.0 / Starlette 1.7.0, open_clip 3.3.0 (no verdict changed on 92 photos and 12 listings in a local Linux image); website minimatch 11.0.3 through an npm override; 5 code scanning alerts dismissed ("used in tests"); `security-log.md` "GitHub security alerts (S1)" | Done (Claude Code); vision **not redeployed** (gcloud sign-in expired) |
+| Owner: `gcloud auth login` on this PC, then an agent redeploys `vision` with the S1 packages and runs the eval (Cloud Run still serves `vision-00005-9cg` with the old ones; command in the S1 handoff) | To do |
+| Owner: merge `Preview` into `main`: the 82 Dependabot alerts are on `main` and close with the merge; then dismiss the expected Pygments alert (S1 handoff) | To do |
+| Requests from S1: CI vision job drops `pygments==2.19.2` (then Pygments 2.21.0); seed and test scripts stop putting the email in sign-in errors | To do |
 | C3 | To do |
 | C4 | To do |
 | C5 | To do |

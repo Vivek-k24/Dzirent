@@ -2,6 +2,106 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## S1 - 2026-11-12 - security updates
+
+**Before starting:**
+- The tree was clean, and `Preview` was up to date at `29da0f4`.
+- Three website test servers from 2026-11-10 were still running: `next start` on ports 3123, 3124 and 3125, six `node` processes from the repo's `.tools` Node. They held `apps/web/node_modules` open, so `npm ci` failed with EPERM. I stopped those six only. The Codex daemon (`codex-runtimes`) was left running.
+
+**Alerts:**
+
+| | Before | After the push to Preview |
+| --- | --- | --- |
+| Dependabot | **82**: Pillow 58, transformers 11, Starlette 7, torch 5 (all `services/vision/requirements.txt`); minimatch 1 (`apps/web/package-lock.json`). 5 critical, 44 high, 29 medium, 4 low. No Gradle alert. | **82**, unchanged. GitHub computes them on the default branch, `main`, and the fixes are on `Preview`. They close when the owner merges. |
+| Code scanning | **5**: `js/clear-text-logging` in three `supabase/seed` scripts and two `supabase/tests` scripts | **0** (all 5 dismissed, see below) |
+
+**Version changes:**
+
+| Where | Package | From | To | Fixes |
+| --- | --- | --- | --- | --- |
+| vision | pillow | 11.2.1 | 13.0.0 | 58 alerts |
+| vision | torch / torchvision (CPU wheels) | 2.7.1 / 0.22.1 | 2.14.1 / 0.29.1 | 5 |
+| vision | transformers | 4.51.3 | 5.20.2 | 11 |
+| vision | fastapi / starlette | 0.115.12 / 0.46.2 | 0.162.0 / 1.7.0 | 7 (the pair in FastAPI 0.162.0's own `uv.lock`) |
+| vision | open_clip_torch | 2.32.0 | 3.3.0 | needed: 2.x calls `batch_encode_plus`, removed in transformers 5 |
+| vision | timm | 1.0.15 | 1.0.30 | needed by open_clip 3.3 (1.0.17 or later) |
+| vision | tokenizers, huggingface-hub, safetensors | 0.21.4, 0.30.2, 0.5.3 | 0.23.3, 2.3.0, 0.8.0 | needed by transformers 5 |
+| vision | new pins | | hf-xet 1.7.0, httpx2 2.16.0, httpcore2 2.16.0, truststore 0.10.5, annotated-doc 0.0.5, opentelemetry-api 1.45.1, typer 0.27.3, rich 15.0.0, markdown-it-py 4.2.0, mdurl 0.1.2, Pygments 2.19.2, shellingham 1.5.4 | new dependencies of the above |
+| web | minimatch under `@typescript-eslint/typescript-estree` (npm override) | 10.2.6 | 11.0.3 | 1; its new dependency `@isaacs/nonrecursive-glob-match` is pinned to 1.0.3 |
+
+- **Version ages:** every version was released at least two weeks before today (PyPI and npm dates checked). Where the resolver picked a newer one (hf-xet 1.8.0, opentelemetry-api 1.45.2, typer 0.29.1, annotated-doc 0.0.6, markdown-it-py 4.3.0, nonrecursive-glob-match 1.1.0), I pinned an older release.
+- **Unchanged:** numpy, scipy, pydantic, uvicorn and the rest stay as they were. The base image keeps the same tag and digest.
+- **Lockfile:** `apps/web/package-lock.json` stays in its v1 format (`npm install --lockfile-version=1`). The diff is the minimatch entry, its new dependency and a few empty `requires: {}` lines. A plain npm 10 install would have rewritten all 4,000 lines.
+- **Other vision code changes:**
+  - **Dockerfile:** `chmod -R a+rX /opt/model`. safetensors 0.8 writes `visual.safetensors` as 0600 and the service runs as user `vision`, so the first local image **failed to start** ("No such file or directory: /opt/model/visual.safetensors"). The fix makes the files readable; they stay owned by root.
+  - **`app/main.py`:** also silences the `httpx2`/`httpcore2` loggers, which log request URLs at INFO like `httpx`.
+  - **`app/config.py`:** `SERVICE_VERSION` is now `s1.1`, so `/health` and every scan show the new build.
+
+**What I ran:**
+1. **Pins:** `pip install --dry-run --report` for Linux, Python 3.12, wheels only, with the PyTorch CPU index.
+   - The resolved set equals `requirements.txt`, apart from `colorama`: pip evaluates markers on this Windows PC, and colorama is Windows-only.
+   - Checked against GitHub's advisory database: one match, Pygments (below).
+2. **Vision tests, model tests included** (`VISION_SAFETY_DIR` set to the pinned safety model), in a scratch venv with the new pins:
+   - **54 passed**, and the CI form gives 52 passed, 2 deselected;
+   - the old packages also gave 54 passed;
+   - the repo's `.venv` is now updated to the new pins too.
+3. **Before/after on the same weights:** the old `.venv` and the new venv each built the assets (`build_assets.build`, no download), then ran the service's own `Model` / `analyze_photo` / `scan` code on 92 photos and 12 listings.
+   - Text embeddings: worst cosine 0.9999998.
+   - Image embeddings: cosine ≥ 0.99974.
+   - Nudity scores: within 3e-7.
+   - **0 changes** in any verdict, reason, label, warning or listing suggestion.
+4. **Local Linux image:** `docker build` of `services/vision` with the unchanged Dockerfile.
+   - `pip check`: "No broken requirements found"; 460 prompts embedded; the safety model loaded strictly.
+   - After the chmod fix, the container ran with `--cpus 2 --memory 4g` and the live `VISION_ALLOWED_URL_PREFIXES`: ready in 7.8 s, as uid 10001 `vision`, `torch.cuda.is_available()` False, policy digest `fab11ee739b2e4db`, peak memory about 0.9 GiB.
+5. **Eval:** `services/vision/eval/run_eval.py`, unchanged, against that container. Only the gcloud token is swapped for a dummy, because there's no Cloud Run front door locally. Same sets as the P2A deployed eval (sample listings from the shop window; the 8B Commons accept and reject sets; hoodies; worn dresses; the beignets photo). Compared photo by photo with the P2A results (`vision-00005-9cg`):
+   - **0 of 92 photos changed** (verdict, reason, looks-like, warnings), **0 of 12 listings** (verdict, reason, title, category, garment type, colours, styles, quality).
+   - Every sample photo is still allowed (22 of 22) and all 12 sample listings are allowed.
+   - should-reject: 32 rejected, 10 review, **0 allowed**.
+   - Highest nudity score 0.148 (a laptop photo); none at or above 0.40, so **no nudity false positives**.
+   - The script exits 1 for the same single photo as in 8B and P2A: `hoodies/hoodie/4`, a long print dress seen from the back with no hood.
+   - Median scan 0.8 s. The container log (110 lines) has no URLs.
+6. **Website** (Node 22.23.3 from `.tools`):
+   - before the change: `npm ci`, lint, 6 of 6 tests and the build pass;
+   - after: `npm install --lockfile-version=1`, then removed `node_modules` and ran a clean `npm ci`: lint passes, **6 of 6** tests, build passes (23 pages);
+   - `npm ls` shows minimatch 11.0.3 (overridden) under typescript-estree only;
+   - a direct call of its `minimatch(path, pattern, { dot: true })` gave the expected matches.
+7. **Android** (JDK 21, env loaded silently; local backend not running; no Docker containers running):
+   - `:androidApp:assembleDebug :shared:testDebugUnitTest`: **BUILD SUCCESSFUL**, **50 tests, 0 failures, 1 skipped**.
+   - `assembleDebug` was up to date: nothing in `mobile/` changed, so no new APK was produced and nothing was copied to OneDrive (rule 15). The APK stays at 2026-11-11 17:22.
+8. **Push and CI:** pushed `8f079d8`. CI run https://github.com/Vivek-k24/Dzirent/actions/runs/43328663217: **success, all 5 jobs green** (contracts, website, android, vision, database).
+9. **Dismissals:** dismissed code scanning alerts #4–#8 with `gh api` (reason below).
+
+**Vision revision: not redeployed.**
+- gcloud can't refresh the owner's sign-in here ("Reauthentication failed. cannot prompt during non-interactive execution"). `vivek.kallakuri@cloudprous.com` is the only account.
+- So `gcloud run deploy` and the deployed eval couldn't run. Cloud Run still serves **`vision-00005-9cg` with the old packages**.
+- The local Linux image of the same Dockerfile is the stand-in (steps 4 and 5). Its first build shows the deploy would have failed without the chmod fix.
+
+**Dismissed:**
+- **Code scanning #4–#8, "used in tests":**
+  - These are seed and integration scripts. CodeQL treats all of `process.env` as sensitive because `userEnv` spreads it.
+  - What reaches `console.error` is a sign-in error: the test user's email, the HTTP status and Auth's error body. Never a password, key or token.
+  - In CI the email is a throwaway `*@dzirent.local` seed user.
+- **Dependabot: none dismissed.** All 82 have a fix in this push.
+- **One new low alert is expected after the merge:** Pygments 2.19.2, GHSA-5239-wwwm-4pmq, a ReDoS in `AdlLexer` that needs local access.
+  - The service never highlights text.
+  - Pygments stays at 2.19.2 because CI installs `pygments==2.19.2` next to `requirements.txt`, and a different pin makes CI's install fail (tried: `ResolutionImpossible`).
+  - Dismiss it as "vulnerable code is not used" when it appears. Logged in `security-log.md`.
+
+**Requests** (outside S1's folders):
+- `.github/workflows/ci.yml`, vision job: drop `pygments==2.19.2` from the pip line (`requirements.txt` now pins Pygments). Then bump Pygments to 2.21.0 in `requirements.txt`.
+- `supabase/seed/*.mjs` and `supabase/tests/step1b.mjs` / `step4c_parity_test.mjs`: drop `${email}` from the `Sign in failed for …` errors, so nothing from the environment is logged.
+- `services/vision/.dockerignore` doesn't exclude `.venv`, so a local `docker build` sends it as context (Cloud Build uses `.gcloudignore`). Harmless, just slow. This one is in my folders; I left it as it is because S1 didn't need it.
+
+**Open issues:**
+- **Owner:** `gcloud auth login` on this PC. Then an agent runs, from the repo root:
+
+      gcloud run deploy vision --source services/vision --project dzirent --region us-west1 --no-allow-unauthenticated --service-account vision-runtime@dzirent.iam.gserviceaccount.com --min-instances 0 --max-instances 1 --cpu 2 --memory 4Gi --timeout 120 --concurrency 4 --set-env-vars VISION_ALLOWED_URL_PREFIXES=https://pwfzkyjeivadbtkfkdxr.supabase.co/storage/v1/object/public/listing-photos/
+
+  - Then check `/health` shows `s1.1`, and run `run_eval.py` with the same sets.
+  - The S1 results file is in my scratch folder, `eval_s1_container.json`, if the next session can still reach it.
+- **Owner:** merge `Preview` into `main` to close the 82 Dependabot alerts. Then dismiss the Pygments alert (above) and list the alerts again.
+- **Website override:** drop it when typescript-eslint itself depends on minimatch 11.0.1 or later.
+
 ## C2 - 2026-11-12 - test foundation
 
 **Before starting:**
