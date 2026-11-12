@@ -14,8 +14,26 @@ const photosSource = readFileSync(join(REPO_ROOT, "supabase/seed/sample_photos.m
 const listings = [...photosSource.matchAll(/id: "([0-9a-f-]{36})",\s*slug: "([^"]+)",\s*title: "[^"]+",\s*ownerUser: (\d)/g)]
   .map((m) => ({ id: m[1], slug: m[2], owner: Number(m[3]) }));
 
+/**
+ * fetch with a 15 s timeout, tried up to 3 times. Right after `functions serve` replaces the edge
+ * runtime container a request can stall (CI run 2 hung here); these are local seed uploads, so
+ * sending one again is safe (an existing file counts as present).
+ */
+async function patientFetch(url, init) {
+  let last;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await fetch(url, { ...init, signal: AbortSignal.timeout(15_000) });
+    } catch (e) {
+      last = e;
+      await new Promise((r) => setTimeout(r, 1000 * attempt));
+    }
+  }
+  throw new Error(`${url}: ${last?.message ?? last}`);
+}
+
 async function signIn(n) {
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+  const res = await patientFetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email: userEnv[`TEST_USER_${n}_EMAIL`], password: userEnv[`TEST_USER_${n}_PASSWORD`] }),
@@ -32,7 +50,7 @@ export async function uploadSeedPhotos() {
     for (const [side, file] of [["front", "front_local_sample.jpg"], ["back", "back_local_sample_.jpg"]]) {
       const dir = join(REPO_ROOT, "supabase/seed/images", l.slug);
       const bytes = existsSync(join(dir, `${side}.jpg`)) ? readFileSync(join(dir, `${side}.jpg`)) : readFileSync(join(dir, "front.jpg"));
-      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/listing-photos/${l.id}/${file}`, {
+      const res = await patientFetch(`${SUPABASE_URL}/storage/v1/object/listing-photos/${l.id}/${file}`, {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${tokens[l.owner]}`, "Content-Type": "image/jpeg" },
         body: bytes,

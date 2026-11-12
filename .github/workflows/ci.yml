@@ -136,6 +136,7 @@ jobs:
       - name: Database tests (pgTAP)
         run: supabase test db supabase/tests/database
       - name: Integration tests (stubs, functions serve, every supabase/tests script)
+        timeout-minutes: 20
         run: node supabase/tests/run-all.mjs
       - name: Stop the local backend
         if: always()

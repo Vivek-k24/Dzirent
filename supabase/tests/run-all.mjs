@@ -108,12 +108,15 @@ async function runAll() {
       const r = spawnSync(cmd, [...pre, join(HERE, file), ...(opts.args ?? []), ...(LIVE ? ["--live"] : [])], {
         cwd: REPO_ROOT,
         stdio: "inherit",
+        // A script that hangs fails after 10 minutes instead of holding up the whole run.
+        timeout: 10 * 60 * 1000,
         env: { ...process.env, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY: SUPABASE_KEY, ...(LIVE ? { DZIRENT_TEST_TARGET: "live" } : {}) },
         shell: process.platform === "win32" && cmd === "python",
       });
       if (opts.after) opts.after();
       results.push({ file: label, ok: r.status === 0, seconds: Math.round((Date.now() - started) / 1000) });
-      console.log(`--- ${label}: ${r.status === 0 ? "passed" : `FAILED (exit ${r.status})`}\n`);
+      const why = r.signal ? `stopped by ${r.signal}, over 10 minutes?` : `exit ${r.status}`;
+      console.log(`--- ${label}: ${r.status === 0 ? "passed" : `FAILED (${why})`}\n`);
     }
   } finally {
     if (!LIVE && !keep) {
