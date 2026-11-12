@@ -22,8 +22,9 @@ from .scan import PhotoResult, analyze_photo, scan
 from .vocab import SLOTS
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
-# httpx logs every request URL at INFO; the logs carry counts and verdicts only.
-for noisy in ("httpx", "httpcore"):
+# httpx logs every request URL at INFO; the logs carry counts and verdicts only. httpx2 and
+# httpcore2 (S1: huggingface_hub 2 and Starlette's test client use them) log the same way.
+for noisy in ("httpx", "httpcore", "httpx2", "httpcore2"):
     logging.getLogger(noisy).setLevel(logging.WARNING)
 log = logging.getLogger("vision")
 state: dict = {}

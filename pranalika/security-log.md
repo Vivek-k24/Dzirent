@@ -409,6 +409,65 @@ Migrations `20261111100000_c1_error_codes.sql`, `20261111101000_c1_price_per_day
 
 Totals: 11 INFO (the 10 known plus `async_jobs`), 4 guest WARN (unchanged), 56 signed-in WARN (the 53 known plus the 3 admin job functions).
 
+## GitHub security alerts (S1)
+
+Read with `gh api` on 2026-11-12. GitHub computes Dependabot and code scanning alerts on the default branch, `main`. The fixes below are on `Preview`, so these alerts close only when the owner merges `Preview` into `main`.
+
+### Before S1
+
+| Source | Open | Packages |
+| --- | --- | --- |
+| Dependabot | 82 (5 critical, 44 high, 29 medium, 4 low) | `services/vision/requirements.txt`: Pillow 58, transformers 11, Starlette 7, torch 5. `apps/web/package-lock.json`: minimatch 1 |
+| Code scanning (CodeQL) | 5 | `js/clear-text-logging` in `supabase/seed/sample_photos.mjs`, `test_sample_photos.mjs`, `sample_data.mjs`, `supabase/tests/step1b.mjs`, `step4c_parity_test.mjs` |
+
+No Gradle (Android) alert was open.
+
+### Fixed by version updates (all 82 Dependabot alerts)
+
+Every new version was released at least two weeks before 2026-11-12 (PyPI and npm upload dates checked).
+
+- **Vision service** (`services/vision/requirements.txt`, CPU-only PyTorch wheels, every package pinned):
+  - Pillow 11.2.1 → 13.0.0: fixes all 58 (the newest advisories need 13.0.0).
+  - torch 2.7.1 → 2.14.1, torchvision 0.22.1 → 0.29.1: all 5 (the newest needs 2.13.0).
+  - transformers 4.51.3 → 5.20.2: all 11. GHSA-x9r9-c232-4q39 lists no patched version but covers only versions up to 5.8.1.
+  - FastAPI 0.115.12 → 0.162.0, Starlette 0.46.2 → 1.7.0: all 7 (the newest needs 1.3.1). This is the pair in FastAPI 0.162.0's own lock file.
+  - Changes these needed:
+    - open_clip_torch 2.32.0 → 3.3.0, because 2.x calls `batch_encode_plus`, which transformers 5 removed;
+    - timm 1.0.15 → 1.0.30 (open_clip 3.3 needs 1.0.17 or later);
+    - tokenizers 0.23.3, huggingface-hub 2.3.0, safetensors 0.8.0;
+    - new pins: hf-xet, httpx2, httpcore2, truststore, annotated-doc, opentelemetry-api, typer, rich, markdown-it-py, mdurl, Pygments, shellingham.
+  - Base image unchanged: same tag and digest.
+- **Website** (`apps/web`): minimatch 10.2.6 → 11.0.3, only under `@typescript-eslint/typescript-estree`, through an npm `overrides` entry in `package.json`. Its new dependency `@isaacs/nonrecursive-glob-match` is pinned there to 1.0.3. eslint-config-next stays 16.4.3.
+  - No typescript-eslint release depends on minimatch 11 yet: 8.72.2 still asks for `^10.2.2`.
+  - typescript-estree calls only `minimatch(path, pattern, { dot: true })`, which minimatch 11 keeps. The APIs 11 removed (`makeRe`, `matchOne`, `Minimatch#regexp`) are not used.
+  - The other minimatch copies (3.1.5, under eslint and its plugins) are outside the alert's range (`>= 7.0.0, < 11.0.1`).
+  - **Revisit:** drop the override once typescript-eslint depends on minimatch 11.0.1 or later.
+
+### Behaviour checks for the vision update
+
+- Each package set built its own text embeddings from the same pinned weights. They match to within float precision (worst cosine 0.9999998). Image embeddings match to cosine 0.99974, safety scores to 3e-7.
+- A local Linux image built from the Dockerfile matched the P2A deployed eval (`vision-00005-9cg`): **0 of 92 photos** and **0 of 12 listings** changed, counting verdict, reason, label, warnings and suggestions.
+- **New in the image:** `chmod -R a+rX /opt/model`. safetensors 0.8 writes `visual.safetensors` owner-only (0600), and the service runs as the unprivileged `vision` user, so without the chmod the container can't start. The model files stay owned by root and read-only for the service.
+- `app/main.py` also silences the `httpx2` and `httpcore2` loggers, as it already did for `httpx`, so request URLs never reach the logs. The container's log had no URLs.
+- **Not redeployed yet:** gcloud needs the owner to sign in again (`gcloud auth login`), so Cloud Run still serves `vision-00005-9cg` with the **old** packages. Until it is redeployed, the live service has the old Pillow, torch, transformers and Starlette.
+  - The service is not public (Cloud Run invoker only), and it decodes only photos from the public `listing-photos` bucket or `data:` URLs sent by `scan-listing`.
+  - **Revisit:** redeploy right after the owner signs in.
+
+### Expected after the merge, to dismiss then (not open yet)
+
+| Package | Advisory | Why it does not apply | Revisit |
+| --- | --- | --- | --- |
+| Pygments 2.19.2 (`services/vision/requirements.txt`, new pin, low) | GHSA-5239-wwwm-4pmq (CVE-2026-4539): ReDoS in `AdlLexer`, local access only, fixed in 2.20.0 | Pygments is only there because transformers needs typer, which needs rich. The service never highlights text, so `AdlLexer` never runs. It stays at 2.19.2 because CI installs `pygments==2.19.2` next to `requirements.txt` for pytest, and two different pins make CI's `pip install` fail. Dismiss as "vulnerable code is not used" when the alert appears. | When `.github/workflows/ci.yml` drops its `pygments==2.19.2` (Request in the S1 handoff), pin Pygments 2.21.0 in `requirements.txt`. |
+
+### Code scanning: dismissed as "used in tests" (5)
+
+| Alert | File | Why |
+| --- | --- | --- |
+| #4, #5, #6 | `supabase/seed/sample_photos.mjs`, `test_sample_photos.mjs`, `sample_data.mjs` | Seed and check scripts that agents run by hand. `userEnv` spreads all of `process.env`, so CodeQL treats every value from it as sensitive. What reaches `console.error` is a sign-in error: the test user's email, the HTTP status and Auth's error body. Never a password, key or token. |
+| #7, #8 | `supabase/tests/step1b.mjs`, `step4c_parity_test.mjs` | Integration tests. Same flow and same content. In CI they run against the local stack, so the email is a throwaway `test1@dzirent.local`-style seed user. |
+
+**Revisit:** take the email out of those `Sign in failed for …` messages; `supabase/` was outside S1's folders (Request in the S1 handoff). Then CodeQL has nothing left to report.
+
 ## Google Cloud (Step 8A)
 
 Project `dzirent`, region `us-west1`. The $20 billing kill switch (budget, Pub/Sub topic `billing-alerts`, function `stop-billing`) was not touched.
