@@ -70,15 +70,21 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 /** Test setup SQL: the local database, or with --live the linked project. Returns the last statement's rows. */
 export function sql(query) {
-  const out = execFileSync(CLI, ["db", "query", LIVE ? "--linked" : "--local", query, "-o", "json"], {
+  // --output-format json: without it the CLI prints a table outside an AI agent session (as in CI).
+  const out = execFileSync(CLI, ["db", "query", LIVE ? "--linked" : "--local", query, "--output-format", "json"], {
     cwd: REPO_ROOT, env: { ...process.env, ...(LIVE ? serverEnv : {}) }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
   });
-  // A statement without rows (insert, update, delete) prints its command tag locally, not JSON.
+  // In an AI agent session the CLI wraps the rows ({ boundary, rows, warning }); elsewhere (CI, a
+  // person's terminal) it prints the bare array. A statement without rows may print only its
+  // command tag ("DELETE 0"), which isn't JSON.
+  let parsed;
   try {
-    return JSON.parse(out).rows ?? [];
+    parsed = JSON.parse(out);
   } catch {
-    return [];
+    if (/^\s*(INSERT|UPDATE|DELETE|SELECT|DO|CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE)\b/m.test(out) || !out.trim()) return [];
+    throw new Error(`Unexpected output from supabase db query: ${out.slice(0, 200)}`);
   }
+  return Array.isArray(parsed) ? parsed : parsed.rows ?? [];
 }
 
 /** The local stub server (pushes and photo checks it handled). Local only. */
