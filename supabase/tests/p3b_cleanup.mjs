@@ -8,31 +8,10 @@
 // 5. Nothing was deleted (the snapshot is the same), the sample listings are untouched, and
 //    job_runs has exactly one new row per job, all count-only and without errors.
 // Run from the repo root with Node 18+ and the Supabase CLI linked: node supabase/tests/p3b_cleanup.mjs
-import { existsSync, readFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
-import assert from "node:assert/strict";
 
-function loadEnvFile(path) {
-  const env = {};
-  try {
-    for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx !== -1) env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-    }
-  } catch {}
-  return env;
-}
-const serverEnv = { ...loadEnvFile("H:/DziRent/secrets/dzirent-server.env"), ...process.env };
-const npmCli = `${process.env.APPDATA ?? ""}/npm/node_modules/supabase/node_modules/@supabase/cli-windows-x64/bin/supabase.exe`;
-const CLI = serverEnv.SUPABASE_CLI ?? (process.platform === "win32" && existsSync(npmCli) ? npmCli : "supabase");
-function sql(query) {
-  const out = execFileSync(CLI, ["db", "query", "--linked", query, "-o", "json"], {
-    env: { ...process.env, ...serverEnv }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
-  });
-  return JSON.parse(out).rows ?? [];
-}
+import assert from "node:assert/strict";
+import { sql, CLI } from "./lib/config.mjs";
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const JOBS = ["abandoned_drafts", "orphan_photos", "old_photo_checks", "expired_reports", "old_data_exports",

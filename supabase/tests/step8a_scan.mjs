@@ -6,37 +6,11 @@
 //    photo_scans row with a 768-number fingerprint. Test user 3 can't read any of it.
 // 4. scan-listing refuses a caller without the shared secret.
 // Run with Node 18+: node supabase/tests/step8a_scan.mjs
-import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
+import { userEnv, SUPABASE_URL, SUPABASE_KEY } from "./lib/config.mjs";
 
-function loadEnvFile(path) {
-  const env = {};
-  try {
-    const content = readFileSync(path, "utf8");
-    for (const line of content.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx !== -1) {
-        env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-      }
-    }
-  } catch {}
-  return env;
-}
-
-const serverEnv = { ...loadEnvFile("H:/DziRent/secrets/dzirent-server.env"), ...process.env };
-const userEnv = { ...loadEnvFile("H:/DziRent/secrets/test-user.env"), ...process.env };
-
-const SUPABASE_URL = serverEnv.SUPABASE_URL?.replace(/\/$/, "");
-const SUPABASE_KEY = serverEnv.SUPABASE_PUBLISHABLE_KEY;
 // Test user 1's sample listing (supabase/seed/sample_photos.mjs).
 const LISTING_ID = "2fe0cfa6-a95e-4994-bbe4-f1bfb6760490";
-
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
-  process.exit(1);
-}
 
 async function signIn(email, password) {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
@@ -71,7 +45,8 @@ async function run() {
   console.log("1. Guest access...");
   const policy = await request(null, "policy_item_types?select=key,allowed&order=position");
   assert.ok(policy.ok && policy.data.length > 100, "guests read the policy");
-  const flags = await request(null, "app_settings?select=key,enabled&order=key");
+  // Only the three Step 8A flags (P2C and P3B added more, which this check doesn't cover).
+  const flags = await request(null, "app_settings?select=key,enabled&key=in.(payments_enabled,verification_required,vision_required)&order=key");
   assert.deepEqual(flags.data, [
     { key: "payments_enabled", enabled: false },
     { key: "verification_required", enabled: false },

@@ -7,32 +7,14 @@
 //   on:  the flag must be on. Adding the photo: the check pauses the listing with
 //        auto_paused_reason. Then the photo is removed, the photos are checked again (allowed)
 //        and the owner republishes: active, the reason cleared.
-// The photo should be one the check won't allow (a generated photo of a typed page works).
+// The photo should be one the check won't allow (a generated photo of a typed page works). Locally
+// any photo works: it is uploaded as reject_<random>.jpg and the vision stub rejects that name.
+// The runner (run-all.mjs) runs both phases locally and switches vision_required for "on".
 import { readFileSync } from "node:fs";
 import { randomBytes, randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
+import { userEnv, SUPABASE_URL, SUPABASE_KEY, LIVE } from "./lib/config.mjs";
 
-function loadEnvFile(path) {
-  const env = {};
-  try {
-    const content = readFileSync(path, "utf8");
-    for (const line of content.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx !== -1) {
-        env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-      }
-    }
-  } catch {}
-  return env;
-}
-
-const serverEnv = { ...loadEnvFile("H:/DziRent/secrets/dzirent-server.env"), ...process.env };
-const userEnv = { ...loadEnvFile("H:/DziRent/secrets/test-user.env"), ...process.env };
-
-const SUPABASE_URL = serverEnv.SUPABASE_URL?.replace(/\/$/, "");
-const SUPABASE_KEY = serverEnv.SUPABASE_PUBLISHABLE_KEY;
 // Test user 1's sample listing (supabase/seed/sample_photos.mjs).
 const LISTING_ID = "2fe0cfa6-a95e-4994-bbe4-f1bfb6760490";
 const [phase, photoPath] = process.argv.slice(2);
@@ -87,7 +69,8 @@ async function nextFinishedScan(previous, label) {
 }
 
 async function addPhoto() {
-  const path = `${LISTING_ID}/${randomBytes(8).toString("hex")}.jpg`;
+  // Locally (C2) the vision stub answers by file name: "reject_" makes it a photo the check won't allow.
+  const path = `${LISTING_ID}/${LIVE ? "" : "reject_"}${randomBytes(8).toString("hex")}.jpg`;
   const up = await fetch(`${SUPABASE_URL}/storage/v1/object/listing-photos/${path}`, {
     method: "POST",
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "image/jpeg" },

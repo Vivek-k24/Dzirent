@@ -9,40 +9,9 @@
 // 5. No token: 401.
 // The export time stays recorded, so test user 3 can't export again for 24 hours.
 // Run from the repo root with Node 18+ and the Supabase CLI linked: node supabase/tests/p3a_data_export.mjs
-import { existsSync, readFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+
 import assert from "node:assert/strict";
-
-function loadEnvFile(path) {
-  const env = {};
-  try {
-    for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx !== -1) env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-    }
-  } catch {}
-  return env;
-}
-
-const serverEnv = { ...loadEnvFile("H:/DziRent/secrets/dzirent-server.env"), ...process.env };
-const userEnv = { ...loadEnvFile("H:/DziRent/secrets/test-user.env"), ...process.env };
-const SUPABASE_URL = serverEnv.SUPABASE_URL?.replace(/\/$/, "");
-const SUPABASE_KEY = serverEnv.SUPABASE_PUBLISHABLE_KEY;
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
-  process.exit(1);
-}
-
-const npmCli = `${process.env.APPDATA ?? ""}/npm/node_modules/supabase/node_modules/@supabase/cli-windows-x64/bin/supabase.exe`;
-const CLI = serverEnv.SUPABASE_CLI ?? (process.platform === "win32" && existsSync(npmCli) ? npmCli : "supabase");
-function sql(query) {
-  const out = execFileSync(CLI, ["db", "query", "--linked", query, "-o", "json"], {
-    env: { ...process.env, ...serverEnv }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
-  });
-  return JSON.parse(out).rows ?? [];
-}
+import { userEnv, SUPABASE_URL, SUPABASE_KEY, sql, CLI } from "./lib/config.mjs";
 
 async function http(path, { method = "GET", token, body } = {}) {
   const headers = { apikey: SUPABASE_KEY };

@@ -12,44 +12,12 @@
 // 5. Clean-up, also after a failure: the test job deleted, the factor deleted, test user 1 removed
 //    from admin_users. Admin log rows stay (the log is append-only by design).
 // Run from the repo root with Node 18+ and the Supabase CLI linked: node supabase/tests/c1_codes_price_jobs.mjs
-import { existsSync, readFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+
 import { createHmac } from "node:crypto";
 import assert from "node:assert/strict";
+import { userEnv, SUPABASE_URL, SUPABASE_KEY, sql, CLI } from "./lib/config.mjs";
 
-function loadEnvFile(path) {
-  const env = {};
-  try {
-    for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx !== -1) env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-    }
-  } catch {}
-  return env;
-}
-
-const serverEnv = { ...loadEnvFile("H:/DziRent/secrets/dzirent-server.env"), ...process.env };
-const userEnv = { ...loadEnvFile("H:/DziRent/secrets/test-user.env"), ...process.env };
-delete serverEnv.SUPABASE_DB_PASSWORD;
-const SUPABASE_URL = serverEnv.SUPABASE_URL?.replace(/\/$/, "");
-const SUPABASE_KEY = serverEnv.SUPABASE_PUBLISHABLE_KEY;
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
-  process.exit(1);
-}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// ---- SQL through the linked CLI (test setup and clean-up only) ----
-const npmCli = `${process.env.APPDATA ?? ""}/npm/node_modules/supabase/node_modules/@supabase/cli-windows-x64/bin/supabase.exe`;
-const CLI = serverEnv.SUPABASE_CLI ?? (process.platform === "win32" && existsSync(npmCli) ? npmCli : "supabase");
-function sql(query) {
-  const out = execFileSync(CLI, ["db", "query", "--linked", query, "-o", "json"], {
-    env: { ...process.env, ...serverEnv }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
-  });
-  return JSON.parse(out).rows ?? [];
-}
 
 // ---- TOTP (RFC 6238, SHA-1, 6 digits, 30 s), as in the P2B test ----
 function base32(secret) {

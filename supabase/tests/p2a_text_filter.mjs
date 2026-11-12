@@ -1,41 +1,15 @@
 // P2A test script: the database text filter, through the API.
 // 1. A listing title with a phone number is refused (P0001, HINT "title"); the title is unchanged.
 // 2. The same phone number in a chat message is accepted (contact details are fine in chat).
-// 3. A slur in a chat message is refused.
+// 3. Chat messages are never filtered (P5A): check_text for a message is null, even for a slur.
+//    (Checked without sending it, so no slur is written to a chat.)
 // 4. Normal words that contain a listed word inside them ("cocktail") and allowlisted words
 //    ("nude heels") are accepted.
 // 5. check_text works for guests (sign-up's display name check).
 // Messages 2 and 4 stay in the test chat between test users 1 and 3 (apps can't delete messages).
 // Run with Node 18+: node supabase/tests/p2a_text_filter.mjs
-import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
-
-function loadEnvFile(path) {
-  const env = {};
-  try {
-    const content = readFileSync(path, "utf8");
-    for (const line of content.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx !== -1) {
-        env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-      }
-    }
-  } catch {}
-  return env;
-}
-
-const serverEnv = { ...loadEnvFile("H:/DziRent/secrets/dzirent-server.env"), ...process.env };
-const userEnv = { ...loadEnvFile("H:/DziRent/secrets/test-user.env"), ...process.env };
-
-const SUPABASE_URL = serverEnv.SUPABASE_URL?.replace(/\/$/, "");
-const SUPABASE_KEY = serverEnv.SUPABASE_PUBLISHABLE_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
-  process.exit(1);
-}
+import { userEnv, SUPABASE_URL, SUPABASE_KEY } from "./lib/config.mjs";
 
 // A slur from the word list, kept encoded so it isn't plain text in the repo.
 const SLUR_MESSAGE = Buffer.from("eW91IHRvd2VsaGVhZA==", "base64").toString("utf8");
@@ -111,11 +85,11 @@ async function run() {
   assert.ok(phoneInChat.ok, `a phone number in chat must be accepted: ${JSON.stringify(phoneInChat.data)}`);
   console.log("   phone number in a chat message: accepted");
 
-  const slur = await send(u1, conversationId, SLUR_MESSAGE);
-  assert.ok(!slur.ok, "a slur in a chat message must be refused");
-  assert.equal(slur.data?.code, "P0001");
-  assert.equal(slur.data?.hint, "body");
-  console.log(`   slur in a chat message: refused (${slur.status}): "${slur.data.message}"`);
+  assert.equal(await rpc(u1.token, "check_text", { p_text: SLUR_MESSAGE, p_where: "message" }), null,
+    "chat messages are not filtered (P5A)");
+  assert.ok(String(await rpc(u1.token, "check_text", { p_text: SLUR_MESSAGE, p_where: "listing" })).startsWith("DZ-E1050: "),
+    "the same words are refused in a listing");
+  console.log("   slur: not checked for a chat message (P5A), refused for a listing with DZ-E1050");
 
   const normal = await send(u1, conversationId, "The cocktail dress goes well with nude heels, a classic look.");
   assert.ok(normal.ok, `normal words must be accepted: ${JSON.stringify(normal.data)}`);
@@ -124,7 +98,7 @@ async function run() {
   console.log("\n4. check_text for a guest...");
   assert.equal(await rpc(null, "check_text", { p_text: "Jane Doe", p_where: "profile" }), null);
   const guestRefusal = await rpc(null, "check_text", { p_text: "Jane jane@example.com", p_where: "profile" });
-  assert.ok(guestRefusal?.startsWith("Please remove contact details"), "contact details in a profile are refused");
+  assert.ok(guestRefusal?.startsWith("DZ-E1051: Please remove contact details"), "contact details in a profile are refused (C1 code)");
   console.log(`   "Jane Doe": fine; with an email: "${guestRefusal}"`);
 
   console.log("\nAll P2A text filter checks PASSED!");
