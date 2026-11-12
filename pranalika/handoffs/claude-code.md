@@ -2,6 +2,108 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## C2 - 2026-11-12 - test foundation
+
+**Before starting:**
+- The tree was clean except two new untracked files, `pranalika/architecture.md` and `pranalika/code-reference.md`. I committed them in this step after scanning them for secrets: none found.
+- `Preview` was up to date at `6fd6d00`.
+- Docker 29.9.2 runs with 8 GB.
+
+**Done:**
+- **Local backend:**
+  - `supabase start` brings up the full stack from `supabase/config.toml`. All 31 migrations apply from scratch, then `supabase/seed.sql`, which is new and local only (`[db.seed]`).
+  - **Migrations fixed from scratch: none needed.** Every migration applied cleanly on an empty database.
+  - **What the seed creates:**
+    - 4 throwaway users (`test1/2/3@dzirent.local`, `admin@dzirent.local`; passwords in `supabase/tests/local.env`), created through `auth.users` so the sign-up trigger makes each profile;
+    - the two sample studios; user 3 with role both and measurements with consent; terms accepted; the admin in `admin_users`;
+    - the 12 sample listings with the live ids and titles, with photo rows, availability and measurements.
+  - **Listings inserted paused:** they are published after their photos. Photo rows on an active listing start an automatic photo check, so inserting them active queued 12 checks on a fresh database.
+  - **Vault:** the seed replaces all six Vault entries.
+    - The migrations create `send_push_url` and `scan_listing_url` with the **live** function addresses. Without the seed's overwrite, a fresh local database would call production; it would get a 401 for the wrong secret, but still call out.
+  - **TOTP on locally** in `config.toml`, so admin tests can sign in with two steps. This file isn't pushed anywhere.
+- **Stubs and local functions:**
+  - **Stub server** (`supabase/tests/stubs/server.mjs`): Node, in the container `dzirent-stubs` on the Supabase network, started with `stubs/run.mjs`.
+    - `/push` checks the secret and fields like `send-push` and records what it would send.
+    - `/scan` plays scan-listing plus vision. Answers by photo name: `reject` → rejected, `review` → review, anything else → allowed. Its fingerprints are deterministic, so different photos never look copied, and it gives a fixed suggestion.
+  - **Why stubs:** the local Vault points the outbox at them. The Google and Firebase token addresses are fixed in `send-push` and `scan-listing`, and function code wasn't in this task's folders, so stubs stand in for those two.
+  - **Edge Functions:** `supabase functions serve --env-file supabase/functions/local.env` (non-secret local values) serves all the others for real. `cleanup-files` is reached from the local Vault.
+  - **Seed photos:** `supabase/tests/lib/local_photos.mjs` uploads them from `supabase/seed/images/`, as each owner.
+- **pgTAP** (`supabase/tests/database/`, 9 files, 106 tests, each in a rolled-back transaction):
+  - **Roles and RLS:** guest, renter, owner, other user, and admin without two-step, with a 25-hour-old code, and with a fresh one.
+  - **Shop window:** no coordinates, emails or account ids, checked in both the declared columns and the actual rows, for guests and signed-in users.
+  - **Refusal codes:** every refusal literal in the database has a DZ code (structural check), plus one refusal per family with its hint.
+  - **Rate limits:** messages and new listings; a refused write isn't counted; server writes aren't limited.
+  - **Outbox:**
+    - the 1/5/30/120 schedule and dead after 5;
+    - a 2xx answer marks a job done, a 503 retries;
+    - a dead photo check ends failed/review, and retrying it is skipped;
+    - admin dead list (no push text), Retry, `DZ-E5061`, logged.
+  - **Report evidence:** saved at report time; can't be updated; outlives the deleted message.
+  - **Terms, age, cleanup:** terms enforcement; the age block; cleanup jobs count only.
+- **Integration:**
+  - **One shared config:** all 13 scripts read `supabase/tests/lib/config.mjs`. It targets the **local** backend by default (URL and keys from `supabase status`, the users in `local.env`, SQL through `db query --local`). `--live` or `DZIRENT_TEST_TARGET=live` switches to dzirent-server and prints a warning.
+  - **One runner:** `node supabase/tests/run-all.mjs`. It starts the stubs and `functions serve`, uploads the seed photos, runs 16 runs (15 scripts, with step 8B twice: `off`, then `on` with `vision_required` switched just around it), and prints a summary. Options: `--only`, `--keep`.
+  - **Runner guards:** the runner fails if it stops before its summary; a pending `fetch` once let it exit 0 having run nothing. A keep-alive timer and fetch timeouts fix the cause.
+  - **Stale scripts fixed** (they would also fail live):
+    - `delete_listing.test.mjs` stripped only the first import, so it had been broken since P5A. It now loads the real `_shared` modules and expects the C1 code.
+    - `p2a` expected chat messages to be filtered (removed in P5A). It now checks `check_text` for a message is null, without sending the slur.
+    - `p2b` and `p2c` expected messages without their C1 codes.
+    - `step8a` expected only three flags in `app_settings`.
+    - `step8b` needed arguments by hand.
+  - **Changed for local runs:**
+    - `step7a`, locally, checks what the push stub recorded instead of a Firebase token removal (live is unchanged).
+    - `step8b`, locally, names its upload `reject_*` so the stub rejects it.
+- **Vision:** the two model-weight tests are marked `@pytest.mark.model` (`tests/conftest.py` registers the marker); CI runs `-m "not model"`.
+- **CI** (`.github/workflows/ci.yml`):
+  - **When:** on pull requests to Preview and main, on pushes to Preview, and by hand.
+  - **Jobs:**
+    - `contracts`: the freshness check;
+    - `website`: `npm ci`, lint, test, build;
+    - `android`: `:shared:testDebugUnitTest`, with a placeholder `google-services.json`, JDK 21;
+    - `vision`: pinned packages, pytest without the model tests;
+    - `database`: `supabase start -x studio,imgproxy,vector,logflare,postgres-meta,supavisor`, `db reset`, pgTAP, the runner, `supabase stop`.
+  - **Secrets:** none. Only the local stack's default keys and placeholders.
+- **Docs:** `pranalika/testing.md` (suites, how to run each, CI, and the rule that integration and load tests never touch the live project); `BOARD.md`.
+
+**What I ran:**
+1. **Local stack:** `supabase start`. All migrations applied; every service healthy except `vector` (the log shipper restart-loops on Docker Desktop; nothing uses it).
+2. **Reset:** `supabase db reset --local` was declined by the permission check twice, so I asked. You chose `supabase stop --no-backup` + `supabase start` instead, and I used that for every fresh start.
+3. **Fresh-start fixes:** the first fresh start found the Vault duplicate (seed changed to update-or-create). A later fresh run found the 12 queued checks (seed now publishes after photos).
+4. **Final fresh local run:**
+   - `supabase test db --local supabase/tests/database`: **9 files, 106 tests, PASS**.
+   - `node supabase/tests/run-all.mjs`: **16 of 16 passed** (`delete_listing.test.mjs` is 4 node tests).
+   - Then `supabase stop`.
+5. **Unit tests, with the backend stopped:**
+   - `:shared:testDebugUnitTest`: **BUILD SUCCESSFUL, 50 tests**;
+   - `npm test` in apps/web: **6 of 6**;
+   - pytest in `services/vision` (new `.venv`, pinned packages): **52 passed, 2 deselected** (`model`).
+6. **CI on Preview:**
+   - **Run 1** ([43126952262](https://github.com/Vivek-k24/Dzirent/actions/runs/43126952262)): contracts, website, android and vision passed. The database job ran 13 of 16, and pgTAP passed.
+   - **Run 1 cause:** outside an agent session, `supabase db query` prints a table, so `sql()` got no rows. It now asks for `--output-format json` and reads both JSON shapes (a bare array outside an agent session, `{ rows }` inside one). I checked it locally with the agent variables removed: 4 of 4.
+   - **Run 2** ([43127866994](https://github.com/Vivek-k24/Dzirent/actions/runs/43127866994)): four jobs passed. The integration step hung at the seed photo upload (in run 1 it took 0.4 s), so I cancelled the run after about 30 minutes to read the log.
+   - **Run 2 fix:** every seed request gets a 15 s timeout and up to 3 tries. Each script is now limited to 10 minutes in the runner, and the CI step to 20.
+   - **Run 3** ([43132086033](https://github.com/Vivek-k24/Dzirent/actions/runs/43132086033)): **all 5 jobs green.** In CI, pgTAP passed 9 files and 106 tests, the seed photos were 24 uploaded, and the integration runner passed 16 of 16.
+7. No emulator, device or live write. The only live call was the read-only Advisor in C1, none this step.
+
+**Test counts per suite:**
+
+| Suite | Count |
+| --- | --- |
+| pgTAP | 106 (9 files) |
+| Integration | 16 runs (15 scripts) |
+| Shared Kotlin | 50 |
+| Website | 6 |
+| Vision | 52 (+2 model tests, skipped) |
+| Contracts | 1 check |
+
+**Open issues:**
+- **`db reset` locally needs your approval;** agents use stop + start. CI runs `db reset`.
+- **Not covered locally:** the Google/Firebase calls inside `send-push` and `scan-listing` (stubbed). A small change would make them testable: let the functions read their token and FCM addresses from env, falling back to Google's. That's in `supabase/functions/`, outside this task.
+- **Leftover data:** the integration scripts leave data in the local database (chats, scans). The pgTAP files are written to pass on both a fresh and a used database, and CI always starts fresh.
+- **Local Studio:** `vector` restart-loops on Docker Desktop for Windows. Harmless; CI leaves it out.
+- **Not in CI:** Android Lint, `assembleDebug`, iPhone builds and tests, the vision eval. Unchanged by this step.
+- **Required checks:** making the CI checks required on `main` and `Preview` is a GitHub setting for the owner (listed on the BOARD).
+
 ## C1 - 2026-11-11 - error codes, price per day, retries
 
 **Before starting:** the working tree was clean and `Preview` was up to date with `origin/Preview` (`7c83362`). The architecture notes (blueprint Section 8, gaps G1, G20, G21) aren't in `pranalika/`, so I worked from the prompt.

@@ -218,9 +218,9 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (C1) | |
+| Done by: Claude Code (C1, C2) | |
 | C1 Error and warning codes (one catalog, generated Kotlin/TypeScript, every database refusal and Edge Function error coded), price per day, background job outbox with retries and dead-letter list, client read retries, stray root doc removed | Done (Claude Code) |
-| C2 | To do |
+| C2 Test foundation: local backend in Docker (migrations from scratch + local seed, stubs for push and vision, functions served locally), pgTAP suite (9 files), integration scripts local by default with one runner, vision model tests marked, CI on every pull request (`.github/workflows/ci.yml`), `pranalika/testing.md` | Done (Claude Code) |
 | C3 | To do |
 | C4 | To do |
 | C5 | To do |
@@ -229,3 +229,4 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | C8 | To do |
 | Mac: build-check the C1 shared-code changes on iPhone (`ErrorCatalog.kt`, `ReadRetry.kt`, the Ktor `HttpRequestRetry` in `createDzirentSupabaseClient`, price per day), see the C1 handoff | To do |
 | Owner: phone test of C1 (see the C1 handoff) | To do |
+| Owner: make the CI checks required on `main` and `Preview` (branch rules), once a few runs are green | To do |
