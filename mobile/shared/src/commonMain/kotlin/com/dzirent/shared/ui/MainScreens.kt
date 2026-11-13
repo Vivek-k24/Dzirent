@@ -29,6 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,13 +40,16 @@ import coil3.compose.AsyncImage
 import com.dzirent.shared.model.*
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.util.ClosetSort
+import com.dzirent.shared.util.ShareLinks
 import com.dzirent.shared.util.sortCloset
 import com.dzirent.shared.util.formatDateRange
 import com.dzirent.shared.util.DistanceUnit
 import com.dzirent.shared.util.formatDistance
 import com.dzirent.shared.util.formatMeasurement
-import com.dzirent.shared.util.formatPrice
+import com.dzirent.shared.util.formatPerDay
 import com.dzirent.shared.util.parseDateRange
+import com.dzirent.shared.util.DateRange
+import com.dzirent.shared.util.daysAndTotal
 import kotlinx.coroutines.launch
 import com.dzirent.shared.util.isBefore
 import com.dzirent.shared.util.isDraft
@@ -54,24 +61,34 @@ sealed class UiState<out T> {
     data class Success<T>(val data: T) : UiState<T>()
 }
 
-/** "$25 · 1.5 mi". Listings from before prices were required show the distance only. */
+/** "$25/day · 1.5 mi". Listings from before prices were required show the distance only. */
 fun cardSubtitle(listing: Listing, unit: DistanceUnit): String =
     listOfNotNull(
-        listing.priceUsd?.let { formatPrice(it) },
+        listing.priceUsd?.let { formatPerDay(it) },
         listing.distanceMiles?.let { formatWholeMiles(it, unit) } ?: listing.distanceKm?.let { formatDistance(it, unit) }
     ).joinToString(" · ")
 
-/** Large photo, title and "$price · distance". No icons on cards. */
+/**
+ * Large photo, title and "$price · distance". No icons on cards. A screen reader reads the
+ * card as one item: "title, $25, 1 mi" (the title once, the dot as a pause), then "double-tap
+ * to open".
+ */
 @Composable
 fun ListingCard(listing: Listing, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val subtitle = cardSubtitle(listing, LocalAppSettings.current.distanceUnit)
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .clickable(onClickLabel = "open") { onClick() }
+            .clearAndSetSemantics {
+                contentDescription = listOf(listing.title, subtitle.replace(" · ", ", "))
+                    .filter { it.isNotBlank() }
+                    .joinToString(", ")
+            }
     ) {
         ListingPhoto(
             url = listing.photos.minByOrNull { it.position }?.storagePath,
-            contentDescription = listing.title,
+            contentDescription = null,
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(3f / 4f)
@@ -85,7 +102,7 @@ fun ListingCard(listing: Listing, onClick: () -> Unit, modifier: Modifier = Modi
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = cardSubtitle(listing, LocalAppSettings.current.distanceUnit),
+            text = subtitle,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1
@@ -105,7 +122,9 @@ fun ListingDetailScreen(
     onMessageLender: (listingId: String, lenderId: String) -> Unit,
     onOpenStudio: (lenderId: String) -> Unit,
     /** Set for a guest: saving asks them to sign up, and there is nothing to report from. */
-    onGuestAction: ((GatedAction) -> Unit)? = null
+    onGuestAction: ((GatedAction) -> Unit)? = null,
+    /** Home's chosen dates: the page shows "<n> days · $total" for them (C1). */
+    dates: DateRange? = null
 ) {
     val isGuest = onGuestAction != null
     var uiState by remember { mutableStateOf<UiState<Listing>>(UiState.Loading) }
@@ -162,7 +181,7 @@ fun ListingDetailScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("Listing Details") },
+            title = { Text("Listing Details", modifier = Modifier.asHeading()) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -171,6 +190,12 @@ fun ListingDetailScreen(
             actions = {
                 // Editing is for the owner only (RLS enforces this too); others can report.
                 val loaded = (uiState as? UiState.Success)?.data
+                // Share (P5C): only a live piece, so the link never lands on "no longer available".
+                if (loaded != null && loaded.status == "active") {
+                    IconButton(onClick = { device.share(ShareLinks.listingText(loaded.title, loaded.id)) }) {
+                        Icon(Icons.Default.Share, contentDescription = "Share")
+                    }
+                }
                 if (loaded != null && loaded.lenderId == currentUserId) {
                     IconButton(onClick = { onEdit(loaded.id) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit listing")
@@ -249,6 +274,15 @@ fun ListingDetailScreen(
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
+                    // C1: the chosen dates' length and total, "5 days · $125".
+                    val perDay = listing.priceUsd
+                    if (perDay != null && dates != null) {
+                        Text(
+                            text = daysAndTotal(perDay, dates),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     // With a price set, the note is extra detail under it.
                     if (listing.priceUsd != null && listing.priceNote.isNotBlank()) {
                         Text(
@@ -340,7 +374,7 @@ fun ListingDetailScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
                             onClick = { onMessageLender(listing.id, listing.lenderId) },
-                            modifier = Modifier.fillMaxWidth().height(50.dp)
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
                         ) {
                             Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -461,7 +495,7 @@ fun MyClosetScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp)
-                .height(50.dp)
+                .heightIn(min = 50.dp)
         ) {
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
@@ -498,6 +532,7 @@ fun ScreenTitle(text: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+            .asHeading()
     )
 }
 
@@ -579,7 +614,7 @@ private fun MyListingsContent(
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
             icon = { Icon(Icons.Default.Delete, contentDescription = null) },
-            title = { Text("Delete this listing?") },
+            title = { Text("Delete this listing?", modifier = Modifier.asHeading()) },
             text = { Text("\"${listing.title}\" and its photos will be removed for good. Chats about it will be deleted too.") },
             confirmButton = {
                 TextButton(onClick = {
@@ -645,7 +680,8 @@ private fun MyListingsContent(
                             Text(
                                 text = message,
                                 color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.announced()
                             )
                         }
                     }
@@ -733,15 +769,20 @@ private fun ClosetListingCard(
                     Switch(
                         checked = isActive,
                         onCheckedChange = onActiveChange,
-                        enabled = !busy
+                        enabled = !busy,
+                        // Says what it switches; the switch itself reports on or off.
+                        modifier = Modifier.semantics {
+                            contentDescription = "Show ${listing.title} in the shop"
+                            stateDescription = if (isActive) "Active" else "Paused"
+                        }
                     )
                 }
                 Row {
                     IconButton(onClick = onEdit, enabled = !busy) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                        Icon(Icons.Default.Edit, contentDescription = "Edit ${listing.title}")
                     }
                     IconButton(onClick = onDelete, enabled = !busy) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Default.Delete, contentDescription = "Delete ${listing.title}", tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -850,7 +891,7 @@ private fun SectionHeader(text: String) {
         style = MaterialTheme.typography.titleSmall,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp).asHeading()
     )
 }
 
@@ -896,11 +937,12 @@ private fun RentalRow(rental: Rental, onClick: () -> Unit) {
 }
 
 /** Square first-photo thumbnail, or the no-photo placeholder. */
+/** The small photo at the start of a row. Decorative: every row shows the listing's title next to it. */
 @Composable
 fun ListingThumbnail(listing: Listing?, size: androidx.compose.ui.unit.Dp) {
     ListingPhoto(
         url = listing?.photos?.minByOrNull { it.position }?.storagePath,
-        contentDescription = listing?.title,
+        contentDescription = null,
         modifier = Modifier
             .size(size)
             .clip(RoundedCornerShape(8.dp))
@@ -984,7 +1026,7 @@ fun ProfileScreen(
     pendingRenterSwitch?.let { active ->
         AlertDialog(
             onDismissRequest = { pendingRenterSwitch = null },
-            title = { Text("Switch to Rent only?") },
+            title = { Text("Switch to Rent only?", modifier = Modifier.asHeading()) },
             text = {
                 Text(
                     "You have ${active.size} active listing${if (active.size == 1) "" else "s"}. " +
@@ -1005,7 +1047,7 @@ fun ProfileScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("Profile") },
+            title = { Text("Profile", modifier = Modifier.asHeading()) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -1075,7 +1117,7 @@ fun ProfileScreen(
             }
             actionError?.let { message ->
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Text(text = message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.announced())
             }
 
             Spacer(modifier = Modifier.height(24.dp))

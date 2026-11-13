@@ -61,7 +61,7 @@ fun BodyMeasurementsScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("My measurements") },
+            title = { Text("My measurements", modifier = Modifier.asHeading()) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -223,7 +223,7 @@ private fun MeasurementsForm(
                 onValueChange = { input -> texts[measurement] = input.filter { it.isDigit() || it == '.' } },
                 label = { Text(measurement.labelFor(fit)) },
                 suffix = { Text(unit) },
-                supportingText = { Text(error ?: measurement.howToFor(fit)) },
+                supportingText = { Text(error ?: measurement.howToFor(fit), modifier = Modifier.announced()) },
                 isError = error != null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
@@ -253,14 +253,14 @@ private fun MeasurementsForm(
         Spacer(modifier = Modifier.height(12.dp))
 
         saveError?.let {
-            Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.announced())
             Spacer(modifier = Modifier.height(8.dp))
         }
         Spacer(modifier = Modifier.height(8.dp))
         Button(
             onClick = { save() },
             enabled = !isSaving,
-            modifier = Modifier.fillMaxWidth().height(50.dp)
+            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
         ) {
             Text(if (isSaving) "Saving..." else "Save")
         }

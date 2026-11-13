@@ -1,41 +1,72 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { context, getListing, isSaved } from "@/lib/data";
+import { guestListing, newestPieces, priceAndCity } from "@/lib/preview";
+import { listingLink, listingShareText } from "@/lib/share";
+import { ShareButton } from "@/components/share-button";
+import { Empty, PieceGrid } from "@/components/cards";
 import { currentUser, serverClient } from "@/lib/supabase/server";
 import { StartChat } from "@/components/start-chat";
 import { Distance } from "@/components/distance";
 import { listingNotice } from "@/lib/workflows";
 import { photoUrl } from "@/lib/supabase/config";
-import { Query, value, price, cityLabel } from "@/lib/types";
+import { Query, value, perDay, daysAndTotal, cityLabel } from "@/lib/types";
 import { Gallery } from "@/components/photo";
 import { Icon } from "@/components/icon";
 import { savePiece } from "@/app/actions";
 import { GatedActionTrigger } from "@/components/guest-gate";
+import { refusalText } from "@/lib/refusals";
+// P5C: link previews come from what a guest sees (preview.ts), so a signed-in sharer's view never
+// leaks into them. The picture is this route's opengraph-image / twitter-image.
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const ctx = await context();
-  const listing = await getListing(id, ctx.lat, ctx.lng);
+  const listing = await guestListing(id);
+  if (!listing) {
+    return {
+      title: UNAVAILABLE,
+      description: "Discover more pieces from local Dzirent studios.",
+      robots: { index: false, follow: true },
+      openGraph: { title: UNAVAILABLE, description: "Discover more pieces from local Dzirent studios.", siteName: "Dzirent", type: "website" },
+      twitter: { card: "summary_large_image", title: UNAVAILABLE },
+    };
+  }
+  const line = priceAndCity(listing);
+  const url = listingLink(listing.id);
   return {
-    title: listing?.title || "Piece not found",
-    description:
-      listing?.description?.slice(0, 160) ||
-      "Discover a piece from a local Dzirent studio.",
-    openGraph: listing
-      ? {
-          title: listing.title,
-          description: listing.description?.slice(0, 160) || undefined,
-          images: listing.photos
-            .map((p) => photoUrl(p.storage_path))
-            .filter((p): p is string => Boolean(p))
-            .slice(0, 1),
-        }
-      : undefined,
+    title: listing.title,
+    description: line,
+    alternates: { canonical: url },
+    openGraph: { title: listing.title, description: line, url, siteName: "Dzirent", type: "website" },
+    twitter: { card: "summary_large_image", title: listing.title, description: line },
   };
+}
+const UNAVAILABLE = "This piece is no longer available";
+
+/** Paused, deleted or hidden: a plain page with newer pieces instead. */
+async function Unavailable() {
+  const pieces = await newestPieces(8);
+  return (
+    <div className="page-width listing-page">
+      <Empty
+        title={UNAVAILABLE}
+        text="It may be paused, rented or removed. Here are some other pieces from local studios."
+        href="/search"
+        label="Browse all pieces"
+      />
+      {pieces.length > 0 && (
+        <>
+          <div className="section-heading">
+            <h2>More pieces to rent</h2>
+          </div>
+          <PieceGrid cards={pieces} />
+        </>
+      )}
+    </div>
+  );
 }
 const date = (s: string) =>
   new Intl.DateTimeFormat("en-US", {
@@ -58,10 +89,10 @@ export default async function ListingPage({
     searchParams,
   ]);
   const [listing, saved] = await Promise.all([
-    getListing(id, ctx.lat, ctx.lng),
+    getListing(id, ctx.lat, ctx.lng, ctx.datesActive ? ctx.start : null, ctx.datesActive ? ctx.end : null),
     isSaved(id),
   ]);
-  if (!listing) notFound();
+  if (!listing) return <Unavailable />;
   const photos = (listing.photos || [])
     .map((p) => photoUrl(p.storage_path))
     .filter((p): p is string => Boolean(p));
@@ -102,9 +133,11 @@ export default async function ListingPage({
             </span>
           </p>
           <div className="listing-price">
-            {price(listing.price)}
-            <span> / rental</span>
+            {perDay(listing.price)}
           </div>
+          {daysAndTotal(listing.days, listing.total) && (
+            <p className="listing-total">{daysAndTotal(listing.days, listing.total)}</p>
+          )}
           {listing.price_note && <p className="muted">{listing.price_note}</p>}
           <div className="listing-tags">
             {listing.size_label && <span>Size {listing.size_label}</span>}
@@ -168,9 +201,19 @@ export default async function ListingPage({
               Save this piece
             </GatedActionTrigger>
           )}
+          <ShareButton
+            className="button secondary full"
+            text={listingShareText(listing.title, listing.id)}
+            link={listingLink(listing.id)}
+          />
           {value(q, "notice") === "save-error" && (
             <p className="form-message error" role="status">
               Couldn’t update Saved. Please try again.
+            </p>
+          )}
+          {refusalText(value(q, "notice")) && (
+            <p className="form-message error" role="status">
+              {refusalText(value(q, "notice"))}
             </p>
           )}
         </section>

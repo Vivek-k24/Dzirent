@@ -9,33 +9,49 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.pm.PackageInfoCompat
 import com.dzirent.app.age.PlayAgeSignals
 import com.dzirent.app.push.ChatNotifications
 import com.dzirent.app.push.FirebasePush
+import com.dzirent.shared.platform.AndroidDataExport
 import com.dzirent.shared.platform.AndroidDeviceServices
 import com.dzirent.shared.platform.AndroidSettingsStorage
 import com.dzirent.shared.platform.LocalDevice
 import com.dzirent.shared.ui.DzirentApp
 import com.dzirent.shared.util.AppSettings
+import com.dzirent.shared.util.LinkTarget
+import com.dzirent.shared.util.ShareLinks
 
 class MainActivity : ComponentActivity() {
     /** The chat a tapped notification asks for, until the app has opened it. */
     private var chatToOpen by mutableStateOf<String?>(null)
 
+    /** The dzirent.com listing or studio link that opened the app (P5C), until it is shown. */
+    private var linkToOpen by mutableStateOf<LinkTarget?>(null)
+
+    private fun linkIn(intent: Intent?): LinkTarget? =
+        intent?.takeIf { it.action == Intent.ACTION_VIEW }?.dataString?.let(ShareLinks::parse)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // The Messages channel exists from the start, so it shows in the phone's settings.
         ChatNotifications.createChannel(this)
-        // After a rotation the intent is the same one again: its chat was already opened.
-        if (savedInstanceState == null) chatToOpen = ChatNotifications.chatToOpen(intent)
+        // After a rotation the intent is the same one again: its chat or link was already opened.
+        if (savedInstanceState == null) {
+            chatToOpen = ChatNotifications.chatToOpen(intent)
+            linkToOpen = linkIn(intent)
+        }
         val settingsStorage = AndroidSettingsStorage(applicationContext)
         val packageInfo = packageManager.getPackageInfo(packageName, 0)
         val device = AndroidDeviceServices(
             applicationContext,
             packageInfo.versionName.orEmpty(),
-            packageInfo.longVersionCode,
+            // PackageInfo.longVersionCode needs Android 9 (API 28); the app starts at Android 8.
+            PackageInfoCompat.getLongVersionCode(packageInfo),
             FirebasePush(applicationContext),
-            PlayAgeSignals(applicationContext)
+            PlayAgeSignals(applicationContext),
+            // Registers the "save file" picker, so it has to be made here in onCreate.
+            AndroidDataExport(this)
         )
         setContent {
             // Wait for the saved settings (a few ms) so the app never flashes the other theme.
@@ -46,7 +62,9 @@ class MainActivity : ComponentActivity() {
                         appSettings = loaded,
                         settingsStorage = settingsStorage,
                         openChatId = chatToOpen,
-                        onOpenChatHandled = { chatToOpen = null }
+                        onOpenChatHandled = { chatToOpen = null },
+                        openLink = linkToOpen,
+                        onOpenLinkHandled = { linkToOpen = null }
                     )
                 }
             }
@@ -57,5 +75,6 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         ChatNotifications.chatToOpen(intent)?.let { chatToOpen = it }
+        linkIn(intent)?.let { linkToOpen = it }
     }
 }

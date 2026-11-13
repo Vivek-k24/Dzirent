@@ -24,7 +24,7 @@ import com.dzirent.shared.model.Listing
 import com.dzirent.shared.model.SavedListing
 import com.dzirent.shared.model.SavedStudio
 import com.dzirent.shared.repository.DzirentRepository
-import com.dzirent.shared.util.formatPrice
+import com.dzirent.shared.util.formatPerDay
 import kotlinx.coroutines.launch
 
 private data class SavedData(val pieces: List<SavedListing>, val studios: List<SavedStudio>)
@@ -192,7 +192,8 @@ private fun SavedPieceRow(saved: SavedListing, onOpen: () -> Unit, onMessage: ()
         ) {
             ListingPhoto(
                 url = listing?.photos?.minByOrNull { it.position }?.storagePath,
-                contentDescription = listing?.title,
+                // The title is right next to it.
+                contentDescription = null,
                 modifier = Modifier
                     .size(width = 72.dp, height = 96.dp)
                     .clip(RoundedCornerShape(8.dp))
@@ -206,7 +207,7 @@ private fun SavedPieceRow(saved: SavedListing, onOpen: () -> Unit, onMessage: ()
                     overflow = TextOverflow.Ellipsis
                 )
                 listing?.priceUsd?.let {
-                    Text(formatPrice(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatPerDay(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (listing != null) {
                     TextButton(onClick = onMessage, contentPadding = PaddingValues(horizontal = 0.dp)) {
@@ -215,7 +216,7 @@ private fun SavedPieceRow(saved: SavedListing, onOpen: () -> Unit, onMessage: ()
                 }
             }
             IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Close, contentDescription = "Remove from Saved")
+                Icon(Icons.Default.Close, contentDescription = "Remove ${listing?.title ?: "this piece"} from Saved")
             }
         }
     }
@@ -244,7 +245,7 @@ private fun SavedStudioRow(saved: SavedStudio, onOpen: () -> Unit, onRemove: () 
                 }
             }
             IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Close, contentDescription = "Remove from Saved")
+                Icon(Icons.Default.Close, contentDescription = "Remove $title from Saved")
             }
         }
     }

@@ -181,6 +181,8 @@ private fun HomeTopBar(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .guideTarget(GuideTarget.AVATAR)
+                // The avatar shows only initials; say what the button does.
+                .semantics { contentDescription = "Open menu" }
         ) {
             Avatar(name = displayName, size = 32.dp)
         }
@@ -363,13 +365,18 @@ private fun HomeRowSection(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     // The fit row is the one row highlighted in the accent color.
-                    color = if (row == HomeRow.FIT) DzirentAccent else MaterialTheme.colorScheme.onSurface
+                    color = if (row == HomeRow.FIT) DzirentAccent else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.asHeading()
                 )
                 row.subtitle?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            TextButton(onClick = onSeeAll) { Text("See all") }
+            // "See all" alone doesn't say which row; the screen reader hears the row's name too.
+            TextButton(
+                onClick = onSeeAll,
+                modifier = Modifier.semantics { contentDescription = "See all: ${row.title}" }
+            ) { Text("See all") }
         }
         Spacer(modifier = Modifier.height(8.dp))
         // Swipe only: no auto-scroll.
@@ -428,7 +435,7 @@ fun SeeAllScreen(
     )
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text(row.title) },
+            title = { Text(row.title, modifier = Modifier.asHeading()) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

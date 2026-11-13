@@ -1,0 +1,45 @@
+# P5A: weekly dependency updates, one grouped pull request per ecosystem. Security updates
+# (turned on in the repository settings) still open on their own as soon as an alert appears.
+# P5C: version-update pull requests target Preview (all work goes there first). GitHub always
+# opens security-update pull requests against the default branch (main); the owner decides.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /apps/web
+    target-branch: Preview
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      web:
+        patterns: ["*"]
+
+  - package-ecosystem: gradle
+    directory: /mobile
+    target-branch: Preview
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      mobile:
+        patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /services/vision
+    target-branch: Preview
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      vision:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: Preview
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ["*"]

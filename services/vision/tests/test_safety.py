@@ -40,6 +40,7 @@ def test_quality_warnings_never_mention_a_person_or_wearing():
             assert not any(word in warning.lower() for word in ("worn", "wear", "person", "model", "someone"))
 
 
+@pytest.mark.model
 @pytest.mark.skipif(not SAFETY_DIR, reason="VISION_SAFETY_DIR is not set")
 def test_the_pinned_model_loads_strictly_and_gives_probabilities():
     model = SafetyModel(Path(SAFETY_DIR))
@@ -54,6 +55,7 @@ def test_the_pinned_model_loads_strictly_and_gives_probabilities():
     assert model.nsfw([]) == []
 
 
+@pytest.mark.model
 @pytest.mark.skipif(not SAFETY_DIR, reason="VISION_SAFETY_DIR is not set")
 def test_plain_synthetic_images_are_not_read_as_unsafe():
     from app.verdict import NSFW_REVIEW_MIN

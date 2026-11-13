@@ -14,9 +14,10 @@ private val AccentOnLight = Color(0xFF8E1538)
 
 /**
  * The same hue, lighter, for dark mode: #8E1538 is only 2.1:1 on the dark background.
- * This is 6.0:1 on the background and 5.6:1 on the drawer, so accent text passes 4.5:1.
+ * This is 6.2:1 on the background, 5.2:1 on the drawer and 4.6:1 on grey chips, so accent text
+ * passes 4.5:1 everywhere (P4B nudged it from #E8638A, which was 4.497:1 on the chips).
  */
-private val AccentOnDark = Color(0xFFE8638A)
+private val AccentOnDark = Color(0xFFEA658C)
 
 private val Ink = Color(0xFF111111)
 
@@ -61,6 +62,14 @@ private val Grey850 = Color(0xFF202020)
 private val Grey900 = Color(0xFF171717)
 private val Night = Color(0xFF0E0E0E)
 
+// Borders of text fields and outlined buttons, and outline-tinted icons, need 3:1 (WCAG 1.4.11).
+// Grey400 was 2.5:1 on white and Grey600 3.0:1 on the dark background. Dividers keep
+// outlineVariant: they are decorative.
+/** 3.4:1 on white, 3.0:1 on Grey100. */
+private val OutlineLight = Color(0xFF8C8C8C)
+/** 3.6:1 on Night, 3.3:1 on Grey900, 3.0:1 on Grey850. */
+private val OutlineDark = Color(0xFF6A6A6A)
+
 // Every surface container is set too: Material's defaults are tinted purple.
 private val LightColorScheme = lightColorScheme(
     primary = Ink,
@@ -83,7 +92,7 @@ private val LightColorScheme = lightColorScheme(
     surfaceVariant = Grey100,
     onSurfaceVariant = Grey600,
     surfaceTint = Color.Transparent,
-    outline = Grey400,
+    outline = OutlineLight,
     outlineVariant = Grey200,
     surfaceBright = Color.White,
     surfaceDim = Grey200,
@@ -115,7 +124,7 @@ private val DarkColorScheme = darkColorScheme(
     surfaceVariant = Grey800,
     onSurfaceVariant = Grey400,
     surfaceTint = Color.Transparent,
-    outline = Grey600,
+    outline = OutlineDark,
     outlineVariant = Grey800,
     surfaceBright = Grey800,
     surfaceDim = Night,

@@ -40,6 +40,38 @@ val generateSupabaseConfig by tasks.registering {
     }
 }
 
+// C1: contracts/error-codes.json -> util/ErrorCodes.kt (and the website's and Edge Functions'
+// copies) with contracts/generate.mjs. The generated files are committed: without Node (the Mac
+// build) this step is skipped and the committed files are used. ErrorCodesTest fails if the
+// committed Kotlin file is out of date.
+val generateErrorCodes by tasks.registering {
+    val repoRoot = rootProject.projectDir.parentFile
+    val script = repoRoot.resolve("contracts/generate.mjs")
+    inputs.file(repoRoot.resolve("contracts/error-codes.json"))
+    inputs.file(script)
+    outputs.file(project.file("src/commonMain/kotlin/com/dzirent/shared/util/ErrorCodes.kt"))
+    doLast {
+        val result = runCatching {
+            val process = ProcessBuilder("node", script.absolutePath)
+                .directory(repoRoot)
+                .redirectErrorStream(true)
+                .start()
+            val output = process.inputStream.bufferedReader().readText()
+            process.waitFor() to output
+        }
+        val (exit, output) = result.getOrNull() ?: run {
+            logger.warn("generateErrorCodes: Node not found, using the committed ErrorCodes.kt")
+            return@doLast
+        }
+        if (exit != 0) throw GradleException("contracts/generate.mjs failed: $output")
+        if (output.isNotBlank()) logger.lifecycle(output.trim())
+    }
+}
+
+tasks.matching { it.name.startsWith("compile") && it.name.contains("Kotlin") }.configureEach {
+    dependsOn(generateErrorCodes)
+}
+
 kotlin {
     androidTarget {
         compilerOptions {
@@ -99,6 +131,8 @@ kotlin {
                 implementation(libs.play.services.location)
                 implementation(libs.androidx.exifinterface)
                 implementation(libs.androidx.activity.compose)
+                // The system save picker (AndroidDataExport) needs Fragment 1.3.0+; Play services bring 1.1.0.
+                implementation(libs.androidx.fragment)
                 // Open-source licenses screen
                 implementation(libs.aboutlibraries.compose.m3)
             }

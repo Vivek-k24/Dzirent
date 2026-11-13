@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { photoUrl } from "@/lib/supabase/config";
 import { ActionDialog } from "./action-dialog";
 import {
@@ -39,6 +39,25 @@ export function ReportsView({ initialReports }: { initialReports: ReportRow[] })
   const [reports, setReports] = useState(initialReports);
   const [filter, setFilter] = useState<"open" | "closed">("open");
   const [selectedReport, setSelectedReport] = useState<ReportRow | null>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!selectedReport) return;
+    const previouslyFocused = (typeof document !== "undefined" ? document.activeElement : null) as HTMLElement | null;
+    drawerRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setSelectedReport(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [selectedReport]);
 
   // Dialog action state
   const [actionType, setActionType] = useState<
@@ -197,12 +216,13 @@ export function ReportsView({ initialReports }: { initialReports: ReportRow[] })
                 <img
                   key={i}
                   src={photoUrl(p) || p}
-                  alt={`Listing photo ${i + 1}`}
+                  alt={`${String(e.title || "Reported listing")} - view ${i + 1}`}
                   width={100}
                   height={120}
                   style={{ objectFit: "cover", borderRadius: "4px", border: "1px solid var(--line)" }}
                 />
               ))}
+
             </div>
           )}
         </div>
@@ -320,16 +340,36 @@ export function ReportsView({ initialReports }: { initialReports: ReportRow[] })
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.5)",
             zIndex: 800,
             display: "flex",
             justifyContent: "flex-end",
           }}
-          onClick={() => setSelectedReport(null)}
         >
-          <div
-            className="admin-detail-drawer"
+          <button
+            type="button"
+            className="admin-report-detail-backdrop"
+            aria-label="Close report details"
+            onClick={() => setSelectedReport(null)}
             style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              border: "none",
+              cursor: "default",
+              width: "100%",
+              height: "100%",
+            }}
+          />
+          <div
+            ref={drawerRef}
+            tabIndex={-1}
+            className="admin-detail-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Report details"
+            style={{
+              position: "relative",
+              zIndex: 801,
               width: "100%",
               maxWidth: "640px",
               height: "100%",
@@ -342,8 +382,8 @@ export function ReportsView({ initialReports }: { initialReports: ReportRow[] })
               flexDirection: "column",
               gap: "20px",
             }}
-            onClick={(e) => e.stopPropagation()}
           >
+
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <span className="eyebrow accent">{selectedReport.target_type.toUpperCase()} REPORT</span>

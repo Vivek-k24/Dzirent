@@ -5,8 +5,10 @@
 // database functions. Any failure marks the scan failed and the listing goes to review.
 // Apps never call this function.
 
+import { readInput, UUID } from "../_shared/input.ts";
+import { errorBody, errorStatus } from "../_shared/errors.ts";
+
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // The vision service's own limit (services/vision/app/config.py MAX_PHOTOS).
 const MAX_PHOTOS = 8;
 // Cloud Run stops a request at 120 s. This leaves time to save the result within the function's
@@ -51,6 +53,11 @@ function json(status: number, body: Record<string, unknown>): Response {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+/** C1: an error as { code, message } with the catalog status (contracts/error-codes.json). */
+function refuse(code: string, message?: string): Response {
+  return json(errorStatus(code), errorBody(code, message));
 }
 
 /** Compares in constant time, so the secret can't be guessed one byte at a time. */
@@ -221,39 +228,40 @@ async function runScan(env: Env, scan: StartedScan): Promise<void> {
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
-    return json(405, { error: "method_not_allowed" });
+    return refuse("DZ-E9005");
   }
 
   const secret = Deno.env.get("SCAN_LISTING_SECRET");
   if (!secret || !sameSecret(req.headers.get("x-scan-listing-secret") ?? "", secret)) {
-    return json(401, { error: "not_allowed" });
+    return refuse("DZ-E9004");
   }
 
-  const scanId = (await req.json().catch(() => null))?.scan_id;
+  const input = await readInput(req, { allowed: ["scan_id"], required: ["scan_id"], maxBytes: 1024 });
+  const scanId = input.ok ? input.body.scan_id : null;
   if (typeof scanId !== "string" || !UUID.test(scanId)) {
-    return json(400, { error: "bad_request" });
+    return refuse("DZ-E9016");
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const key = serviceKey();
   if (!supabaseUrl || !key) {
-    return json(500, { error: "not_configured" });
+    return refuse("DZ-E9003");
   }
 
   const startResponse = await rpc({ supabaseUrl, key }, "vision_start_scan", { p_scan_id: scanId });
   if (!startResponse.ok) {
-    return json(500, { error: "start_failed" });
+    return refuse("DZ-E9003");
   }
   const scan: StartedScan | null = await startResponse.json().catch(() => null);
   if (!scan) {
-    return json(409, { error: "not_queued" });
+    return refuse("DZ-E2024");
   }
 
   const visionUrl = Deno.env.get("VISION_URL")?.replace(/\/+$/, "");
   const account = loadInvokerKey();
   if (!visionUrl || !account) {
     await rpc({ supabaseUrl, key }, "vision_fail_scan", { p_scan_id: scanId, p_error: "not_configured" });
-    return json(500, { error: "not_configured" });
+    return refuse("DZ-E9003");
   }
 
   // Answer the database at once; the scan itself can take a cold start plus a minute.

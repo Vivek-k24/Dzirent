@@ -1,6 +1,7 @@
 import "server-only";
 import { currentUser, serverClient } from "./supabase/server";
 import { suspensionNotice } from "./suspension";
+import { describeError, errorText } from "./errors";
 import type {
   ChatData,
   Conversation,
@@ -20,24 +21,27 @@ export class WorkflowError extends Error {
     message: string,
     public status = 400,
     public field?: string,
+    /** C1: the catalog code (contracts/error-codes.json) when the error has one. */
+    public code?: string,
   ) {
     super(message);
   }
 }
+/** C1: a database refusal as the page shows it: the catalog's words for its code, then the code. */
+export function codedError(error: unknown, status = 400): WorkflowError {
+  const shown = describeError(error);
+  return new WorkflowError(errorText(shown), status, shown.field, shown.code);
+}
+/**
+ * The data, or a WorkflowError for the database's refusal (C1): the catalog's words for its code;
+ * an error without a code shows DZ-E9999. [context] says what the call was for, for readers.
+ */
 export function must<T>(
   result: { data: T; error: unknown },
-  fallbackMessage = "Please try again.",
+  context?: string,
 ): T {
-  if (result.error) {
-    const pgError = result.error as {
-      message?: string;
-      hint?: string;
-      code?: string;
-      details?: string;
-    };
-    const msg = pgError.message || fallbackMessage;
-    throw new WorkflowError(msg, 400, pgError.hint);
-  }
+  void context;
+  if (result.error) throw codedError(result.error);
   return result.data;
 }
 export async function session() {

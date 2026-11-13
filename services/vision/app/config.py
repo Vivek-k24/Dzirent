@@ -36,7 +36,7 @@ SAFETY_MODEL_FILES = ["config.json", "model.safetensors"]
 SAFETY_SUBDIR = "safety"  # under MODEL_DIR
 SAFETY_IMAGE_SIZE = 384
 
-SERVICE_VERSION = "p2a.1"
+SERVICE_VERSION = "s1.1"
 
 # The model card's zero-shot recipe: softmax(100 * cosine similarity).
 LOGIT_SCALE = 100.0

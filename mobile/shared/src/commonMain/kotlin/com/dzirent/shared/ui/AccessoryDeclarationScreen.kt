@@ -41,7 +41,7 @@ fun AccessoryDeclarationScreen(onSign: suspend (String) -> Unit, onDismiss: () -
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(modifier = Modifier.fillMaxSize()) {
                 TopAppBar(
-                    title = { Text(AccessoryDeclaration.TITLE) },
+                    title = { Text(AccessoryDeclaration.TITLE, modifier = Modifier.asHeading()) },
                     navigationIcon = {
                         IconButton(onClick = onDismiss, enabled = !saving) {
                             Icon(Icons.Default.Close, contentDescription = "Close")
@@ -76,7 +76,7 @@ fun AccessoryDeclarationScreen(onSign: suspend (String) -> Unit, onDismiss: () -
                         onValueChange = { if (it.length <= AccessoryDeclaration.NAME_MAX) name = it },
                         label = { Text(AccessoryDeclaration.NAME_LABEL) },
                         isError = nameError != null,
-                        supportingText = nameError?.let { { Text(it) } },
+                        supportingText = nameError?.let { { Text(it, modifier = Modifier.announced()) } },
                         singleLine = true,
                         enabled = !saving,
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
@@ -90,7 +90,7 @@ fun AccessoryDeclarationScreen(onSign: suspend (String) -> Unit, onDismiss: () -
                     )
                     error?.let {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.announced())
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
@@ -108,7 +108,7 @@ fun AccessoryDeclarationScreen(onSign: suspend (String) -> Unit, onDismiss: () -
                             }
                         },
                         enabled = !saving && AccessoryDeclaration.canSign(checked.toList(), name),
-                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
                     ) {
                         if (saving) CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
                         else Text(AccessoryDeclaration.SIGN_BUTTON, fontWeight = FontWeight.Bold)

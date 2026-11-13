@@ -1,0 +1,143 @@
+# C2: checks on every pull request to Preview or main, and every push to Preview.
+# No production secret is used anywhere here. The database job runs the whole backend in Docker
+# (supabase start) with the local stack's built-in default keys; the website and Android builds get
+# the same local placeholder URL and key, and Android a placeholder google-services.json.
+# What each job covers and how to run it on a PC: pranalika/testing.md.
+name: CI
+
+on:
+  pull_request:
+    branches: [Preview, main]
+  push:
+    branches: [Preview]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: contracts (error-code freshness)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: node contracts/generate.mjs --check
+
+  website:
+    name: website (lint, test, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH # the local stack's public default
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  android:
+    name: android (shared unit tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SUPABASE_URL: http://127.0.0.1:54321
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH # the local stack's public default
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: android-actions/setup-android@v4
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Placeholder google-services.json (no real Firebase values)
+        run: |
+          set -euo pipefail
+          FILE="$RUNNER_TEMP/google-services.json"
+          client() {
+            printf '{"client_info":{"mobilesdk_app_id":"1:000000000000:android:%s","android_client_info":{"package_name":"%s"}},"api_key":[{"current_key":"ci-placeholder-not-a-key"}]}' "$1" "$2"
+          }
+          printf '{"project_info":{"project_number":"000000000000","project_id":"ci-placeholder","storage_bucket":"ci-placeholder.appspot.com"},"client":[%s,%s],"configuration_version":"1"}\n' \
+            "$(client 0000000000000001 com.dzirent.app)" "$(client 0000000000000002 com.dzirent.app.debug)" > "$FILE"
+          echo "GOOGLE_SERVICES_JSON=$FILE" >> "$GITHUB_ENV"
+      - name: Shared unit tests
+        working-directory: mobile
+        run: bash ./gradlew --no-daemon :shared:testDebugUnitTest
+      - name: Test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-reports
+          path: mobile/shared/build/reports/tests/
+
+  vision:
+    name: vision (pytest, model tests skipped)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: services/vision
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: services/vision/requirements.txt
+      - name: Install the pinned packages (CPU PyTorch)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-deps -r requirements.txt pytest==8.4.2 iniconfig==2.1.0 pluggy==1.6.0
+      - run: python -m pytest -m "not model" tests
+
+  database:
+    name: database (local backend, pgTAP, integration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - name: Start the local backend (migrations from scratch, local seed)
+        # Studio, the log stack and the image proxy aren't needed for tests.
+        run: supabase start -x studio,imgproxy,vector,logflare,postgres-meta,supavisor
+      - name: Reset the database (every migration from scratch, then supabase/seed.sql)
+        run: supabase db reset
+      - name: Database tests (pgTAP)
+        run: supabase test db supabase/tests/database
+      - name: Integration tests (stubs, functions serve, every supabase/tests script)
+        timeout-minutes: 20
+        run: node supabase/tests/run-all.mjs
+      - name: Stop the local backend
+        if: always()
+        run: supabase stop --no-backup

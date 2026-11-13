@@ -142,7 +142,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages, P2C), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
+| Done by: Claude Code (P1A part 1, P1B part 1, P2A, P2B part 1, plain-language legal pages, P2C, P3A, P3B, P4B, P5A, P5C), Antigravity (P1A part 2, P1A fix-up, P1B part 2, website catch-up, website fixes, P2B part 2) | |
 
 | P1A part 1: data inventory and `compliance.md`; legal fill-ins in `legal-placeholders.md` | Done |
 | P1A part 2: website legal pages (privacy policy, terms, community rules and prohibited items, copyright/DMCA, safety tips, delete-account page, support/contact), fill-ins in one config | Done |
@@ -177,11 +177,30 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Mac: `:shared:iosSimulatorArm64Test` couldn't run (`simctl spawn` of any process exits 137 on this Mac) | To do |
 | Paid Apple account: Declared Age Range capability on the App ID, then drop the simulator-only condition on `CODE_SIGN_ENTITLEMENTS` (see the Mac iOS session handoff) | To do |
 | Owner: phone test of P2C on Android (see the P2C handoff); check the "Preview only" label and the new dialogs on the website in both themes and on a phone | To do |
-| P3A Download my data on all three platforms | To do |
-| P3B Cleanup and retention jobs: abandoned drafts, orphan photos, old scans, log retention; sample listings removed from production | To do |
-| P4A Website accessibility to WCAG 2.1 AA (automated checker in the build plus a manual pass) | To do |
-| P4B App accessibility: screen reader labels, touch targets, large text, contrast in both themes (iPhone part on the Mac) | To do |
-| P5A Security hardening: database rule audit, rate limits, bot check on sign-up, website security headers, input checks on every server function, dependency and secret scanning | To do |
+| P3A Download my data on all three platforms | Done on website and Android (Claude Code); iPhone opens the website until a Mac session adds a native save |
+| P3A (Claude Code): `export-my-data` Edge Function and `export_my_data()` (one JSON file of everything Dzirent holds about the caller, other people only by name and handle, once a day, `data_exports`); website Settings > Privacy & safety > Download my data; Android Settings row with the system save picker; iPhone row opens the website; privacy and help text; welcome popups never open on policy and help pages; page titles "<Page> \| Dzirent"; website blocked page for age-blocked accounts (`age_blocked()`) | Done |
+| Mac: native "Download my data" save on iPhone (`IosDataExport`, see the P3A handoff), and build-check the P3A shared-code changes | To do |
+| Owner: phone test of P3A on Android (see the P3A handoff); check the website's Download my data, the blocked page and the page titles | To do |
+| P3B Cleanup and retention jobs: abandoned drafts, orphan photos, old scans, log retention; sample listings removed from production | Jobs done, all counting only (Claude Code); log retention and sample removal still open (below) |
+| P3B (Claude Code): nine nightly cleanup jobs (pg_cron; files through `cleanup-files` and the Storage API), retention settings in `app_private.settings`, `job_runs`, one Flags-page switch per job (all count-only), "Cleanup jobs" card on the admin overview, privacy retention section; `remove_sample_data.mjs` written, not run; README rule 15 (copy each new debug APK to OneDrive) | Done |
+| Owner: decide when to switch each cleanup job to deleting (admin Flags page, `cleanup_<job>`); check the admin overview's Cleanup jobs card after the first nightly runs | To do |
+| Owner: say when to remove the 12 sample listings (`node supabase/seed/remove_sample_data.mjs --yes`, run by an agent) | To do |
+| Attorney: declaration retention period (placeholder 7 years) and report retention (placeholder 730 days) | To do |
+| P4A Website accessibility to WCAG 2.1 AA (automated checker in the build plus a manual pass) | Done (Antigravity) |
+| P4B App accessibility: screen reader labels, touch targets, large text, contrast in both themes (iPhone part on the Mac) | Android done (Claude Code); iPhone VoiceOver check on the Mac |
+| P4B (Claude Code): headings on every screen and dialog title and section header, errors and photo-check progress announced, listing cards read as one item, row photos and avatars decorative, labelled closet switch and Edit/Delete/Remove buttons, selectable sidebar categories, 48 dp targets (photo remove, date chips, categories), buttons grow with large text, theme contrast fixes (outline, dark accent), Lint accessibility checks as errors (shared module included), two Lint errors fixed (Android 8 crash in MainActivity, Fragment version for the save picker) | Done |
+| Owner: TalkBack and largest-font test of P4B on Android (list in the P4B handoff) | To do |
+| Mac: VoiceOver pass of the shared screens with VoiceOver actually on (P4B handoff), and build-check the P4B shared-code changes | To do |
+| P5A Security hardening: database rule audit, rate limits, bot check on sign-up, website security headers, input checks on every server function, dependency and secret scanning | Done (Claude Code); bot check researched, stays off until P8C |
+| P5A (Claude Code): database audit (nothing to fix; 11 foreign-key indexes added), current terms enforced in the database, rate limits (messages, chats, reports, listings, photo checks), upload rules (JPEG/PNG/WebP, 10 MB, `{listing_id}/{random}.jpg`), input checks in all 7 Edge Functions, website security headers, GitHub alerts/Dependabot/CodeQL, 30-day inactivity sign-out, admin code every 24 hours, phone sessions in the Keystore/Keychain and Android backup off, chat filter removed, privacy policy sentence | Done |
+| Mac: build-check the P5A shared code, especially `IosSecureStore.kt` (Keychain) and that a signed-in iPhone stays signed in after the update (see the P5A handoff) | To do |
+| Owner: phone test of P5A on Android (see the P5A handoff); check the website's headers, sign-in, live chat, uploads and admin area on Preview after the deploy | To do |
+| Owner: root `README.md` still says the text filter covers chat (see Requests in the P5A handoff) | Done (P5C, Claude Code) |
+| P5C Share listings and studios: share button on all three platforms, rich link previews with the studio handle, app links (Android now, iPhone with the paid Apple account) | Done on website and Android (Claude Code); iPhone share sheet written, needs the Mac build; iPhone universal links with the paid Apple account (P8B) |
+| P5C (Claude Code): link previews (listing and studio Open Graph/X tags, 1200 × 630 preview images, "no longer available" page), Share on listing and studio pages (website share menu or Copy link; Android and iPhone system share sheet), Android verified app links (`assetlinks.json` for the debug app), opened links go to the listing or studio; Dependabot version updates target `Preview`; root README text filter line; iPhone Keychain cleared on a fresh install | Done |
+| Mac: build-check P5C on iPhone: `IosDevice.share` (UIActivityViewController) and the Keychain first-launch marker in `IosSecureStore.kt` (see the P5C handoff) | To do |
+| Owner: phone test of P5C (see the P5C handoff), after the website with `/.well-known/assetlinks.json` is live on dzirent.com (it is served from `main`) | To do |
+| P8A: add the release package and Play signing fingerprint to `assetlinks.json` | To do |
 | P5B Logs and monitoring: error tracking, uptime checks, alerts, backup restore drill, incident plan | To do |
 | P6A ID verification (Didit) on all three platforms; flag off, keys blank | To do |
 | P6B Payments backend: Stripe Connect test mode, deposits, "confirm rental" step, sales tax hook off | To do |
@@ -191,3 +210,28 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | P8A Google Play: organization account, new package, upload key, store forms, first upload, release pipeline | To do |
 | P8B Apple: organization enrollment, App Store Connect, privacy labels, age rating, push key, TestFlight, submission | To do |
 | P8C Go-live: flags on, email confirmation on, monitoring live, launch checklist | To do |
+| P8C: sign-up bot check (hCaptcha recommended, see `security-log.md` "Bot check"; all three clients send the token before it's switched on) | To do |
+| P8C: official App Store and Google Play badges on the About page, once each listing is live | To do |
+| P8C: first-sign-in wording for brand-new users | To do |
+
+## Code completion
+
+| Item | Status |
+| --- | --- |
+| Done by: Claude Code (C1, C2, S1, S1b) | |
+| C1 Error and warning codes (one catalog, generated Kotlin/TypeScript, every database refusal and Edge Function error coded), price per day, background job outbox with retries and dead-letter list, client read retries, stray root doc removed | Done (Claude Code) |
+| C2 Test foundation: local backend in Docker (migrations from scratch + local seed, stubs for push and vision, functions served locally), pgTAP suite (9 files), integration scripts local by default with one runner, vision model tests marked, CI on every pull request (`.github/workflows/ci.yml`), `pranalika/testing.md` | Done (Claude Code) |
+| S1 Security updates: vision service on Pillow 13.0.0, torch 2.14.1 (CPU), transformers 5.20.2, FastAPI 0.162.0 / Starlette 1.7.0, open_clip 3.3.0 (no verdict changed on 92 photos and 12 listings in a local Linux image); website minimatch 11.0.3 through an npm override; 5 code scanning alerts dismissed ("used in tests"); `security-log.md` "GitHub security alerts (S1)" | Done (Claude Code); deployed in S1b |
+| Owner: `gcloud auth login` on this PC, then an agent redeploys `vision` with the S1 packages and runs the eval | Done: owner signed in; S1b deployed `vision-00006-sxv` (`s1.1`), eval unchanged on 92 photos and 12 listings |
+| S1b: Pygments 2.21.0 and the CI vision job's separate pin dropped; `.venv/` kept out of Cloud Build and Docker uploads; `contracts/generate.mjs` escapes backslashes and control characters for Kotlin and Markdown (CodeQL #9 fixed on PR #103, generated files unchanged) | Done (Claude Code) |
+| Owner: merge `Preview` into `main` (PR #103): the 82 Dependabot alerts are on `main` and close with the merge | To do |
+| Request from S1: seed and test scripts stop putting the email in sign-in errors (`supabase/`) | To do |
+| C3 | To do |
+| C4 | To do |
+| C5 | To do |
+| C6 | To do |
+| C7 | To do |
+| C8 | To do |
+| Mac: build-check the C1 shared-code changes on iPhone (`ErrorCatalog.kt`, `ReadRetry.kt`, the Ktor `HttpRequestRetry` in `createDzirentSupabaseClient`, price per day), see the C1 handoff | To do |
+| Owner: phone test of C1 (see the C1 handoff) | To do |
+| Owner: make the CI checks required on `main` and `Preview` (branch rules), once a few runs are green | To do |

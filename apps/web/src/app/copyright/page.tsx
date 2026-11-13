@@ -5,7 +5,7 @@ import { LegalLayout, LegalPlaceholder } from "@/components/legal-layout";
 import { LEGAL_CONFIG } from "@/content/legal/config";
 
 export const metadata: Metadata = {
-  title: "Copyright & DMCA Policy — Dzirent",
+  title: "Copyright & DMCA Policy",
   description:
     "How Dzirent respects intellectual property rights, handles DMCA takedown notices, counter-notices, and addresses repeat infringement.",
 };
@@ -59,9 +59,10 @@ export default function CopyrightPage() {
         </p>
 
         <div className="legal-card" style={{ maxWidth: "600px", marginTop: "16px" }}>
-          <h4 style={{ marginBottom: "12px", borderBottom: "1px solid var(--border-subtle)", paddingBottom: "8px" }}>
+          <h3 style={{ marginBottom: "12px", borderBottom: "1px solid var(--border-subtle)", paddingBottom: "8px" }}>
             Designated DMCA Agent Contact
-          </h4>
+          </h3>
+
           <div style={{ display: "grid", gap: "8px", fontSize: "0.95rem" }}>
             <div>
               <strong>Agent Name:</strong>{" "}

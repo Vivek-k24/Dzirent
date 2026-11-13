@@ -19,7 +19,10 @@ COPY app ./app
 RUN python -m app.build_assets \
  && rm -f /opt/model/open_clip_model.safetensors /opt/model/tokenizer.json /opt/model/tokenizer_config.json \
           /opt/model/special_tokens_map.json /opt/model/spiece.model \
- && rm -rf /opt/model/.cache /opt/model/safety/.cache /root/.cache
+ && rm -rf /opt/model/.cache /opt/model/safety/.cache /root/.cache \
+ && chmod -R a+rX /opt/model
+# chmod (S1): safetensors 0.8 writes visual.safetensors owner-only (0600), and the service runs as
+# the unprivileged user below, so without it the app can't read the vision tower and never starts.
 
 ENV HF_HUB_OFFLINE=1 \
     OMP_NUM_THREADS=2 \

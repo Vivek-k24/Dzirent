@@ -66,7 +66,7 @@ fun WelcomeScreen(
 
             Button(
                 onClick = onNavigateToLogin,
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) {
                 Text("Log In")
             }
@@ -74,7 +74,7 @@ fun WelcomeScreen(
 
             OutlinedButton(
                 onClick = onNavigateToSignUp,
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) {
                 Text("Sign Up")
             }
@@ -83,7 +83,7 @@ fun WelcomeScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 TextButton(
                     onClick = onBrowseAsGuest,
-                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                 ) {
                     Text("Browse as guest")
                 }
@@ -116,7 +116,7 @@ fun LoginScreen(
         AlertDialog(
             onDismissRequest = { resetSentTo = null },
             icon = { Icon(Icons.Default.Mail, contentDescription = null) },
-            title = { Text("Check your email") },
+            title = { Text("Check your email", modifier = Modifier.asHeading()) },
             text = { Text("If an account exists for $sentTo, we sent a link to reset your password.") },
             confirmButton = { TextButton(onClick = { resetSentTo = null }) { Text("OK") } }
         )
@@ -159,7 +159,8 @@ fun LoginScreen(
                         Text(
                             text = errorMessage ?: "",
                             color = MaterialTheme.colorScheme.onErrorContainer,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.announced()
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         TextButton(
@@ -243,7 +244,7 @@ fun LoginScreen(
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) {
                 Text("Log In")
             }
@@ -339,7 +340,8 @@ fun SignUpScreen(
                         Text(
                             text = errorMessage ?: "",
                             color = MaterialTheme.colorScheme.onErrorContainer,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.announced()
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         TextButton(
@@ -360,7 +362,7 @@ fun SignUpScreen(
                 label = { Text("Display Name") },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 isError = nameError != null,
-                supportingText = nameError?.let { { Text(it) } },
+                supportingText = nameError?.let { { Text(it, modifier = Modifier.announced()) } },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -527,7 +529,7 @@ fun SignUpScreen(
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) {
                 Text("Sign Up")
             }
@@ -589,7 +591,7 @@ fun EmailConfirmationView(
             Spacer(modifier = Modifier.height(32.dp))
             Button(
                 onClick = onGoToLogin,
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) {
                 Text("Go to Log In")
             }
@@ -643,7 +645,7 @@ fun FirstVisitBottomSheet(
 
             Button(
                 onClick = onSignUp,
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) {
                 Text("Sign Up")
             }
@@ -651,7 +653,7 @@ fun FirstVisitBottomSheet(
 
             OutlinedButton(
                 onClick = onSignIn,
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) {
                 Text("Log In")
             }
@@ -659,7 +661,7 @@ fun FirstVisitBottomSheet(
 
             TextButton(
                 onClick = onBrowseGuest,
-                modifier = Modifier.fillMaxWidth().height(48.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
             ) {
                 Text("Browse as guest")
             }

@@ -7,10 +7,16 @@ import test from "node:test";
 
 const LISTING_ID = "11111111-1111-4111-8111-111111111111";
 const OWNER_ID = "22222222-2222-4222-8222-222222222222";
+// Every import line goes; createClient is mocked, and the shared input and error helpers
+// (P5A, C1) are the real modules, passed in by name.
 const source = stripTypeScriptTypes(
   readFileSync(new URL("../functions/delete-listing/index.ts", import.meta.url), "utf8")
-    .replace(/^import[^\r\n]*\r?\n/, ""),
+    .replace(/^import[^\r\n]*\r?\n/gm, ""),
 );
+const shared = {
+  ...(await import(new URL("../functions/_shared/input.ts", import.meta.url))),
+  ...(await import(new URL("../functions/_shared/errors.ts", import.meta.url))),
+};
 
 function setup({ lenderId = OWNER_ID, files = [], cleanupError = null } = {}) {
   const events = [];
@@ -78,11 +84,11 @@ function setup({ lenderId = OWNER_ID, files = [], cleanupError = null } = {}) {
     env: { get: (name) => name === "SUPABASE_URL" ? "https://example.test" : "mock-key" },
     serve: (callback) => { handler = callback; },
   };
-  new Function("Deno", "createClient", source)(deno, (_url, _key, options) => {
+  new Function("Deno", "createClient", "readInput", "UUID", "errorBody", "errorStatus", source)(deno, (_url, _key, options) => {
     events.push("create-client");
     assert.equal(options.global.headers.Authorization, "Bearer mock-token");
     return client;
-  });
+  }, shared.readInput, shared.UUID, shared.errorBody, shared.errorStatus);
   return { events, handler };
 }
 
@@ -130,7 +136,7 @@ test("failed photo cleanup keeps the listing for retry", async () => {
   });
   const response = await handler(request());
   assert.equal(response.status, 503);
-  assert.equal((await response.json()).error, "photo_cleanup_failed");
+  assert.equal((await response.json()).code, "DZ-E2066"); // C1: { code, message }
   assert.ok(events.includes("remove:1"));
   assert.ok(!events.includes("delete-listing"));
 });

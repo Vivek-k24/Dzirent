@@ -5,7 +5,7 @@ import { LegalLayout, LegalPlaceholder } from "@/components/legal-layout";
 import { LEGAL_CONFIG } from "@/content/legal/config";
 
 export const metadata: Metadata = {
-  title: "Terms of Use | Dzirent",
+  title: "Terms of Use",
   description: "Terms and conditions governing your use of the Dzirent platform.",
 };
 

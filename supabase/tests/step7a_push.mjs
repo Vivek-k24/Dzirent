@@ -1,38 +1,13 @@
 // Step 7A test script: push notifications through the database trigger and send-push.
 // 1. send-push refuses callers without the database's shared secret.
-// 2. A fake token for test user 1 + a message from test user 3: send-push runs, Firebase
-//    rejects the token, and send-push removes it.
+// 2. A fake token for test user 1 + a message from test user 3: a push is due.
+//    Live: send-push runs, Firebase rejects the token, and send-push removes it.
+//    Local (C2): the outbox sends it to the push stub, which records it: recipient, kind and title
+//    "New message from <name>", and no body while "Show message text" is off.
 // 3. With user 1 blocking user 3 there is no send attempt (the fake token stays), then unblock.
 // Run with Node 18+: node supabase/tests/step7a_push.mjs
-import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
-
-function loadEnvFile(path) {
-  const env = {};
-  try {
-    const content = readFileSync(path, "utf8");
-    for (const line of content.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx !== -1) {
-        env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-      }
-    }
-  } catch {}
-  return env;
-}
-
-const serverEnv = { ...loadEnvFile("H:/DziRent/secrets/dzirent-server.env"), ...process.env };
-const userEnv = { ...loadEnvFile("H:/DziRent/secrets/test-user.env"), ...process.env };
-
-const SUPABASE_URL = serverEnv.SUPABASE_URL?.replace(/\/$/, "");
-const SUPABASE_KEY = serverEnv.SUPABASE_PUBLISHABLE_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
-  process.exit(1);
-}
+import { userEnv, SUPABASE_URL, SUPABASE_KEY, LIVE, STUBS_URL } from "./lib/config.mjs";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -135,9 +110,22 @@ async function run() {
     prefer: "return=minimal",
   });
   assert.ok(sent.ok, `message insert failed: ${sent.status}`);
-  const removed = await waitFor(async () => !(await myTokens(u1)).includes(fakeToken), 60);
-  assert.ok(removed, "send-push should remove the token Firebase rejected");
-  console.log("   message sent; send-push removed the fake token after Firebase rejected it");
+  if (LIVE) {
+    const removed = await waitFor(async () => !(await myTokens(u1)).includes(fakeToken), 60);
+    assert.ok(removed, "send-push should remove the token Firebase rejected");
+    console.log("   message sent; send-push removed the fake token after Firebase rejected it");
+  } else {
+    const recorded = async () =>
+      ((await (await fetch(`${STUBS_URL}/log`)).json()).push ?? []).filter((p) => p.conversation_id === conversationId);
+    assert.ok(await waitFor(async () => (await recorded()).length > 0, 30), "the push stub should receive the push");
+    const push = (await recorded()).at(-1);
+    assert.equal(push.recipient_id, u1.id);
+    assert.equal(push.kind, "message");
+    assert.equal(push.title, "New message from Jordan Bell");
+    assert.ok(!push.body, "no message text while Show message text is off");
+    console.log(`   message sent; the push stub recorded "${push.title}" for user 1, without the text`);
+    await rpc(u1.token, "unregister_push_token", { p_token: fakeToken });
+  }
 
   console.log("\n5. User 1 blocks user 3: no send attempt...");
   const blockedToken = `step7a-blocked-${Date.now()}`;

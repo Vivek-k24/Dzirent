@@ -8,31 +8,11 @@
 //    the test listing is deleted. The test message stays in the test chat.
 // Bad input is refused (unknown source, result or platform; guests).
 // Run from the repo root with Node 18+: node supabase/tests/p2c_age_gate.mjs
-import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
+import { userEnv, SUPABASE_URL, SUPABASE_KEY } from "./lib/config.mjs";
 
-function loadEnvFile(path) {
-  const env = {};
-  try {
-    for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx !== -1) env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-    }
-  } catch {}
-  return env;
-}
-
-const serverEnv = { ...loadEnvFile("H:/DziRent/secrets/dzirent-server.env"), ...process.env };
-const userEnv = { ...loadEnvFile("H:/DziRent/secrets/test-user.env"), ...process.env };
-const SUPABASE_URL = serverEnv.SUPABASE_URL?.replace(/\/$/, "");
-const SUPABASE_KEY = serverEnv.SUPABASE_PUBLISHABLE_KEY;
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
-  process.exit(1);
-}
-const MESSAGE = "Dzirent is only for people 18 and older.";
+// C1: the refusal starts with its code.
+const MESSAGE = "DZ-E1030: Dzirent is only for people 18 and older.";
 
 async function http(path, { method = "GET", token, body, prefer } = {}) {
   const headers = { apikey: SUPABASE_KEY };

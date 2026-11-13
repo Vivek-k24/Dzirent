@@ -5,7 +5,7 @@ import { LegalLayout, LegalPlaceholder } from "@/components/legal-layout";
 import { LEGAL_CONFIG } from "@/content/legal/config";
 
 export const metadata: Metadata = {
-  title: "Help & Support — Dzirent",
+  title: "Help & Support",
   description:
     "Get help with your Dzirent account, find answers to common questions, or contact our support and safety teams.",
 };
@@ -36,7 +36,7 @@ export default function SupportPage() {
 
         <div className="legal-card-grid">
           <div className="legal-card">
-            <h4>Customer Support</h4>
+            <h3>Customer Support</h3>
             <p>For questions about listings, account settings, or using the app.</p>
             <p style={{ fontWeight: 600, marginTop: "8px" }}>
               <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
@@ -53,7 +53,7 @@ export default function SupportPage() {
           </div>
 
           <div className="legal-card">
-            <h4>Privacy & Data Rights</h4>
+            <h3>Privacy & Data Rights</h3>
             <p>For data export, deletion assistance, or privacy questions.</p>
             <p style={{ fontWeight: 600, marginTop: "8px" }}>
               <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
@@ -63,7 +63,7 @@ export default function SupportPage() {
           </div>
 
           <div className="legal-card">
-            <h4>Trust, Safety & Abuse</h4>
+            <h3>Trust, Safety & Abuse</h3>
             <p>To report abusive behavior, safety concerns, or fraud.</p>
             <p style={{ fontWeight: 600, marginTop: "8px" }}>
               <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
@@ -73,7 +73,7 @@ export default function SupportPage() {
           </div>
 
           <div className="legal-card">
-            <h4>Security Disclosures</h4>
+            <h3>Security Disclosures</h3>
             <p>For security researchers reporting platform vulnerabilities.</p>
             <p style={{ fontWeight: 600, marginTop: "8px" }}>
               <a href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}>
@@ -90,49 +90,49 @@ export default function SupportPage() {
 
         <div className="legal-card-grid">
           <Link href="/privacy" className="legal-card" style={{ textDecoration: "none" }}>
-            <h4 style={{ color: "var(--brand-primary)" }}>Privacy Policy &rarr;</h4>
+            <h3 style={{ color: "var(--brand-primary)", fontSize: "1rem", margin: "0 0 6px" }}>Privacy Policy &rarr;</h3>
             <p style={{ color: "var(--text-secondary)", margin: 0 }}>
               How we collect, use, and protect your information, location precision, and rights.
             </p>
           </Link>
 
           <Link href="/terms" className="legal-card" style={{ textDecoration: "none" }}>
-            <h4 style={{ color: "var(--brand-primary)" }}>Terms of Service &rarr;</h4>
+            <h3 style={{ color: "var(--brand-primary)", fontSize: "1rem", margin: "0 0 6px" }}>Terms of Service &rarr;</h3>
             <p style={{ color: "var(--text-secondary)", margin: 0 }}>
               The rules governing marketplace use, eligibility, listings, and peer agreements.
             </p>
           </Link>
 
           <Link href="/community-guidelines" className="legal-card" style={{ textDecoration: "none" }}>
-            <h4 style={{ color: "var(--brand-primary)" }}>Community Guidelines &rarr;</h4>
+            <h3 style={{ color: "var(--brand-primary)", fontSize: "1rem", margin: "0 0 6px" }}>Community Guidelines &rarr;</h3>
             <p style={{ color: "var(--text-secondary)", margin: 0 }}>
               Allowed categories, prohibited items, photo standards, and how photo checks work.
             </p>
           </Link>
 
           <Link href="/safety" className="legal-card" style={{ textDecoration: "none" }}>
-            <h4 style={{ color: "var(--brand-primary)" }}>Trust & Safety Guide &rarr;</h4>
+            <h3 style={{ color: "var(--brand-primary)", fontSize: "1rem", margin: "0 0 6px" }}>Trust & Safety Guide &rarr;</h3>
             <p style={{ color: "var(--text-secondary)", margin: 0 }}>
               In-person meetup recommendations, joint garment inspection, and security deposits.
             </p>
           </Link>
 
           <Link href="/copyright" className="legal-card" style={{ textDecoration: "none" }}>
-            <h4 style={{ color: "var(--brand-primary)" }}>Copyright & DMCA &rarr;</h4>
+            <h3 style={{ color: "var(--brand-primary)", fontSize: "1rem", margin: "0 0 6px" }}>Copyright & DMCA &rarr;</h3>
             <p style={{ color: "var(--text-secondary)", margin: 0 }}>
               DMCA takedown notice requirements, counter-notices, and designated agent details.
             </p>
           </Link>
 
           <Link href="/delete-account" className="legal-card" style={{ textDecoration: "none" }}>
-            <h4 style={{ color: "var(--brand-primary)" }}>Delete Account &rarr;</h4>
+            <h3 style={{ color: "var(--brand-primary)", fontSize: "1rem", margin: "0 0 6px" }}>Delete Account &rarr;</h3>
             <p style={{ color: "var(--text-secondary)", margin: 0 }}>
               Step-by-step account deletion guide and explanation of what data is purged.
             </p>
           </Link>
 
           <Link href="/about" className="legal-card" style={{ textDecoration: "none" }}>
-            <h4 style={{ color: "var(--brand-primary)" }}>About Dzirent &rarr;</h4>
+            <h3 style={{ color: "var(--brand-primary)", fontSize: "1rem", margin: "0 0 6px" }}>About Dzirent &rarr;</h3>
             <p style={{ color: "var(--text-secondary)", margin: 0 }}>
               Our story, mission, and why peer-to-peer wardrobe sharing matters.
             </p>

@@ -35,9 +35,19 @@ export function ActionDialog({
 
   useEffect(() => {
     const dialog = ref.current;
+    const previouslyFocused = (typeof document !== "undefined" ? document.activeElement : null) as HTMLElement | null;
     dialog?.showModal();
-    return () => dialog?.close();
-  }, []);
+    const handleClick = (e: MouseEvent) => {
+      if (e.target === dialog && !busy) onClose();
+    };
+    dialog?.addEventListener("click", handleClick);
+    return () => {
+      dialog?.removeEventListener("click", handleClick);
+      dialog?.close();
+      previouslyFocused?.focus();
+    };
+  }, [busy, onClose]);
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,10 +73,8 @@ export function ActionDialog({
       className="modal admin-action-dialog"
       aria-label={title}
       onCancel={onClose}
-      onClick={(e) => {
-        if (e.target === ref.current && !busy) onClose();
-      }}
     >
+
       <div className="modal-content" style={{ maxWidth: "520px" }}>
         <div className="modal-top">
           <h2>{title}</h2>

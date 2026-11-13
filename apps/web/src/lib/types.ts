@@ -1,7 +1,13 @@
 export type Card = {
   id: string;
   title: string;
+  /** Price per day in USD (C1); the same number as price_per_day. */
   price: number | null;
+  price_per_day?: number | null;
+  price_unit?: string | null;
+  /** With dates passed to the shop window: days (inclusive) and price per day x days. */
+  days?: number | null;
+  total?: number | null;
   distance: number | null;
   city: string | null;
   category: string;
@@ -91,6 +97,12 @@ export const price = (amount: number | null) =>
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       }).format(amount);
+/** C1: prices are per day. "$25/day", or "Ask for price" for listings without one. */
+export const perDay = (amount: number | null) =>
+  amount == null ? price(null) : `${price(amount)}/day`;
+/** "5 days · $125" ("1 day · $25"), from the shop window's days and total; null without dates. */
+export const daysAndTotal = (days: number | null | undefined, total: number | null | undefined) =>
+  days == null || total == null ? null : `${days === 1 ? "1 day" : `${days} days`} · ${price(total)}`;
 export const distance = (miles: number | null) =>
   miles == null
     ? "distance unavailable"

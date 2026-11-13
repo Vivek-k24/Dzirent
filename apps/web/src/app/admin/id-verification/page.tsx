@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "ID Verification | Dzirent Admin",
+  title: "Admin: ID Verification",
   robots: {
     index: false,
     follow: false,

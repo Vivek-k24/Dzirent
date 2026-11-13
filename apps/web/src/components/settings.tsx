@@ -32,6 +32,42 @@ export function Settings({
     "role" | "password" | "delete" | "withdraw_consent" | null
   >(null);
   const [confirmation, setConfirmation] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState({ text: "", error: false });
+  /** Download my data (P3A): saves dzirent-data-<date>.json. Once a day. */
+  async function downloadData() {
+    setExporting(true);
+    setExportMessage({ text: "", error: false });
+    try {
+      const response = await fetch("/api/workflows/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Couldn't prepare your data. Please try again.");
+      }
+      const blob = await response.blob();
+      const name =
+        /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") || "")?.[1] ||
+        `dzirent-data-${new Date().toISOString().slice(0, 10)}.json`;
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(href), 1000);
+      setExportMessage({ text: `Saved as ${name}.`, error: false });
+    } catch (e) {
+      setExportMessage({ text: (e as Error).message, error: true });
+    } finally {
+      setExporting(false);
+    }
+  }
   async function role(next: string, confirm = false) {
     setBusy(true);
     setError("");
@@ -208,7 +244,25 @@ export function Settings({
               </p>
               <UpdateLocation />
 
-              <h3>Privacy &amp; safety</h3>
+              <h3 id="privacy">Privacy &amp; safety</h3>
+              <div className="account-section">
+                <strong>Download my data</strong>
+                <p className="muted">
+                  One file with everything Dzirent keeps about you: your account,
+                  profile, measurements, listings and photos, chats, saved pieces and
+                  more. Other people appear only by name and studio handle. You can
+                  download it once a day.
+                </p>
+                <button
+                  type="button"
+                  className="button secondary compact"
+                  disabled={exporting}
+                  onClick={downloadData}
+                >
+                  {exporting ? "Preparing your file..." : "Download my data"}
+                </button>
+                <Notice message={exportMessage.text} error={exportMessage.error} />
+              </div>
               <div className="account-section">
                 <strong>Measurements consent</strong>
                 <p className="muted">

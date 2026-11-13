@@ -2,6 +2,840 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## S1b - 2026-11-12 - security updates finished
+
+**Before starting:**
+- The tree was clean, and `Preview` was up to date at `a7a10cc`.
+- gcloud: `vivek.kallakuri@cloudprous.com` active, and `gcloud auth print-access-token` worked.
+
+**Done:**
+- **Vision deployed:** revision **`vision-00006-sxv`**, serving 100% (it replaced `vision-00005-9cg`). I used the S1 handoff's command, unchanged. It contains the S1 packages plus Pygments 2.21.0.
+- **Pygments:** `services/vision/requirements.txt` now pins Pygments 2.21.0 (2026-08-17; no advisories in GitHub's database). The CI vision job no longer installs `pygments==2.19.2` separately. So the low Pygments alert S1 expected after the merge won't appear.
+- **Uploads:** `.venv/` is added to `services/vision/.gcloudignore` and `.dockerignore`. Without it, this deploy would have uploaded the local test venv (with torch) to Cloud Build. `gcloud meta list-files-for-upload` now lists 19 files.
+- **`contracts/generate.mjs`** (CodeQL alert #9, `js/incomplete-sanitization`, high, on PR #103):
+  - Markdown cells escape `\` first, then `|` and backticks; line breaks become `<br>`.
+  - Kotlin literals also escape line breaks, tabs and other control characters (`\uXXXX`) on top of `\`, `"` and `$`.
+  - TypeScript stays `JSON.stringify`.
+  - `field` must be an input name (`a-z`, `0-9`, `_`).
+  - The four generated files came out byte-identical, because no catalog text has these characters, so there is no regenerated diff.
+- **Docs:** `security-log.md`:
+  - the deploy;
+  - Pygments fixed, nothing to dismiss;
+  - the generator alert;
+  - alerts #10–#12 (`supabase/tests/run-all.mjs`, `lib/local_photos.mjs`), which were dismissed as "used in tests" from the owner's account on 2026-11-13.
+
+**What I ran:**
+1. **Generator:**
+   - `node contracts/generate.mjs` wrote nothing, and `--check` reports "125 codes, generated files up to date".
+   - **Round-trip test** (scratch `escape_test.mjs`) with a catalog whose messages contain `\`, `"`, `$`, `${x}`, `|`, backticks, line breaks, tabs, `\u0001`, `\u007f` and ` `. Every Kotlin literal decodes back exactly, with no raw line break and no bare `$`. The TypeScript object evaluates back exactly. Every Markdown row has 7 cells and unescapes back. A field of ``a`b`` is refused.
+   - The same test against the old generator fails 6 checks: raw line breaks in Kotlin, the backslash-pipe case, a broken row, and the unvalidated field.
+   - First run: my editor wrote ` `/` ` into the regex as raw characters, a syntax error. I removed them with a Node script; Kotlin accepts those characters in strings anyway.
+2. **Vision tests** (repo `.venv`, Pygments 2.21.0, `pip check` clean, `VISION_SAFETY_DIR` set): **54 passed**; the CI form gives 52 passed, 2 deselected.
+3. **Deploy:**
+   - `gcloud run deploy vision --source services/vision …`, the S1 handoff command: "revision [vision-00006-sxv] … serving 100 percent of traffic".
+   - `describe` afterwards: max 1, min unset (0), 2 CPU, 4Gi, no GPU, concurrency 4, 120 s, `vision-runtime`, the same `VISION_ALLOWED_URL_PREFIXES`. All the same as before the deploy.
+   - IAM: still only `roles/run.invoker` for `vision-invoker`.
+   - `/health` without a token → 403, with a made-up token → 401.
+   - With `gcloud auth print-identity-token`: HTTP 200, **`service_version` `s1.1`**, policy digest `fab11ee739b2e4db`, 114 items, both models at their pinned revisions, start-up 37.3 s (23.6 s in P2A).
+4. **Deployed eval:** `run_eval.py --url https://vision-296325491472.us-west1.run.app`, with the same sets as P2A and S1 (sample listings; 8B accept and reject sets; hoodies; worn dresses; the beignets photo).
+   - **Against S1's container run** (`eval_s1_container.json`) and against P2A's deployed run: **0 of 92 photos changed** (verdict, reason, looks-like, warnings). **0 of 12 listings changed** (verdict, reason, title, category, garment type, colours, styles, quality).
+   - Sample: 22 of 22 allowed; listings 12 of 12 allowed.
+   - should-reject: 32 rejected, 10 review, 0 allowed.
+   - Highest nudity score 0.148; none at or above 0.40.
+   - Not passing, all three the same as in P2A and S1:
+     - `should-accept/jumpsuit/1` rejected (read as a document);
+     - `should-accept/saree/2` rejected (read as a dog);
+     - `hoodies/hoodie/4` allowed (the back of a long print dress, no hood). This last one makes the script exit 1.
+   - Single scans: median 1.4 s, max 2.9 s.
+   - Cloud Run log of the new revision: 114 lines. The only two with a URL are Cloud Run's own front-door refusals of my two unauthenticated test requests, with Google docs links. None of the app's lines has one.
+5. **Push and CI:** `5a01fea`, all green:
+   - CI on the push: https://github.com/Vivek-k24/Dzirent/actions/runs/43337392087, 5 of 5 jobs;
+   - CI on PR #103: https://github.com/Vivek-k24/Dzirent/actions/runs/43337399629, 5 of 5;
+   - CodeQL on PR #103: https://github.com/Vivek-k24/Dzirent/actions/runs/43337394733, javascript-typescript, actions, python.
+6. **CodeQL alert #9:** `gh api …/code-scanning/alerts/9` shows its instance on `refs/pull/103/head` as **`fixed`**. The alert's own `state` field is empty because it never existed on `main`; GitHub fills that field only for default-branch alerts.
+   - Open code scanning alerts: 0 on the PR ref, 0 on `main`.
+   - Dependabot: still 82 open, all on `main`; they close when PR #103 merges.
+
+**Open issues:**
+- **Owner: merge PR #103** (`Preview` → `main`) to close the 82 Dependabot alerts. Then list them again: none should remain, and no Pygments alert should appear.
+- **Request, still open from S1:** `supabase/seed/*.mjs`, `supabase/tests/step1b.mjs` and `step4c_parity_test.mjs` should drop `${email}` from their `Sign in failed for …` errors (outside S1b's folders).
+- Start-up after a cold start is 37 s (23.6 s on the P2A revision). It didn't change any scan, and the 120 s timeout covers it, but `scan-listing`'s first call after idle waits longer.
+
+## S1 - 2026-11-12 - security updates
+
+**Before starting:**
+- The tree was clean, and `Preview` was up to date at `29da0f4`.
+- Three website test servers from 2026-11-10 were still running: `next start` on ports 3123, 3124 and 3125, six `node` processes from the repo's `.tools` Node. They held `apps/web/node_modules` open, so `npm ci` failed with EPERM. I stopped those six only. The Codex daemon (`codex-runtimes`) was left running.
+
+**Alerts:**
+
+| | Before | After the push to Preview |
+| --- | --- | --- |
+| Dependabot | **82**: Pillow 58, transformers 11, Starlette 7, torch 5 (all `services/vision/requirements.txt`); minimatch 1 (`apps/web/package-lock.json`). 5 critical, 44 high, 29 medium, 4 low. No Gradle alert. | **82**, unchanged. GitHub computes them on the default branch, `main`, and the fixes are on `Preview`. They close when the owner merges. |
+| Code scanning | **5**: `js/clear-text-logging` in three `supabase/seed` scripts and two `supabase/tests` scripts | **0** (all 5 dismissed, see below) |
+
+**Version changes:**
+
+| Where | Package | From | To | Fixes |
+| --- | --- | --- | --- | --- |
+| vision | pillow | 11.2.1 | 13.0.0 | 58 alerts |
+| vision | torch / torchvision (CPU wheels) | 2.7.1 / 0.22.1 | 2.14.1 / 0.29.1 | 5 |
+| vision | transformers | 4.51.3 | 5.20.2 | 11 |
+| vision | fastapi / starlette | 0.115.12 / 0.46.2 | 0.162.0 / 1.7.0 | 7 (the pair in FastAPI 0.162.0's own `uv.lock`) |
+| vision | open_clip_torch | 2.32.0 | 3.3.0 | needed: 2.x calls `batch_encode_plus`, removed in transformers 5 |
+| vision | timm | 1.0.15 | 1.0.30 | needed by open_clip 3.3 (1.0.17 or later) |
+| vision | tokenizers, huggingface-hub, safetensors | 0.21.4, 0.30.2, 0.5.3 | 0.23.3, 2.3.0, 0.8.0 | needed by transformers 5 |
+| vision | new pins | | hf-xet 1.7.0, httpx2 2.16.0, httpcore2 2.16.0, truststore 0.10.5, annotated-doc 0.0.5, opentelemetry-api 1.45.1, typer 0.27.3, rich 15.0.0, markdown-it-py 4.2.0, mdurl 0.1.2, Pygments 2.19.2, shellingham 1.5.4 | new dependencies of the above |
+| web | minimatch under `@typescript-eslint/typescript-estree` (npm override) | 10.2.6 | 11.0.3 | 1; its new dependency `@isaacs/nonrecursive-glob-match` is pinned to 1.0.3 |
+
+- **Version ages:** every version was released at least two weeks before today (PyPI and npm dates checked). Where the resolver picked a newer one (hf-xet 1.8.0, opentelemetry-api 1.45.2, typer 0.29.1, annotated-doc 0.0.6, markdown-it-py 4.3.0, nonrecursive-glob-match 1.1.0), I pinned an older release.
+- **Unchanged:** numpy, scipy, pydantic, uvicorn and the rest stay as they were. The base image keeps the same tag and digest.
+- **Lockfile:** `apps/web/package-lock.json` stays in its v1 format (`npm install --lockfile-version=1`). The diff is the minimatch entry, its new dependency and a few empty `requires: {}` lines. A plain npm 10 install would have rewritten all 4,000 lines.
+- **Other vision code changes:**
+  - **Dockerfile:** `chmod -R a+rX /opt/model`. safetensors 0.8 writes `visual.safetensors` as 0600 and the service runs as user `vision`, so the first local image **failed to start** ("No such file or directory: /opt/model/visual.safetensors"). The fix makes the files readable; they stay owned by root.
+  - **`app/main.py`:** also silences the `httpx2`/`httpcore2` loggers, which log request URLs at INFO like `httpx`.
+  - **`app/config.py`:** `SERVICE_VERSION` is now `s1.1`, so `/health` and every scan show the new build.
+
+**What I ran:**
+1. **Pins:** `pip install --dry-run --report` for Linux, Python 3.12, wheels only, with the PyTorch CPU index.
+   - The resolved set equals `requirements.txt`, apart from `colorama`: pip evaluates markers on this Windows PC, and colorama is Windows-only.
+   - Checked against GitHub's advisory database: one match, Pygments (below).
+2. **Vision tests, model tests included** (`VISION_SAFETY_DIR` set to the pinned safety model), in a scratch venv with the new pins:
+   - **54 passed**, and the CI form gives 52 passed, 2 deselected;
+   - the old packages also gave 54 passed;
+   - the repo's `.venv` is now updated to the new pins too.
+3. **Before/after on the same weights:** the old `.venv` and the new venv each built the assets (`build_assets.build`, no download), then ran the service's own `Model` / `analyze_photo` / `scan` code on 92 photos and 12 listings.
+   - Text embeddings: worst cosine 0.9999998.
+   - Image embeddings: cosine ≥ 0.99974.
+   - Nudity scores: within 3e-7.
+   - **0 changes** in any verdict, reason, label, warning or listing suggestion.
+4. **Local Linux image:** `docker build` of `services/vision` with the unchanged Dockerfile.
+   - `pip check`: "No broken requirements found"; 460 prompts embedded; the safety model loaded strictly.
+   - After the chmod fix, the container ran with `--cpus 2 --memory 4g` and the live `VISION_ALLOWED_URL_PREFIXES`: ready in 7.8 s, as uid 10001 `vision`, `torch.cuda.is_available()` False, policy digest `fab11ee739b2e4db`, peak memory about 0.9 GiB.
+5. **Eval:** `services/vision/eval/run_eval.py`, unchanged, against that container. Only the gcloud token is swapped for a dummy, because there's no Cloud Run front door locally. Same sets as the P2A deployed eval (sample listings from the shop window; the 8B Commons accept and reject sets; hoodies; worn dresses; the beignets photo). Compared photo by photo with the P2A results (`vision-00005-9cg`):
+   - **0 of 92 photos changed** (verdict, reason, looks-like, warnings), **0 of 12 listings** (verdict, reason, title, category, garment type, colours, styles, quality).
+   - Every sample photo is still allowed (22 of 22) and all 12 sample listings are allowed.
+   - should-reject: 32 rejected, 10 review, **0 allowed**.
+   - Highest nudity score 0.148 (a laptop photo); none at or above 0.40, so **no nudity false positives**.
+   - The script exits 1 for the same single photo as in 8B and P2A: `hoodies/hoodie/4`, a long print dress seen from the back with no hood.
+   - Median scan 0.8 s. The container log (110 lines) has no URLs.
+6. **Website** (Node 22.23.3 from `.tools`):
+   - before the change: `npm ci`, lint, 6 of 6 tests and the build pass;
+   - after: `npm install --lockfile-version=1`, then removed `node_modules` and ran a clean `npm ci`: lint passes, **6 of 6** tests, build passes (23 pages);
+   - `npm ls` shows minimatch 11.0.3 (overridden) under typescript-estree only;
+   - a direct call of its `minimatch(path, pattern, { dot: true })` gave the expected matches.
+7. **Android** (JDK 21, env loaded silently; local backend not running; no Docker containers running):
+   - `:androidApp:assembleDebug :shared:testDebugUnitTest`: **BUILD SUCCESSFUL**, **50 tests, 0 failures, 1 skipped**.
+   - `assembleDebug` was up to date: nothing in `mobile/` changed, so no new APK was produced and nothing was copied to OneDrive (rule 15). The APK stays at 2026-11-11 17:22.
+8. **Push and CI:** pushed `8f079d8`. CI run https://github.com/Vivek-k24/Dzirent/actions/runs/43328663217: **success, all 5 jobs green** (contracts, website, android, vision, database).
+9. **Dismissals:** dismissed code scanning alerts #4–#8 with `gh api` (reason below).
+
+**Vision revision: not redeployed.**
+- gcloud can't refresh the owner's sign-in here ("Reauthentication failed. cannot prompt during non-interactive execution"). `vivek.kallakuri@cloudprous.com` is the only account.
+- So `gcloud run deploy` and the deployed eval couldn't run. Cloud Run still serves **`vision-00005-9cg` with the old packages**.
+- The local Linux image of the same Dockerfile is the stand-in (steps 4 and 5). Its first build shows the deploy would have failed without the chmod fix.
+
+**Dismissed:**
+- **Code scanning #4–#8, "used in tests":**
+  - These are seed and integration scripts. CodeQL treats all of `process.env` as sensitive because `userEnv` spreads it.
+  - What reaches `console.error` is a sign-in error: the test user's email, the HTTP status and Auth's error body. Never a password, key or token.
+  - In CI the email is a throwaway `*@dzirent.local` seed user.
+- **Dependabot: none dismissed.** All 82 have a fix in this push.
+- **One new low alert is expected after the merge:** Pygments 2.19.2, GHSA-5239-wwwm-4pmq, a ReDoS in `AdlLexer` that needs local access.
+  - The service never highlights text.
+  - Pygments stays at 2.19.2 because CI installs `pygments==2.19.2` next to `requirements.txt`, and a different pin makes CI's install fail (tried: `ResolutionImpossible`).
+  - Dismiss it as "vulnerable code is not used" when it appears. Logged in `security-log.md`.
+
+**Requests** (outside S1's folders):
+- `.github/workflows/ci.yml`, vision job: drop `pygments==2.19.2` from the pip line (`requirements.txt` now pins Pygments). Then bump Pygments to 2.21.0 in `requirements.txt`.
+- `supabase/seed/*.mjs` and `supabase/tests/step1b.mjs` / `step4c_parity_test.mjs`: drop `${email}` from the `Sign in failed for …` errors, so nothing from the environment is logged.
+- `services/vision/.dockerignore` doesn't exclude `.venv`, so a local `docker build` sends it as context (Cloud Build uses `.gcloudignore`). Harmless, just slow. This one is in my folders; I left it as it is because S1 didn't need it.
+
+**Open issues:**
+- **Owner:** `gcloud auth login` on this PC. Then an agent runs, from the repo root:
+
+      gcloud run deploy vision --source services/vision --project dzirent --region us-west1 --no-allow-unauthenticated --service-account vision-runtime@dzirent.iam.gserviceaccount.com --min-instances 0 --max-instances 1 --cpu 2 --memory 4Gi --timeout 120 --concurrency 4 --set-env-vars VISION_ALLOWED_URL_PREFIXES=https://pwfzkyjeivadbtkfkdxr.supabase.co/storage/v1/object/public/listing-photos/
+
+  - Then check `/health` shows `s1.1`, and run `run_eval.py` with the same sets.
+  - The S1 results file is in my scratch folder, `eval_s1_container.json`, if the next session can still reach it.
+- **Owner:** merge `Preview` into `main` to close the 82 Dependabot alerts. Then dismiss the Pygments alert (above) and list the alerts again.
+- **Website override:** drop it when typescript-eslint itself depends on minimatch 11.0.1 or later.
+
+## C2 - 2026-11-12 - test foundation
+
+**Before starting:**
+- The tree was clean except two new untracked files, `pranalika/architecture.md` and `pranalika/code-reference.md`. I committed them in this step after scanning them for secrets: none found.
+- `Preview` was up to date at `6fd6d00`.
+- Docker 29.9.2 runs with 8 GB.
+
+**Done:**
+- **Local backend:**
+  - `supabase start` brings up the full stack from `supabase/config.toml`. All 31 migrations apply from scratch, then `supabase/seed.sql`, which is new and local only (`[db.seed]`).
+  - **Migrations fixed from scratch: none needed.** Every migration applied cleanly on an empty database.
+  - **What the seed creates:**
+    - 4 throwaway users (`test1/2/3@dzirent.local`, `admin@dzirent.local`; passwords in `supabase/tests/local.env`), created through `auth.users` so the sign-up trigger makes each profile;
+    - the two sample studios; user 3 with role both and measurements with consent; terms accepted; the admin in `admin_users`;
+    - the 12 sample listings with the live ids and titles, with photo rows, availability and measurements.
+  - **Listings inserted paused:** they are published after their photos. Photo rows on an active listing start an automatic photo check, so inserting them active queued 12 checks on a fresh database.
+  - **Vault:** the seed replaces all six Vault entries.
+    - The migrations create `send_push_url` and `scan_listing_url` with the **live** function addresses. Without the seed's overwrite, a fresh local database would call production; it would get a 401 for the wrong secret, but still call out.
+  - **TOTP on locally** in `config.toml`, so admin tests can sign in with two steps. This file isn't pushed anywhere.
+- **Stubs and local functions:**
+  - **Stub server** (`supabase/tests/stubs/server.mjs`): Node, in the container `dzirent-stubs` on the Supabase network, started with `stubs/run.mjs`.
+    - `/push` checks the secret and fields like `send-push` and records what it would send.
+    - `/scan` plays scan-listing plus vision. Answers by photo name: `reject` → rejected, `review` → review, anything else → allowed. Its fingerprints are deterministic, so different photos never look copied, and it gives a fixed suggestion.
+  - **Why stubs:** the local Vault points the outbox at them. The Google and Firebase token addresses are fixed in `send-push` and `scan-listing`, and function code wasn't in this task's folders, so stubs stand in for those two.
+  - **Edge Functions:** `supabase functions serve --env-file supabase/functions/local.env` (non-secret local values) serves all the others for real. `cleanup-files` is reached from the local Vault.
+  - **Seed photos:** `supabase/tests/lib/local_photos.mjs` uploads them from `supabase/seed/images/`, as each owner.
+- **pgTAP** (`supabase/tests/database/`, 9 files, 106 tests, each in a rolled-back transaction):
+  - **Roles and RLS:** guest, renter, owner, other user, and admin without two-step, with a 25-hour-old code, and with a fresh one.
+  - **Shop window:** no coordinates, emails or account ids, checked in both the declared columns and the actual rows, for guests and signed-in users.
+  - **Refusal codes:** every refusal literal in the database has a DZ code (structural check), plus one refusal per family with its hint.
+  - **Rate limits:** messages and new listings; a refused write isn't counted; server writes aren't limited.
+  - **Outbox:**
+    - the 1/5/30/120 schedule and dead after 5;
+    - a 2xx answer marks a job done, a 503 retries;
+    - a dead photo check ends failed/review, and retrying it is skipped;
+    - admin dead list (no push text), Retry, `DZ-E5061`, logged.
+  - **Report evidence:** saved at report time; can't be updated; outlives the deleted message.
+  - **Terms, age, cleanup:** terms enforcement; the age block; cleanup jobs count only.
+- **Integration:**
+  - **One shared config:** all 13 scripts read `supabase/tests/lib/config.mjs`. It targets the **local** backend by default (URL and keys from `supabase status`, the users in `local.env`, SQL through `db query --local`). `--live` or `DZIRENT_TEST_TARGET=live` switches to dzirent-server and prints a warning.
+  - **One runner:** `node supabase/tests/run-all.mjs`. It starts the stubs and `functions serve`, uploads the seed photos, runs 16 runs (15 scripts, with step 8B twice: `off`, then `on` with `vision_required` switched just around it), and prints a summary. Options: `--only`, `--keep`.
+  - **Runner guards:** the runner fails if it stops before its summary; a pending `fetch` once let it exit 0 having run nothing. A keep-alive timer and fetch timeouts fix the cause.
+  - **Stale scripts fixed** (they would also fail live):
+    - `delete_listing.test.mjs` stripped only the first import, so it had been broken since P5A. It now loads the real `_shared` modules and expects the C1 code.
+    - `p2a` expected chat messages to be filtered (removed in P5A). It now checks `check_text` for a message is null, without sending the slur.
+    - `p2b` and `p2c` expected messages without their C1 codes.
+    - `step8a` expected only three flags in `app_settings`.
+    - `step8b` needed arguments by hand.
+  - **Changed for local runs:**
+    - `step7a`, locally, checks what the push stub recorded instead of a Firebase token removal (live is unchanged).
+    - `step8b`, locally, names its upload `reject_*` so the stub rejects it.
+- **Vision:** the two model-weight tests are marked `@pytest.mark.model` (`tests/conftest.py` registers the marker); CI runs `-m "not model"`.
+- **CI** (`.github/workflows/ci.yml`):
+  - **When:** on pull requests to Preview and main, on pushes to Preview, and by hand.
+  - **Jobs:**
+    - `contracts`: the freshness check;
+    - `website`: `npm ci`, lint, test, build;
+    - `android`: `:shared:testDebugUnitTest`, with a placeholder `google-services.json`, JDK 21;
+    - `vision`: pinned packages, pytest without the model tests;
+    - `database`: `supabase start -x studio,imgproxy,vector,logflare,postgres-meta,supavisor`, `db reset`, pgTAP, the runner, `supabase stop`.
+  - **Secrets:** none. Only the local stack's default keys and placeholders.
+- **Docs:** `pranalika/testing.md` (suites, how to run each, CI, and the rule that integration and load tests never touch the live project); `BOARD.md`.
+
+**What I ran:**
+1. **Local stack:** `supabase start`. All migrations applied; every service healthy except `vector` (the log shipper restart-loops on Docker Desktop; nothing uses it).
+2. **Reset:** `supabase db reset --local` was declined by the permission check twice, so I asked. You chose `supabase stop --no-backup` + `supabase start` instead, and I used that for every fresh start.
+3. **Fresh-start fixes:** the first fresh start found the Vault duplicate (seed changed to update-or-create). A later fresh run found the 12 queued checks (seed now publishes after photos).
+4. **Final fresh local run:**
+   - `supabase test db --local supabase/tests/database`: **9 files, 106 tests, PASS**.
+   - `node supabase/tests/run-all.mjs`: **16 of 16 passed** (`delete_listing.test.mjs` is 4 node tests).
+   - Then `supabase stop`.
+5. **Unit tests, with the backend stopped:**
+   - `:shared:testDebugUnitTest`: **BUILD SUCCESSFUL, 50 tests**;
+   - `npm test` in apps/web: **6 of 6**;
+   - pytest in `services/vision` (new `.venv`, pinned packages): **52 passed, 2 deselected** (`model`).
+6. **CI on Preview:**
+   - **Run 1** ([43126952262](https://github.com/Vivek-k24/Dzirent/actions/runs/43126952262)): contracts, website, android and vision passed. The database job ran 13 of 16, and pgTAP passed.
+   - **Run 1 cause:** outside an agent session, `supabase db query` prints a table, so `sql()` got no rows. It now asks for `--output-format json` and reads both JSON shapes (a bare array outside an agent session, `{ rows }` inside one). I checked it locally with the agent variables removed: 4 of 4.
+   - **Run 2** ([43127866994](https://github.com/Vivek-k24/Dzirent/actions/runs/43127866994)): four jobs passed. The integration step hung at the seed photo upload (in run 1 it took 0.4 s), so I cancelled the run after about 30 minutes to read the log.
+   - **Run 2 fix:** every seed request gets a 15 s timeout and up to 3 tries. Each script is now limited to 10 minutes in the runner, and the CI step to 20.
+   - **Run 3** ([43132086033](https://github.com/Vivek-k24/Dzirent/actions/runs/43132086033)): **all 5 jobs green.** In CI, pgTAP passed 9 files and 106 tests, the seed photos were 24 uploaded, and the integration runner passed 16 of 16.
+7. No emulator, device or live write. The only live call was the read-only Advisor in C1, none this step.
+
+**Test counts per suite:**
+
+| Suite | Count |
+| --- | --- |
+| pgTAP | 106 (9 files) |
+| Integration | 16 runs (15 scripts) |
+| Shared Kotlin | 50 |
+| Website | 6 |
+| Vision | 52 (+2 model tests, skipped) |
+| Contracts | 1 check |
+
+**Open issues:**
+- **`db reset` locally needs your approval;** agents use stop + start. CI runs `db reset`.
+- **Not covered locally:** the Google/Firebase calls inside `send-push` and `scan-listing` (stubbed). A small change would make them testable: let the functions read their token and FCM addresses from env, falling back to Google's. That's in `supabase/functions/`, outside this task.
+- **Leftover data:** the integration scripts leave data in the local database (chats, scans). The pgTAP files are written to pass on both a fresh and a used database, and CI always starts fresh.
+- **Local Studio:** `vector` restart-loops on Docker Desktop for Windows. Harmless; CI leaves it out.
+- **Not in CI:** Android Lint, `assembleDebug`, iPhone builds and tests, the vision eval. Unchanged by this step.
+- **Required checks:** making the CI checks required on `main` and `Preview` is a GitHub setting for the owner (listed on the BOARD).
+
+## C1 - 2026-11-11 - error codes, price per day, retries
+
+**Before starting:** the working tree was clean and `Preview` was up to date with `origin/Preview` (`7c83362`). The architecture notes (blueprint Section 8, gaps G1, G20, G21) aren't in `pranalika/`, so I worked from the prompt.
+
+**Done:**
+- **Error and warning codes:**
+  - One source: `contracts/error-codes.json`, 125 codes. `contracts/generate.mjs` writes four outputs: `ErrorCodes.kt` (shared Kotlin), `apps/web/src/lib/error-codes.generated.ts`, `supabase/functions/_shared/error-codes.ts`, and `pranalika/error-codes.md` (the readable table). All four are committed and marked "do not edit".
+  - The generator runs at build time: the website's `prebuild`, and the Android `generateErrorCodes` task, which is skipped with a warning when Node is missing, as on the Mac. Two checks fail on stale files: `npm run lint` runs `generate.mjs --check` first, and `ErrorCodesFreshnessTest` (Kotlin) compares `ErrorCodes.kt` with the JSON.
+  - | Family | Codes |
+    | --- | --- |
+    | 1xxx account, sign-in, terms, age | 22 |
+    | 2xxx listings, photos, photo checks | 28 errors + 8 warnings (`DZ-W2001`-`W2008`) |
+    | 3xxx chat, saving, blocking | 9 |
+    | 4xxx rentals, payments | reserved, 0 |
+    | 5xxx reports, moderation, admin | 36 |
+    | 6xxx ID verification | reserved, 0 |
+    | 7xxx data download, deletion | 9 |
+    | 9xxx system | 13 (incl. `DZ-E9999`) |
+  - **Database** (`20261111100000_c1_error_codes.sql`): I generated this migration from the live definitions (`pg_get_functiondef`) of the 66 functions that refuse. Only the raise lines changed: all 116 refusals now start with their code, with the same words. The field goes in the HINT (`full_legal_name`, `dates`, `reason`, `days`, `platform`; the text filter keeps its column). `text_refusal` (so also `check_text`) and `suspension_message` carry the code inside the sentence. One wording change: "You cannot message this user" is now "You can't message this user.", the words the apps already showed.
+  - **Edge Functions:** all 7 answer `{ code, message }` with the catalog's status (`_shared/errors.ts`; `_shared/input.ts` adds a code to each input refusal), and all 7 are redeployed. Two side effects:
+    - A few statuses moved to the catalog's value. For example "not configured" is now 503 instead of 500, and "Admins can't ban themselves" is 409 instead of 400.
+    - `send-push` now answers 503 when nothing was delivered and a phone failed for a reason other than a dead token, so the outbox tries again.
+  - **Shared Kotlin:**
+    - `util/ErrorCatalog.kt` does the lookups. `fail()` in the repository shows the catalog's words with the code, "Add a photo first (DZ-E2010)", and takes the field from the HINT. A code this build doesn't know shows the server's words; anything without a code shows `DZ-E9999`.
+    - Auth, network and Storage failures get codes in the app: `DZ-E1004`-`E1008`, `E9002`, `E1002`, `E2064`/`E2065`. `DzirentException` has a `code`.
+    - Photo warnings, from the phone and from the server, show their `DZ-W2xxx` code, and `PhotoIssue` has a `code`.
+  - **Website:**
+    - `lib/errors.ts` does the lookups. `must()` and `WorkflowError` carry the code, and so do the API route's error JSON, the admin actions, sign-in and sign-up, the sign-up name check, the redirect notices (`refusals.ts`), Storage refusals and the photo warnings.
+    - The admin two-step detection (`admin-code.ts`, `proxy.ts`, both layouts) now matches codes `DZ-E5002`/`E5003` instead of sentences.
+- **Price per day:**
+  - **Database** (`20261111101000_c1_price_per_day.sql`): `listings.price_unit` (`'per_day'`, default, the only allowed value). `browse_listings` and `get_listing` are dropped and re-created with the same bodies.
+    - Both now also return `price_per_day`, `price_unit`, and with dates `days` (both ends counted) and `total`.
+    - `get_listing` takes `p_start_date`/`p_end_date`.
+    - `price` stays (the same number) so installed apps keep working.
+  - **Apps:** cards "$X/day · distance"; the listing page "$X/day" and "<n> days · $total" for Home's chosen dates (`BrowseSession.dates`); chat header, Saved and filter heading per day; editor label "Price per day ($)".
+  - **Website:**
+    - cards "$X/day · distance"; the listing page "$X/day" and, with dates chosen, "<n> days · $total" from `get_listing`;
+    - closet and chat show per-day prices; the editor field says "Price per day (USD)";
+    - the link-preview line is "$X/day · City, ST".
+- **Retries and dead-letter** (`20261111102000_c1_async_jobs.sql`):
+  - `app_private.async_jobs` is closed to every API role. `queue_push` and `queue_scan` now call `enqueue_job` (the first attempt still goes out on commit) instead of `net.http_post`.
+  - pg_cron `dzirent-async-jobs` runs `run_async_jobs()` every minute:
+    - a 2xx answer marks the job done;
+    - after a failure the next attempt waits 1, 5, 30, then 120 minutes; the 5th failure marks the job dead;
+    - a dead photo-check job runs `vision_fail_scan`, which marks the check failed with verdict review.
+  - Done jobs are kept 1 day, dead jobs 30 days.
+  - Admin functions `admin_jobs_status`, `admin_list_dead_jobs` and `admin_retry_job` (logged as `retry_background_job`). On the website: a "Background jobs" card on the admin overview, and `/admin/jobs` with the dead list and Retry. There is a new nav item.
+- **Client read retries:**
+  - **Rules:** reads only, meaning GET/HEAD and a fixed list of read-only database functions. After a network failure, 408 or 5xx: 2 retries, after 0.5 s then 2 s. Writes are never retried.
+  - **Apps:** Ktor `HttpRequestRetry` in `createDzirentSupabaseClient` (`util/ReadRetry.kt`, needs `@OptIn(SupabaseInternal)` for `httpConfig`).
+  - **Website:** `lib/retry.ts` in the browser, server and preview clients.
+- **Cleanup:** deleted `iOS_Toolchain_and_Packages.md` from the repo root. It was an Oct 31 Antigravity audit that no other file links to.
+- **Docs:**
+  - `contract.md`: new section 5, plus price fields, the outbox and Edge Function errors.
+  - `security-log.md`: "Error codes, price per day and background jobs (C1)", with the Advisor run.
+  - `decisions.md`: "Price (2026-11-11)" and "Errors and retries (2026-11-11)".
+  - Root README product rules; `BOARD.md` "Code completion".
+
+**What I ran:**
+1. `supabase db push --linked`: the 3 migrations applied.
+2. A live check that every `raise exception` literal now starts with a `DZ-` code (118 raises, counting the 2 new ones in `admin_retry_job`), and that the cron job has succeeded runs.
+3. `supabase functions deploy <name> --no-verify-jwt --use-api` for all 7 functions.
+4. `:androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded, `GOOGLE_SERVICES_JSON` set). The first run failed to compile: `httpConfig` needs an opt-in, and `URLBuilder` has no `encodedPath`. The second built, but the P5A `storageRefusalsInPlainWords` test still expected sentences, so I updated it to codes. The third: **BUILD SUCCESSFUL**, 50 tests, 0 failures. The new ones are `ErrorCatalogTest` (9), `PricePerDayTest` (5: 1 day, 5 days, month and year boundaries, cents, read-retry rules) and `ErrorCodesFreshnessTest` (1).
+5. `apps/web` with Node 22.23.3 from `.tools`:
+   - `npm test` (new: catalog lookups and fallbacks, read retries, price lines): 6 of 6, after one fix. The website's existing `price()` prints "$12.5", so I corrected the test, not the format.
+   - `npm run lint`: freshness check passed, then eslint with no warnings.
+   - `npm run build`: passed.
+6. Freshness check proof: I appended a line to the generated TS file. `generate.mjs --check` exited 1 and named the file. I regenerated, and it passed.
+7. `node supabase/tests/c1_codes_price_jobs.mjs` against dzirent-server: **passed on the first run.**
+   - **Refusals:**
+     - `check_text` returned `DZ-E2050: ...` (guest).
+     - `record_accessory_declaration` with a blank name returned 400 `DZ-E2041` with hint `full_legal_name`.
+     - `set_conversation_dates` with the end date before the start returned `DZ-E3006` with hint `dates`.
+     - A non-admin calling `admin_retry_job` got `DZ-E5001`.
+   - **Edge Functions:** `delete-listing` with an unknown field answered 400 `{ code: "DZ-E9011", message }`; `export-my-data` without a token answered 401 `DZ-E1003`.
+   - **Price:** 3 `browse_listings` cards for Dec 30 - Jan 2 all had days 4 and total = price × 4. `get_listing` returned 1 day for one date, 5 days for Feb 26 - Mar 2 2027, and null days and total without dates.
+   - **Job:**
+     - A `send_push` job whose payload `send-push` refuses (required fields missing, HTTP 400) failed 5 times. The measured waits were exactly 1, 5, 30 and 120 minutes; I skipped each wait by setting `next_attempt_at` (SQL, test setup only). It was dead after attempt 5.
+     - I made test user 1 a temporary admin and signed in with TOTP at aal2. `admin_jobs_status` counted the job and `admin_list_dead_jobs` listed it, with no push text.
+     - `admin_retry_job` started it again at attempt 1 (running), and it failed again to pending. A second Retry was refused with `DZ-E5061`, and the admin log has the retry.
+   - **Clean-up:** the test job deleted, the factor deleted, the admin row removed. Afterwards: admin rows 0, factors 0, test jobs 0. The admin log rows stay (append-only by design). No rows were written by the refusal checks.
+8. Security Advisor (MCP `get_advisors`): only expected findings. They are the `async_jobs` INFO and the 3 admin job functions, all logged.
+9. No emulator, device or browser.
+
+**APK (built 2026-11-11 17:22):**
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, which replaced the P5C copy. Same size (23,437,377 bytes) and SHA-256.
+
+**Phone test (Android):**
+1. **Prices:** Home cards read "$X/day · N mi". A listing page shows "$X/day" and, under it, "<n> days · $total" for the dates on Home. Change Home's dates and open the listing again: the days and total follow. The editor's field says "Price per day ($)".
+2. **An error with a code:** in a listing title, type a phone number and save. The field shows "Please remove contact details from your listing; ... (DZ-E2050)".
+3. **Wrong password at sign-in:** "Email or password is incorrect. (DZ-E1004)".
+4. **Photo warnings:** a dark photo shows "Too dark: try daylight (DZ-W2002)".
+5. **Push still arrives:** send a message from another account. It now goes through the outbox, so it should still arrive within seconds.
+6. **Read retry:** with flight mode on, open Home. It waits about 2.5 s (two retries), then shows the error with "(DZ-E9002)" or "(DZ-E9999)". Turn flight mode off and try again.
+7. **Website admin** (after the deploy): the overview has a "Background jobs" card; `/admin/jobs` shows counts and "No dead jobs."
+
+**iPhone, for the Mac session (not compiled on iOS):**
+- `ErrorCatalog.kt` and `ReadRetry.kt` are common code. The Ktor `HttpRequestRetry` and `kotlin.coroutines.cancellation.CancellationException` should compile for iOS too.
+- Without Node, `generateErrorCodes` logs a warning and uses the committed `ErrorCodes.kt`.
+
+**Open issues:**
+- **Uncoded errors:** Postgres check-constraint and unique violations (for example `listings_price_usd_positive`) aren't `raise` statements, so they carry no code and show `DZ-E9999`. The apps validate those fields first. A later step could map constraint names to codes.
+- **Server photo warnings:** the vision service (`services/`, not in this task's folders) still sends warning words. Clients map the exact words to `DZ-W2xxx`, so a reworded warning there would lose its code until the catalog is updated.
+- **Website price format:** the website's existing price format shows "$12.5" where the apps show "$12.50"; not changed here.
+- **Retrying a dead photo check:** a dead photo-check job has already ended its check as review. Retrying it finishes as "skipped", and the lender asks for a new check from the editor.
+- **App listing page totals:** the app has no date picker on the listing page. The days/total line uses Home's chosen dates (Home always has a range), and the app computes it with the same rule the database uses, not from `get_listing`.
+- **Generic fallback:** some website screens that used to say "Couldn't load your inbox." now say "Something went wrong. Please try again. (DZ-E9999)" for an uncoded failure, as the prompt asked.
+- **Installed apps:** older apps that are already installed show server refusals with the code prefix, for example "DZ-E2010: Add a photo first", and fall back to their generic text for the rest. Updating the app fixes this.
+
+**Requests:** none.
+
+## P5C - 2026-11-10 - sharing
+
+**Before starting:** the working tree was clean, and `Preview` was up to date with `origin/Preview` (`84d0d9b`).
+
+**Done:**
+- **Link previews (website):**
+  - **Listing pages:** Open Graph and X tags.
+    - title, "$price · City, ST", the clean `og:url`, `summary_large_image`;
+    - a 1200 × 630 PNG at the listing's own `opengraph-image` / `twitter-image` route: the first photo in a white Dzirent frame with the wordmark, a maroon rule, title, "$price · City, ST" in maroon, `@handle` and "dzirent.com".
+  - **Studio pages:** the same tags for everyone, guests and bots included, with an image of up to 4 listing photos, the studio name and `@handle`. Guests still get the sign-up gate on the page itself.
+  - **Paused, deleted or hidden listings** (and made-up ids): a plain "This piece is no longer available" page with 8 newer pieces and "Browse all pieces", and a generic Dzirent preview image.
+  - **Guest data only:**
+    - All preview data is read with an anonymous client (`lib/preview.ts`).
+    - Studio data comes from the guest shop window, because `get_studio` is signed-in only and `supabase/` wasn't in this task's folders.
+  - **Content-Security-Policy:** not changed (reason in `security-log.md`).
+- **Share:**
+  - **Website:** a Share button on listing and studio pages (`components/share-button.tsx`). It uses the browser's share menu, else "Copy link" with "Link copied".
+  - **Apps:**
+    - a Share icon in the listing top bar (live pieces only) and the studio top bar;
+    - `DeviceServices.share`: an Android chooser, and on iPhone a `UIActivityViewController`.
+  - **Text** (`lib/share.ts`, `util/ShareLinks.kt`): "`<title>` on Dzirent: https://dzirent.com/listing/`<id>`" and "`<studio name>` on Dzirent: https://dzirent.com/studio/`<handle>`".
+- **Android app links:**
+  - `apps/web/public/.well-known/assetlinks.json` lists `com.dzirent.app.debug` with this PC's debug key fingerprint (the same key that signed the APK, checked with `apksigner`). It is kept out of the sign-in proxy.
+  - The manifest has a verified (`autoVerify`) filter for `https://dzirent.com/listing/` and `/studio/`, and `MainActivity` is now `singleTask`.
+  - `MainActivity` reads the link, and `DzirentApp` / `MainAppScaffold` open the listing, or the studio (guests get the sign-up pop-up).
+  - A guest arriving through a link doesn't see the first-visit sheet.
+- **P5A leftovers:**
+  - `dependabot.yml`: all 4 entries now have `target-branch: Preview`.
+  - Root README text filter line updated.
+  - iPhone: a fresh install clears old Keychain items before reading the session (marker `dzirent_keychain_ready` in NSUserDefaults).
+- **Docs:** `contract.md` section 4 (links, previews, app links, the P8A and P8B placeholders); `security-log.md` "Sharing and link previews (P5C)"; `compliance.md` 1.14 and the new 1.14a; `BOARD.md`.
+
+**What I ran:**
+1. **Mobile build:** `:androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded, `GOOGLE_SERVICES_JSON` set): **BUILD SUCCESSFUL**. 35 tests, 0 failures, including the new `ShareLinksTest` (3): share text, links opened, links ignored.
+2. **APK checks:**
+   - `apksigner`: SHA-256 `a7af02ea…ee957c`, matching `assetlinks.json`.
+   - `aapt2 dump`: package `com.dzirent.app.debug`, `autoVerify=true`, host `dzirent.com`, path prefixes `/listing/` and `/studio/`, `singleTask`.
+3. **`apps/web`:** `npm run lint` (no warnings) and `npm run build` passed (Node 22.23.3 from `.tools`). Both ran twice, because of the studio image fix below.
+4. **HTTP checks** against `next start` of the build, as a guest, with `p5c-http.mjs` in my scratch folder: **17 of 17 passed**.
+   - **Listing page** (a real listing, "Black shirt"):
+     - `og:title` "Black shirt", `og:description` "$15 · Irving, TX";
+     - `og:url` `https://dzirent.com/listing/<id>`; `og:image` and `twitter:image` are its own routes; `summary_large_image`;
+     - no tracking parameters; the share text is in the page;
+     - the image returned 200 `image/png`.
+   - **Studio page as a guest:** "AA cinema (@allu.arjun)" and its own image route, with a PNG.
+   - **Made-up listing id:** 200, "This piece is no longer available", links to other pieces, the generic preview and a PNG.
+   - **`/.well-known/assetlinks.json`:** 200, `application/json; charset=UTF-8`, valid JSON with the debug package and one fingerprint.
+5. **Preview images:** I looked at the two generated images.
+   - The listing image was right.
+   - A studio with one photo showed three empty tiles. Fixed: one photo now fills the panel, two sit side by side, three or four make a grid.
+   - I rebuilt and re-ran the checks, 17 of 17 again. The first re-run hit the old server still holding the port, so I re-ran on a new port against the new build.
+6. **`curl` against the live site:** `https://dzirent.com/` answers 200 with no redirect. `/.well-known/assetlinks.json` is 404 there today, because dzirent.com serves `main`.
+7. No emulator, device or browser.
+
+**APK (built 2026-11-10 17:12):**
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, which replaced the P5A copy. Same size and SHA-256.
+
+**Before the phone test:** shared links, their previews and app-link verification all use `https://dzirent.com`, which serves `main`. Merge `Preview` into `main` first. Until then:
+- `assetlinks.json` is 404, so Android won't verify and links open in the browser;
+- shared links show the old preview (only the first photo, no generated image).
+
+After merging, reinstall the APK (or wait about a day) so Android checks the link again.
+
+**Phone test (Android):**
+1. **Share a listing to WhatsApp.**
+   - Open a piece, tap Share in the top bar, and pick WhatsApp.
+   - The message should read "`<title>` on Dzirent: https://dzirent.com/listing/…".
+   - The chat should show a card with the framed photo, title, price and city.
+2. **Share a studio** the same way. The card shows the studio's photos, name and `@handle`.
+3. **Open a shared link with the app installed.** Tap a listing link in WhatsApp: the Dzirent Debug app opens on that listing.
+   - Tap a studio link while signed in: the studio opens.
+   - Signed out: the sign-up pop-up appears.
+   - With the app already open, the link opens on top of it.
+4. **Open a link without the app.** Uninstall it, or tap the link on another phone: the website opens on that page.
+5. **Share on the website:**
+   - on the phone's browser, Share opens the share menu;
+   - on a desktop browser without one, the button says "Copy link" and shows "Link copied".
+6. **A paused piece:** pause one of your listings and open its link in a browser. You should see "This piece is no longer available" with other pieces.
+
+**iPhone, for the Mac session (none of this has been compiled):**
+- **`IosDevice.kt` `share()` / `showShareSheet()`:**
+  - presents `UIActivityViewController` from the top view controller, anchored to the screen centre on iPad;
+  - check the `platform.UIKit.popoverPresentationController` import resolves (Kotlin/Native may expose it as a member instead of an extension);
+  - test sharing a listing and a studio.
+- **`IosSecureStore.kt`:**
+  - `KeychainSettings.clear()` on the first launch of an install;
+  - check that a fresh install starts signed out, and that an update from a pre-P5A build stays signed in (the NSUserDefaults session moves over).
+  - Someone who had a P5A iPhone build installed will be signed out once by this update.
+- **iPhone universal links** are not done: they need the paid Apple account and `apple-app-site-association` (P8B). Links open the website on iPhone.
+
+**Open issues:**
+- **Studio previews read at most the 300 newest pieces** (10 pages of 30). A studio whose pieces are all older gets the generic preview. Cleaner later: a small shop-window function `studio_preview(p_handle)` returning the name, handle and 4 cover photo paths. That needs a migration, so it was left out (`supabase/` wasn't in this task's folders).
+- **The image routes refetch the photos on every request** (`cache-control: max-age=0`). Preview bots cache them themselves. Watch Vercel function use after launch.
+- **The preview font is Next's built-in one:** the site's Roboto ships only as woff2, which the image renderer can't read. Titles in scripts it lacks (for example Devanagari) would show as boxes.
+- **Security updates:** GitHub opens Dependabot *security* pull requests against the default branch (`main`) whatever `target-branch` says. Only the weekly version updates go to `Preview`. Two version pull requests opened before this change (pillow 13.0.0, torch 2.12.1) target `main`; close them or retarget them.
+- **Privacy policy:** it doesn't yet mention link previews. Studio name, handle and photos now appear together for anyone who has a studio link (compliance 1.14a). Owner and attorney to decide.
+- **Release builds:** `assetlinks.json` lists only the debug app; P8A adds the release package and key. `www.dzirent.com` links open the website, not the app.
+
+## P5A - 2026-11-10 - security hardening
+
+**Before starting:** the working tree was clean. I pulled `Preview` up to `1b200d1` (P4A).
+
+**Done:**
+- **Database audit:**
+  - Every table has RLS, and every function has a fixed search path.
+  - Guests reach only the shop window and public reference data. No elevated function was found that shouldn't be.
+  - I added indexes for the 11 foreign keys the Performance Advisor listed.
+  - Details are in `security-log.md` under "Security hardening (P5A)".
+- **Migration `20261110230000_p5a_security_hardening.sql`:**
+  - **Current terms required:** publishing, starting a chat, sending a message, saving a piece or studio, and reporting are refused until the caller accepts the current terms. Drafts and reading stay allowed.
+  - **Rate limits:** messages 30 a minute, new chats 30 a day, reports 20 a day, new listings 20 a day, photo checks 30 an hour.
+    - Built from one helper, the closed `app_private.rate_counters` table and `rate_limit_*` rows in `app_private.settings`.
+    - The photo-check guard (was 20 an hour) now uses the same helper.
+  - **Chat filter removed:** the trigger and its function are dropped, and `check_text(…,'message')` returns null.
+  - **Uploads:** the `listing-photos` bucket now has type and size limits, and its policies accept only `{listing_id}/{random}.jpg`.
+- **Migration `20261110231000_p5a_admin_code_24h.sql`:** `require_admin()` and `is_admin()` need a TOTP check from the last 24 hours, read from the JWT's `amr` claim.
+  - The website shows the code step for the new refusal and then reloads the requested page (`proxy.ts`, `admin/layout.tsx`, `mfa-gate.tsx`, `lib/admin-code.ts`).
+- **Edge Functions:**
+  - `_shared/input.ts` checks every body: one JSON object, a size limit, no unknown fields, required fields present, and plain errors.
+  - All 7 functions use it and are redeployed.
+  - `admin-actions` no longer returns the database's reply in errors.
+- **Website:**
+  - Security headers in `next.config.ts`.
+  - The terms and rate-limit refusals now show in the database's words on the listing and studio pages (`lib/refusals.ts`). Every other place already passed the database's sentence through `must()`.
+  - Storage type and size refusals are shown in plain words.
+  - Privacy policy section 15 has the 30-day sentence. Nowhere else does.
+- **Apps (shared code):**
+  - The new refusals are in `DATABASE_MESSAGES`, and Storage type and size refusals are shown in plain words.
+  - Uploads now send `Content-Type: image/jpeg`. Before, nothing was set.
+  - The session moved to encrypted storage (`platform/SecureSession.kt`, `AndroidSecureStore.kt`, `IosSecureStore.kt`, `DzirentApplication.kt`). A session left in plain storage moves over once, so nobody is signed out.
+  - `android:allowBackup="false"`.
+- **Report and Block in chat:** already two taps on all three platforms. On the website it's the conversation menu, then Report user or Block user. On Android and iPhone it's the top-bar ⋮ menu, then the same two items (shared `ChatScreens.kt`). Nothing changed.
+- **Public text about chat checking:** no website or app page said chat messages are checked. The root `README.md` does (see Requests).
+- **Auth:** the inactivity timeout is now 30 days (`sessions_inactivity_timeout` = 720 hours, set with the management API). No other Auth setting changed.
+- **GitHub:**
+  - Turned on vulnerability alerts, Dependabot security updates, and CodeQL default setup (actions, JavaScript/TypeScript, Python, Java/Kotlin; Swift is left out because it needs a macOS build).
+  - Secret scanning and push protection were already on.
+  - Added `.github/dependabot.yml`.
+- **Docs:**
+  - `security-log.md`: audit, everything above, bot-check research, accepted risks.
+  - `compliance.md`: 1.1, 1.14, section 5. Gaps 16, 18, 20, 21 and 22 updated.
+  - `contract.md`: terms and rate limits, uploads, Edge Function input rules, the admin 24 hours, the text filter.
+  - `decisions.md`: "Security (2026-11-10)" and "Chat (2026-11-10)".
+  - `BOARD.md`: the P5A rows, the P5C row, the P8C rows.
+
+**What I ran:**
+1. **Security and Performance Advisors and catalog queries** before the change, for the audit.
+2. **`supabase db push --linked`** for each migration, dry run first. The second migration failed once with a syntax error (`pg_catalog.extract(epoch from …)` isn't valid). Nothing was applied that time; I fixed it and pushed again.
+   - `SUPABASE_DB_PASSWORD` from the env file was refused. The CLI's access-token login worked instead.
+   - The env files are written as `KEY = value`, so loaders must trim the space after `=`.
+3. **`supabase functions deploy <name> --no-verify-jwt --use-api`** for all 7 functions.
+4. **API tests (Node 22, test users 1, 3 and 4): 12 of 12 passed.**
+   - User 4 hadn't accepted the current terms. A message and a save were refused with "Please accept the updated Terms of Use and Privacy Policy to continue.". After `accept_legal('web')`, the message went through.
+   - User 3: 30 messages were sent and the 31st was refused with "You're doing that too often. Try again in a bit.". The first of those messages contained a word from the filter list and was accepted.
+   - User 1: the same word in a listing title was refused, and the title didn't change.
+   - Uploads to user 1's own listing:
+     - `image/gif` was refused by Storage (415);
+     - 10 MB + 1 KB was refused (413);
+     - a `.png` name was refused (403).
+     - Nothing was stored.
+   - Edge Functions refused unknown fields, non-JSON bodies and bad ids with plain messages, and a non-admin got 403. The secret-protected functions gave 401 without the secret.
+   - All 31 database calls to `send-push` returned 200.
+   - The admin 24-hour check was tested with simulated JWT claims: a TOTP entry 1 hour old passes; 25 hours old and password-only are refused. It wasn't tested with a real admin session (I have none).
+5. **Auth settings read back with a GET:**
+   - `jwt_exp` 3600, refresh-token rotation on, reuse interval 10 s;
+   - `sessions_inactivity_timeout` 720, `sessions_timebox` 0, single session off;
+   - captcha off, TOTP enroll and verify on, `password_min_length` 8, leaked-password check on.
+6. **Mobile build:** `:androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded, `GOOGLE_SERVICES_JSON` set): **BUILD SUCCESSFUL**, 28 tests, 0 failures. I then added `SecureSessionTest` (4 tests: secure save and load, the one-time move from plain storage, unreadable value signs out, Storage refusal wording). Re-run: 32 tests, 0 failures.
+7. **Website:** `npm ci` first, because P4A's `eslint-plugin-jsx-a11y` wasn't installed. Then `npm run lint`: no warnings. `npm run build`: passed. All with Node 22.23.3 from `.tools`.
+8. **`next start` of the build:**
+   - **Headers on `/` and a listing page:**
+     - `Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://pwfzkyjeivadbtkfkdxr.supabase.co; font-src 'self'; connect-src 'self' https://pwfzkyjeivadbtkfkdxr.supabase.co wss://pwfzkyjeivadbtkfkdxr.supabase.co; media-src 'self' blob:; frame-src 'none'; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests`
+     - `Strict-Transport-Security: max-age=63072000; includeSubDomains`
+     - `X-Frame-Options: DENY`
+     - `Referrer-Policy: strict-origin-when-cross-origin`
+     - `X-Content-Type-Options: nosniff`
+     - `Permissions-Policy: camera=(self), geolocation=(self), microphone=(), payment=(), usb=(), display-capture=()`
+     - On Vercel preview deployments, the Vercel toolbar's addresses are added.
+   - **Listing page:** its 3 photos loaded (200, `image/jpeg`) from the allowed Supabase address.
+   - **Sign-in:** through the site's own form, it returned 303 with the auth cookie, and the inbox then showed test user 3's chats.
+9. **Security Advisor after both migrations (22:36 UTC):** 67 findings, all fixed or logged.
+   - 10 INFO "RLS, no policies": the 9 already logged, plus the new closed `rate_counters` table.
+   - 4 WARN for guest-callable shop-window functions.
+   - 53 WARN for signed-in-callable functions, already logged.
+   - Performance: no unindexed foreign keys left. 18 unused-index INFO (new indexes not read yet) and the Auth connection INFO (not changed: no other Auth settings).
+10. No emulator, device, browser or screenshots.
+
+**Where tokens are stored:**
+- **Android:** AES-256-GCM. The key is generated inside the Android Keystore (`dzirent_session_key`) and can't be read out. Only the ciphertext is kept, in private SharedPreferences `dzirent_secure_session`. Backup is off.
+- **iPhone:** the Keychain (service `com.dzirent.app.session`), through `KeychainSettings` from multiplatform-settings 1.3.0, which supabase-kt already brings in.
+- **Before P5A:** both phones kept the session in plain storage (SharedPreferences / NSUserDefaults).
+
+**APK (built 2026-11-10 16:29):**
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, which replaced the P4B copy. Both exist, same size and SHA-256.
+
+**Phone test for the owner (Android):**
+1. Install over the old app while signed in. You should **stay signed in**: the session moves to encrypted storage.
+2. Sign out, then sign in again, then close and reopen the app. You should still be signed in.
+3. Send many messages very fast in one chat. After 30 in a minute you'll see "You're doing that too often. Try again in a bit." under the chat box.
+4. A message with a rude word now sends. The same word in a listing title is still refused.
+5. Add and publish a listing with photos. Uploads and the photo check should work as before.
+
+**iPhone, for the Mac session:**
+- Build the shared framework. `IosSecureStore.kt` is the only new iOS file, and it has never been compiled. It imports `com.russhwolf.settings.KeychainSettings` with `@OptIn(ExperimentalSettingsImplementation::class)`. If the iOS targets don't see `multiplatform-settings`, add `com.russhwolf:multiplatform-settings:1.3.0` to `iosMain`.
+- On the Simulator:
+  - sign in with the old build, install the new one, and check you stay signed in;
+  - then sign out, sign in, and restart;
+  - the session should be in the Keychain, and the old NSUserDefaults key gone.
+- Keychain items survive deleting the app on iOS, so after reinstalling the app may find the old session. Decide whether to clear it on first launch.
+
+**Open issues:**
+- **Not checked in a browser:** live chat over Realtime, photo uploads and the admin area under the new CSP. They use only the allowed addresses, but check them on Preview after the deploy. The CSP includes `upgrade-insecure-requests`, so a local `next start` over plain http isn't a fair browser test; use Preview.
+- **Admin 24-hour code:** tested only with simulated claims, not with a real admin TOTP session.
+- **`'unsafe-inline'` scripts** are accepted in the CSP (Next.js inline scripts); nonces would make every page dynamic.
+- **Photo metadata:** a direct API upload can keep it. Accepted risk, in `security-log.md`.
+- **Test data this run wrote:**
+  - 32 messages by test users 3 and 4 (users can't delete messages);
+  - test user 4 accepted the current terms;
+  - one rate-limit counter row each for users 3 and 4.
+- **`send-push`** still puts the recipient id and dead tokens in URLs (compliance gap 16). Moved to P5B.
+- **Bot check** stays off: hCaptcha is recommended, planned for P8C.
+- **Dependabot** pull requests will target `main`, the default branch.
+
+**Requests (outside my folders):**
+- Root `README.md`, "Text filter" table: "The words the database refuses in listings, profiles, chat and reports" should become "…in listings, profiles and report reasons".
+
+## P4B - 2026-11-07 - app accessibility
+
+Done (shared code, so Android and iPhone both get it; no redesign):
+- Before starting: working tree clean, `Preview` up to date with `origin/Preview` (`17080e2`).
+- **Helpers** (`ui/Accessibility.kt`): `Modifier.asHeading()` (heading semantics) and `Modifier.announced()` (polite live region).
+- **Headings:**
+  - All 31 top-bar and dialog titles (`title = { Text(...) }`).
+  - `ScreenTitle` (bottom-bar screens), `SettingsGroup`, the closet's `SectionHeader`, the Home row titles, and the sidebar's "All categories".
+  - `SectionTitle` and the guided-pick step titles were already headings.
+- **Announced when they appear:**
+  - The sign-in and sign-up error cards, and 19 error texts across the screens and dialogs.
+  - Field errors in supporting text: legal name, display name, retail value, price note, title, studio name, handle, pickup area, measurement fields.
+  - The listing editor's publish errors.
+  - The whole photo-check banner: "Uploading your photos…" → "Checking your photos…" → result.
+  - Character counters were left alone, so typing isn't interrupted.
+- **Listing cards:** `ListingCard` reads as one item ("title, $25, 3 mi", the "·" read as a pause) with "double-tap to open". The photo no longer repeats the title.
+  - Row thumbnails (`ListingThumbnail`: inbox, chat header, closet, rentals) and the saved-piece photo are decorative, because their title sits next to them.
+  - Detail-screen photos keep "title, photo 2 of 4". Studio grid photos (photo-only) keep the title.
+- **Avatars** are decorative: the initials only repeated the name next to them. The Home avatar button is now labelled "Open menu"; its label was only the initials.
+- **Labels that say what they act on:**
+  - Closet: the switch is "Show <title> in the shop", reporting Active or Paused; "Edit <title>" and "Delete <title>".
+  - Saved: "Remove <title> from Saved" for pieces and studios.
+  - Home: "See all: <row>".
+  - Bottom tabs: the icon no longer repeats the tab label. The inbox dot reads "New activity".
+- **State:** sidebar categories are `selectable`, so TalkBack says which is selected (it was color and bold only). Material chips, tabs, segmented buttons and switches already reported their state. The Settings switch rows were already `toggleable`.
+- **Touch targets (48 dp):**
+  - The photo "remove" X keeps the same 32 dp circle in the same corner, inside a 48 dp touch area.
+  - The availability date chip: its 24 dp X button is gone; tapping the whole chip removes the dates, like the search filter chips, with the X as the visual hint and TalkBack hearing "double-tap to remove these dates".
+  - Sidebar categories are at least 48 dp tall.
+  - A scan found no other tappable element sized under 48 dp. Material components enforce 48 dp themselves.
+- **Large text:** 23 buttons with a fixed 48 or 50 dp height now use a minimum height, so the label grows instead of clipping. This includes Sign in, Create account, Message lender, Publish, Next, Reset, Apply, List an item, Sign out, Agree and Delete my account. The look is the same at normal sizes. Truncated one-line titles keep their full text for screen readers, and the full title shows on the listing page.
+- **Contrast**, measured for every theme pair (`ui/theme/Theme.kt`):
+  - Text all passed 4.5:1 except the dark accent on grey chips (4.497:1), nudged from #E8638A to #EA658C: now 4.6:1 there, 6.2:1 on the background.
+  - The outline color (text-field borders, outlined buttons, outline-tinted icons) was below 3:1. It is now #8C8C8C in light (3.4:1; was 2.5:1) and #6A6A6A in dark (3.6:1; was 3.0:1).
+  - Dividers (`outlineVariant`) are decorative and unchanged.
+- **Lint:** `androidApp/build.gradle.kts` sets `ContentDescription`, `ClickableViewAccessibility`, `GetContentDescriptionOverride`, `KeyboardInaccessibleWidget`, `LabelFor`, `AccessibilityWindowStateChangedEvent` and `AccessibilityScrollActions` as errors, with `checkDependencies = true` so the shared module is checked too.
+  - Lint reported no accessibility issues. Its accessibility checks read XML views; the Compose screens were reviewed by hand, above.
+  - It did report two real errors, both fixed:
+    - `MainActivity` called `PackageInfo.longVersionCode`, which needs Android 9, while the app supports Android 8, so it would have crashed at start on Android 8.x. It now uses `PackageInfoCompat`.
+    - The P3A save picker needs Fragment 1.3+, and Play services brought 1.1.0. `androidx.fragment` 1.8.5 is now pinned in the shared module.
+
+What I ran:
+1. A baseline `:androidApp:lintDebug` with the new settings: 2 errors (the two above), 0 accessibility issues, 71 warnings.
+2. `:androidApp:assembleDebug :androidApp:lintDebug :shared:testDebugUnitTest` (JDK 21, env loaded, `GOOGLE_SERVICES_JSON` set). It failed three times before passing:
+   - two missing `Modifier` imports, in `PhotoPermissions.kt` and then `Notifications.kt`;
+   - then the Fragment pin had to move from the app into the shared module, because lint checks each module with its own dependencies.
+   - **Final run: BUILD SUCCESSFUL.** Lint 0 errors (72 warnings: vector path length, dependency updates, KTX suggestions; none accessibility). Unit tests 28, 0 failures.
+3. Contrast ratios computed with a script (WCAG relative luminance) for 26 pairs, then for the new colors.
+4. No emulator, device or screenshots.
+
+APK (built 2026-11-07 14:42):
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, which replaced the P3A copy. Same size and SHA-256 as the original.
+
+TalkBack test list for the owner (TalkBack on, then Settings > Display > Font size and Display size at the largest):
+1. **Home:** swipe through. Each card is one stop ("title, price, distance"), row titles are headings (swipe up/down with headings selected), "See all: <row>", and the avatar says "Open menu".
+2. **Bottom bar:** each tab says its name once and "selected" on the current one; Inbox says "New activity" when the dot shows.
+3. **Sidebar:** categories say "selected" / "not selected"; "All categories" is a heading.
+4. **Listing page:** photos read "title, photo 1 of N"; Save says "Save" / "Remove from Saved".
+5. **List an item:**
+   - Add photos: the remove X on a photo says "Remove the front photo" and is easy to hit.
+   - "Uploading your photos…" and "Checking your photos…" are read out by themselves, then the result.
+   - In Details, tapping a date chip removes it, and TalkBack says "double-tap to remove these dates".
+6. **Errors:** wrong password on sign-in, a contact detail in a listing title, too-short password in Change password. Each message should be read without moving to it.
+7. **Closet:** the switch says "Show <title> in the shop, Active / Paused"; Edit and Delete say the title.
+8. **Largest font:** sign-in, sign-up, listing editor buttons, filter sheet Reset/Apply, Settings Sign out. Labels wrap or grow, never cut off.
+9. **Dark mode:** text field borders and outlined buttons are visible; accent text on grey chips is readable.
+
+iPhone VoiceOver items for the next Mac session:
+- **Test with VoiceOver actually on.** Compose Multiplatform builds the iOS accessibility tree only while an assistive technology is running. The Mac session's "no accessibility elements" was read from the inspector with VoiceOver off, so check again with VoiceOver on before concluding it's broken.
+- Then the same list as above, on iPhone: headings (rotor), announcements (errors, photo check), one-stop listing cards, labelled buttons, and Dynamic Type at the largest size (Compose follows the system font scale on iOS).
+- Build-check: `Accessibility.kt`, `Theme.kt` and the changed screens are all `commonMain`, with no iOS-specific code.
+
+Open issues:
+- **No device check:** none of this was heard on a device. TalkBack order, the live-region announcements and the largest-font layouts are untested until the owner's phone test.
+- **Lint coverage:** Android Lint has no Compose accessibility checks. Lint passing proves only the XML/manifest side, and the Compose screens were reviewed by reading the code.
+- **Small behavior change:** tapping an availability date chip now removes it. It used to do nothing, and only its tiny X removed it.
+- **Large-text gaps:** segmented buttons in Settings (theme, units) keep one-line labels; at the largest font a long label may truncate, and TalkBack still reads it in full. The Home top bar has a fixed 56 dp height, enough for one line at the largest scale, but worth a look.
+- **72 lint warnings** (none accessibility) are unchanged, mostly long vector paths in icons.
+
+## P3B - 2026-11-07 - cleanup and retention
+
+Done:
+- **Before starting:** working tree clean, `Preview` already up to date with `origin/Preview` (`138343b`).
+- **`pranalika/README.md`:** rule 15, copy every new Android debug APK to the OneDrive `Dzirent-apk` folder (copy, never move; confirm both). This task built no APK, so there was nothing to copy.
+- **Backend:** `supabase/migrations/20261107140000_p3b_cleanup_jobs.sql`, pushed.
+  - It installs `pg_cron`.
+  - **Retention settings** in `app_private.settings`, each noting who decides:
+
+    | Setting | Default | Decides |
+    | --- | --- | --- |
+    | `draft_retention_days` | 60 | Owner |
+    | `orphan_photo_days` | 1 | Owner |
+    | `photo_check_retention_days` | 90 | Owner |
+    | `report_retention_days` | 730 | Attorney |
+    | `data_export_retention_days` | 30 | Owner |
+    | `age_checks_keep` | "latest" | Owner |
+    | `suggestion_retention_days` | 365 | Owner |
+    | `declaration_retention_years` | 7 | Attorney |
+    | `device_token_stale_days` | 90 | Owner |
+
+  - **Listings** get server-written `updated_at` (touched by any change to the listing, its photos, measurements or dates) and `published_at` (first time `active`). The 13 existing listings, all active, count as published.
+  - **`app_private.job_runs`** is closed: one row per job run with job, mode, counts, error, start and finish.
+  - **Seven database jobs:** `old_photo_checks`, `expired_reports`, `old_data_exports`, `old_age_checks`, `old_suggestion_choices`, `old_declarations`, `stale_device_tokens`. `app_private.run_cleanup_jobs()` runs them, each on its own, so one failure doesn't stop the rest.
+  - **Age checks** keep the latest row per account and the latest decisive one, which the age gate reads. A strict "latest only" could have deleted the store "minor" that blocks an account.
+  - **Two file jobs:** `abandoned_drafts` and `orphan_photos`. `public.cleanup_file_plan()` and `cleanup_record_run()` are callable with the server key only. `app_private.request_file_cleanup()` calls the function through `pg_net` with the Vault secret `cleanup_files_secret`.
+  - **pg_cron:** `dzirent-cleanup-database` at 09:15 UTC, `dzirent-cleanup-files` at 09:30 UTC, nightly.
+  - **Switches:** nine `app_settings` flags `cleanup_<job>`, all off (count only). They show on the admin Flags page with the existing confirmation, and `set_flag` logs each switch in the admin log.
+  - `public.admin_cleanup_status()` (admin + two-step, logged) feeds the overview card.
+  - The admin log and takedown records are never purged.
+- **Edge Function `cleanup-files`** (deployed, `verify_jwt = false`):
+  - It checks the shared secret in constant time, reads the plan, and in delete mode empties each abandoned draft's folder through the Storage API, then deletes the listing (as delete-listing does). It removes orphan files through the Storage API, and records both runs.
+  - `CLEANUP_FILES_SECRET` was copied from Vault through a temporary file in my scratch folder, deleted at once. Never printed.
+- **Website:**
+  - The admin overview has a "Cleanup jobs" card: each job's mode badge, last run, counts and any error, with a link to the Flags page.
+  - The privacy page's retention section has "Automatic Clean-ups" in plain words. The declaration and report periods stay visible placeholders. It also says the clean-ups are being switched on one at a time and are kept as the rest of the policy says until then, which is true while they only count.
+- **`supabase/seed/remove_sample_data.mjs`:** signs in as test users 1 and 2 and calls `delete-listing` for each of their listings with one of the 12 sample titles. Without `--yes` it only lists them. **Not run, not even the dry run.** contract.md says to run it only when the owner says so.
+- **Docs:** `contract.md` (jobs table, switches, `cleanup-files`, `admin_cleanup_status`, Sample data), `security-log.md` ("Cleanup and retention jobs (P3B)", Advisor), `compliance.md` (gaps 1-2, 5, 11, 14, 15, 24, 32, the admin log and takedown rows, TDPSA row, column map), `BOARD.md`.
+
+What I ran:
+1. `supabase db push --linked` (dry run first). Checked: both cron jobs active, 9 switches all off, 9 settings, 2 Vault entries, 0 unpublished listings, 0 job runs.
+2. `supabase functions deploy cleanup-files --no-verify-jwt`; `supabase secrets set --env-file` (temporary file, deleted). `secrets list` shows `CLEANUP_FILES_SECRET`.
+3. `node supabase/tests/p3b_cleanup.mjs` (new): **PASSED on the first run**. It runs `run_cleanup_jobs()` and `request_file_cleanup()`, the same calls pg_cron makes. `cleanup-files` answered 200 through pg_net.
+4. Supabase Security Advisor: two new findings (`job_runs` closed, `admin_cleanup_status` admin-only), logged.
+5. `apps/web`: `npm run lint` and `npm run build` pass, with no warnings (Node 22.23.4 from my scratch folder).
+6. No emulator, device or screenshots. No Android build (no app code changed), so no APK to copy.
+
+Count-only results (one run per job, all mode "count", no errors):
+
+| Job | Would delete |
+| --- | --- |
+| `abandoned_drafts` | 0 listings, 0 photos |
+| `orphan_photos` | 0 files |
+| `old_photo_checks` | 0 photo checks, 0 photo results |
+| `expired_reports` | 0 reports, 0 evidence |
+| `old_data_exports` | 0 records |
+| `old_age_checks` | 4 age checks |
+| `old_suggestion_choices` | 0 |
+| `old_declarations` | 0 accessory, 0 listing |
+| `stale_device_tokens` | 0 tokens |
+
+Nothing was deleted. The before and after snapshots matched exactly:
+
+| Table or store | Rows |
+| --- | --- |
+| Listings | 13 |
+| Photo rows | 25 |
+| Photo files | 25 |
+| Photo checks | 10 |
+| Photo results | 18 |
+| Reports | 6 |
+| Evidence | 6 |
+| Download records | 2 |
+| Age checks | 6 |
+| Suggestion choices | 13 |
+| Declarations | 0 |
+| Device tokens | 2 |
+
+`job_runs` has exactly 9 rows, one per job. The 12 sample listings are untouched: same ids, still active, with the same 22 photo rows and 22 files.
+
+Open issues:
+- **The delete paths have not run.** By design, every job only counted. Before switching a job on, run it once in count mode (it runs nightly anyway), read the card, then switch. The first real run of `abandoned_drafts` should be watched.
+- **The Flags page's generic wording.** The cleanup switches show their key as the title and my description. When turning one off, the page says "This will disable enforcement…". Fixing that wording means editing `components/admin/flags-view.tsx`, which was outside this task's folders.
+- **Not covered:** `listing_events` (not in the job list; owner to decide), `auth.sessions` (a Supabase Auth setting), `pg_net` replies (its TTL), provider log retention (provider accounts, P5B/P7B), and the phones' original photos (needs an app change). All are in compliance.md.
+- **Sample listings** are still there, waiting for the owner's go-ahead.
+- **Attorney:** the declaration (7 years) and report (730 days) periods.
+
+## P3A - 2026-11-07 - download my data
+
+Done:
+- **Before starting:** working tree clean. `git pull --rebase` fast-forwarded `Preview` from `9bdfd2c` to `6603cce` (the Mac iOS session, merged from `ios01`).
+- **Backend:** `supabase/migrations/20261107130000_p3a_data_export.sql`, pushed.
+  - `public.data_exports` records when each export ran; the owner reads their own and nobody writes it directly.
+  - `public.export_my_data()` builds the whole file from `auth.uid()` only. It allows once per 24 hours, with an advisory lock against two exports at once, and refuses with "You can download your data once a day. Try again after Nov 8, 2026, 6:51 PM UTC."
+  - Other people go through `app_private.export_person`: name (studio name, else display name) and handle.
+  - `public.age_blocked()`, true or false for the caller, feeds the website's blocked page.
+- **The rule:** I read every query against "nothing from another user's private data" before shipping. Choices it led to:
+  - Messages are only `from: you / other person`, text and time, never sender ids.
+  - Saved pieces show a title only while the piece is public.
+  - Reports the user filed give reason, details and status. Not the outcome, admin note or evidence.
+  - Blocked people, saved studios, chat and rental partners are name + handle only.
+  - Photo checks' `duplicate` is only true or false.
+- **Edge Function `export-my-data`** (deployed, `verify_jwt = false` in `config.toml`):
+  - It verifies the token with Auth in code, then calls `export_my_data` with the caller's own token. It holds no server key.
+  - It adds the plain-language `about` part (what each part is, the photo links, once a day), `exported_at`, and a `link` for every listing photo.
+  - It returns the file with `Content-Disposition: attachment; filename="dzirent-data-<date>.json"`. The once-a-day refusal is HTTP 429.
+- **Website:**
+  - Settings > Privacy & safety (now `#privacy` on `/app/settings/preferences`) has "Download my data". It goes through `/api/workflows/export` and saves the file under the name the function gives.
+  - The privacy page ("Download Your Data" in Your rights) and help ("Can I download a copy of my data?") now say where it is and that it works once a day. The privacy page's visible "/delete-account" link text is now "our account deletion page" (the plain-language task missed it).
+  - **Welcome popups:** neither the guest "Welcome to Dzirent" popup nor the signed-in first-visit checklist opens on `/terms`, `/privacy`, `/community-guidelines`, `/copyright`, `/safety`, `/delete-account`, `/support` or `/help`. The app opens these in a browser, as a guest, so it was the guest popup the Mac session saw. The checklist waits for the next other page.
+  - **Titles:** the template is `%s | Dzirent`, and the policy pages no longer add their own "| Dzirent" / "— Dzirent". Admin pages read "Admin: User Management | Dzirent" and so on.
+  - **Age-blocked accounts** see a full page before anything else: "Dzirent is only for people 18 and older.", Delete my account (with a confirmation in the site's overlay), Sign out, and "Think this is a mistake? Contact support". The policy and support pages above stay readable.
+- **Android and shared code:**
+  - `platform/DataExport.kt` adds a `DataExportService` (`savesFiles`, `save` → SAVED / CANCELLED / FAILED) to `DeviceServices`.
+  - `androidMain/.../AndroidDataExport.kt` uses the system "save file" picker (`ActivityResultContracts.CreateDocument("application/json")`). It is registered in `MainActivity.onCreate`, and the waiting file is held per process, so turning the phone while the picker is open still saves it.
+  - Settings > Privacy & safety > "Download my data" (`DataExportSetting` in `Legal.kt`) suggests `dzirent-data-<date>.json` and shows a "Saved" toast and "Saved as …" under the row.
+  - The downloaded file stays in memory, for that account and day, so a cancelled or failed save can be retried without hitting the daily limit. It is dropped on sign-out (`DzirentRepository.signOut`).
+  - The once-a-day sentence reaches the row word for word.
+- **iPhone:** `iosMain/.../IosDataExport.kt` has `savesFiles = false`, so the same row opens `AppLinks.DATA_EXPORT_URL` (the website's Settings > Privacy & safety).
+- **Docs:** `contract.md` (`export-my-data`, `export_my_data`, `age_blocked`, `data_exports`), `security-log.md` ("Download my data (P3A)", Advisor), `compliance.md` (gap 13 handled with the rule, the TDPSA row, the column map), `BOARD.md`.
+
+The export's parts, in file order: `about`, `exported_at`, `account` (email, created, last sign-in), `profile`, `private_profile` (measurements, consent time, fit profile, style interests), `listings` (each with `measurements`, `availability`, `photos` with `link`, `photo_checks` with per-photo results including the 768-number fingerprint), `saved_pieces`, `saved_studios`, `chats` (with `messages`, read time and rental answer), `rentals`, `blocked_people`, `reports_filed`, `warnings`, `accessory_declarations`, `listing_declarations`, `legal_acceptances`, `age_checks`, `notification_settings`, `devices` (platform and dates, no tokens), `suggestion_choices`, `listing_activity`, `earlier_exports`.
+
+What I ran:
+1. `supabase db push --linked` (dry run first) and `supabase functions deploy export-my-data --no-verify-jwt`.
+2. `node supabase/tests/p3a_data_export.mjs` (new), as test user 3: **PASSED on the first run**.
+   - The file is named `dzirent-data-2026-11-07.json`, starts with `about` then `exported_at`, and has all 20 parts, each explained in `about`.
+   - Test user 1 appears only as `{"name":"Studio Rostova","handle":"studiorostova"}`. Their email and account id are nowhere in the file.
+   - All 10 other-person entries hold only name and handle, and all 17 messages only from, text and time.
+   - A second export is refused (429): "You can download your data once a day. Try again after Nov 8, 2026, 6:51 PM UTC." No token gets 401.
+   - Setup cleared test user 3's earlier export times first (test data). This run's time stays, so test user 3 can't export again until Nov 8, 18:51 UTC.
+3. Test user 3 has no listings, so I also checked the listing parts with one SQL call acting as test user 1. It returned 6 listings, 11 photos, 10 photo checks and 18 per-photo results (fingerprints of 768 numbers), with test user 3's email and id absent. I then deleted the `data_exports` row it made, so test user 1's daily limit is untouched.
+4. Supabase Security Advisor: two new findings (`export_my_data`, `age_blocked`, both intended), logged.
+5. `:androidApp:assembleDebug :shared:testDebugUnitTest`: BUILD SUCCESSFUL. 28 tests, 0 failures, including the new `DataExportTest` (3 tests).
+6. `apps/web`: `npm run lint` and `npm run build` pass (Node 22.23.4 from my scratch folder). The first lint run flagged `window.location` in the blocked page; I switched it to the router and re-ran, and lint now reports no warnings.
+7. No emulator, device or screenshots. Not run: an iOS build (no Mac here).
+
+A mistake I made and fixed: a PowerShell replace script for the page titles flattened its list and swapped every letter "t" in 15 website files (`layout.tsx`, the eight policy pages, six admin pages). A byte-for-byte check showed each file differed from `HEAD` only by that swap, and none had other uncommitted changes. I restored them with `git checkout --` and made the title edits one by one. `git diff --numstat` then showed exactly one changed line per file. Nothing broken was committed.
+
+Debug APK: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk` (built 2026-11-07 13:00 local time).
+
+iOS work left for the Mac:
+- Build-check the shared changes: `DeviceServices.dataExport`, `IosDeviceServices`, and the new `IosDataExport.kt`. None of the iosMain code was compiled here.
+- **Native save:** in `IosDataExport.save`, write the bytes to a temporary file named `fileName`, then present `UIDocumentPickerViewController(forExporting:)` (or a share sheet) from the top view controller. Delete the temporary file afterwards, and return SAVED / CANCELLED / FAILED. Then set `savesFiles = true`; the shared row already handles the rest.
+- Until then the iPhone row opens the website page in Safari, which needs the user to sign in there.
+
+Open issues:
+- **What the file leaves out:** provider logs (Supabase, Vercel, Google), declarations already unlinked from a deleted account, report evidence and reports about the user (moderation data), and anything only on the phone or in the browser. compliance.md gap 13 lists these for the attorney.
+- **The daily limit counts at download, not at save.** On Android the kept file covers a cancelled or failed save until the app is closed. On the website a download the browser blocks still uses the day.
+- **Android rotation:** if the phone turns while the picker is open, the file is still saved, but the "Saved" confirmation is lost with the old screen.
+- **Size:** fingerprints make photo checks large: 768 numbers per photo, so about 8 KB each. Test user 1's file is fine, but a lender with many re-checked listings could reach a few MB.
+- **Test user 3 can't export again** until Nov 8, 18:51 UTC (the test run's record). The test clears it itself next time.
+
 ## Mac iOS session - 2026-11-07
 
 Branch: `ios01` only. Before starting: `git fetch`, `git switch ios01`, `git pull origin Preview` fast-forwarded `8c51207` to `9bdfd2c` (P2C, which had landed); the tree was clean. Kotlin (2.1.0) and Compose Multiplatform (1.7.3) weren't upgraded. No Android emulator or device.

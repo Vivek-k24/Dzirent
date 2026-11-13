@@ -42,7 +42,10 @@ enum class PhotoIssue(val message: String, val severity: Severity) {
     CUT_OFF_TOP("Top of the item is cut off", Severity.WARN),
     CUT_OFF_BOTTOM("Bottom of the item is cut off", Severity.WARN),
     CUT_OFF_LEFT("Left side of the item is cut off", Severity.WARN),
-    CUT_OFF_RIGHT("Right side of the item is cut off", Severity.WARN)
+    CUT_OFF_RIGHT("Right side of the item is cut off", Severity.WARN);
+
+    /** Its DZ-W2xxx code (C1), the same as the server photo check's warning with these words. */
+    val code: String? get() = ErrorCatalog.warningCode(message)
 }
 
 /** One check's result; [issue] is set when [status] is FAIL. [note] says why, for tests and tuning. */

@@ -22,8 +22,8 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - `p_styles` (text[], default null): array of listing styles to match (`operator(pg_catalog.&&)` overlap).
   - `p_start_date` (date, default null): start date of requested rental window.
   - `p_end_date` (date, default null): end date of requested rental window (only listings available for the full range).
-  - `p_min_price` (numeric, default null): minimum price USD.
-  - `p_max_price` (numeric, default null): maximum price USD.
+  - `p_min_price` (numeric, default null): minimum price per day, USD.
+  - `p_max_price` (numeric, default null): maximum price per day, USD.
   - `p_new_days` (integer, default null): listings created within last N days (for "New near you").
   - `p_saved_only` (boolean, default false): signed-in only; returns caller's saved pieces.
   - `p_saved_studios_only` (boolean, default false): signed-in only; returns listings from studios the caller saved.
@@ -33,13 +33,15 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 - **Returns:** Table of listing cards:
   - `id` (uuid): listing ID.
   - `title` (text): listing title.
-  - `price` (numeric): rental price in USD.
+  - `price` (numeric): price per day in USD (C1; kept for installed apps, the same as `price_per_day`).
   - `distance` (integer): whole miles from caller, or null.
   - `city` (text): city label.
   - `category` (text): category name.
   - `cover_photo_path` (text): Storage path of lowest position photo.
   - `studio_name` (text): studio name or display name.
   - `studio_handle` (text): studio handle.
+  - `price_per_day` (numeric), `price_unit` (text, always `'per_day'` for now) (C1).
+  - `days` (integer) and `total` (numeric): with both `p_start_date` and `p_end_date`, the days in the range counting both ends (Dec 30 - Jan 2 is 4) and `price_per_day × days`; null otherwise (C1).
 
 ### `get_listing`
 - **Who can call:** Guest and signed-in (`anon`, `authenticated`).
@@ -47,12 +49,14 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - `p_listing_id` (uuid): listing ID.
   - `p_lat` (double precision, default null): caller's latitude.
   - `p_lng` (double precision, default null): caller's longitude.
+  - `p_start_date`, `p_end_date` (date, default null, C1): the dates the person chose.
 - **Returns:** Table with one row (or empty if paused/blocked/not found):
   - `id` (uuid), `title` (text), `category` (text), `item_type` (text), `garment_type` (text), `size_label` (text), `description` (text), `price` (numeric), `price_note` (text), `deposit_note` (text), `retail_value` (numeric), `listing_styles` (text[]), `city` (text), `distance` (integer), `studio_name` (text), `studio_handle` (text).
   - `photos` (jsonb): array of `{ storage_path, position, slot }` in position order.
   - `measurements` (jsonb): array of `{ label, value, unit }`.
   - `availability` (jsonb): array of `{ start_date, end_date }` in date order.
   - `created_at` (timestamptz).
+  - `price_per_day` (numeric), `price_unit` (text), `days` (integer), `total` (numeric): as in `browse_listings` (C1). `price` is the price per day.
 
 ### `get_studio`
 - **Who can call:** Signed-in only (`authenticated`).
@@ -154,7 +158,7 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 ### Audit & Utility RPCs
 - `record_accessory_declaration(p_full_legal_name, p_declaration_version, p_app_version)`: Signed-in only.
 - `record_listing_declaration(p_listing_id, p_declaration_version)`: Signed-in owner only.
-- `set_conversation_dates(p_conversation_id, p_start, p_end)`: Signed-in renter only. Refused (`42501`, "You cannot message this user") when the two people in the chat are blocked in either direction, like sending a message (Step 5B).
+- `set_conversation_dates(p_conversation_id, p_start, p_end)`: Signed-in renter only. Refused (`42501`, `DZ-E3005` "You can't message this user." since C1) when the two people in the chat are blocked in either direction, like sending a message (Step 5B).
 - `mark_conversation_read(p_conversation_id)`: Signed-in participant only.
 - `mark_activity_seen()`: Signed-in only.
 
@@ -175,16 +179,41 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 - Triggers check text when it is inserted or changes (a column that doesn't change is never checked, so old rows never block other updates):
   - `listings`: `title`, `description`, `price_note`, `deposit_note` (public text);
   - `profiles`: `display_name`, `studio_name`, `studio_handle`, `studio_bio`, `pickup_area` (public text);
-  - `messages`: `body`; `reports`: `reason`, `details`.
-- Language that isn't allowed (LDNOOBW English list, whole words after normalizing case, accents, repeated letters and swaps such as 0/o, 1/i or l, @/a, $/s) is refused everywhere. Contact details and outside links (phone numbers, email addresses, URLs, `@handles`) are refused only in listings and profiles; chat allows them.
+  - `reports`: `reason` (`details` unfiltered since P2B).
+  - `messages.body` is **not checked since P5A** (owner decision): no check and no logging. A chat message is never refused for its words.
+- Language that isn't allowed (LDNOOBW English list, whole words after normalizing case, accents, repeated letters and swaps such as 0/o, 1/i or l, @/a, $/s) is refused in the fields above (not in chat messages since P5A). Contact details and outside links (phone numbers, email addresses, URLs, `@handles`) are refused only in listings and profiles; chat allows them.
 - A refusal is `P0001` with one of these messages, and `hint` = the column name (for example `title`, `body`, `studio_bio`), so apps can show it under the right field:
   - "This text includes language that isn't allowed on Dzirent."
   - "Please remove contact details from your listing; people can message you in Dzirent."
   - "Please remove contact details from your profile; people can message you in Dzirent."
-- `check_text(p_text text, p_where text)`: Guest and signed-in. `p_where` is `'listing'`, `'profile'`, `'message'` or `'report'` (else `22023`); text up to 5000 characters. Returns the refusal message, or null when the text is fine. Saving runs the same check; this is for asking first, mainly sign-up's display name (the Auth API hides the database's message when the profile insert at sign-up is refused).
+- `check_text(p_text text, p_where text)`: Guest and signed-in. `p_where` is `'listing'`, `'profile'`, `'message'` or `'report'` (else `22023`); text up to 5000 characters. Returns the refusal message, or null when the text is fine. `'message'` always returns null since P5A (kept so installed apps don't fail). Saving runs the same check; this is for asking first, mainly sign-up's display name (the Auth API hides the database's message when the profile insert at sign-up is refused).
+
+### Current terms and rate limits (P5A)
+- **Current terms required.** These writes are refused with `P0001` "Please accept the updated Terms of Use and Privacy Policy to continue." until the caller has accepted the current version of both documents (`needs_legal_acceptance()` false; `accept_legal` fixes it):
+  - publishing a listing (`listings.status` becoming `active`, insert or update; private drafts are allowed);
+  - starting a chat (`start_conversation` or a `conversations` insert; reopening an existing chat is allowed);
+  - sending a message (`messages` insert);
+  - saving a piece (`saved_listings` insert) or a studio (`save_studio`);
+  - filing a report (`reports` insert, `report_user`).
+  - Reading, deleting, unsaving, blocking and everything else stay allowed.
+- **Rate limits.** Refused with `P0001` "You're doing that too often. Try again in a bit." A refused write isn't counted. Settings in `app_private.settings` (`rate_limit_<action>`, changed only by migrations); a window starts at the first write after the previous window ended:
+
+| Action | Limit | Counted on |
+| --- | --- | --- |
+| `message` | 30 a minute | `messages` insert |
+| `new_chat` | 30 a day | a new chat (`start_conversation` reopening an existing chat isn't counted) |
+| `report` | 20 a day | `reports` insert (direct or `report_user`) |
+| `new_listing` | 20 a day | `listings` insert (drafts included) |
+| `photo_scan` | 30 an hour per lender | a new photo check, asked for (`request_scan`) or automatic |
+
+- Both rules key on the signed-in caller writing their own row: server jobs and admins acting on someone else's row aren't stopped. Trigger `terms_and_limits` on `messages`, `conversations`, `reports`, `saved_listings`, `saved_studios` and `listings`.
+
+### Listing photo uploads (P5A)
+- Bucket `listing-photos` (public reads): Storage accepts only `image/jpeg`, `image/png` and `image/webp`, at most 10 MB (10,485,760 bytes). Otherwise Storage answers HTTP 400 with `statusCode` `415` ("mime type … is not supported") or `413` ("The object exceeded the maximum allowed size"). The apps and website show "Choose a JPEG, PNG or WebP photo." and "This photo is too big. Choose one under 10 MB.".
+- Upload and update are allowed only at `{listing_id}/{random}.jpg`, where `{random}` is 16 to 64 letters, digits, `_` or `-`, and only for a listing the caller owns (else 403, row-level security). Both apps and the website upload compressed JPEG with `Content-Type: image/jpeg`.
 
 ### Admin (P2B part 1)
-Admins are the accounts in `app_private.admin_users` (closed to every API role). Every admin function below is callable by `authenticated` but starts with `app_private.require_admin()`: it refuses with `42501` "Admins only" unless the caller is in `admin_users`, and "Sign in with two-step verification to use admin tools" unless the JWT is `aal2` (Supabase MFA, TOTP). Every call, reads included, writes one row to the append-only admin log. Functions return `jsonb` unless noted.
+Admins are the accounts in `app_private.admin_users` (closed to every API role). Every admin function below is callable by `authenticated` but starts with `app_private.require_admin()`: it refuses with `42501` "Admins only" unless the caller is in `admin_users`, and "Sign in with two-step verification to use admin tools" unless the JWT is `aal2` (Supabase MFA, TOTP). Since P5A it also refuses with "Enter a new two-step code to keep using admin tools" when the session's last TOTP check (the JWT's `amr` entry) is more than 24 hours old, and `is_admin()` is false then. The website shows the code step for both messages and then continues to the page that was asked for. Every call, reads included, writes one row to the append-only admin log. Functions return `jsonb` unless noted.
 
 - **Adding or removing an admin:** list the admin emails in `ADMIN_EMAILS` (comma-separated) in `H:\DziRent\secrets\providers.env`, then an agent runs `node supabase/seed/admins.mjs` from the repo root. It makes `admin_users` match the list exactly: listed accounts are added, unlisted admins removed, each change logged as `admin_added` / `admin_removed`. An empty list is refused. An email with no Dzirent account is skipped (sign up first, then run it again). The admin then enrolls a TOTP factor (Supabase MFA) and signs in with it.
 - `is_admin()` → `boolean`: true only for an admin at `aal2`. Any signed-in user may call it.
@@ -218,7 +247,7 @@ Admins are the accounts in `app_private.admin_users` (closed to every API role).
 - **Checks:** validates the caller's token (`auth.getUser`), then calls `is_admin()` with the caller's own token. Anything else gets HTTP 403. A reason of at least 3 characters is required.
 - `{ "action": "ban" | "unban", "user_id", "reason", "report_id"? }`: Supabase Auth ban (`ban_duration` about 100 years, or `none`) with the server key from the function's environment, then `admin_record_ban` as the caller. A banned account can't sign in or refresh. An admin can't ban themselves.
 - `{ "action": "remove_photos", "listing_id", "photo_ids": [...], "reason", "takedown_id"? }`: `admin_remove_photos` as the caller, then deletes the files from `listing-photos` with the server key.
-- Returns `{ ok, action, ... }`. An Auth failure is HTTP 502 (nothing recorded). If the record step fails after the Auth change, it is HTTP 500 with `auth_changed: true`.
+- Returns `{ ok, action, ... }`. An Auth failure is HTTP 502 (nothing recorded). If the record step fails after the Auth change, it is HTTP 500 with `auth_changed: true`. Since P5A errors carry a plain `message` and no longer a `detail` with the database's reply.
 
 Suspension and holds (any client):
 - **Suspended accounts:** messages, new chats and reports by a suspended account are refused with `P0001`: "Your account is suspended until Nov 8, 2026. Reason: …." For a ban: "Your account is suspended. Reason: …." Reading one's own data still works. Apps can't change `suspended_until` or `suspension_reason` (a trigger keeps them).
@@ -249,20 +278,57 @@ Reports (P2B changes):
 - Apps show a full-screen "Dzirent is only for people 18 and older." step (Delete my account, Sign out) when `record_age_check` returns true.
 - `admin_find_user` (P2B) also returns `age_check` (`{ source, result, platform, checked_at }` of the latest row, or null) and `age_blocked` (boolean).
 
+- `age_blocked()` → `boolean` (P3A): Signed-in only. True while the caller is blocked by the age gate. The website shows its full blocked page then.
+
+### Download my data (P3A)
+- **Clients call the Edge Function `export-my-data`** (below). It returns the file; the database function behind it is `export_my_data()`.
+- `export_my_data()` → `jsonb`: Signed-in only. Everything Dzirent holds about the caller, built from `auth.uid()` only. Once per 24 hours: a second call is refused with `P0001` "You can download your data once a day. Try again after Nov 8, 2026, 6:51 PM UTC." Each successful call adds a row to `data_exports`.
+- **Parts:** `account` (email, created, last sign-in), `profile`, `private_profile`, `listings` (each with `measurements`, `availability`, `photos`, `photo_checks` with per-photo results), `saved_pieces`, `saved_studios`, `chats` (with `messages`), `rentals`, `blocked_people`, `reports_filed`, `warnings`, `accessory_declarations`, `listing_declarations`, `legal_acceptances`, `age_checks`, `notification_settings`, `devices` (platform and dates, never tokens), `suggestion_choices`, `listing_activity`, `earlier_exports`.
+- **Other people** appear only as `{ name, handle }` (studio name, else display name; studio handle). Messages say `from: "you"` or `"other person"`. Never another user's account id, email, location, measurements or private fields. Reports about the caller, report evidence, outcomes and admin notes are not included.
+
+### Cleanup and retention jobs (P3B)
+- **Nine jobs, nightly** (pg_cron, UTC): the seven database jobs at 09:15 (`app_private.run_cleanup_jobs()`), the two file jobs at 09:30 (`app_private.request_file_cleanup()` → Edge Function `cleanup-files`).
+- **Each job counts only until its switch is on.** The switch is the `app_settings` flag `cleanup_<job>`: off (default) = count only, on = delete. Admins switch it on the admin Flags page (`set_flag`, logged). Every run, in either mode, adds a row to `app_private.job_runs` (job, mode, counts, error, start and finish).
+- **Retention settings** in `app_private.settings` (key → default, who decides):
+
+| Job | What it removes | Setting (default) | Decides |
+| --- | --- | --- | --- |
+| `abandoned_drafts` | Listings never published (`published_at` null), paused, not held, not edited for N days, with their photo files | `draft_retention_days` (60) | Owner |
+| `orphan_photos` | Files in `listing-photos` with no `listing_photos` row, older than N days | `orphan_photo_days` (1) | Owner |
+| `old_photo_checks` | Finished photo checks older than N days except the latest per listing, with their per-photo results | `photo_check_retention_days` (90) | Owner |
+| `expired_reports` | Closed reports past the period, with their evidence | `report_retention_days` (730, placeholder) | Attorney |
+| `old_data_exports` | `data_exports` rows older than N days | `data_export_retention_days` (30) | Owner |
+| `old_age_checks` | Every age check except the latest per account and the latest decisive one (what the age gate reads) | `age_checks_keep` ("latest") | Owner |
+| `old_suggestion_choices` | `suggestion_events` older than N days | `suggestion_retention_days` (365) | Owner |
+| `old_declarations` | Accessory and listing declarations older than N years | `declaration_retention_years` (7, placeholder) | Attorney |
+| `stale_device_tokens` | `device_tokens` not seen for N days | `device_token_stale_days` (90) | Owner |
+
+- **Never purged:** the admin log and takedown records.
+- **Listings** have two new server-written columns: `updated_at` (any change to the listing, its photos, measurements or dates) and `published_at` (the first time it became `active`). Apps can't set them. Existing listings were all counted as published.
+- `cleanup-files` (`POST /functions/v1/cleanup-files`, `verify_jwt = false`):
+  - Called only by the database, with the header `x-cleanup-secret` = function secret `CLEANUP_FILES_SECRET` (Vault `cleanup_files_secret`); anything else gets 401.
+  - It reads `cleanup_file_plan()` (service role only). In delete mode it empties each abandoned draft's folder through the Storage API and then deletes the listing, and removes orphan files through the Storage API. It records both runs with `cleanup_record_run()` (service role only).
+  - It returns `{ ok, abandoned_drafts: {...}, orphan_photos: {...} }` with counts.
+- `admin_cleanup_status()` → `jsonb` (admin + two-step sign-in, logged): each job's `deletes` switch, description and `last_run` (`mode`, `counts`, `error`, `started_at`, `finished_at`). The admin overview's "Cleanup jobs" card shows it.
+
+### Sample data
+- `supabase/seed/remove_sample_data.mjs` removes the 12 sample listings from `sample_data.mjs`, with their photos. It signs in as their owners (test users 1 and 2) and calls `delete-listing` for each owner's listing with one of the sample titles. Without `--yes` it only lists them.
+- **Run only when the owner says so.**
+
 ### Photo checks (Step 8A, Step 8B)
 - `request_scan(p_listing_id uuid)`: Signed-in listing owner only. Returns the `uuid` of the photo check (a `listing_scans` row) for the listing's current photos. The check runs on the server and usually finishes within a minute (longer when the vision service starts cold). Watch the row until `status` is `done` or `failed`: Realtime `UPDATE` events on `listing_scans` filtered by `id`, with polling by ID as the fallback (Step 8B).
   - One scan at a time per listing: asking again while one is `queued` or `running` returns that scan's ID. Since Step 8B, when the latest check is `done` and covers the current photos (`photo_set_hash`), that check's ID comes back instead of a new one. A scan that hasn't finished after 10 minutes is marked `failed` and a new one can start.
-  - Refused: `42501` "Not signed in" / "Not your listing"; `22023` "Add a photo first"; `P0001` "Too many photo checks. Try again in an hour." (20 per lender per hour).
-- Automatic re-check (Step 8B): any insert or delete on `listing_photos` of an `active` listing, or a change of a photo's `storage_path`, `slot` or `listing_id`, queues a check the same way as `request_scan` (same 20-an-hour limit). Apps don't call anything for it. The listing stays `active` while the check runs.
+  - Refused: `42501` "Not signed in" / "Not your listing"; `22023` "Add a photo first"; `P0001` "You're doing that too often. Try again in a bit." (30 new checks per lender per hour since P5A; was "Too many photo checks. Try again in an hour." at 20).
+- Automatic re-check (Step 8B): any insert or delete on `listing_photos` of an `active` listing, or a change of a photo's `storage_path`, `slot` or `listing_id`, queues a check the same way as `request_scan` (same 30-an-hour limit since P5A). Apps don't call anything for it. The listing stays `active` while the check runs.
 - Automatic pause (Step 8B), only while `vision_required` is on: when that check of an `active` listing ends with a result that isn't `allowed`, or fails, the server sets the listing to `paused` and writes a plain sentence to `listings.auto_paused_reason`: "Paused: <reason>" for a rejection, otherwise "Paused: the new photos need a check before this listing can go live again." If the photos changed again while the check ran, the server checks again instead. If the 20-an-hour limit stops a re-check, the listing is paused with "Paused: the photos changed too often to check right now. Check them again in an hour." While the flag is off, photos are re-checked only and nothing is ever paused.
 - Content safety (P2A), in the vision service: any photo (size tags and close-ups included) that the safety model reads as clear nudity or sexual content makes the verdict `rejected` with "This photo isn't allowed on Dzirent."; an uncertain one makes it `review` ("Someone at Dzirent will check these photos before this listing can go live.") unless it is already rejected; a photo read as a hooded garment turns `allowed` into `review` ("This piece has a hood, so someone at Dzirent will check it."). A piece being worn never changes the verdict and never adds a warning. Each photo's `labels` (in `photo_scans`) now also carry `hooded` and `safety.nsfw`.
 - `listings.auto_paused_reason` (text, at most 300 characters, Step 8B): why the server paused the listing; apps show it on paused listings. Written only by the server: apps can't update it, and a listing inserted by an app always starts without one. A successful republish (`status` set to `active`, flag on or off) clears it.
 - `policy_item_types` (table below): what can be listed, readable by everyone, guests included. Allowed rows give the listing's own `category`, `item_type` (accessories), `garment_type` and `style`; the others give the `reason` shown to the lender.
-- `app_settings` (table below): feature flags, readable by everyone, changed by admins through `set_flag` (P2B). `vision_required`, `verification_required` and `payments_enabled` are all off. `preview_label` (P2C) is on: the website header shows "Preview only" in red while it is.
+- `app_settings` (table below): feature flags, readable by everyone, changed by admins through `set_flag` (P2B). Since P3B also the nine `cleanup_<job>` switches (all off = count only). `vision_required`, `verification_required` and `payments_enabled` are all off. `preview_label` (P2C) is on: the website header shows "Preview only" in red while it is.
 - Publish gate: while `vision_required` is on, a listing can become `active` (insert or update) only if its latest scan is `done`, covers its current photos (`photo_set_hash`) and was `allowed` or approved by an admin (`admin_decision = 'approved'`; `rejected` blocks). Otherwise the update is refused with `P0001` and plain words, for example "Check the photos before publishing this listing." or "This listing can't be published yet: <reason>". So when the flag is turned on, apps must insert new listings as `paused`, upload photos, run `request_scan`, then publish (the mobile apps always work this way since Step 8B). While the flag is off nothing is blocked.
 
 ### Push events
-The database (triggers on `messages` and `conversations`) decides; the `send-push` Edge Function delivers. Apps never send pushes.
+The database (triggers on `messages` and `conversations`) decides; the `send-push` Edge Function delivers, through the background job outbox (section 5) since C1. Apps never send pushes.
 - New message: to the other participant. Title "New message from <name>". Body: the message text, only if the recipient turned on "Show message text".
 - New chat on a listing: to the lender. Title "New chat from <name>". Body: listing title and requested dates.
 - Requested dates changed: to the other participant. Title "New dates from <name>". Body: "Nov 5 - 8 · <listing title>".
@@ -274,6 +340,18 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 ---
 
 ## 2. Edge Functions
+
+**Input rules (P5A, every function, `supabase/functions/_shared/input.ts`):** the body must be one JSON object, within the function's size limit, with only the fields listed for it and every required one present. Otherwise HTTP 400 (413 when too large) with a plain `message` ("Send a JSON object.", "This request has fields that aren't accepted.", "This request is missing required fields.", "This request is too large."). Errors never include database or library details.
+
+**Errors (C1, every function, `supabase/functions/_shared/errors.ts`):** every error body is `{ "code": "DZ-E####", "message": "..." }` with the catalog's HTTP status (section 5), for example `delete-listing` 400 `DZ-E9011` for an unknown field, 401 `DZ-E1003` without a token, 409 `DZ-E7010` from `delete-account` for an active rental. The old `error` slugs are gone. `admin-actions` keeps its extra fields (`auth_changed: true` with `DZ-E5025`, `rows_removed` with `DZ-E5036`) and passes a database refusal's code through (`DZ-E5034`, ...).
+
+| Function | Fields | Size limit |
+| --- | --- | --- |
+| `delete-listing` | `listing_id` (required) | 1 KB |
+| `delete-account`, `export-my-data`, `cleanup-files` | none (`{}` or an empty body) | 1 KB |
+| `admin-actions` | `action`, `reason` (required, at most 500 characters), `user_id`, `report_id`, `listing_id`, `photo_ids` (at most 20), `takedown_id` | 16 KB |
+| `send-push` | `kind`, `conversation_id`, `recipient_id`, `title` (required), `body` | 8 KB |
+| `scan-listing` | `scan_id` (required) | 1 KB |
 
 ### `delete-listing`
 - **Who can call:** Signed-in listing owner (`POST /functions/v1/delete-listing`).
@@ -294,14 +372,27 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 - **Returns:** HTTP 200 `{ "ok": true }`.
 
 ### `send-push`
-- **Who can call:** The database only (`app_private.queue_push`, through `pg_net`). Never apps.
+- **Who can call:** The database only (`app_private.queue_push`, through the `async_jobs` outbox and `pg_net`, C1). Never apps.
 - **Auth:** Header `x-send-push-secret` must equal the function secret `SEND_PUSH_SECRET` (the same value is in Vault as `send_push_secret`); compared in constant time. `verify_jwt = false`. Anything else gets HTTP 401.
 - **Payload:** `{ "kind": "message" | "new_chat" | "dates", "conversation_id": "<uuid>", "recipient_id": "<uuid>", "title": "<text>", "body": "<text>" | null }`, already checked and worded by the database.
 - **Behavior:** Gets a Google access token with the Firebase server key (`FIREBASE_SERVICE_ACCOUNT_BASE64`), sends the data message above through the FCM HTTP v1 API to each of the recipient's Android tokens (TTL one day), then deletes the tokens Firebase reports as unregistered or invalid.
-- **Returns:** HTTP 200 `{ "sent", "failed", "removed", "errors" }`: counts and Firebase error codes only, never tokens or text.
+- **Returns:** HTTP 200 `{ "sent", "failed", "removed", "errors" }`: counts and Firebase error codes only, never tokens or text. Since C1, when nothing was delivered and a phone failed for a reason other than a dead token, HTTP 503 `DZ-E9003` with the same counts, so the outbox tries again.
+
+### `export-my-data` (P3A)
+- **Who can call:** Signed-in user (`POST /functions/v1/export-my-data`, body `{}`).
+- **Auth:** Bearer token verified in code (`auth.getUser(token)`). `verify_jwt = false`. Holds no server key: it calls `export_my_data()` with the caller's own token.
+- **Returns:** HTTP 200 with the file, as `application/json` and `Content-Disposition: attachment; filename="dzirent-data-<YYYY-MM-DD>.json"`. It starts with `about` (a plain-language explanation of each part, the photo links and the daily limit), then `exported_at`, then the parts above in that order. Each listing photo gets `link`, the public URL of the caller's own photo.
+- **Errors (C1):** JSON `{ code, message }`:
+  - 401 `DZ-E1003`;
+  - 429 `DZ-E7001`, the database's sentence with the time (without its code prefix);
+  - 500 `DZ-E7002`; 503 `DZ-E7003` when the function isn't configured.
+- **Clients:**
+  - Website: Settings > Privacy & safety > Download my data, through `/api/workflows/export`.
+  - Android: Settings > Privacy & safety > Download my data, saved with the system "save file" picker.
+  - iPhone: the same row opens the website's page for now.
 
 ### `scan-listing` (Step 8A)
-- **Who can call:** The database only (`request_scan` and the automatic re-check, through `pg_net`). Never apps.
+- **Who can call:** The database only (`request_scan` and the automatic re-check, through the `async_jobs` outbox and `pg_net`, C1). Never apps.
 - **Auth:** Header `x-scan-listing-secret` must equal the function secret `SCAN_LISTING_SECRET` (the same value is in Vault as `scan_listing_secret`); compared in constant time. `verify_jwt = false`. Anything else gets HTTP 401.
 - **Payload:** `{ "scan_id": "<uuid>" }`.
 - **Behavior:** `vision_start_scan` marks the scan `running` and returns the listing's current photos; the function answers HTTP 202 at once and works in the background. It signs in to Google as the `vision-invoker` service account (`VISION_INVOKER_KEY_BASE64`), sends the photos' public URLs to the vision service (`VISION_URL`, `POST /scan`, 115 s timeout), computes the photo set hash and saves the result with `vision_finish_scan`. Any failure calls `vision_fail_scan`: status `failed`, verdict `review`.
@@ -346,6 +437,82 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `photo_scans` | SELECT | Owned listing only. Written only by the server. One row per scanned photo: `scan_id`, `listing_id`, `photo_id`, `storage_path`, `slot`, `blur_score` (0 sharp to 1 blurry), `brightness_score` (0 black to 1 white), `framing_score` (0 = whole piece in frame; higher = more of its outline on the edge), `worn_probability`, `fingerprint` (`vector(768)`), `labels` (JSON label scores), `warnings` (text[], worded as on the phone), `decision` (`allowed`, `not_allowed`, `not_clothing`, `detail`, `unsure`), `scanned_at`. Removed with the photo or listing. |
 | `policy_item_types` | SELECT | Everyone, guests included (`using (true)`); no writes through the API. Columns `key`, `label`, `kind` (`garment`, `accessory`, `other`), `allowed`, `category`, `item_type`, `garment_type`, `style`, `policy_group`, `noun`, `looks_like`, `reason`, `prompts`, `position`. |
 | `app_settings` | SELECT | Everyone, guests included; changed by admins through `set_flag` (P2B). Columns `key`, `enabled`, `description`, `updated_at`. |
+| `data_exports` | SELECT | `user_id = auth.uid()` (P3A). Written only by `export_my_data`. Columns `id` (bigint), `user_id`, `exported_at`. Removed with the account. |
 | `age_checks` | SELECT | `user_id = auth.uid()` (P2C). Written only by `record_age_check`. Columns `id` (bigint), `user_id`, `source` (`store_signal`, `self_declared`), `result` (`adult`, `minor`, `unknown`), `platform` (`web`, `android`, `ios`), `checked_at`. No birthdate. Removed with the account. |
 | `legal_documents` | SELECT | Everyone, guests included; changed only by migrations (P1B). One row per document: `document` (`terms`, `privacy`), `version` (seeded `1.0.0` and `1.0.0`, from the website's `TERMS_VERSION` and `PRIVACY_VERSION`), `url`, `updated_at`. |
 | `legal_acceptances` | SELECT | `user_id = auth.uid()`. Written only by `accept_legal` (P1B). Columns `id`, `user_id`, `document`, `version`, `platform` (`web`, `android`, `ios`), `accepted_at`; one row per user, document and version. Removed with the account. |
+
+---
+
+## 4. Links, sharing and previews (P5C)
+
+**Shared links** are always the production address, with no tracking parameters:
+- a listing: `https://dzirent.com/listing/<listing id>`;
+- a studio: `https://dzirent.com/studio/<studio handle>` (URL-encoded).
+
+**Share text** is the same on all three platforms:
+- "`<title>` on Dzirent: `<link>`" for a listing;
+- "`<studio name>` on Dzirent: `<link>`" for a studio (studio name, else display name).
+
+Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.kt`.
+
+**Share buttons:**
+- **Website:** on listing and studio pages. It opens the browser's share menu where there is one, otherwise "Copy link" with "Link copied".
+- **Android and iPhone:** the top bar of a listing (live pieces only) and of a studio opens the system share sheet (`DeviceServices.share`).
+
+**Link previews** (Open Graph and X/Twitter card tags, built by the website):
+- **Read as a guest:** an anonymous client with no cookies (`apps/web/src/lib/preview.ts`), so a preview shows only what the shop window shows a guest. Never coordinates, email, account ids or anything private.
+- **Listing** `/listing/<id>`:
+  - `og:title` is the title;
+  - `og:description` is "$price/day · City, ST" (C1);
+  - `og:url` is the clean link;
+  - `og:image` / `twitter:image` is `/listing/<id>/opengraph-image` (and `/twitter-image`): a 1200 × 630 PNG with the first photo in a Dzirent frame, the wordmark, title, "$price/day · City, ST" and `@handle`.
+  - Next.js adds a short `?<hash>` to the image address; that's its cache key, not a tracking parameter.
+- **Studio** `/studio/<handle>`:
+  - The tags are served to everyone, guests and preview bots included: "`<studio name>` (@`<handle>`)", and an image with up to 4 of the studio's listing photos.
+  - The page itself still asks guests to sign up.
+  - The data comes from `browse_listings` (`get_studio` is signed-in only). It reads at most 10 pages of 30 newest pieces.
+  - A studio with no active pieces there gets the generic Dzirent preview.
+- **A listing that is paused, deleted or hidden** (`get_listing` returns nothing), or not a listing id:
+  - HTTP 200, a plain "This piece is no longer available" page with up to 8 newer pieces and "Browse all pieces";
+  - the generic Dzirent preview; `noindex`.
+
+**Android app links:**
+- `MainActivity` has an `autoVerify` intent filter for `https://dzirent.com/listing/…` and `/studio/…`, and is `singleTask`.
+- Android checks `https://dzirent.com/.well-known/assetlinks.json`, served by the website from `apps/web/public/.well-known/assetlinks.json` (`application/json`).
+- **The file lists only the debug app for now:** package `com.dzirent.app.debug`, SHA-256 `A7:AF:02:EA:F1:8C:67:72:05:A4:FC:75:BF:48:3E:D8:E4:B4:5D:AB:DE:DC:DA:F1:B2:1E:05:D9:66:EE:95:7C`. That is the standard Android debug key on the build PC, which signs the APKs copied to OneDrive.
+- **Placeholders:**
+  - **P8A** adds the release package (`com.dzirent.app`) with the release (Play app signing) fingerprint to this file.
+  - **P8B** adds the iPhone file `apple-app-site-association` (universal links).
+- **In the app:** an opened link goes straight to that listing (guests too). A studio link opens the studio for a signed-in person, and the usual sign-up pop-up for a guest. A link that arrives during sign-in or the terms step waits until Home shows.
+
+---
+
+## 5. Error codes, prices and background jobs (C1)
+
+### Error and warning codes
+- **One source:** `contracts/error-codes.json`. `node contracts/generate.mjs` writes the Kotlin (`mobile/shared/.../util/ErrorCodes.kt`), website (`apps/web/src/lib/error-codes.generated.ts`) and Edge Function (`supabase/functions/_shared/error-codes.ts`) copies and the readable table `pranalika/error-codes.md`. The website build (`prebuild`) and the Android build (`generateErrorCodes`, skipped without Node) run it; `npm run lint` (`--check`) and `ErrorCodesFreshnessTest` fail when a committed copy is out of date. Codes are never reused or renumbered.
+- **Entry:** `code` (`DZ-E####` error, `DZ-W####` warning), `kind`, `area`, `message` (what people see), optional `field`, `status` (HTTP-like), optional `server_detail` (the server's sentence carries a date or reason; show it).
+- **Families:** 1xxx account, sign-in, terms, age; 2xxx listings, photos, photo checks; 3xxx chat, saving, blocking; 4xxx rentals, payments, deposits (reserved); 5xxx reports, moderation, admin; 6xxx ID verification (reserved); 7xxx data download, deletion; 9xxx system (rate limit `DZ-E9001`, unreachable `DZ-E9002`, unavailable `DZ-E9003`, request checks `DZ-E9010`-`E9016`, unexpected `DZ-E9999`).
+- **Database:** every refusal's message starts with its code, `"DZ-E2010: Add a photo first"`; the SQLSTATE (`P0001`, `42501`, `22023`, `P0002`, ...) is unchanged. The field is in the HINT: the text filter's column as before, and the catalog's field otherwise (`full_legal_name`, `dates`, `reason`, `days`, `platform`). `check_text` returns the refusal with its code. The suspension sentence is `DZ-E1040: Your account is suspended ...`. One wording change: "You cannot message this user" is now "You can't message this user." (`DZ-E3005`).
+- **Clients:** show the catalog message for the code (the server's words when `server_detail`), under the field when one is named, then the code in brackets: "Add a photo first (DZ-E2010)". A code the build doesn't know shows the server's words; anything without a code shows `DZ-E9999` "Something went wrong. Please try again.". Auth, network and Storage failures get their codes in the client (`DZ-E1004` wrong password, `DZ-E9002` no connection, `DZ-E2064`/`E2065` photo type and size, ...).
+- **Photo warnings:** the 8 scanner and phone warnings are `DZ-W2001`-`W2008`, matched by their words (the vision service still sends words); the apps and website show the code after the warning.
+
+### Price per day
+- `listings.price_usd` is the price for one day; `listings.price_unit` (`'per_day'`, the only value, default) says so. Apps can't update `price_unit`.
+- `browse_listings` and `get_listing` return `price_per_day`, `price_unit`, and with dates `days` and `total` (above). Other functions' `price` (`my_conversations`, `my_saved_listings`, `get_studio` cards, `fit_listings`) is also per day.
+
+### Background jobs (outbox)
+- `app_private.async_jobs` (closed to every API role): `id`, `kind` (`send_push`, `scan_listing`), `payload` (the Edge Function's body), `status` (`pending`, `running`, `done`, `dead`), `attempts`, `next_attempt_at`, `last_error`, `request_id` (pg_net), `dispatched_at`, `finished_at`, `created_at`, `updated_at`.
+- `queue_push` and `queue_scan` add a job with `app_private.enqueue_job`; its first attempt goes out when the transaction commits, as the direct call did.
+- pg_cron `dzirent-async-jobs` runs `app_private.run_async_jobs()` every minute: a 2xx answer marks the attempt's job `done`; any other answer, a timeout, or no answer 10 minutes later is a failure. After failure 1, 2, 3 and 4 the next attempt is 1, 5, 30 and 120 minutes later; failure 5 marks it `dead`. A dead `scan_listing` job ends its photo check like any failed check (`vision_fail_scan`: `failed`, verdict `review`). A `scan_listing` attempt whose check is no longer `queued` is marked done (skipped).
+- Kept: done jobs 1 day, dead jobs 30 days.
+- **Admin** (two-step sign-in, logged like every admin call):
+  - `admin_jobs_status()` -> `jsonb`: `kinds` (per kind: `pending`, `running`, `done_day`, `dead`, `retrying`), `oldest_waiting_at`, `last_dead_at`, `schedule_minutes` `[1,5,30,120]`, `max_attempts` 5.
+  - `admin_list_dead_jobs(p_limit int default 30 (max 100), p_offset int default 0)` -> `jsonb` array: `id`, `kind`, `attempts`, `last_error`, `created_at`, `died_at`, and `push_kind` + `conversation_id` (push) or `scan_id` (photo check). Never the push title or text.
+  - `admin_retry_job(p_job_id bigint, p_reason text default null)` -> `jsonb` `{ id, kind, status, attempts, last_error }`: starts a dead job again from attempt 1 at once; logged as `retry_background_job`. Refused: `DZ-E5060` not found, `DZ-E5061` not dead.
+  - Website: the overview's "Background jobs" card and `/admin/jobs` (counts, dead jobs, Retry).
+
+### Read retries (clients)
+- Reads only: GET and HEAD, and the read-only database functions (`browse_listings`, `get_listing`, `get_studio`, `fit_listings`, `search_cities`, `my_*`, `needs_legal_acceptance`, `age_blocked`, `is_admin`, `check_text`; the website also the admin status reads). After a network failure, 408 or 5xx (not 501): 2 retries, after 0.5 s and then 2 s. Writes are never retried; their error shows its code.
+- Android/iPhone: Ktor `HttpRequestRetry` in `createDzirentSupabaseClient` (`util/ReadRetry.kt`). Website: `retryingFetch` (`lib/retry.ts`) in all three Supabase clients.

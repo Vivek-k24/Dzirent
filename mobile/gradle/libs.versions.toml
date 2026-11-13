@@ -21,6 +21,9 @@ aboutlibraries = "11.2.3"
 firebaseBom = "34.19.0"
 # Google Play Age Signals (P2C age gate). 0.0.4 was published 2026-07-20.
 ageSignals = "0.0.4"
+# Play services bring in Fragment 1.1.0; the system save picker (registerForActivityResult,
+# P3A) needs 1.3.0 or newer (Lint InvalidFragmentVersionForActivityResult).
+fragment = "1.8.5"
 
 [libraries]
 # Supabase
@@ -68,6 +71,7 @@ firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging
 
 # Age gate (Texas SB 2420, Utah): the app store's age range, never a birthdate
 play-age-signals = { group = "com.google.android.play", name = "age-signals", version.ref = "ageSignals" }
+androidx-fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }

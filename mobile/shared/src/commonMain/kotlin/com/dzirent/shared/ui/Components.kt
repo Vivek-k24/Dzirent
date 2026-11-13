@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -22,6 +23,7 @@ import coil3.compose.AsyncImage
 import com.dzirent.shared.config.SupabaseBuildConfig
 import com.dzirent.shared.util.DistanceUnit
 import com.dzirent.shared.util.KM_PER_MILE
+import com.dzirent.shared.util.ErrorCatalog
 import com.dzirent.shared.repository.DzirentException
 import com.dzirent.shared.ui.theme.DzirentAccent
 
@@ -29,8 +31,8 @@ import com.dzirent.shared.ui.theme.DzirentAccent
  * The text to show on screen for an error. Only DzirentException messages are written
  * for users; anything else could carry URLs or tokens, so it falls back to [fallback].
  */
-fun Throwable.userMessage(fallback: String = "Something went wrong. Please try again."): String =
-    if (this is DzirentException) message ?: fallback else fallback
+fun Throwable.userMessage(fallback: String = ErrorCatalog.message(ErrorCatalog.FALLBACK)): String =
+    if (this is DzirentException) message ?: fallback else "$fallback (${ErrorCatalog.FALLBACK})"
 
 /** "AL" for "Ana Lopez", "A" for "Ana", "?" for no name. */
 fun initialsOf(name: String): String {
@@ -42,7 +44,10 @@ fun initialsOf(name: String): String {
     }
 }
 
-/** Round avatar with the person's initials (profiles have no photo yet). */
+/**
+ * Round avatar with the person's initials (profiles have no photo yet). Decorative for screen
+ * readers: the name is always shown next to it, so the initials would only repeat it.
+ */
 @Composable
 fun Avatar(name: String, size: Dp, modifier: Modifier = Modifier) {
     Box(
@@ -51,6 +56,7 @@ fun Avatar(name: String, size: Dp, modifier: Modifier = Modifier) {
             .size(size)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clearAndSetSemantics { }
     ) {
         Text(
             text = initialsOf(name),

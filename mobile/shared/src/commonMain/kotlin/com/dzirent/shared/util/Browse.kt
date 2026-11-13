@@ -5,7 +5,7 @@ import com.dzirent.shared.model.Listing
 
 /**
  * What Home and Search show, set from the sidebar (category) and its filter sheet.
- * Null means "any". Prices are in USD per rental.
+ * Null means "any". Prices are in USD per day (C1).
  */
 data class BrowseFilters(
     val category: String? = null,

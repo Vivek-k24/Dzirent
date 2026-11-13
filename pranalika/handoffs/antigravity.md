@@ -2,6 +2,75 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## P4A - 2026-11-07 - website accessibility
+
+- What was done:
+  - Added `eslint-plugin-jsx-a11y` to `apps/web/package.json` and wired it into `apps/web/eslint.config.mjs` applying all recommended accessibility rules at error level.
+  - Resolved all 31 accessibility lint issues across admin and customer dialogs, drawers, form controls, and images.
+  - Implemented keyboard accessibility:
+    - Visible high-contrast focus rings for both light (`--accent: #8e1538`, >9:1 contrast) and dark (`--accent: #e48aa5`, >7.5:1 contrast) modes.
+    - Floating "Skip to content" link (`.skip-link`) styled with high contrast border, paper background, and visible focus outline.
+    - Full keyboard navigation and focus trapping inside all dialogs and drawers (`showModal()`, focus restoration via `previouslyFocused?.focus()` on close, and Escape key dismiss).
+  - Form and image accessibility:
+    - Every form control and input has an associated programmatic `<label>`.
+    - Error messages linked to inputs via `role="alert"` and announced to screen readers.
+    - Fixed `label-content-name-mismatch` on `.date-chip` and `.location-button` by removing overriding `aria-label` so accessible names match visible labels.
+    - Image alt text standardized without redundant "photo" or "image" phrasing; decorative images marked with `alt=""`.
+    - Icon-only buttons equipped with accessible names (`aria-label`).
+  - Headings, target sizes, and motion:
+    - Fixed heading hierarchies across `/delete-account`, `/safety`, `/support`, and `/copyright` (eliminated skips from `<h2>` directly to `<h4>`).
+    - Page language declared with `<html lang="en">` in root layout.
+    - Added `@media (prefers-reduced-motion: reduce)` suppressing all animation durations and transitions.
+    - Ensured minimum 24x24px click target sizing on all interactive buttons, links, and form elements.
+  - Color contrast (WCAG 2.1 AA):
+    - Replaced sub-4.5:1 text colors (`#777`, `#888`) across header chips, welcome modal, auth cards, `.field small`, and footers with `var(--muted)` (`#666` in light mode for 5.96:1 contrast; `#b1b1b1` in dark mode for 8.69:1 contrast).
+    - Verified "Preview only" badge contrast (>5.8:1 in light mode, >6.7:1 in dark mode).
+  - Created `/accessibility` page (`apps/web/src/app/accessibility/page.tsx`):
+    - Conformance statement to WCAG 2.1 AA, technical specifications, support measures, known limits (user-uploaded media, chat messages), and support contact (`support@dzirent.com`).
+    - Linked `/accessibility` in footer navigation (`apps/web/src/components/shell.tsx`) and added to `sitemap.ts`.
+  - Testing & Verification:
+    - `npm run lint` passed with 0 errors and 0 warnings.
+    - `npm run build` passed with 0 errors.
+    - Headless browser Axe-core audit executed across all 10 required routes:
+      1. Home (`/`): 0 violations (13 passed checks)
+      2. Search results (`/search?q=dress`): 0 violations (13 passed checks)
+      3. Listing page (`/listing/<id>`): 0 violations (12 passed checks)
+      4. Sign in (`/auth`): 0 violations (23 passed checks)
+      5. Sign up (`/auth?mode=signup`): 0 violations (26 passed checks)
+      6. Listing editor (`/app/list-a-piece`): 0 violations (12 passed checks)
+      7. Chat (`/app/messages`): 0 violations (12 passed checks)
+      8. Settings (`/app/settings/profile`): 0 violations (12 passed checks)
+      9. Privacy (`/privacy`): 0 violations (25 passed checks)
+      10. Admin overview (`/admin`): 0 violations (12 passed checks)
+      - Total Axe violations across all 10 routes: 0.
+
+- Files changed:
+  - `apps/web/package.json`
+  - `apps/web/package-lock.json`
+  - `apps/web/eslint.config.mjs`
+  - `apps/web/src/app/accessibility/page.tsx`
+  - `apps/web/src/app/community-guidelines/page.tsx`
+  - `apps/web/src/app/copyright/page.tsx`
+  - `apps/web/src/app/delete-account/page.tsx`
+  - `apps/web/src/app/globals.css`
+  - `apps/web/src/app/safety/page.tsx`
+  - `apps/web/src/app/sitemap.ts`
+  - `apps/web/src/app/support/page.tsx`
+  - `apps/web/src/components/admin/action-dialog.tsx`
+  - `apps/web/src/components/admin/mfa-gate.tsx`
+  - `apps/web/src/components/admin/photo-reviews-view.tsx`
+  - `apps/web/src/components/admin/reports-view.tsx`
+  - `apps/web/src/components/admin/takedowns-view.tsx`
+  - `apps/web/src/components/admin/users-view.tsx`
+  - `apps/web/src/components/guest-gate.tsx`
+  - `apps/web/src/components/listing-editor.tsx`
+  - `apps/web/src/components/onboarding.tsx`
+  - `apps/web/src/components/photo.tsx`
+  - `apps/web/src/components/shell.tsx`
+  - `apps/web/src/components/workflow-ui.tsx`
+  - `pranalika/BOARD.md`
+  - `pranalika/handoffs/antigravity.md`
+
 ## P2B part 2 - 2026-11-07 - admin website
 
 - What was done:

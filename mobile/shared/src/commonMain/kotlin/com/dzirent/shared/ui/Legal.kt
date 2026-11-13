@@ -23,7 +23,10 @@ import androidx.compose.ui.unit.dp
 import com.dzirent.shared.model.AppLinks
 import com.dzirent.shared.model.PrivateProfile
 import com.dzirent.shared.platform.LocalDevice
+import com.dzirent.shared.platform.SaveResult
 import com.dzirent.shared.repository.DzirentRepository
+import com.dzirent.shared.util.DataExport
+import com.dzirent.shared.util.today
 import kotlinx.coroutines.launch
 
 /** Shown before the first body measurement is saved (give_measurements_consent). */
@@ -120,7 +123,8 @@ fun TermsUpdateScreen(
                     text = it,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.announced()
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -140,7 +144,7 @@ fun TermsUpdateScreen(
                     }
                 },
                 enabled = !isBusy,
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) {
                 Text(if (isBusy) "Saving..." else "Agree")
             }
@@ -169,7 +173,7 @@ fun MeasurementsConsentDialog(onAgree: () -> Unit, onNotNow: () -> Unit) {
     AlertDialog(
         onDismissRequest = onNotNow,
         icon = { Icon(Icons.Default.Lock, contentDescription = null) },
-        title = { Text("Your measurements") },
+        title = { Text("Your measurements", modifier = Modifier.asHeading()) },
         text = { Text(MEASUREMENTS_CONSENT_TEXT) },
         confirmButton = { TextButton(onClick = onAgree) { Text("Agree") } },
         dismissButton = { TextButton(onClick = onNotNow) { Text("Not now") } }
@@ -211,7 +215,7 @@ fun MeasurementsConsentSetting(repository: DzirentRepository) {
     if (confirmWithdraw) {
         AlertDialog(
             onDismissRequest = { if (!isWithdrawing) confirmWithdraw = false },
-            title = { Text("Withdraw consent?") },
+            title = { Text("Withdraw consent?", modifier = Modifier.asHeading()) },
             text = {
                 Text(
                     "Your saved body measurements will be deleted, and \"Likely to fit you\" stops " +
@@ -247,6 +251,60 @@ fun MeasurementsConsentSetting(repository: DzirentRepository) {
             }
         )
     }
+}
+
+/**
+ * Settings > Privacy & safety > Download my data (P3A). Android: downloads the file (once a day)
+ * and asks where to save it with the system picker, suggesting dzirent-data-<date>.json. iPhone
+ * for now: opens the same button on the website.
+ */
+@Composable
+fun DataExportSetting(repository: DzirentRepository, userId: String) {
+    val scope = rememberCoroutineScope()
+    val device = LocalDevice.current
+    val open = rememberOpenLink()
+    var isBusy by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf<String?>(null) }
+
+    fun download() {
+        if (!device.dataExport.savesFiles) {
+            open(AppLinks.DATA_EXPORT_URL)
+            return
+        }
+        scope.launch {
+            isBusy = true
+            status = null
+            try {
+                val name = DataExport.fileName(today())
+                val bytes = DataExport.kept(userId, name)
+                    ?: repository.exportMyData().encodeToByteArray().also { DataExport.keep(userId, name, it) }
+                status = when (device.dataExport.save(name, bytes)) {
+                    SaveResult.SAVED -> {
+                        device.toast("Saved")
+                        "Saved as $name."
+                    }
+                    SaveResult.CANCELLED -> "Not saved. Tap again to choose where to save it."
+                    SaveResult.FAILED -> "Couldn't save the file. Tap to try again."
+                }
+            } catch (e: Exception) {
+                status = e.userMessage("Couldn't prepare your data. Please try again.")
+            }
+            isBusy = false
+        }
+    }
+
+    SettingsRow(
+        title = "Download my data",
+        subtitle = when {
+            isBusy -> "Preparing your file..."
+            status != null -> status
+            device.dataExport.savesFiles -> "One file with your account, listings, chats and more. Once a day."
+            else -> "Opens Dzirent's website, where you can download it. Once a day."
+        },
+        icon = Icons.Default.Download,
+        showChevron = !device.dataExport.savesFiles,
+        onClick = if (isBusy) null else ({ download() })
+    )
 }
 
 /** Settings > Help & legal: the website's help, policy and support pages, opened in the browser. */

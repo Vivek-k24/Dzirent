@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { currentUser, serverClient } from "@/lib/supabase/server";
 import { AdminNav, type AdminQueueCounts } from "@/components/admin/admin-nav";
 import { AdminMfaGate } from "@/components/admin/mfa-gate";
+import { ADMIN_CODE_STALE, adminCodeNeeded } from "@/lib/admin-code";
+import { codeOf } from "@/lib/errors";
 
 export const metadata: Metadata = {
-  title: "Admin - Dzirent",
+  title: "Admin",
   robots: {
     index: false,
     follow: false,
@@ -30,14 +32,13 @@ export default async function AdminLayout({
 
   if (!isAdmin) {
     // Check if user is an admin account that needs 2-step verification (at aal1)
+    // ...or whose last code is more than 24 hours old (P5A). After the code, the page reloads
+    // and continues to the page that was asked for.
     const { error: queuesError } = await client.rpc("admin_queues");
-    if (
-      queuesError?.message ===
-      "Sign in with two-step verification to use admin tools"
-    ) {
+    if (adminCodeNeeded(queuesError?.message)) {
       return (
         <div className="page-width admin-shell-container" style={{ padding: "30px 16px" }}>
-          <AdminMfaGate />
+          <AdminMfaGate stale={codeOf(queuesError?.message) === ADMIN_CODE_STALE} />
         </div>
       );
     }

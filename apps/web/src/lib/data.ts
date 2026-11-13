@@ -128,13 +128,22 @@ export async function browse(
   return (data || []) as Card[];
 }
 export const getListing = cache(
-  async (id: string, lat: number, lng: number): Promise<Listing | null> => {
+  async (
+    id: string,
+    lat: number,
+    lng: number,
+    start: string | null = null,
+    end: string | null = null,
+  ): Promise<Listing | null> => {
     if (!/^[a-f0-9-]{36}$/i.test(id)) return null;
     const client = await serverClient();
+    // C1: with dates, get_listing also returns days and total (price per day x days).
     const { data, error } = await client.rpc("get_listing", {
       p_listing_id: id,
       p_lat: lat,
       p_lng: lng,
+      p_start_date: start,
+      p_end_date: end,
     });
     if (error)
       throw new Error("We could not load this piece. Please try again.");

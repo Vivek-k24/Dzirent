@@ -4,7 +4,10 @@ import com.dzirent.shared.util.*
 import com.dzirent.shared.config.SupabaseBuildConfig
 import com.dzirent.shared.model.*
 import com.dzirent.shared.platform.ImageCompressor
+import com.dzirent.shared.platform.SecureSessionManager
+import com.dzirent.shared.platform.platformSecureStore
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.annotations.SupabaseInternal
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.CodeVerifierCache
@@ -16,6 +19,11 @@ import io.github.jan.supabase.auth.SettingsSessionManager
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.exceptions.RestException
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.isSuccess
+import com.dzirent.shared.util.DataExport
 import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.Postgrest
@@ -35,6 +43,7 @@ import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.storage
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -50,32 +59,49 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import kotlin.random.Random
 
-/** User-friendly exception safe for display in UI. */
-/** A message for the person. [field] is the database column a refusal is about (its HINT), if any. */
-class DzirentException(message: String, val field: String? = null) : Exception(message)
+/**
+ * A message for the person, safe to show. [field] is the input a refusal is about (the database's
+ * HINT), if any; [code] its catalog code (contracts/error-codes.json). A coded error's message
+ * ends with the code in brackets, "Add a photo first (DZ-E2010)".
+ */
+class DzirentException(message: String, val field: String? = null, val code: String? = null) : Exception(message) {
+    constructor(shown: ShownError) : this(shown.text, shown.field, shown.code)
+}
 
-const val CANT_MESSAGE_USER = "You can't message this user."
+/** What the chat shows when the two people are blocked (DZ-E3005). */
+val CANT_MESSAGE_USER: String = ErrorCatalog.shown("DZ-E3005").text
 
-/** How the database's plain-words refusals start (supabase/migrations); these reach the lender as they are. */
-private val DATABASE_MESSAGES = listOf(
-    "This listing can't be published yet",
-    "Check the photos before publishing",
-    "The photo check is still running",
-    "The photos changed after they were checked",
-    "Too many photo checks",
-    "Add a photo first",
-    "Sign the accessory declaration",
-    "Give consent before saving your measurements",
-    // The text filter (P2A); its HINT names the field.
-    "This text includes language that isn't allowed",
-    "Please remove contact details",
-    // Admin actions (P2B).
-    "Your account is suspended",
-    "This listing is hidden by Dzirent",
-    "You can only report messages in your own chats",
-    // Age gate (P2C).
-    "Dzirent is only for people 18 and older"
-)
+/** Storage's own refusals for listing-photos (P5A: JPEG, PNG or WebP, at most 10 MB), as catalog codes. */
+internal fun storageRefusal(statusCode: Int?, raw: String): String? {
+    val said = raw.lowercase()
+    return when {
+        statusCode == 413 || "maximum allowed size" in said || "payload too large" in said -> "DZ-E2065"
+        "mime type" in said || "invalid_mime_type" in said -> "DZ-E2064"
+        else -> null
+    }
+}
+
+/** The coded server error inside [throwable] (a database refusal or an Edge Function body), or null. */
+internal fun serverError(throwable: Throwable): ShownError? {
+    val rest = throwable as? RestException
+    val hint = rest?.description?.trim()?.takeIf { it.isNotEmpty() && ErrorCatalog.parse(it) == null && !it.startsWith("{") }
+    return ErrorCatalog.fromAny(listOf(rest?.error, rest?.description, throwable.message), hint = hint)
+}
+
+/** The catalog code for an Auth, network or session failure the server didn't code, or null. */
+internal fun clientErrorCode(raw: String): String? {
+    val said = raw.lowercase()
+    return when {
+        "invalid login credentials" in said -> "DZ-E1004"
+        "email not confirmed" in said -> "DZ-E1005"
+        "already registered" in said || "already been registered" in said || "user_already_exists" in said -> "DZ-E1006"
+        "password should" in said || "weak_password" in said -> "DZ-E1007"
+        "rate limit" in said || "too many requests" in said -> "DZ-E1008"
+        "unable to resolve host" in said || "failed to connect" in said || "timeout" in said || "timed out" in said -> "DZ-E9002"
+        "row-level security" in said || "permission denied" in said || "jwt" in said -> "DZ-E1002"
+        else -> null
+    }
+}
 
 /** How often the editor asks for a scan's state when Realtime hasn't sent it. */
 private const val SCAN_POLL_MS = 4_000L
@@ -126,7 +152,7 @@ private fun generateRandomHex(length: Int = 16): String {
     return (1..length).map { chars[Random.nextInt(chars.length)] }.joinToString("")
 }
 
-@OptIn(ExperimentalSerializationApi::class)
+@OptIn(ExperimentalSerializationApi::class, SupabaseInternal::class)
 fun createDzirentSupabaseClient(
     url: String = SupabaseBuildConfig.SUPABASE_URL,
     key: String = SupabaseBuildConfig.SUPABASE_PUBLISHABLE_KEY,
@@ -143,8 +169,29 @@ fun createDzirentSupabaseClient(
                 encodeDefaults = false
             }
         )
+        // C1: reads (GET, HEAD and the read-only database functions) are sent again after a
+        // network failure or a 5xx, after 0.5 s and then 2 s. Writes never are.
+        httpConfig {
+            install(HttpRequestRetry) {
+                retryIf(ReadRetry.MAX_RETRIES) { request, response ->
+                    ReadRetry.isRead(request.method.value, request.url.encodedPath) &&
+                        ReadRetry.retryableStatus(response.status.value)
+                }
+                retryOnExceptionIf(ReadRetry.MAX_RETRIES) { request, cause ->
+                    cause !is CancellationException && ReadRetry.isRead(request.method.value, request.url.buildString())
+                }
+                delayMillis(respectRetryAfterHeader = false) { retry -> ReadRetry.delayMs(retry) }
+            }
+        }
         install(Auth) {
-            this.sessionManager = sessionManager ?: runCatching { SettingsSessionManager() }.getOrElse { MemorySessionManager() }
+            // P5A: the session lives in encrypted storage (Android Keystore, iPhone Keychain), never in
+            // plain app storage. A session saved in plain storage by an earlier version moves over once.
+            // Without secure storage (unit tests) it stays in memory only.
+            this.sessionManager = sessionManager
+                ?: platformSecureStore()?.let { store ->
+                    SecureSessionManager(store, legacy = runCatching { SettingsSessionManager() }.getOrNull())
+                }
+                ?: MemorySessionManager()
             this.codeVerifierCache = runCatching { SettingsCodeVerifierCache() }.getOrElse { MemoryCodeVerifierCache() }
         }
         install(Postgrest)
@@ -173,38 +220,23 @@ class DzirentRepository(
 
     fun currentEmail(): String? = auth.currentUserOrNull()?.email
 
+    /**
+     * C1: what to show for a failed call. A coded server refusal shows the catalog's words for its
+     * code (field from the HINT); Auth, network and session failures get their catalog code;
+     * anything else is DZ-E9999. [operation] names the step that failed (kept for callers' context).
+     */
+    @Suppress("UNUSED_PARAMETER")
     private fun fail(operation: String, throwable: Throwable): DzirentException {
         if (throwable is DzirentException) return throwable
-        // The database's own plain-words refusals (publish gate, photo checks, declaration) are shown as they are.
-        (throwable as? RestException)?.let { rest ->
-            val said = rest.error.trim()
-            if (DATABASE_MESSAGES.any { said.startsWith(it) }) {
-                return DzirentException(said, field = rest.description?.trim()?.ifBlank { null })
-            }
-        }
-        val raw = throwable.message.orEmpty().lowercase()
-        val message = when {
-            "invalid login credentials" in raw -> "Email or password is incorrect."
-            "email not confirmed" in raw -> "Please confirm your email first. Check your inbox for the link."
-            "already registered" in raw || "already been registered" in raw || "user_already_exists" in raw ->
-                "An account with this email already exists. Try logging in."
-            "password should" in raw || "weak_password" in raw ->
-                "That password is too weak. Use at least $PASSWORD_MIN_LENGTH characters."
-            "rate limit" in raw || "too many requests" in raw ->
-                "Too many attempts. Please try again later."
-            "unable to resolve host" in raw || "failed to connect" in raw || "timeout" in raw || "timed out" in raw ->
-                "Can't reach the server. Check your internet connection and try again."
-            "row-level security" in raw || "permission denied" in raw || "jwt" in raw ->
-                "Your session may have expired. Please log out and log in again."
-            else -> "Couldn't $operation. Please try again."
-        }
-        return DzirentException(message)
+        serverError(throwable)?.let { return DzirentException(it) }
+        val code = clientErrorCode(throwable.message.orEmpty()) ?: ErrorCatalog.FALLBACK
+        return DzirentException(ErrorCatalog.shown(code))
     }
 
     private fun failBlockAware(operation: String, throwable: Throwable): DzirentException {
         val raw = throwable.message.orEmpty().lowercase()
-        if ("row-level security" in raw) {
-            return DzirentException(CANT_MESSAGE_USER)
+        if (serverError(throwable) == null && "row-level security" in raw) {
+            return DzirentException(ErrorCatalog.shown("DZ-E3005"))
         }
         return fail(operation, throwable)
     }
@@ -219,7 +251,7 @@ class DzirentRepository(
     fun hasSession(): Boolean = auth.currentSessionOrNull() != null
 
     private fun requireUserId(): String =
-        currentUserId ?: throw DzirentException("Your session may have expired. Please log out and log in again.")
+        currentUserId ?: throw DzirentException(ErrorCatalog.shown("DZ-E1002"))
 
     // =========================================================================
     // AUTHENTICATION
@@ -285,6 +317,8 @@ class DzirentRepository(
     }
 
     suspend fun signOut() {
+        // The downloaded data file (kept in memory for a retry) goes with the session.
+        DataExport.forget()
         try {
             auth.signOut()
         } catch (_: Exception) {
@@ -297,7 +331,7 @@ class DzirentRepository(
     }
 
     suspend fun changePassword(current: String, new: String) {
-        val emailStr = currentEmail ?: throw DzirentException("Your session may have expired. Please log out and log in again.")
+        val emailStr = currentEmail ?: throw DzirentException(ErrorCatalog.shown("DZ-E1002"))
         try {
             auth.signInWith(Email) {
                 email = emailStr
@@ -610,7 +644,8 @@ class DzirentRepository(
             put("p_text", text)
             put("p_where", where)
         }).decodeAs<kotlinx.serialization.json.JsonElement>()
-        (answer as? JsonPrimitive)?.takeIf { it.isString }?.content
+        // C1: the refusal starts with its code ("DZ-E1050: ..."); shown as "words (code)".
+        (answer as? JsonPrimitive)?.takeIf { it.isString }?.content?.let { ErrorCatalog.fromServer(it)?.text ?: it }
     } catch (e: Exception) {
         throw fail("check your text", e)
     }
@@ -747,6 +782,24 @@ class DzirentRepository(
         } catch (e: Exception) {
             throw fail("delete your listing", e)
         }
+    }
+
+    /**
+     * Download my data (P3A): the export-my-data function's JSON file, as text. Once a day: a
+     * second try within 24 hours is refused with the server's plain sentence.
+     */
+    suspend fun exportMyData(): String {
+        val response = try {
+            functions.invoke("export-my-data", buildJsonObject {})
+        } catch (e: Exception) {
+            throw fail("download your data", e)
+        }
+        val text = response.bodyAsText()
+        if (!response.status.isSuccess()) {
+            // C1: { code, message }; DZ-E7001 (once a day) carries the time in its message.
+            throw DzirentException(ErrorCatalog.fromBody(text) ?: ErrorCatalog.shown("DZ-E7002"))
+        }
+        return text
     }
 
     suspend fun deleteAccount() {
@@ -1074,8 +1127,13 @@ class DzirentRepository(
             // Filenames are fresh; upsert would need an UPDATE policy the bucket doesn't grant.
             storage.from("listing-photos").upload(path, imageBytes) {
                 upsert = false
+                // The photos are compressed to JPEG on the phone; the bucket checks the type (P5A).
+                contentType = ContentType.Image.JPEG
             }
         } catch (e: Exception) {
+            val rest = e as? RestException
+            storageRefusal(rest?.statusCode, listOfNotNull(rest?.error, rest?.description, e.message).joinToString(" "))
+                ?.let { throw DzirentException(ErrorCatalog.shown(it)) }
             throw fail("upload the photo", e)
         }
 

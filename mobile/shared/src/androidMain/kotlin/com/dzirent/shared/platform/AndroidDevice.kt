@@ -22,7 +22,9 @@ class AndroidDeviceServices(
     /** Firebase lives in the app module (androidApp), which hands it in. */
     override val push: PushService,
     /** Google Play Age Signals also lives in the app module. */
-    override val ageSignals: AgeSignalsService
+    override val ageSignals: AgeSignalsService,
+    /** Needs the activity for the system "save file" picker: [AndroidDataExport]. */
+    override val dataExport: DataExportService
 ) : DeviceServices {
     private val app = context.applicationContext
 
@@ -63,6 +65,12 @@ class AndroidDeviceServices(
     override fun openUrl(url: String) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         runCatching { app.startActivity(intent) }
+    }
+
+    override fun share(text: String) {
+        val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+        val chooser = Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { app.startActivity(chooser) }
     }
 }
 

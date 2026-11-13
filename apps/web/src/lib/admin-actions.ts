@@ -3,16 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { serverClient, currentUser } from "./supabase/server";
 import { config } from "./supabase/config";
+import { describeError, errorText, shown } from "./errors";
 
 async function requireAdminSession() {
   const user = await currentUser();
   if (!user) {
-    throw new Error("You must be signed in.");
+    throw new Error(errorText(shown("DZ-E1001")));
   }
   const client = await serverClient();
   const { data: isAdmin } = await client.rpc("is_admin");
   if (!isAdmin) {
-    throw new Error("Admins only, signed in with two-step verification.");
+    throw new Error(errorText(shown("DZ-E5008")));
   }
   return { user, client };
 }
@@ -45,11 +46,8 @@ async function callAdminEdgeFunction(payload: Record<string, unknown>) {
     unknown
   > | null;
   if (!response.ok) {
-    const errorMsg =
-      (body?.message as string) ||
-      (body?.error as string) ||
-      "Edge Function request failed.";
-    throw new Error(errorMsg);
+    // C1: { code, message } with the catalog status.
+    throw new Error(errorText(describeError(body)));
   }
   return body;
 }
@@ -60,7 +58,7 @@ export async function dismissReportAction(reportId: string, reason: string) {
     p_report_id: reportId,
     p_reason: reason,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/reports");
 }
@@ -76,7 +74,7 @@ export async function warnUserAction(
     p_note: note,
     p_report_id: reportId || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/reports");
   revalidatePath("/admin/users");
@@ -91,7 +89,7 @@ export async function removeReportedContentAction(
     p_report_id: reportId,
     p_reason: reason,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/reports");
 }
@@ -109,7 +107,7 @@ export async function suspendUserAction(
     p_reason: reason,
     p_report_id: reportId || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/reports");
   revalidatePath("/admin/users");
@@ -121,7 +119,7 @@ export async function unsuspendUserAction(userId: string, reason: string) {
     p_user_id: userId,
     p_reason: reason,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/reports");
   revalidatePath("/admin/users");
@@ -170,7 +168,7 @@ export async function decideScanAction(
     p_decision: decision,
     p_reason: reason,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/photo-reviews");
 }
@@ -181,7 +179,7 @@ export async function hideListingAction(listingId: string, reason: string) {
     p_listing_id: listingId,
     p_reason: reason,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/listings");
 }
@@ -192,7 +190,7 @@ export async function unhideListingAction(listingId: string, reason: string) {
     p_listing_id: listingId,
     p_reason: reason,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/listings");
 }
@@ -216,7 +214,7 @@ export async function createTakedownAction(data: {
     p_received_at: data.receivedAt || null,
     p_note: data.note || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/takedowns");
 }
@@ -232,7 +230,7 @@ export async function takedownRemoveListingAction(
     p_listing_id: listingId,
     p_reason: reason,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/takedowns");
 }
@@ -265,7 +263,7 @@ export async function recordCounterNoticeAction(
     p_notice: notice,
     p_received_at: receivedAt || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/takedowns");
 }
@@ -281,7 +279,7 @@ export async function setTakedownStatusAction(
     p_status: status,
     p_note: note,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/takedowns");
 }
@@ -292,7 +290,7 @@ export async function setFlagAction(key: string, enabled: boolean) {
     p_key: key,
     p_enabled: enabled,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   revalidatePath("/admin");
   revalidatePath("/admin/flags");
   // The header on every page reads preview_label.
@@ -304,8 +302,17 @@ export async function findUserAction(query: string) {
   const { data, error } = await client.rpc("admin_find_user", {
     p_query: query,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(errorText(describeError(error)));
   return (data || []) as Record<string, unknown>[];
 
 }
 
+/** C1: starts a dead background job (send-push or scan-listing) again; logged in the admin log. */
+export async function retryJobAction(jobId: number) {
+  const { client } = await requireAdminSession();
+  const { data, error } = await client.rpc("admin_retry_job", { p_job_id: jobId });
+  if (error) throw new Error(errorText(describeError(error)));
+  revalidatePath("/admin");
+  revalidatePath("/admin/jobs");
+  return data as { id: number; kind: string; status: string; attempts: number };
+}

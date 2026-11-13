@@ -11,45 +11,14 @@
 //    removed from admin_users.
 // Test messages and reports stay (reports and their evidence are kept by design).
 // Run from the repo root with Node 18+ and the Supabase CLI linked: node supabase/tests/p2b_admin.mjs
-import { existsSync, readFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+
 import { createHmac } from "node:crypto";
 import assert from "node:assert/strict";
+import { userEnv, SUPABASE_URL, SUPABASE_KEY, sql, CLI } from "./lib/config.mjs";
 
-function loadEnvFile(path) {
-  const env = {};
-  try {
-    for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx !== -1) env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-    }
-  } catch {}
-  return env;
-}
-
-const serverEnv = { ...loadEnvFile("H:/DziRent/secrets/dzirent-server.env"), ...process.env };
-const userEnv = { ...loadEnvFile("H:/DziRent/secrets/test-user.env"), ...process.env };
-const SUPABASE_URL = serverEnv.SUPABASE_URL?.replace(/\/$/, "");
-const SUPABASE_KEY = serverEnv.SUPABASE_PUBLISHABLE_KEY;
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
-  process.exit(1);
-}
 const ZERO = "00000000-0000-0000-0000-000000000000";
 // A slur from the word list, kept encoded so it isn't plain text in the repo (as in the P2A test).
 const SLUR = Buffer.from("dG93ZWxoZWFk", "base64").toString("utf8");
-
-// ---- SQL through the linked CLI (test setup and clean-up only) ----
-const npmCli = `${process.env.APPDATA ?? ""}/npm/node_modules/supabase/node_modules/@supabase/cli-windows-x64/bin/supabase.exe`;
-const CLI = serverEnv.SUPABASE_CLI ?? (process.platform === "win32" && existsSync(npmCli) ? npmCli : "supabase");
-function sql(query) {
-  const out = execFileSync(CLI, ["db", "query", "--linked", query, "-o", "json"], {
-    env: { ...process.env, ...serverEnv }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
-  });
-  return JSON.parse(out).rows ?? [];
-}
 
 // ---- TOTP (RFC 6238, SHA-1, 6 digits, 30 s) ----
 function base32(secret) {
@@ -243,7 +212,7 @@ async function run() {
     assert.ok(suspended.suspended_until, "suspended_until set");
     const blocked = await rest(u3.token, "messages", { method: "POST", body: { conversation_id: conversationId, sender_id: u3.id, body: "P2B while suspended" } });
     assert.ok(!blocked.ok, "a suspended user can't send a message");
-    assert.ok(String(blocked.data?.message).startsWith("Your account is suspended until"), blocked.data?.message);
+    assert.ok(String(blocked.data?.message).startsWith("DZ-E1040: Your account is suspended until"), blocked.data?.message);
     const blockedReport = await rest(u3.token, "reports", { method: "POST", body: { reporter_id: u3.id, target_type: "listing", target_id: listing.id, reason: "Other" } });
     assert.ok(!blockedReport.ok, "a suspended user can't report");
     const activeDuring = (await rest(u3.token, `listings?select=id&status=eq.active&lender_id=eq.${u3.id}`)).data.length;
@@ -266,7 +235,7 @@ async function run() {
     assert.equal((await rpc(null, "get_listing", { p_listing_id: listing.id })).length, 0, "guests can't see a hidden listing");
     const republish = await rest(u1.token, `listings?id=eq.${listing.id}`, { method: "PATCH", body: { status: "active" } });
     assert.ok(!republish.ok, "the owner can't republish a hidden listing");
-    assert.ok(String(republish.data?.message).startsWith("This listing is hidden by Dzirent"), republish.data?.message);
+    assert.ok(String(republish.data?.message).startsWith("DZ-E2030: This listing is hidden by Dzirent"), republish.data?.message);
     const reasonShown = (await rest(u1.token, `listings?select=auto_paused_reason&id=eq.${listing.id}`)).data[0].auto_paused_reason;
     const unhidden = await rpc(admin, "admin_unhide_listing", { p_listing_id: listing.id, p_reason: "P2B test unhide" });
     state.hidden = null;

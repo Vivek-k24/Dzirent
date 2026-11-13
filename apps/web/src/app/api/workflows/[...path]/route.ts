@@ -9,6 +9,7 @@ import {
   editorData,
   ownListing,
   must,
+  codedError,
   WorkflowError,
   uuid,
 } from "@/lib/workflow-server";
@@ -31,14 +32,42 @@ function failure(error: unknown) {
   return NextResponse.json(
     {
       error:
-        error instanceof WorkflowError ? error.message : "Please try again.",
+        error instanceof WorkflowError ? error.message : "Something went wrong. Please try again. (DZ-E9999)",
       field: error instanceof WorkflowError ? error.field : undefined,
+      code: error instanceof WorkflowError ? error.code : "DZ-E9999",
     },
     {
       status: error instanceof WorkflowError ? error.status : 500,
       headers: { "Cache-Control": "no-store" },
     },
   );
+}
+/**
+ * Settings > Privacy > Download my data (P3A): the export-my-data Edge Function, as the signed-in
+ * user, returned as a file. Once a day; the function's own sentence explains a refusal.
+ */
+async function exportMyData() {
+  const { client } = await session();
+  const result = await client.functions.invoke("export-my-data", { body: {} });
+  if (result.error) {
+    // C1: { code, message }; DZ-E7001 (once a day) carries the time in its message.
+    const context = (result.error as { context?: Response }).context;
+    let body: unknown = { code: "DZ-E7002" };
+    if (context) {
+      try {
+        body = await context.json();
+      } catch {}
+    }
+    throw codedError(body, context?.status === 429 ? 429 : 400);
+  }
+  const date = new Date().toISOString().slice(0, 10);
+  return new NextResponse(JSON.stringify(result.data, null, 2), {
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Disposition": `attachment; filename="dzirent-data-${date}.json"`,
+      "Cache-Control": "private, no-store",
+    },
+  });
 }
 export async function GET(_request: NextRequest, { params }: Params) {
   try {
@@ -82,6 +111,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
     if (path[0] === "chat")
       return reply(await chatMutation(path[1], path[2], body));
+    if (path[0] === "export") return await exportMyData();
     if (path[0] === "account") {
       if (path[1] === "delete") {
         if (String(body.confirm).trim() !== "DELETE")

@@ -134,3 +134,28 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - A blocked account can only read its own data and delete itself: every write by that user is refused with "Dzirent is only for people 18 and older." Its active listings are paused when the block starts and stay paused after it ends until the owner republishes them.
 - Admins see the latest age check and the block in user lookup.
 - `preview_label` (`app_settings`, default on) shows "Preview only" in red in the website header; admins switch it on the Flags page.
+
+## Security (2026-11-10)
+
+- The current Terms of Use and Privacy Policy are enforced in the database: publishing a listing, starting a chat, sending a message, saving a piece or studio, and filing a report are refused until the person has accepted the current versions. Reading stays allowed.
+- Rate limits live in the database, in the closed settings table: messages 30 a minute, new chats 30 a day, reports 20 a day, new listings 20 a day, photo checks 30 an hour per person.
+- Listing photo uploads: JPEG, PNG or WebP only, up to 10 MB, only at `{listing_id}/{random}.jpg` for a listing the uploader owns.
+- People are signed out after 30 days without using Dzirent (Supabase Auth inactivity timeout).
+- Admins enter a fresh two-step code when their last one is more than 24 hours old.
+- On the phones the sign-in session is kept in encrypted storage: the Android Keystore and the iPhone Keychain, never plain app storage.
+
+## Chat (2026-11-10)
+
+- Chat messages are not filtered: no language check and no logging. People report, block or ignore. This replaces "chat messages" in "Content safety (2026-11-07)"; listings, profiles and studio fields keep the filter.
+
+## Price (2026-11-11)
+
+- A listing's price is its price for one day (`listings.price_usd`, `price_unit` = `per_day`, the only unit for now). Cards show "$X/day · distance"; the listing page shows "$X/day" and, with dates chosen, "<n> days · $total". Editors label the field "Price per day".
+- Days count both the first and the last day (Nov 5 - Nov 8 is 4 days). The total is price per day times days; the database returns both (`browse_listings`, `get_listing`).
+
+## Errors and retries (2026-11-11)
+
+- Every error and warning people can see has a code from one catalog, `contracts/error-codes.json` (`DZ-E####` errors, `DZ-W####` warnings, families 1xxx account to 9xxx system). Kotlin, the website and the Edge Functions use code generated from it; the generated files are committed and a check fails when they are out of date.
+- The database starts every refusal with its code and keeps its words; the field goes in the HINT. Edge Functions answer `{ code, message }` with the catalog's status. Clients show the catalog's words with the code in brackets, else the server's words, else `DZ-E9999` "Something went wrong. Please try again.".
+- Background calls to `send-push` and `scan-listing` go through an outbox (`app_private.async_jobs`): retried after 1, 5, 30 and 120 minutes, dead after 5 attempts. A photo check whose job dies ends as review. Admins see dead jobs and can retry one (logged).
+- Clients retry reads only (2 retries, 0.5 s then 2 s), never writes.

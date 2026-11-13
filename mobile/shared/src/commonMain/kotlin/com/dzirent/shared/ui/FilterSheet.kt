@@ -98,13 +98,13 @@ fun FilterSheet(
                 }
             }
 
-            SheetHeading("Price per rental")
+            SheetHeading("Price per day")
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PriceField("Min", minText, { minText = it }, Modifier.weight(1f))
                 PriceField("Max", maxText, { maxText = it }, Modifier.weight(1f))
             }
             priceError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.announced())
             }
 
             SheetHeading("Size")
@@ -125,7 +125,7 @@ fun FilterSheet(
                         maxText = ""
                         sizeText = ""
                     },
-                    modifier = Modifier.weight(1f).height(50.dp)
+                    modifier = Modifier.weight(1f).heightIn(min = 50.dp)
                 ) { Text("Reset") }
                 Button(
                     onClick = {
@@ -138,7 +138,7 @@ fun FilterSheet(
                         )
                     },
                     enabled = priceError == null,
-                    modifier = Modifier.weight(1f).height(50.dp)
+                    modifier = Modifier.weight(1f).heightIn(min = 50.dp)
                 ) { Text("Apply") }
             }
         }

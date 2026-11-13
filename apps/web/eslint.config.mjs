@@ -1,4 +1,15 @@
 import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
-export default defineConfig([...nextVitals, ...nextTs, globalIgnores(['.next/**','next-env.d.ts'])]);
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+
+export default defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  {
+    rules: {
+      ...jsxA11y.flatConfigs.recommended.rules,
+    },
+  },
+  globalIgnores(['.next/**', 'next-env.d.ts']),
+]);

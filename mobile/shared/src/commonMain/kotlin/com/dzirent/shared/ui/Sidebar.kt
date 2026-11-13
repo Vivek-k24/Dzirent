@@ -1,6 +1,7 @@
 package com.dzirent.shared.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -145,7 +146,12 @@ private fun CategoryText(
         color = if (selected) DzirentAccent else MaterialTheme.colorScheme.onSurface,
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            // Selectable, so screen readers say which category is selected (not only the color).
+            .selectable(selected = selected, onClick = onClick)
+            // At least 48 dp tall; the text stays centered.
+            .heightIn(min = 48.dp)
+            .wrapContentHeight()
             .padding(vertical = 12.dp)
+            .then(if (heading) Modifier.asHeading() else Modifier)
     )
 }

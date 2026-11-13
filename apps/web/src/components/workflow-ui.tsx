@@ -15,9 +15,19 @@ export function WorkflowModal({
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const d = ref.current;
+    const previouslyFocused = (typeof document !== "undefined" ? document.activeElement : null) as HTMLElement | null;
     d?.showModal();
-    return () => d?.close();
-  }, []);
+    const handleClick = (e: MouseEvent) => {
+      if (e.target === d && !busy) onClose();
+    };
+    d?.addEventListener("click", handleClick);
+    return () => {
+      d?.removeEventListener("click", handleClick);
+      d?.close();
+      previouslyFocused?.focus();
+    };
+  }, [busy, onClose]);
+
   return (
     <dialog
       ref={ref}
@@ -27,10 +37,8 @@ export function WorkflowModal({
         e.preventDefault();
         if (!busy) onClose();
       }}
-      onClick={(e) => {
-        if (e.target === ref.current && !busy) onClose();
-      }}
     >
+
       <div className="modal-content">
         <div className="modal-top">
           <h2>{title}</h2>

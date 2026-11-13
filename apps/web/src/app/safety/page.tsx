@@ -5,7 +5,7 @@ import { LegalLayout, LegalPlaceholder } from "@/components/legal-layout";
 import { LEGAL_CONFIG } from "@/content/legal/config";
 
 export const metadata: Metadata = {
-  title: "Trust & Safety Guide — Dzirent",
+  title: "Trust & Safety Guide",
   description:
     "Practical safety advice, in-person meetup recommendations, security deposits, and reporting tools for Dzirent members.",
 };
@@ -53,28 +53,28 @@ export default function SafetyPage() {
 
         <div className="legal-card-grid">
           <div className="legal-card">
-            <h4>Meet in Public Places</h4>
+            <h3>Meet in Public Places</h3>
             <p>
               Choose a busy, well-lit public location for your handoff—such as a popular local café,
               public library, community center, or shopping galleria.
             </p>
           </div>
           <div className="legal-card">
-            <h4>Meet During Daylight Hours</h4>
+            <h3>Meet During Daylight Hours</h3>
             <p>
               Arrange handoffs during standard daytime or early evening hours whenever feasible. Avoid
               late-night meetings or isolated parking structures.
             </p>
           </div>
           <div className="legal-card">
-            <h4>Bring or Notify a Friend</h4>
+            <h3>Bring or Notify a Friend</h3>
             <p>
               Let a family member, roommate, or friend know where you are going, who you are meeting,
               and your estimated return time. If you feel hesitant, invite a friend along.
             </p>
           </div>
           <div className="legal-card">
-            <h4>Never Compromise Comfort</h4>
+            <h3>Never Compromise Comfort</h3>
             <p>
               If a meeting location feels uncomfortable, ask to change it to a public venue. If
               anything feels wrong upon arrival, leave immediately.

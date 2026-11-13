@@ -52,6 +52,9 @@ interface DeviceServices {
     /** The app store's age signal (P2C age gate). */
     val ageSignals: AgeSignalsService
 
+    /** Saving the "Download my data" file (P3A). */
+    val dataExport: DataExportService
+
     /** The app's version name ("1.0.0"), recorded with the accessory declaration. */
     val appVersion: String
 
@@ -72,6 +75,9 @@ interface DeviceServices {
 
     /** Opens a web page or mailto: link outside the app. */
     fun openUrl(url: String)
+
+    /** The system share sheet with [text] ("<title> on Dzirent: <link>", P5C). */
+    fun share(text: String)
 }
 
 val LocalDevice = staticCompositionLocalOf<DeviceServices> { error("DeviceServices not provided") }

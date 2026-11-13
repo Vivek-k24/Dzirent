@@ -446,25 +446,26 @@ export function UsersView({ initialUsers, initialQuery }: { initialUsers: AdminU
           onConfirm={handleAction}
         >
           <div style={{ marginBottom: "12px" }}>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 500, marginBottom: "4px" }}>
-              Suspension duration (days):
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 500 }}>
+              <span style={{ display: "block", marginBottom: "4px" }}>Suspension duration (days):</span>
+              <input
+                type="number"
+                min={1}
+                max={3650}
+                value={suspendDays}
+                onChange={(e) => setSuspendDays(Math.max(1, parseInt(e.target.value) || 1))}
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--line)",
+                  background: "var(--paper)",
+                  color: "var(--ink)",
+                }}
+              />
             </label>
-            <input
-              type="number"
-              min={1}
-              max={3650}
-              value={suspendDays}
-              onChange={(e) => setSuspendDays(Math.max(1, parseInt(e.target.value) || 1))}
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                borderRadius: "4px",
-                border: "1px solid var(--line)",
-                background: "var(--paper)",
-                color: "var(--ink)",
-              }}
-            />
           </div>
+
         </ActionDialog>
       )}
 

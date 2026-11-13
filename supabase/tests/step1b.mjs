@@ -1,35 +1,8 @@
 // Step 1B test script: verifies guest browsing, owner CRUD, cross-account restrictions,
 // conversations, blocking, and fit matching.
-import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
-
-function loadEnvFile(path) {
-  const env = {};
-  try {
-    const content = readFileSync(path, "utf8");
-    for (const line of content.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx !== -1) {
-        env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-      }
-    }
-  } catch {}
-  return env;
-}
-
-const serverEnv = { ...loadEnvFile("H:/DziRent/secrets/dzirent-server.env"), ...process.env };
-const userEnv = { ...loadEnvFile("H:/DziRent/secrets/test-user.env"), ...process.env };
-
-const SUPABASE_URL = serverEnv.SUPABASE_URL?.replace(/\/$/, "");
-const SUPABASE_KEY = serverEnv.SUPABASE_PUBLISHABLE_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
-  process.exit(1);
-}
+import { userEnv, SUPABASE_URL, SUPABASE_KEY } from "./lib/config.mjs";
 
 // 1x1 valid JPEG
 const TINY_JPEG = Buffer.from([

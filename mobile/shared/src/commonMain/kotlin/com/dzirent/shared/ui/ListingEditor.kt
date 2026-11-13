@@ -100,7 +100,7 @@ fun ListingEditorScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         if (onBack != null) {
             TopAppBar(
-                title = { Text(if (listingId == null) "New Listing" else "Edit Listing") },
+                title = { Text(if (listingId == null) "New Listing" else "Edit Listing", modifier = Modifier.asHeading()) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -362,7 +362,7 @@ private fun ListingEditorForm(
     draftOffer?.let { saved ->
         AlertDialog(
             onDismissRequest = {},
-            title = { Text("Continue your draft?") },
+            title = { Text("Continue your draft?", modifier = Modifier.asHeading()) },
             text = { Text(saved.title.ifBlank { "You have a listing you didn't finish." }) },
             confirmButton = {
                 TextButton(onClick = {
@@ -590,7 +590,7 @@ private fun ListingEditorForm(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = noLocationToPublish(settings.distanceUnit), color = MaterialTheme.colorScheme.onErrorContainer)
+                        Text(text = noLocationToPublish(settings.distanceUnit), color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.announced())
                         Spacer(modifier = Modifier.height(8.dp))
                         TextButton(onClick = onSetLocation) { Text("Set my location") }
                     }
@@ -602,7 +602,7 @@ private fun ListingEditorForm(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                 ) {
-                    Text(text = it, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(16.dp))
+                    Text(text = it, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(16.dp).announced())
                 }
             }
 
@@ -619,7 +619,7 @@ private fun ListingEditorForm(
                         onMessage = { errorMessage = it }
                     )
                     Spacer(modifier = Modifier.height(24.dp))
-                    Button(onClick = { next() }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                    Button(onClick = { next() }, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)) {
                         Text(photosMissing?.button ?: "Next")
                     }
                 }
@@ -631,7 +631,7 @@ private fun ListingEditorForm(
                     )
                     DetailsStep(state = state, onOpenDeclaration = { showDeclaration = true })
                     Spacer(modifier = Modifier.height(24.dp))
-                    Button(onClick = { next() }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                    Button(onClick = { next() }, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)) {
                         Text(detailsGap?.button ?: "Next")
                     }
                     TextButton(onClick = { errorMessage = null; state.step = STEP_PHOTOS }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
@@ -658,7 +658,7 @@ private fun ListingEditorForm(
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = { publish() },
-                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
                     ) { Text(missing?.button ?: if (isNew || state.isDraft) "Publish listing" else "Save changes") }
                     TextButton(onClick = { errorMessage = null; state.step = STEP_DETAILS }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                         Text("Back to details")
@@ -730,7 +730,7 @@ fun DepositFields(
         onValueChange = { input -> onRetailValueChange(input.filter { it.isDigit() || it == '.' }) },
         label = { Text("Retail value (\$) - optional") },
         isError = retailError != null,
-        supportingText = retailError?.let { { Text(it) } },
+        supportingText = retailError?.let { { Text(it, modifier = Modifier.announced()) } },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         singleLine = true,
         modifier = Modifier.fillMaxWidth()

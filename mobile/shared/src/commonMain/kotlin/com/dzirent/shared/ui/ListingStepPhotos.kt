@@ -48,6 +48,7 @@ import com.dzirent.shared.util.SuggestField
 import com.dzirent.shared.util.UPLOADING_PHOTOS
 import com.dzirent.shared.util.assignSlots
 import com.dzirent.shared.util.extraWarnings
+import com.dzirent.shared.util.ErrorCatalog
 import com.dzirent.shared.util.readyLine
 
 /**
@@ -87,7 +88,7 @@ fun PhotosStep(
     choosingSourceFor?.let { slot ->
         AlertDialog(
             onDismissRequest = { choosingSourceFor = null },
-            title = { Text("Add the ${slot.label.lowercase()} photo") },
+            title = { Text("Add the ${slot.label.lowercase()} photo", modifier = Modifier.asHeading()) },
             confirmButton = {
                 TextButton(onClick = { choosingSourceFor = null; targetKey = slot.key; start(PhotoSource.Camera) }) { Text("Camera") }
             },
@@ -166,7 +167,7 @@ fun DetailsStep(state: ListingEditorState, onOpenDeclaration: () -> Unit) {
         label = { Text("Title") },
         placeholder = { Text("e.g. Maroon lehenga") },
         isError = state.textErrors["title"] != null,
-        supportingText = state.textErrors["title"]?.let { { Text(it) } },
+        supportingText = state.textErrors["title"]?.let { { Text(it, modifier = Modifier.announced()) } },
         singleLine = true,
         trailingIcon = clearIcon("title", state.title.text.isNotEmpty()) { state.clear(SuggestField.TITLE) },
         modifier = Modifier.fillMaxWidth()
@@ -285,13 +286,24 @@ private fun SlotTile(
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f),
-                modifier = Modifier.align(Alignment.TopEnd).padding(2.dp)
+            // The same 32 dp circle in the corner as before, inside a 48 dp touch target that
+            // reaches into the photo.
+            Box(
+                contentAlignment = Alignment.TopEnd,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(48.dp)
+                    .clickable(role = Role.Button, onClick = onRemove)
+                    .semantics { contentDescription = "Remove the ${slot.label.lowercase()} photo" }
             ) {
-                IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = "Remove the ${slot.label.lowercase()} photo", tint = Color.White)
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f),
+                    modifier = Modifier.padding(2.dp).size(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Close, contentDescription = null, tint = Color.White)
+                    }
                 }
             }
             if (review?.verdict == PhotoVerdict.CHECKING) {
@@ -309,7 +321,7 @@ private fun SlotTile(
         }
         review?.let { PhotoCheckResult(it, onUseAnyway) }
         extraWarnings(review?.messages.orEmpty(), serverWarnings).forEach { warning ->
-            Text(text = warning, style = MaterialTheme.typography.labelSmall, color = DzirentWarn, textAlign = TextAlign.Center)
+            Text(text = ErrorCatalog.warningText(warning), style = MaterialTheme.typography.labelSmall, color = DzirentWarn, textAlign = TextAlign.Center)
         }
     }
 }
@@ -329,7 +341,7 @@ fun PhotoCheckBanner(banner: CheckBanner?, onRetry: () -> Unit, onReplacePhotos:
         modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
     ) {
         val text = if (error) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp).announced()) {
             when (banner) {
                 CheckBanner.Uploading, CheckBanner.Checking -> {
                     Text(if (banner == CheckBanner.Uploading) UPLOADING_PHOTOS else CHECKING_PHOTOS, color = text)
@@ -382,7 +394,7 @@ private fun PhotoCheckResult(review: PhotoReview, onUseAnyway: () -> Unit) {
         )
         else -> {
             review.messages.forEach { message ->
-                Text(text = message, style = MaterialTheme.typography.labelSmall, color = color, textAlign = TextAlign.Center)
+                Text(text = ErrorCatalog.warningText(message), style = MaterialTheme.typography.labelSmall, color = color, textAlign = TextAlign.Center)
             }
             when (review.verdict) {
                 PhotoVerdict.WARNING -> TextButton(

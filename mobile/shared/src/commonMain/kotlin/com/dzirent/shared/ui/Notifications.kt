@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import com.dzirent.shared.platform.KeyValueStore
 import com.dzirent.shared.platform.LocalDevice
 import com.dzirent.shared.platform.PushService
@@ -39,7 +40,7 @@ fun NotificationPromptDialog(onTurnOn: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Notifications, contentDescription = null) },
-        title = { Text("Get notified when they reply") },
+        title = { Text("Get notified when they reply", modifier = Modifier.asHeading()) },
         text = {
             Text(
                 "Dzirent tells you about new messages and new dates in your chats. What they wrote " +

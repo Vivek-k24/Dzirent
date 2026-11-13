@@ -1,12 +1,14 @@
 // Delivers chat notifications through Firebase Cloud Messaging (HTTP v1 API).
-// Called only by the database (app_private.queue_push, through pg_net), which has already
+// Called only by the database (app_private.queue_push, through the async_jobs outbox and pg_net), which has already
 // checked blocks, the recipient's settings and the wording. The database proves it is the
 // caller with the shared secret in x-send-push-secret. Apps never call this function.
+
+import { readInput, UUID } from "../_shared/input.ts";
+import { errorBody, errorStatus } from "../_shared/errors.ts";
 
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const KINDS = new Set(["message", "new_chat", "dates"]);
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // A chat notification that couldn't be delivered for a day is stale; the inbox has it.
 const TTL = "86400s";
 
@@ -33,6 +35,11 @@ function json(status: number, body: Record<string, unknown>): Response {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+/** C1: an error as { code, message } with the catalog status (contracts/error-codes.json). */
+function refuse(code: string, message?: string): Response {
+  return json(errorStatus(code), errorBody(code, message));
 }
 
 /** Compares in constant time, so the secret can't be guessed one byte at a time. */
@@ -189,24 +196,29 @@ async function sendOne(
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
-    return json(405, { error: "method_not_allowed" });
+    return refuse("DZ-E9005");
   }
 
   const secret = Deno.env.get("SEND_PUSH_SECRET");
   if (!secret || !sameSecret(req.headers.get("x-send-push-secret") ?? "", secret)) {
-    return json(401, { error: "not_allowed" });
+    return refuse("DZ-E9004");
   }
 
   const account = loadServiceAccount();
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const key = serviceKey();
   if (!account || !supabaseUrl || !key) {
-    return json(500, { error: "not_configured" });
+    return refuse("DZ-E9003");
   }
 
-  const push = parseRequest(await req.json().catch(() => null));
+  const input = await readInput(req, {
+    allowed: ["kind", "conversation_id", "recipient_id", "title", "body"],
+    required: ["kind", "conversation_id", "recipient_id", "title"],
+    maxBytes: 8192,
+  });
+  const push = input.ok ? parseRequest(input.body) : null;
   if (!push) {
-    return json(400, { error: "bad_request" });
+    return refuse("DZ-E9016");
   }
 
   // Android phones only: iOS delivery comes with the iOS app (Step 5).
@@ -215,7 +227,7 @@ Deno.serve(async (req) => {
     { headers: restHeaders(key) },
   );
   if (!tokensResponse.ok) {
-    return json(500, { error: "tokens_unavailable" });
+    return refuse("DZ-E9003");
   }
   const rows: Array<{ token: string }> = await tokensResponse.json();
   if (rows.length === 0) {
@@ -237,7 +249,7 @@ Deno.serve(async (req) => {
   try {
     bearer = await accessToken(account);
   } catch {
-    return json(502, { error: "firebase_auth_failed" });
+    return refuse("DZ-E9003");
   }
 
   const results = await Promise.all(rows.map((row) => sendOne(account, bearer, row.token, data)));
@@ -266,5 +278,10 @@ Deno.serve(async (req) => {
   const errors = [...new Set(results.flatMap((r) => (r.ok ? [] : [r.code])))];
   // Counts only: never tokens or message text in the logs.
   console.log(JSON.stringify({ kind: push.kind, sent, failed: rows.length - sent, removed, errors }));
+  // C1: nothing delivered and a phone still worth trying (not a dead token): answer an error so
+  // the database's outbox (app_private.async_jobs) tries again later.
+  if (sent === 0 && results.some((r) => !r.ok && !r.deadToken)) {
+    return json(errorStatus("DZ-E9003"), { ...errorBody("DZ-E9003"), sent, failed: rows.length - sent, removed, errors });
+  }
   return json(200, { sent, failed: rows.length - sent, removed, errors });
 });

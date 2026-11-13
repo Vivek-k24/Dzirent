@@ -1,6 +1,7 @@
 import {createServerClient} from '@supabase/ssr';
 import {NextResponse, type NextRequest} from 'next/server';
 import {config as supabaseConfig} from '@/lib/supabase/config';
+import {adminCodeNeeded} from '@/lib/admin-code';
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({request});
   const {url,key} = supabaseConfig();
@@ -26,11 +27,10 @@ export async function proxy(request: NextRequest) {
     }
     const { data: isAdmin } = await client.rpc("is_admin");
     if (!isAdmin) {
+      // An admin without a two-step code in this session, or whose last code is older than
+      // 24 hours (P5A), gets the code step on the page they asked for; anyone else gets a 404.
       const { error: queuesErr } = await client.rpc("admin_queues");
-      if (
-        queuesErr?.message !==
-        "Sign in with two-step verification to use admin tools"
-      ) {
+      if (!adminCodeNeeded(queuesErr?.message)) {
         return NextResponse.rewrite(new URL("/_not-found", request.url), {
           status: 404,
         });
@@ -41,4 +41,5 @@ export async function proxy(request: NextRequest) {
   return response;
 
 }
-export const config = {matcher:['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|webp|woff2)$).*)']};
+// /.well-known/ (assetlinks.json for Android app links, P5C) is a plain public file: no session work.
+export const config = {matcher:['/((?!_next/static|_next/image|favicon.ico|\\.well-known/|.*\\.(?:svg|png|jpg|jpeg|webp|woff2)$).*)']};

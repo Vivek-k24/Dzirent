@@ -14,6 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Share
+import com.dzirent.shared.util.ShareLinks
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -112,6 +114,13 @@ fun StudioScreen(
                 }
             },
             actions = {
+                // Share (P5C): "<studio name> on Dzirent: https://dzirent.com/studio/<handle>".
+                val handle = page?.lender?.studioHandle
+                if (page != null && !handle.isNullOrBlank()) {
+                    IconButton(onClick = { device.share(ShareLinks.studioText(page.lender.studioTitle, handle)) }) {
+                        Icon(Icons.Default.Share, contentDescription = "Share studio")
+                    }
+                }
                 if (page != null && !isMine) {
                     IconButton(onClick = { toggleSaved(page) }, enabled = !savingBookmark) {
                         Icon(
@@ -187,7 +196,7 @@ private fun StudioContent(
                 }
                 if (!isMine && page.pieces.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onMessage, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                    Button(onClick = onMessage, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)) {
                         Text("Message ${lender.studioTitle}", maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }

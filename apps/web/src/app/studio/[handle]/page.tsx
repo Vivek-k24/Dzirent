@@ -7,10 +7,41 @@ import { Gate, PieceGrid } from "@/components/cards";
 import { Icon } from "@/components/icon";
 import { studioAction } from "@/app/actions";
 import { ConfirmSubmit } from "@/components/submit";
-export const metadata: Metadata = {
-  title: "Meet the studio",
-  robots: { index: false, follow: false },
-};
+import { refusalText } from "@/lib/refusals";
+import { safeDecode, studioPreview } from "@/lib/preview";
+import { studioLink, studioShareText } from "@/lib/share";
+import { ShareButton } from "@/components/share-button";
+// P5C: preview tags for everyone, guests and link-preview bots included, from the guest shop
+// window only (studio name, handle, up to 4 listing photos in the opengraph-image). The page
+// itself still asks guests to sign up.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ handle: string }>;
+}): Promise<Metadata> {
+  const handle = safeDecode((await params).handle);
+  const preview = await studioPreview(handle);
+  const robots = { index: false, follow: false };
+  if (!preview) {
+    return {
+      title: "Meet the studio",
+      robots,
+      openGraph: { title: "A studio on Dzirent", description: "Rent clothes from closets near you.", siteName: "Dzirent", type: "website" },
+      twitter: { card: "summary_large_image", title: "A studio on Dzirent" },
+    };
+  }
+  const title = `${preview.name} (@${preview.handle})`;
+  const description = `Pieces to rent from @${preview.handle} on Dzirent.`;
+  const url = studioLink(preview.handle);
+  return {
+    title,
+    description,
+    robots,
+    alternates: { canonical: url },
+    openGraph: { title, description, url, siteName: "Dzirent", type: "profile" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 export default async function StudioPage({
   params,
   searchParams,
@@ -56,6 +87,12 @@ export default async function StudioPage({
             {s.is_saved ? "Studio saved" : "Save studio"}
           </button>
         </form>
+        <div className="studio-share">
+          <ShareButton
+            text={studioShareText(s.studio_name, s.studio_handle)}
+            link={studioLink(s.studio_handle)}
+          />
+        </div>
       </section>
       <div className="studio-stats">
         <div>
@@ -91,6 +128,11 @@ export default async function StudioPage({
       {value(q, "notice") === "action-error" && (
         <p className="notice" role="status">
           That didn’t go through. Please try again.
+        </p>
+      )}
+      {refusalText(value(q, "notice")) && (
+        <p className="notice" role="status">
+          {refusalText(value(q, "notice"))}
         </p>
       )}
       <div className="section-heading">

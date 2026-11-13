@@ -5,7 +5,7 @@ import { LegalLayout, LegalPlaceholder } from "@/components/legal-layout";
 import { LEGAL_CONFIG } from "@/content/legal/config";
 
 export const metadata: Metadata = {
-  title: "Community Guidelines — Dzirent",
+  title: "Community Guidelines",
   description:
     "Standards, allowed categories, photo requirements, and etiquette for lending and renting on Dzirent.",
 };
@@ -72,48 +72,49 @@ export default function CommunityGuidelinesPage() {
 
         <div className="legal-card-grid">
           <div className="legal-card">
-            <h4>Career & Professional</h4>
+            <h3>Career & Professional</h3>
             <p>
               Tailored blazers, suits, structured trousers, pencil skirts, professional shifts, and
               curated executive workwear designed for interviews, presentations, or business events.
             </p>
           </div>
           <div className="legal-card">
-            <h4>Occasion & Party</h4>
+            <h3>Occasion & Party</h3>
             <p>
               Cocktail dresses, evening gowns, backless maxi dresses, formal tuxedos, party sets,
               statement jumpsuits, and celebratory attire for weddings, galas, and special nights.
             </p>
           </div>
           <div className="legal-card">
-            <h4>Cultural & Traditional</h4>
+            <h3>Cultural & Traditional</h3>
             <p>
               Authentic cultural attire including lehengas, sarees, sherwanis, qipaos, hanboks,
               abayas, kaftans, dirndls, and heritage celebration garments.
             </p>
           </div>
           <div className="legal-card">
-            <h4>Everyday</h4>
+            <h3>Everyday</h3>
             <p>
               Elevated tops, blouses, premium knitwear, silk shirts, structured vests, statement
               jackets, and distinctive fashion pieces with exceptional cut, fabric, or design.
             </p>
           </div>
           <div className="legal-card">
-            <h4>Outerwear</h4>
+            <h3>Outerwear</h3>
             <p>
               Tailored wool coats, classic trench coats, capes, leather or shearling jackets, and
               formal wraps or duster coats.
             </p>
           </div>
           <div className="legal-card">
-            <h4>Accessories</h4>
+            <h3>Accessories</h3>
             <p>
               Curated luxury sunglasses, high-end handbags and clutches, designer silk ties,
               non-smart classic watches, statement belt buckles, and costume jewelry accompanied by an
               accessory declaration.
             </p>
           </div>
+
         </div>
       </section>
 

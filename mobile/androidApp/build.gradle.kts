@@ -129,6 +129,21 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // P4B: Android Lint's accessibility checks fail the build. checkDependencies also runs them
+    // on the shared module, where the screens are.
+    lint {
+        checkDependencies = true
+        error += setOf(
+            "ContentDescription",
+            "ClickableViewAccessibility",
+            "GetContentDescriptionOverride",
+            "KeyboardInaccessibleWidget",
+            "LabelFor",
+            "AccessibilityWindowStateChangedEvent",
+            "AccessibilityScrollActions",
+        )
+    }
 }
 
 dependencies {

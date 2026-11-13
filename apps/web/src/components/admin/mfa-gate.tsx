@@ -10,7 +10,8 @@ type Factor = {
   friendly_name?: string;
 };
 
-export function AdminMfaGate() {
+/** [stale]: the admin's last code is more than 24 hours old (P5A). */
+export function AdminMfaGate({ stale = false }: { stale?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<"enroll" | "challenge">("challenge");
   const [factorId, setFactorId] = useState("");
@@ -121,7 +122,9 @@ export function AdminMfaGate() {
           <p className="muted" style={{ fontSize: "14px" }}>
             {mode === "enroll"
               ? "Scan this QR code with an authenticator app (Google Authenticator, 1Password, Authy), then enter the 6-digit code to complete setup."
-              : "Enter the 6-digit code from your authenticator app to unlock the admin area."}
+              : stale
+                ? "Your last code was more than 24 hours ago. Enter the 6-digit code from your authenticator app to continue."
+                : "Enter the 6-digit code from your authenticator app to unlock the admin area."}
           </p>
         </div>
 
@@ -172,9 +175,9 @@ export function AdminMfaGate() {
                 if (error) setError("");
               }}
               style={{ fontSize: "24px", letterSpacing: "6px", textAlign: "center", padding: "12px" }}
-              autoFocus
               disabled={busy}
               required
+
             />
           </label>
           <button

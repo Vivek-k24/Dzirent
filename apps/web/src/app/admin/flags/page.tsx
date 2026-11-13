@@ -3,7 +3,7 @@ import { serverClient } from "@/lib/supabase/server";
 import { FlagsView, FeatureFlag } from "@/components/admin/flags-view";
 
 export const metadata: Metadata = {
-  title: "Feature Flags | Dzirent Admin",
+  title: "Admin: Feature Flags",
   robots: {
     index: false,
     follow: false,
