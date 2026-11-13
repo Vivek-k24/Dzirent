@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(6);
 
-select is((select count(*)::int from public.app_settings where key like 'cleanup_%'), 9, 'nine cleanup switches');
+select is((select count(*)::int from public.app_settings where key like 'cleanup_%'), 10, 'ten cleanup switches (C3 adds old_condition_photos)');
 select is((select count(*)::int from public.app_settings where key like 'cleanup_%' and enabled), 0, 'all off: count only');
 select is((select count(*)::int from cron.job where jobname in ('dzirent-cleanup-database', 'dzirent-cleanup-files')), 2, 'both nightly jobs are scheduled');
 

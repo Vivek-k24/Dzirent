@@ -82,9 +82,10 @@ export default function DeleteAccountPage() {
         <div className="legal-callout warning">
           <div className="callout-title">Ongoing Rentals Must Be Concluded</div>
           <p>
-            If you have an active rental in progress—either as a lender who has an item out on loan, or
-            as a borrower who has not yet returned a piece—your account <strong>cannot be deleted</strong>
-            until the rental is completed and marked as returned by both parties.
+            If you have a rental in progress (from the moment the lender accepts a request until it is
+            completed or cancelled), as the lender or as the renter, your account{" "}
+            <strong>cannot be deleted</strong> until the rental is cancelled before pickup, or the lender
+            marks the piece returned. A request that hasn&apos;t been accepted doesn&apos;t stop you.
           </p>
           <p style={{ marginTop: "8px" }}>
             This requirement protects both users against abandoned rentals and ensures accountability

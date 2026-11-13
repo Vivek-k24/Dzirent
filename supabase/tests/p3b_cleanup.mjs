@@ -1,5 +1,5 @@
 // P3B test script: every cleanup job once, in count-only mode, against dzirent-server.
-// 1. All nine switches (app_settings cleanup_<job>) must be off (count only).
+// 1. All ten switches (app_settings cleanup_<job>, C3 added old_condition_photos) must be off (count only).
 // 2. Snapshot of every table the jobs touch, the photo files in Storage, and the 12 sample listings.
 // 3. The seven database jobs: app_private.run_cleanup_jobs() (what pg_cron runs nightly).
 // 4. The two file jobs: app_private.request_file_cleanup() (what pg_cron runs nightly), which
@@ -14,7 +14,9 @@ import { sql, CLI } from "./lib/config.mjs";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const JOBS = ["abandoned_drafts", "orphan_photos", "old_photo_checks", "expired_reports", "old_data_exports",
+// C3 adds the third file job, old_condition_photos (bucket rental-photos).
+const FILE_JOBS = ["abandoned_drafts", "orphan_photos", "old_condition_photos"];
+const JOBS = [...FILE_JOBS, "old_photo_checks", "expired_reports", "old_data_exports",
   "old_age_checks", "old_suggestion_choices", "old_declarations", "stale_device_tokens"];
 const SAMPLE_TITLES = [
   "Silk Halter Evening Gown", "Tailored Charcoal Blazer", "Emerald Velvet Cocktail Dress", "Cashmere Belted Trench Coat",
@@ -51,8 +53,8 @@ async function run() {
   const on = sql(`select key from public.app_settings where key like 'cleanup_%' and enabled`);
   assert.equal(on.length, 0, `every cleanup job must be count-only; on: ${on.map((r) => r.key).join(", ")}`);
   const switches = sql(`select count(*) n from public.app_settings where key like 'cleanup_%'`)[0].n;
-  assert.equal(Number(switches), 9, "nine switches");
-  console.log("   9 switches, all off (count only)");
+  assert.equal(Number(switches), JOBS.length, `${JOBS.length} switches`);
+  console.log(`   ${JOBS.length} switches, all off (count only)`);
 
   console.log("\n2. Snapshot...");
   const before = snapshot();
@@ -72,12 +74,12 @@ async function run() {
   let fileRuns = [];
   for (let i = 0; i < 30; i++) {
     await sleep(3000);
-    fileRuns = sql(`select job from app_private.job_runs where id > ${lastRun} and job in ('abandoned_drafts', 'orphan_photos')`);
-    if (fileRuns.length >= 2) break;
+    fileRuns = sql(`select job from app_private.job_runs where id > ${lastRun} and job in (${FILE_JOBS.map((j) => `'${j}'`).join(", ")})`);
+    if (fileRuns.length >= FILE_JOBS.length) break;
   }
   const response = sql(`select status_code, left(content, 400) content from net._http_response where id = ${Number(requestId)}`)[0];
   console.log(`   cleanup-files answered ${response?.status_code ?? "(no reply yet)"}: ${response?.content ?? ""}`);
-  assert.equal(fileRuns.length, 2, "both file jobs recorded a run");
+  assert.equal(fileRuns.length, FILE_JOBS.length, "every file job recorded a run");
 
   console.log("\n5. Results...");
   const runs = sql(`select job, mode, counts, error from app_private.job_runs where id > ${lastRun} order by id`);

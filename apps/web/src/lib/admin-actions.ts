@@ -307,6 +307,31 @@ export async function findUserAction(query: string) {
 
 }
 
+/**
+ * C3: signed links (1 hour) to condition photos. The bucket is private; admins with a fresh
+ * two-step session may read it (storage policy rental_photos_read).
+ */
+async function signRentalPhotos(
+  client: Awaited<ReturnType<typeof requireAdminSession>>["client"],
+  paths: string[],
+): Promise<Record<string, string>> {
+  if (!paths.length) return {};
+  const { data } = await client.storage.from("rental-photos").createSignedUrls(paths, 3600);
+  const links: Record<string, string> = {};
+  for (const link of data || []) if (link.path && link.signedUrl) links[link.path] = link.signedUrl;
+  return links;
+}
+
+/** C3: a person's rentals with their timeline and condition photos (admin_user_rentals, logged). */
+export async function userRentalsAction(userId: string) {
+  const { client } = await requireAdminSession();
+  const { data, error } = await client.rpc("admin_user_rentals", { p_user_id: userId });
+  if (error) throw new Error(errorText(describeError(error)));
+  const rentals = (data || []) as Record<string, unknown>[];
+  const paths = rentals.flatMap((r) => ((r.photos as { storage_path: string }[]) || []).map((p) => p.storage_path));
+  return { rentals, links: await signRentalPhotos(client, paths) };
+}
+
 /** C1: starts a dead background job (send-push or scan-listing) again; logged in the admin log. */
 export async function retryJobAction(jobId: number) {
   const { client } = await requireAdminSession();

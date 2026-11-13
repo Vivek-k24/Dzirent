@@ -40,7 +40,10 @@ function publishableKey(): string | null {
 
 type Photo = { storage_path?: string | null; [key: string]: unknown };
 type Listing = { photos?: Photo[]; [key: string]: unknown };
-type Export = Record<string, unknown> & { listings?: Listing[] };
+type ConditionPhoto = { storage_path?: string | null; [key: string]: unknown };
+type Export = Record<string, unknown> & { listings?: Listing[]; condition_photos?: ConditionPhoto[] };
+const CONDITION_BUCKET = "rental-photos";
+const CONDITION_LINK_SECONDS = 7 * 24 * 3600;
 
 /** What each part of the file is, in plain words. */
 const ABOUT = {
@@ -50,7 +53,8 @@ const ABOUT = {
     "email, location, measurements or other private details.",
   photo_links:
     "Each listing photo has a link. These are the public web addresses of your own listing photos; " +
-    "anyone with the link can open them, as with every listing photo on Dzirent.",
+    "anyone with the link can open them, as with every listing photo on Dzirent. Condition photos " +
+    "(pickup and return) are private: their links are signed and stop working after 7 days.",
   how_often: "You can download your data once a day.",
   parts: {
     account: "The email you sign in with, when you created your account, and when you last signed in. Your password is never readable, so it isn't here.",
@@ -60,7 +64,8 @@ const ABOUT = {
     saved_pieces: "Pieces you saved. The title is shown while the piece is still public.",
     saved_studios: "Studios you saved, by name and handle.",
     chats: "Every chat you are part of, with all its messages. The other person is shown only by their name and handle.",
-    rentals: "Rentals arranged in your chats.",
+    rentals: "Rentals arranged in your chats: dates, the price agreed when it was requested, and every step (requested, accepted, picked up, returned, completed, cancelled ...) with who took it and when.",
+    condition_photos: "Photos you took of a piece at pickup or return, with a link to each (valid 7 days).",
     blocked_people: "People you blocked, by name and handle.",
     reports_filed: "Reports you made, with your reason and details. Reports other people made about you are not included.",
     warnings: "Warnings Dzirent sent you.",
@@ -129,13 +134,38 @@ Deno.serve(async (req) => {
         link: photo.storage_path ? photoLink(photo.storage_path) : null,
       })),
     }));
+    // C3: the caller's own condition photos get signed links, made with the caller's token (the
+    // bucket is private and lets the rental's two people read).
+    const conditionPhotos = data.condition_photos ?? [];
+    const paths = conditionPhotos.map((photo) => photo.storage_path).filter((p): p is string => !!p);
+    const signed = new Map<string, string>();
+    if (paths.length > 0) {
+      const asCaller = createClient(url, key, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
+      const { data: links } = await asCaller.storage.from(CONDITION_BUCKET)
+        .createSignedUrls(paths, CONDITION_LINK_SECONDS);
+      for (const link of links ?? []) {
+        if (link.path && link.signedUrl) signed.set(link.path, link.signedUrl);
+      }
+    }
+    const conditionWithLinks = conditionPhotos.map((photo) => ({
+      ...photo,
+      link: photo.storage_path ? signed.get(photo.storage_path) ?? null : null,
+    }));
+
     const now = new Date();
     const file: Record<string, unknown> = {
       about: ABOUT,
       exported_at: now.toISOString(),
     };
     for (const part of Object.keys(ABOUT.parts)) {
-      file[part] = part === "listings" ? listings : (data[part] ?? null);
+      file[part] = part === "listings"
+        ? listings
+        : part === "condition_photos"
+        ? conditionWithLinks
+        : (data[part] ?? null);
     }
 
     const date = now.toISOString().slice(0, 10);

@@ -10,6 +10,49 @@ import {
   warnUserAction,
 } from "@/lib/admin-actions";
 import { ActionDialog } from "./action-dialog";
+import { userRentalsAction } from "@/lib/admin-actions";
+import { RentalEvidence } from "./rental-evidence";
+
+/** C3: a person's rentals (timeline and condition photos), loaded when asked for (logged). */
+function UserRentals({ userId }: { userId: string }) {
+  const [state, setState] = useState<{ rentals: Record<string, unknown>[]; links: Record<string, string> } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  if (!state)
+    return (
+      <div style={{ marginTop: "12px" }}>
+        <button
+          type="button"
+          className="button secondary compact"
+          disabled={loading}
+          onClick={async () => {
+            setLoading(true);
+            setError(null);
+            try {
+              setState(await userRentalsAction(userId));
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Couldn't load the rentals.");
+            } finally {
+              setLoading(false);
+            }
+          }}
+        >
+          {loading ? "Loading rentals..." : "Show rentals"}
+        </button>
+        {error && <p className="form-message error">{error}</p>}
+      </div>
+    );
+  return (
+    <div style={{ marginTop: "12px" }}>
+      <h4>Rentals ({state.rentals.length})</h4>
+      {state.rentals.length ? (
+        state.rentals.map((r) => <RentalEvidence key={String(r.rental_id)} snapshot={r} links={state.links} />)
+      ) : (
+        <p className="muted">No rentals.</p>
+      )}
+    </div>
+  );
+}
 
 export type AdminUserData = {
   id: string;
@@ -428,6 +471,7 @@ export function UsersView({ initialUsers, initialQuery }: { initialUsers: AdminU
                     </div>
                   </div>
                 </div>
+                <UserRentals userId={u.id} />
               </div>
             );
           })}

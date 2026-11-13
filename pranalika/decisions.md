@@ -159,3 +159,16 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - The database starts every refusal with its code and keeps its words; the field goes in the HINT. Edge Functions answer `{ code, message }` with the catalog's status. Clients show the catalog's words with the code in brackets, else the server's words, else `DZ-E9999` "Something went wrong. Please try again.".
 - Background calls to `send-push` and `scan-listing` go through an outbox (`app_private.async_jobs`): retried after 1, 5, 30 and 120 minutes, dead after 5 attempts. A photo check whose job dies ends as review. Admins see dead jobs and can retry one (logged).
 - Clients retry reads only (2 retries, 0.5 s then 2 s), never writes.
+
+## Rentals (2026-11-13)
+
+- A rental is requested, answered and tracked in the app: the renter requests dates in the chat ("Request to rent"), the lender accepts or declines within 48 hours (no answer means expired), the lender marks it picked up and returned. States: requested, accepted, declined, expired, awaiting_payment, paid, picked_up, returned, completed, cancelled, claimed, disputed. awaiting_payment, paid, claimed and disputed are used only while payments_enabled is on; while it is off, accept goes straight to accepted and returned straight to completed.
+- Rentals change only through database functions that check who may act and from which state; apps can't insert or update rentals. Every change is recorded with who made it, when, and the note given.
+- The price per day, days and total are fixed when the rental is requested (USD).
+- A request must fall inside the listing's availability (a listing with no availability windows can't be rented). One listing can't be booked twice for the same day; days count both ends, so a rental may start the day after another ends.
+- The renter cancels a request; before pickup either person can cancel; after pickup the rental can only be returned.
+- Blocking stops new requests, answers and pickups between the two people; cancelling and returning stay possible so a block never leaves a rental stuck.
+- At pickup and at return the lender adds at least 2 photos of the piece; the renter may add theirs. Condition photos are private to the two people and to admins handling a report, and are kept for a period the attorney sets (placeholder 1 year after the rental ends).
+- Rental reminders: the day before a pickup or return and once a day for up to 3 days when a return is overdue, at 9 AM Austin time, to both people. A "Rental reminders" switch (on by default) turns them off; requests, answers and completion follow the Messages switch. This replaces "Rental reminders wait for a decision on a 'confirm rental' step" in "Notifications (2026-11-03)": accepting a request is that step.
+- Account deletion waits while a rental is in progress (from accepted until completed or cancelled); a request alone doesn't block it.
+- A studio's rental count counts completed rentals.

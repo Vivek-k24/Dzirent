@@ -40,6 +40,9 @@ import coil3.compose.AsyncImage
 import com.dzirent.shared.model.*
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.util.ClosetSort
+import com.dzirent.shared.util.RentalGroup
+import com.dzirent.shared.util.rentalGroup
+import com.dzirent.shared.util.rentalStatusLabel
 import com.dzirent.shared.util.ShareLinks
 import com.dzirent.shared.util.sortCloset
 import com.dzirent.shared.util.formatDateRange
@@ -824,14 +827,14 @@ fun MyRentalsScreen(
     onOpenChat: (conversationId: String) -> Unit,
     onBrowse: () -> Unit
 ) {
-    var uiState by remember { mutableStateOf<UiState<List<Rental>>>(UiState.Loading) }
+    var uiState by remember { mutableStateOf<UiState<List<RentalView>>>(UiState.Loading) }
     val scope = rememberCoroutineScope()
 
     fun loadRentals() {
         scope.launch {
             uiState = UiState.Loading
             try {
-                uiState = UiState.Success(repository.getMyRentals(currentUserId))
+                uiState = UiState.Success(repository.myRentals())
             } catch (e: Exception) {
                 uiState = UiState.Error(e.userMessage("Couldn't load your rentals. Please try again."))
             }
@@ -848,13 +851,12 @@ fun MyRentalsScreen(
             is UiState.Loading -> LoadingView(message = "Loading your rentals...")
             is UiState.Error -> ErrorView(message = state.message, onRetry = { loadRentals() })
             is UiState.Success -> {
-                // Cancelled deals never happened, so they aren't rentals worth listing.
-                val active = state.data.filter { it.status == "active" }
-                val past = state.data.filter { it.status == "returned" }
-                if (active.isEmpty() && past.isEmpty()) {
+                // C3: grouped by state; a lender's incoming requests come first.
+                val groups = state.data.groupBy { rentalGroup(it.status, it.iAmLender) }
+                if (state.data.isEmpty()) {
                     EmptyView(
-                        title = "No active rentals yet",
-                        description = "When you rent something, mark it as rented in the chat and it will show up here.",
+                        title = "No rentals yet",
+                        description = "Open a chat about a piece and tap Request to rent. Requests, upcoming and past rentals show up here.",
                         icon = Icons.Default.ShoppingBag,
                         onAction = onBrowse,
                         actionLabel = "Browse Home"
@@ -865,16 +867,13 @@ fun MyRentalsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        if (active.isNotEmpty()) {
-                            item { SectionHeader("Active") }
-                            items(active, key = { it.conversationId }) { rental ->
-                                RentalRow(rental = rental, onClick = { onOpenChat(rental.conversationId) })
-                            }
-                        }
-                        if (past.isNotEmpty()) {
-                            item { SectionHeader("Past") }
-                            items(past, key = { it.conversationId }) { rental ->
-                                RentalRow(rental = rental, onClick = { onOpenChat(rental.conversationId) })
+                        RentalGroup.entries.forEach { group ->
+                            val rows = groups[group].orEmpty()
+                            if (rows.isNotEmpty()) {
+                                item(key = "header-${group.name}") { SectionHeader(group.title) }
+                                items(rows, key = { it.id }) { rental ->
+                                    RentalRow(rental = rental, onClick = { onOpenChat(rental.conversationId) })
+                                }
                             }
                         }
                     }
@@ -896,7 +895,7 @@ private fun SectionHeader(text: String) {
 }
 
 @Composable
-private fun RentalRow(rental: Rental, onClick: () -> Unit) {
+private fun RentalRow(rental: RentalView, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -907,30 +906,35 @@ private fun RentalRow(rental: Rental, onClick: () -> Unit) {
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ListingThumbnail(listing = rental.listing, size = 56.dp)
+            ListingPhoto(
+                url = rental.coverPhotoPath,
+                contentDescription = null,
+                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(8.dp))
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = rental.listing?.title ?: "Listing no longer available",
+                    text = rental.listingTitle ?: "Listing no longer available",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                val other = rental.otherName?.ifBlank { null } ?: "a Dzirent member"
                 Text(
-                    text = "From ${rental.lender?.displayName?.ifBlank { null } ?: "a lender"}",
+                    text = if (rental.iAmLender) "Rented by $other" else "From $other",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = formatDateRange(rental.startDate, rental.endDate) ?: "Dates not set",
+                    text = rentalSummaryLine(rental).ifBlank { "Dates not set" },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             AssistChip(
                 onClick = onClick,
-                label = { Text(if (rental.status == "active") "Active" else "Returned") }
+                label = { Text(rentalStatusLabel(rental.status, rental.iAmLender).substringBefore(":")) }
             )
         }
     }

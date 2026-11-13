@@ -15,6 +15,8 @@ import { Photo } from "./photo";
 import { Empty } from "./cards";
 import { Icon } from "./icon";
 import { WorkflowModal, Notice } from "./workflow-ui";
+import { rentalSummary } from "./rental-card";
+import { groupTitles, rentalGroup, rentalStatusLabel, type RentalView } from "@/lib/rentals";
 type ClosetData = {
   profile: Profile;
   listings: OwnListing[];
@@ -30,6 +32,8 @@ export function Closet({ initial }: { initial: ClosetData }) {
   const [deleting, setDeleting] = useState<OwnListing | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // C3: every rental I'm in (my_rentals), as renter and as lender.
+  const [rentals, setRentals] = useState<RentalView[] | null>(null);
   useEffect(() => {
     let live = true;
     workflow<ClosetData>("closet")
@@ -37,6 +41,16 @@ export function Closet({ initial }: { initial: ClosetData }) {
         if (live) setData(d);
       })
       .catch(() => {});
+    workflow<RentalView[]>("rentals")
+      .then((r) => {
+        if (live) setRentals(r);
+      })
+      .catch((e) => {
+        if (live) {
+          setRentals([]);
+          setError((e as Error).message);
+        }
+      });
     return () => {
       live = false;
     };
@@ -67,9 +81,6 @@ export function Closet({ initial }: { initial: ClosetData }) {
             : 1
         : b.created_at.localeCompare(a.created_at),
   );
-  const rentals = data.inbox.rentals
-    .filter((r) => r.renter_id === data.inbox.me && r.status !== "cancelled")
-    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   return (
     <div className="page-width workflow-page closet-page">
       <div className="workflow-heading">
@@ -84,7 +95,7 @@ export function Closet({ initial }: { initial: ClosetData }) {
           </Link>
         )}
       </div>
-      {data.profile.role === "both" && (
+      {data.profile.role !== "renter" && (
         <div className="workflow-tabs" role="tablist" aria-label="Closet">
           {["My Listings", "My Rentals"].map((t) => (
             <button
@@ -167,7 +178,7 @@ export function Closet({ initial }: { initial: ClosetData }) {
                     {data.inbox.rentals.some(
                       (r) =>
                         r.listing_id === l.id &&
-                        r.status === "active" &&
+                        r.status === "picked_up" &&
                         r.lender_id === data.inbox.me,
                     ) && <p className="accent">Rented out</p>}
                     <div className="closet-actions">
@@ -207,56 +218,52 @@ export function Closet({ initial }: { initial: ClosetData }) {
             />
           )}
         </>
+      ) : rentals === null ? (
+        <p className="muted">Loading your rentals...</p>
       ) : rentals.length ? (
         <div className="rental-sections">
-          {(["active", "returned"] as const).map((status) => {
-            const group = rentals.filter((r) => r.status === status);
-            return group.length ? (
-              <section key={status}>
-                <h2>{status === "active" ? "Active" : "Past"}</h2>
-                {group.map((r) => {
-                  const c = data.inbox.cards.find(
-                    (c) => c.id === r.conversation_id,
-                  );
-                  return (
-                    <Link
-                      className="inbox-row"
-                      key={r.id}
-                      href={"/app/messages/" + r.conversation_id}
-                    >
-                      <div className="inbox-photo">
-                        <Photo
-                          src={photoUrl(c?.cover_photo_path || null)}
-                          alt={
-                            c?.listing_title || "Listing no longer available"
-                          }
-                          sizes="80px"
-                        />
-                      </div>
-                      <div className="inbox-copy">
-                        <strong>
-                          {c?.listing_title || "Listing no longer available"}
-                        </strong>
-                        <p>From {c?.other_name || "Dzirent member"}</p>
-                        <span className="muted">
-                          {dateRange(r.start_date, r.end_date)}
-                        </span>
-                      </div>
-                      <span className="status-badge">
-                        {status === "active" ? "Active" : "Returned"}
-                      </span>
-                      <Icon name="chevron" />
-                    </Link>
-                  );
-                })}
+          {groupTitles.map(([group, title]) => {
+            const rows = rentals.filter((r) => rentalGroup(r.status, r.your_role === "lender") === group);
+            return rows.length ? (
+              <section key={group}>
+                <h2>{title}</h2>
+                {rows.map((r) => (
+                  <Link
+                    className="inbox-row"
+                    key={r.id}
+                    href={"/app/messages/" + r.conversation_id}
+                  >
+                    <div className="inbox-photo">
+                      <Photo
+                        src={photoUrl(r.cover_photo_path || null)}
+                        alt={r.listing_title || "Listing no longer available"}
+                        sizes="80px"
+                      />
+                    </div>
+                    <div className="inbox-copy">
+                      <strong>
+                        {r.listing_title || "Listing no longer available"}
+                      </strong>
+                      <p>
+                        {r.your_role === "lender" ? "Rented by " : "From "}
+                        {r.other_name || "Dzirent member"}
+                      </p>
+                      <span className="muted">{rentalSummary(r) || dateRange(r.start_date, r.end_date)}</span>
+                    </div>
+                    <span className="status-badge">
+                      {rentalStatusLabel(r.status, r.your_role === "lender").split(":")[0]}
+                    </span>
+                    <Icon name="chevron" />
+                  </Link>
+                ))}
               </section>
             ) : null;
           })}
         </div>
       ) : (
         <Empty
-          title="No active rentals yet"
-          text="When you rent something, mark it as rented in the chat and it will show up here."
+          title="No rentals yet"
+          text="Open a chat about a piece and choose Request to rent. Requests, upcoming and past rentals show up here."
           href="/"
           label="Browse Home"
         />

@@ -331,7 +331,7 @@ private fun NotificationSettingsSection(repository: DzirentRepository) {
         subtitle = when {
             current == null -> if (loadFailed) "Couldn't load. Open Settings again to retry." else "Loading..."
             current.messages && !phoneAllows -> "Off in your phone's settings. Tap to turn on."
-            else -> "New messages, new chats and date changes"
+            else -> "New messages, new chats, date changes and rental requests and answers"
         },
         checked = current?.messages == true && phoneAllows,
         enabled = current != null,
@@ -352,6 +352,14 @@ private fun NotificationSettingsSection(repository: DzirentRepository) {
         checked = current?.showMessageText == true,
         enabled = current?.messages == true,
         onCheckedChange = { on -> current?.let { save(it.copy(showMessageText = on)) } }
+    )
+    // C3: pickup and return reminders the day before, and overdue returns.
+    SwitchSetting(
+        title = "Rental reminders",
+        subtitle = "The day before a pickup or return, and when a return is overdue",
+        checked = current?.rentalReminders == true,
+        enabled = current != null,
+        onCheckedChange = { on -> current?.let { save(it.copy(rentalReminders = on)) } }
     )
 }
 

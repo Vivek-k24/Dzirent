@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.AssignmentReturn
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -32,11 +31,12 @@ import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.repository.InboxSnapshot
 import com.dzirent.shared.util.ActivityItem
 import com.dzirent.shared.util.DateRange
-import com.dzirent.shared.util.FOLLOW_UP_AFTER_DAYS
+import com.dzirent.shared.util.ErrorCatalog
+import com.dzirent.shared.util.RentalAction
+import com.dzirent.shared.util.RentalStatus
 import com.dzirent.shared.util.chatDatesLine
 import com.dzirent.shared.util.datesAsked
 import com.dzirent.shared.util.datesQuestion
-import com.dzirent.shared.util.daysSince
 import com.dzirent.shared.util.formatInboxTime
 import com.dzirent.shared.util.formatMessageTime
 import com.dzirent.shared.util.parseDateRange
@@ -49,8 +49,8 @@ import kotlinx.coroutines.withContext
 // --- INBOX SCREEN ---
 
 /**
- * Two tabs: Messages (my chats, unread ones marked) and Activity (rental changes and
- * follow-up reminders). [onNewsChanged] keeps the dot on the Inbox tab in sync.
+ * Two tabs: Messages (my chats, unread ones marked) and Activity (the latest step of each
+ * rental, C3). [onNewsChanged] keeps the dot on the Inbox tab in sync.
  */
 @Composable
 fun InboxScreen(
@@ -290,8 +290,11 @@ fun ChatScreen(
 
     var uiState by remember { mutableStateOf<UiState<Conversation>>(UiState.Loading) }
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
-    var rental by remember { mutableStateOf<Rental?>(null) }
-    var myOutcome by remember { mutableStateOf<RentalOutcome?>(null) }
+    // C3: the chat's latest rental (get_rental), signed links to its condition photos, and the
+    // listing's open and booked days for "Request to rent".
+    var rental by remember { mutableStateOf<RentalView?>(null) }
+    var photoLinks by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var listingDetail by remember { mutableStateOf<ListingDetail?>(null) }
     var liveUnavailable by remember { mutableStateOf(false) }
 
     var input by remember { mutableStateOf(initialDraft.orEmpty()) }
@@ -302,7 +305,11 @@ fun ChatScreen(
     var actionError by remember { mutableStateOf<String?>(null) }
     var isSavingRental by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
-    var showRentedPicker by remember { mutableStateOf(false) }
+    var showRequestDialog by remember { mutableStateOf(false) }
+    var showCancelDialog by remember { mutableStateOf(false) }
+    /** The condition photo stage whose camera-or-gallery choice is showing. */
+    var choosingPhotoStage by remember { mutableStateOf<String?>(null) }
+    var uploadingStage by remember { mutableStateOf<String?>(null) }
     var iBlocked by remember { mutableStateOf(false) }
     var showBlockConfirm by remember { mutableStateOf(false) }
     var reportTarget by remember { mutableStateOf<ReportTarget?>(null) }
@@ -316,17 +323,24 @@ fun ChatScreen(
         if (fresh.isNotEmpty()) messages = (messages + fresh).sortedBy { timestampMillis(it.createdAt) }
     }
 
+    /** Reloads the rental card and links its condition photos (the bucket is private). */
+    suspend fun reloadRental() {
+        val loaded = repository.getChatRental(conversationId)
+        rental = loaded
+        val missing = loaded?.photos?.map { it.storagePath }?.filter { it !in photoLinks }.orEmpty()
+        if (missing.isNotEmpty()) {
+            photoLinks = photoLinks + runCatching { repository.conditionPhotoLinks(missing) }.getOrDefault(emptyMap())
+        }
+    }
+
     suspend fun loadAll() {
         uiState = UiState.Loading
         try {
             val conversation = repository.getConversation(conversationId)
             val history = repository.getMessages(conversationId)
-            val loadedRental = repository.getRental(conversationId)
-            val outcome = repository.getMyRentalOutcome(conversationId)
             iBlocked = repository.haveIBlocked(conversation.otherUserId(currentUserId))
             merge(history)
-            rental = loadedRental
-            myOutcome = outcome
+            reloadRental()
             uiState = UiState.Success(conversation)
             repository.markConversationRead(conversationId)
         } catch (e: Exception) {
@@ -353,7 +367,8 @@ fun ChatScreen(
                         if (message.senderId != currentUserId) repository.markConversationRead(conversationId)
                     }
                 }
-                launch { sub.rentals.collect { rental = it } }
+                // Any change to this chat's rentals: reload the card (timeline and photos too).
+                launch { sub.rentals.collect { runCatching { reloadRental() } } }
             }
             loadAll()
             awaitCancellation()
@@ -406,26 +421,70 @@ fun ChatScreen(
         }
     }
 
-    fun updateRental(status: String, range: DateRange? = null, outcome: Boolean? = null) {
-        val conv = conversation ?: return
+    /** Runs one rental step on the server, then reloads the card. */
+    fun rentalStep(block: suspend () -> Unit) {
         scope.launch {
             isSavingRental = true
             actionError = null
             try {
-                rental = repository.saveRental(
-                    conversation = conv,
-                    status = status,
-                    startDate = range?.start?.toString(),
-                    endDate = range?.end?.toString()
-                )
-                if (outcome != null) {
-                    repository.submitRentalOutcome(RentalOutcome(conv.id, currentUserId, happened = outcome))
-                    myOutcome = RentalOutcome(conv.id, currentUserId, happened = outcome)
-                }
+                block()
+                reloadRental()
             } catch (e: Exception) {
                 actionError = e.userMessage("Couldn't update the rental. Please try again.")
             }
             isSavingRental = false
+        }
+    }
+
+    fun openRequestDialog() {
+        val conv = conversation ?: return
+        scope.launch {
+            actionError = null
+            try {
+                listingDetail = repository.getListing(conv.listingId)
+                if (listingDetail == null) actionError = ErrorCatalog.shown("DZ-E4011").text else showRequestDialog = true
+            } catch (e: Exception) {
+                actionError = e.userMessage("Couldn't load this piece's dates. Please try again.")
+            }
+        }
+    }
+
+    // Condition photos: picked or taken, compressed on the phone, uploaded to the private bucket.
+    val conditionPhotoStore = remember(currentUserId) { device.photoStore("rentals-$currentUserId") }
+    val startConditionPhotos = rememberPhotoSources(
+        photoStore = conditionPhotoStore,
+        maxPhotos = 6,
+        onPhotos = { uris ->
+            val current = rental
+            val stage = uploadingStage
+            if (current != null && stage != null && uris.isNotEmpty()) {
+                rentalStep {
+                    try {
+                        uris.forEach { uri ->
+                            val bytes = device.readPhoto(uri)?.let { device.imageCompressor.compressImage(it) }
+                                ?: throw DzirentException("One of the photos couldn't be read. Pick a different one.")
+                            repository.uploadConditionPhoto(current.id, stage, bytes)
+                        }
+                    } finally {
+                        conditionPhotoStore.delete(uris)
+                    }
+                }
+            }
+        },
+        onMessage = { actionError = it }
+    )
+
+    fun onRentalAction(action: RentalAction) {
+        val current = rental ?: return
+        when (action) {
+            RentalAction.ACCEPT -> rentalStep { repository.respondRental(current.id, accept = true) }
+            RentalAction.DECLINE -> rentalStep { repository.respondRental(current.id, accept = false) }
+            RentalAction.CANCEL -> showCancelDialog = true
+            RentalAction.ADD_PICKUP_PHOTOS -> choosingPhotoStage = "pickup"
+            RentalAction.ADD_RETURN_PHOTOS -> choosingPhotoStage = "return"
+            RentalAction.MARK_PICKED_UP -> rentalStep { repository.markPickedUp(current.id) }
+            RentalAction.MARK_RETURNED -> rentalStep { repository.markReturned(current.id) }
+            RentalAction.COMPLETE -> rentalStep { repository.completeRental(current.id) }
         }
     }
 
@@ -444,30 +503,42 @@ fun ChatScreen(
         }
     }
 
-    fun answerFollowUpNo() {
-        val conv = conversation ?: return
-        scope.launch {
-            actionError = null
-            try {
-                val answer = RentalOutcome(conv.id, currentUserId, happened = false)
-                repository.submitRentalOutcome(answer)
-                myOutcome = answer
-            } catch (e: Exception) {
-                actionError = e.userMessage("Couldn't save your answer. Please try again.")
+    if (showRequestDialog) {
+        val detail = listingDetail
+        RentalRequestDialog(
+            pricePerDay = detail?.price,
+            windows = detail?.availability.orEmpty().mapNotNull { parseDateRange(it.startDate, it.endDate) },
+            booked = detail?.booked.orEmpty().mapNotNull { parseDateRange(it.startDate, it.endDate) },
+            initial = conversation?.requestedDates ?: myDates,
+            onDismiss = { showRequestDialog = false },
+            onConfirm = { range ->
+                showRequestDialog = false
+                val conv = conversation
+                if (conv != null) rentalStep { repository.requestRental(conv.listingId, range) }
             }
-        }
+        )
     }
 
-    if (showRentedPicker) {
-        DateRangePickerDialog(
-            title = "Rental dates",
-            allowPast = true,
-            initial = rental?.let { parseDateRange(it.startDate, it.endDate) },
-            confirmLabel = "Mark as rented",
-            onDismiss = { showRentedPicker = false },
-            onConfirm = { range ->
-                showRentedPicker = false
-                updateRental("active", range, outcome = true)
+    if (showCancelDialog) {
+        CancelRentalDialog(
+            onDismiss = { showCancelDialog = false },
+            onConfirm = { reason ->
+                showCancelDialog = false
+                rental?.let { current -> rentalStep { repository.cancelRental(current.id, reason) } }
+            }
+        )
+    }
+
+    choosingPhotoStage?.let { stage ->
+        AlertDialog(
+            onDismissRequest = { choosingPhotoStage = null },
+            title = { Text(if (stage == "pickup") "Photos at pickup" else "Photos at return", modifier = Modifier.asHeading()) },
+            text = { Text("Show the piece's condition: front, back and any marks. Only the two of you (and Dzirent if there's a report) see them.") },
+            confirmButton = {
+                TextButton(onClick = { choosingPhotoStage = null; uploadingStage = stage; startConditionPhotos(PhotoSource.Camera) }) { Text("Camera") }
+            },
+            dismissButton = {
+                TextButton(onClick = { choosingPhotoStage = null; uploadingStage = stage; startConditionPhotos(PhotoSource.Gallery) }) { Text("Gallery") }
             }
         )
     }
@@ -527,27 +598,23 @@ fun ChatScreen(
                             Icon(Icons.Default.MoreVert, contentDescription = "More options")
                         }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            val status = rental?.status
-                            DropdownMenuItem(
-                                text = { Text(if (status == "active") "Change rental dates" else "Mark as rented") },
-                                leadingIcon = { Icon(Icons.Default.EventAvailable, contentDescription = null) },
-                                enabled = !isSavingRental,
-                                onClick = { menuOpen = false; showRentedPicker = true }
-                            )
-                            if (status == "active") {
+                            val open = rental?.status in RentalStatus.OPEN
+                            if (conversation.renterId == currentUserId && !open && !iBlocked) {
                                 DropdownMenuItem(
-                                    text = { Text("Mark as returned") },
-                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.AssignmentReturn, contentDescription = null) },
+                                    text = { Text("Request to rent") },
+                                    leadingIcon = { Icon(Icons.Default.EventAvailable, contentDescription = null) },
                                     enabled = !isSavingRental,
-                                    onClick = { menuOpen = false; updateRental("returned") }
+                                    onClick = { menuOpen = false; openRequestDialog() }
                                 )
                             }
-                            if (status == null || status == "active") {
+                            rental?.let { current ->
                                 DropdownMenuItem(
-                                    text = { Text("Deal didn't happen") },
-                                    leadingIcon = { Icon(Icons.Default.EventBusy, contentDescription = null) },
-                                    enabled = !isSavingRental,
-                                    onClick = { menuOpen = false; updateRental("cancelled", outcome = false) }
+                                    text = { Text("Report this rental") },
+                                    leadingIcon = { Icon(Icons.Default.Flag, contentDescription = null) },
+                                    onClick = {
+                                        menuOpen = false
+                                        reportTarget = ReportTarget("rental", current.id, "Report this rental")
+                                    }
                                 )
                             }
                             HorizontalDivider()
@@ -583,7 +650,6 @@ fun ChatScreen(
                     datesLine = chatDatesLine(conv.requestedDates, iAmRenter = conv.renterId == currentUserId),
                     onClick = { onOpenListing(conv.listingId) }
                 )
-                rental?.let { RentalBanner(it, currentUserId, otherName) }
                 if (iBlocked) {
                     Surface(color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.fillMaxWidth()) {
                         Row(
@@ -612,9 +678,6 @@ fun ChatScreen(
                     )
                 }
 
-                val showFollowUp = rental == null && myOutcome == null &&
-                    (daysSince(conv.createdAt) ?: 0L) >= FOLLOW_UP_AFTER_DAYS
-
                 LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(16.dp),
@@ -632,12 +695,28 @@ fun ChatScreen(
                             )
                         }
                     }
-                    if (showFollowUp) {
-                        item(key = "follow-up") {
-                            FollowUpCard(
-                                onYes = { showRentedPicker = true },
-                                onNo = { answerFollowUpNo() }
+                    rental?.let { current ->
+                        item(key = "rental") {
+                            RentalCard(
+                                rental = current,
+                                photoLinks = photoLinks,
+                                busy = isSavingRental,
+                                onAction = { onRentalAction(it) }
                             )
+                        }
+                    }
+                    // The renter's way in: a request card when there's no open rental.
+                    if (conv.renterId == currentUserId && rental?.status !in RentalStatus.OPEN && !iBlocked && suspended == null) {
+                        item(key = "request") {
+                            OutlinedButton(
+                                onClick = { openRequestDialog() },
+                                enabled = !isSavingRental,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.EventAvailable, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(if (rental == null) "Request to rent" else "Request to rent again")
+                            }
                         }
                     }
                     if (messages.isEmpty() && !iBlocked) {
@@ -762,64 +841,6 @@ private fun PinnedListing(listing: Listing?, datesLine: String?, onClick: () -> 
                 }
             }
             if (listing != null) Icon(Icons.Default.ChevronRight, contentDescription = "Open listing")
-        }
-    }
-}
-
-@Composable
-private fun RentalBanner(rental: Rental, currentUserId: String, otherName: String) {
-    val dates = parseDateRange(rental.startDate, rental.endDate)?.format()
-    val (text, emphasized) = when (rental.status) {
-        "active" -> listOfNotNull("Rented", dates).joinToString(" · ") to true
-        "returned" -> listOfNotNull("Returned", dates).joinToString(" · ") to false
-        else -> "Deal didn't happen" to false
-    }
-    val by = when (rental.updatedBy) {
-        null -> null
-        currentUserId -> "Marked by you"
-        else -> "Marked by $otherName"
-    }
-    Surface(
-        color = if (emphasized) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = if (rental.status == "active") Icons.Default.EventAvailable else Icons.Default.Info,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = text, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
-            by?.let { Text(text = it, style = MaterialTheme.typography.labelSmall) }
-        }
-    }
-}
-
-@Composable
-private fun FollowUpCard(onYes: () -> Unit, onNo: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Did this rental happen?",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Your answer helps us improve Dzirent. Only you see this question.",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onYes) { Text("Yes") }
-                OutlinedButton(onClick = onNo) { Text("No") }
-            }
         }
     }
 }

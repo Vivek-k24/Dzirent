@@ -58,6 +58,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.hours
 
 /**
  * A message for the person, safe to show. [field] is the input a refusal is about (the database's
@@ -749,6 +750,7 @@ class DzirentRepository(
                     put("user_id", uid)
                     put("messages", settings.messages)
                     put("show_message_text", settings.showMessageText)
+                    put("rental_reminders", settings.rentalReminders)
                 }
             )
         } catch (e: Exception) {
@@ -1308,19 +1310,135 @@ class DzirentRepository(
         }
     }
 
-    // --- Rentals ---
+    // --- Rentals (C3: every change goes through a database function) ---
+    /** My listings that are out with a renter right now (picked up). */
     suspend fun getRentedOutListingIds(): Set<String> {
         val uid = requireUserId()
         return try {
             postgrest.from("rentals").select {
                 filter {
                     eq("lender_id", uid)
-                    eq("status", "active")
+                    eq("status", RentalStatus.PICKED_UP)
                 }
             }.decodeList<Rental>().map { it.listingId }.toSet()
         } catch (_: Exception) {
             emptySet()
         }
+    }
+
+    private val rentalJson = Json { ignoreUnknownKeys = true; coerceInputValues = true }
+
+    private fun JsonElement.toRental(): RentalView? =
+        if (this is JsonNull) null else rentalJson.decodeFromJsonElement(RentalView.serializer(), this)
+
+    /** The latest rental of a chat with its timeline and photos, or null. */
+    suspend fun getChatRental(conversationId: String): RentalView? = try {
+        postgrest.rpc("get_rental", buildJsonObject { put("p_conversation_id", conversationId) })
+            .decodeAs<JsonElement>().toRental()
+    } catch (e: Exception) {
+        throw fail("load the rental", e)
+    }
+
+    suspend fun getRentalById(rentalId: String): RentalView? = try {
+        postgrest.rpc("get_rental", buildJsonObject { put("p_rental_id", rentalId) })
+            .decodeAs<JsonElement>().toRental()
+    } catch (e: Exception) {
+        throw fail("load the rental", e)
+    }
+
+    /** Every rental I'm in (my_rentals): incoming requests to me first, then by state. */
+    suspend fun myRentals(): List<RentalView> = try {
+        val rows = postgrest.rpc("my_rentals", buildJsonObject { put("p_limit", 100) }).decodeAs<JsonElement>()
+        (rows as? JsonArray)?.mapNotNull { it.toRental() } ?: emptyList()
+    } catch (e: Exception) {
+        throw fail("load your rentals", e)
+    }
+
+    /** Asks to rent [listingId] for [dates] (the renter). Returns the new rental's id. */
+    suspend fun requestRental(listingId: String, dates: DateRange): String = try {
+        postgrest.rpc("request_rental", buildJsonObject {
+            put("p_listing_id", listingId)
+            put("p_start", dates.start.toString())
+            put("p_end", dates.end.toString())
+        }).decodeAs<String>()
+    } catch (e: Exception) {
+        throw fail("send your rental request", e)
+    }
+
+    /** The lender's answer; returns the new state. */
+    suspend fun respondRental(rentalId: String, accept: Boolean, note: String? = null): String = rentalCall(
+        "respond_rental", "answer the request",
+        buildJsonObject {
+            put("p_rental_id", rentalId)
+            put("p_answer", if (accept) "accept" else "decline")
+            note?.takeIf { it.isNotBlank() }?.let { put("p_note", it) }
+        }
+    )
+
+    suspend fun cancelRental(rentalId: String, reason: String? = null): String = rentalCall(
+        "cancel_rental", "cancel the rental",
+        buildJsonObject {
+            put("p_rental_id", rentalId)
+            reason?.takeIf { it.isNotBlank() }?.let { put("p_reason", it) }
+        }
+    )
+
+    suspend fun markPickedUp(rentalId: String, note: String? = null): String = rentalCall(
+        "mark_picked_up", "mark it picked up",
+        buildJsonObject {
+            put("p_rental_id", rentalId)
+            note?.takeIf { it.isNotBlank() }?.let { put("p_note", it) }
+        }
+    )
+
+    suspend fun markReturned(rentalId: String, note: String? = null): String = rentalCall(
+        "mark_returned", "mark it returned",
+        buildJsonObject {
+            put("p_rental_id", rentalId)
+            note?.takeIf { it.isNotBlank() }?.let { put("p_note", it) }
+        }
+    )
+
+    suspend fun completeRental(rentalId: String): String = rentalCall(
+        "complete_rental", "complete the rental", buildJsonObject { put("p_rental_id", rentalId) }
+    )
+
+    private suspend fun rentalCall(function: String, doing: String, params: JsonObject): String = try {
+        postgrest.rpc(function, params).decodeAs<String>()
+    } catch (e: Exception) {
+        throw fail(doing, e)
+    }
+
+    /**
+     * Uploads one compressed condition photo at {rental_id}/{stage}/{random}.jpg (bucket
+     * rental-photos, private). Storage refuses it outside the matching state (DZ-E4021).
+     */
+    suspend fun uploadConditionPhoto(rentalId: String, stage: String, imageBytes: ByteArray): String {
+        val path = "$rentalId/$stage/${generateRandomHex(24)}.jpg"
+        try {
+            storage.from("rental-photos").upload(path, imageBytes) {
+                upsert = false
+                contentType = ContentType.Image.JPEG
+            }
+        } catch (e: Exception) {
+            val rest = e as? RestException
+            val raw = listOfNotNull(rest?.error, rest?.description, e.message).joinToString(" ")
+            storageRefusal(rest?.statusCode, raw)?.let { throw DzirentException(ErrorCatalog.shown(it)) }
+            if ("row-level security" in raw.lowercase() || rest?.statusCode == 403) {
+                throw DzirentException(ErrorCatalog.shown("DZ-E4021"))
+            }
+            throw fail("upload the photo", e)
+        }
+        return path
+    }
+
+    /** Short-lived links to condition photos (the bucket is private), by storage path. */
+    suspend fun conditionPhotoLinks(paths: List<String>): Map<String, String> {
+        if (paths.isEmpty()) return emptyMap()
+        val bucket = storage.from("rental-photos")
+        return paths.mapNotNull { path ->
+            runCatching { path to bucket.createSignedUrl(path, 1.hours) }.getOrNull()
+        }.toMap().ifEmpty { throw DzirentException(ErrorCatalog.shown("DZ-E4022")) }
     }
 
     // --- Rental Outcomes ---
@@ -1623,108 +1741,6 @@ class DzirentRepository(
         }
     }
 
-    /** Rentals where I am the renter, with the listing and the lender from my conversations. */
-    suspend fun getMyRentals(): List<Rental> {
-        val me = requireUserId()
-        return try {
-            val cards = allConversationCards().associateBy { it.id }
-            postgrest.from("rentals").select {
-                filter { eq("renter_id", me) }
-                order("updated_at", Order.DESCENDING)
-            }.decodeList<Rental>().map { rental ->
-                val card = cards[rental.conversationId]
-                rental.copy(
-                    listing = card?.let { cardListing(it, rental.lenderId) },
-                    lender = card?.let { Profile(id = rental.lenderId, displayName = it.otherName, studioHandle = it.otherHandle) }
-                )
-            }
-        } catch (e: Exception) {
-            throw fail("load your rentals", e)
-        }
-    }
-
-    suspend fun getRental(conversationId: String): Rental? {
-        return try {
-            postgrest.from("rentals").select {
-                filter { eq("conversation_id", conversationId) }
-            }.decodeSingleOrNull<Rental>()
-        } catch (e: Exception) {
-            throw fail("load the rental status", e)
-        }
-    }
-
-    /**
-     * Creates or updates the rental row for a conversation. Dates are only changed when
-     * given. If the other person created the row a moment earlier, this updates it instead.
-     */
-    suspend fun saveRental(
-        conversation: Conversation,
-        status: String,
-        startDate: String?,
-        endDate: String?
-    ): Rental {
-        val uid = requireUserId()
-        val changes = buildJsonObject {
-            put("status", status)
-            put("updated_by", uid)
-            if (startDate != null && endDate != null) {
-                put("start_date", startDate)
-                put("end_date", endDate)
-            }
-        }
-        suspend fun update(rentalId: String): Rental =
-            postgrest.from("rentals").update(changes) {
-                filter { eq("id", rentalId) }
-                select()
-            }.decodeSingle<Rental>()
-
-        return try {
-            val existing = getRental(conversation.id)
-            if (existing?.id != null) {
-                update(existing.id)
-            } else {
-                try {
-                    postgrest.from("rentals").insert(
-                        buildJsonObject {
-                            put("conversation_id", conversation.id)
-                            put("listing_id", conversation.listingId)
-                            put("renter_id", conversation.renterId)
-                            put("lender_id", conversation.lenderId)
-                            changes.forEach { (key, value) -> put(key, value) }
-                        }
-                    ) { select() }.decodeSingle<Rental>()
-                } catch (insertEx: Exception) {
-                    val raced = getRental(conversation.id)?.id ?: throw insertEx
-                    update(raced)
-                }
-            }
-        } catch (e: Exception) {
-            throw fail("update the rental", e)
-        }
-    }
-
-    /** My answer to "Did this rental happen?" for a conversation, if any. */
-    suspend fun getMyRentalOutcome(conversationId: String): RentalOutcome? {
-        val uid = requireUserId()
-        return try {
-            postgrest.from("rental_outcomes").select {
-                filter {
-                    eq("conversation_id", conversationId)
-                    eq("user_id", uid)
-                }
-            }.decodeSingleOrNull<RentalOutcome>()
-        } catch (e: Exception) {
-            throw fail("load your answer", e)
-        }
-    }
-
-    suspend fun submitRentalOutcome(outcome: RentalOutcome) {
-        try {
-            postgrest.from("rental_outcomes").upsert(outcome)
-        } catch (e: Exception) {
-            throw fail("save your answer", e)
-        }
-    }
 
     /** Blocks a chat partner by account id (chat rows carry them; my own blocks row). */
     suspend fun blockUserById(blockedId: String) {
@@ -1826,7 +1842,6 @@ class DzirentRepository(
     suspend fun unsaveListing(userId: String, listingId: String) = unsaveListing(listingId)
     suspend fun getMyListings(lenderId: String): List<Listing> = getMyListings()
     suspend fun getRentedOutListingIds(lenderId: String): Set<String> = getRentedOutListingIds()
-    suspend fun getMyRentals(renterId: String): List<Rental> = getMyRentals()
     suspend fun getPrivateProfile(userId: String): PrivateProfile = getPrivateProfile()
     suspend fun updateRole(userId: String, role: String): Profile = updateRole(role)
     suspend fun updateLocation(userId: String, lat: Double, lng: Double, city: String): Profile = updateLocation(lat, lng, city)
@@ -1848,13 +1863,13 @@ class DzirentRepository(
         pickupArea: String
     ): Profile = updateStudio(name, handle, bio, styleTags, pickupArea)
 
-    /** True while I have an active rental as renter or lender (account deletion waits for it). */
+    /** True while I have a rental in progress as renter or lender (account deletion waits for it, C3). */
     suspend fun hasActiveRental(userId: String): Boolean {
         val uid = requireUserId()
         return try {
             postgrest.from("rentals").select(Columns.raw("id")) {
                 filter {
-                    eq("status", "active")
+                    isIn("status", RentalStatus.IN_PROGRESS.toList())
                     or {
                         eq("renter_id", uid)
                         eq("lender_id", uid)
