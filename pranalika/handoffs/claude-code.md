@@ -2,6 +2,65 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## S1b - 2026-11-12 - security updates finished
+
+**Before starting:**
+- The tree was clean, and `Preview` was up to date at `a7a10cc`.
+- gcloud: `vivek.kallakuri@cloudprous.com` active, and `gcloud auth print-access-token` worked.
+
+**Done:**
+- **Vision deployed:** revision **`vision-00006-sxv`**, serving 100% (it replaced `vision-00005-9cg`). I used the S1 handoff's command, unchanged. It contains the S1 packages plus Pygments 2.21.0.
+- **Pygments:** `services/vision/requirements.txt` now pins Pygments 2.21.0 (2026-08-17; no advisories in GitHub's database). The CI vision job no longer installs `pygments==2.19.2` separately. So the low Pygments alert S1 expected after the merge won't appear.
+- **Uploads:** `.venv/` is added to `services/vision/.gcloudignore` and `.dockerignore`. Without it, this deploy would have uploaded the local test venv (with torch) to Cloud Build. `gcloud meta list-files-for-upload` now lists 19 files.
+- **`contracts/generate.mjs`** (CodeQL alert #9, `js/incomplete-sanitization`, high, on PR #103):
+  - Markdown cells escape `\` first, then `|` and backticks; line breaks become `<br>`.
+  - Kotlin literals also escape line breaks, tabs and other control characters (`\uXXXX`) on top of `\`, `"` and `$`.
+  - TypeScript stays `JSON.stringify`.
+  - `field` must be an input name (`a-z`, `0-9`, `_`).
+  - The four generated files came out byte-identical, because no catalog text has these characters, so there is no regenerated diff.
+- **Docs:** `security-log.md`:
+  - the deploy;
+  - Pygments fixed, nothing to dismiss;
+  - the generator alert;
+  - alerts #10–#12 (`supabase/tests/run-all.mjs`, `lib/local_photos.mjs`), which were dismissed as "used in tests" from the owner's account on 2026-11-13.
+
+**What I ran:**
+1. **Generator:**
+   - `node contracts/generate.mjs` wrote nothing, and `--check` reports "125 codes, generated files up to date".
+   - **Round-trip test** (scratch `escape_test.mjs`) with a catalog whose messages contain `\`, `"`, `$`, `${x}`, `|`, backticks, line breaks, tabs, `\u0001`, `\u007f` and ` `. Every Kotlin literal decodes back exactly, with no raw line break and no bare `$`. The TypeScript object evaluates back exactly. Every Markdown row has 7 cells and unescapes back. A field of ``a`b`` is refused.
+   - The same test against the old generator fails 6 checks: raw line breaks in Kotlin, the backslash-pipe case, a broken row, and the unvalidated field.
+   - First run: my editor wrote ` `/` ` into the regex as raw characters, a syntax error. I removed them with a Node script; Kotlin accepts those characters in strings anyway.
+2. **Vision tests** (repo `.venv`, Pygments 2.21.0, `pip check` clean, `VISION_SAFETY_DIR` set): **54 passed**; the CI form gives 52 passed, 2 deselected.
+3. **Deploy:**
+   - `gcloud run deploy vision --source services/vision …`, the S1 handoff command: "revision [vision-00006-sxv] … serving 100 percent of traffic".
+   - `describe` afterwards: max 1, min unset (0), 2 CPU, 4Gi, no GPU, concurrency 4, 120 s, `vision-runtime`, the same `VISION_ALLOWED_URL_PREFIXES`. All the same as before the deploy.
+   - IAM: still only `roles/run.invoker` for `vision-invoker`.
+   - `/health` without a token → 403, with a made-up token → 401.
+   - With `gcloud auth print-identity-token`: HTTP 200, **`service_version` `s1.1`**, policy digest `fab11ee739b2e4db`, 114 items, both models at their pinned revisions, start-up 37.3 s (23.6 s in P2A).
+4. **Deployed eval:** `run_eval.py --url https://vision-296325491472.us-west1.run.app`, with the same sets as P2A and S1 (sample listings; 8B accept and reject sets; hoodies; worn dresses; the beignets photo).
+   - **Against S1's container run** (`eval_s1_container.json`) and against P2A's deployed run: **0 of 92 photos changed** (verdict, reason, looks-like, warnings). **0 of 12 listings changed** (verdict, reason, title, category, garment type, colours, styles, quality).
+   - Sample: 22 of 22 allowed; listings 12 of 12 allowed.
+   - should-reject: 32 rejected, 10 review, 0 allowed.
+   - Highest nudity score 0.148; none at or above 0.40.
+   - Not passing, all three the same as in P2A and S1:
+     - `should-accept/jumpsuit/1` rejected (read as a document);
+     - `should-accept/saree/2` rejected (read as a dog);
+     - `hoodies/hoodie/4` allowed (the back of a long print dress, no hood). This last one makes the script exit 1.
+   - Single scans: median 1.4 s, max 2.9 s.
+   - Cloud Run log of the new revision: 114 lines. The only two with a URL are Cloud Run's own front-door refusals of my two unauthenticated test requests, with Google docs links. None of the app's lines has one.
+5. **Push and CI:** `5a01fea`, all green:
+   - CI on the push: https://github.com/Vivek-k24/Dzirent/actions/runs/43337392087, 5 of 5 jobs;
+   - CI on PR #103: https://github.com/Vivek-k24/Dzirent/actions/runs/43337399629, 5 of 5;
+   - CodeQL on PR #103: https://github.com/Vivek-k24/Dzirent/actions/runs/43337394733, javascript-typescript, actions, python.
+6. **CodeQL alert #9:** `gh api …/code-scanning/alerts/9` shows its instance on `refs/pull/103/head` as **`fixed`**. The alert's own `state` field is empty because it never existed on `main`; GitHub fills that field only for default-branch alerts.
+   - Open code scanning alerts: 0 on the PR ref, 0 on `main`.
+   - Dependabot: still 82 open, all on `main`; they close when PR #103 merges.
+
+**Open issues:**
+- **Owner: merge PR #103** (`Preview` → `main`) to close the 82 Dependabot alerts. Then list them again: none should remain, and no Pygments alert should appear.
+- **Request, still open from S1:** `supabase/seed/*.mjs`, `supabase/tests/step1b.mjs` and `step4c_parity_test.mjs` should drop `${email}` from their `Sign in failed for …` errors (outside S1b's folders).
+- Start-up after a cold start is 37 s (23.6 s on the P2A revision). It didn't change any scan, and the 120 s timeout covers it, but `scan-listing`'s first call after idle waits longer.
+
 ## S1 - 2026-11-12 - security updates
 
 **Before starting:**
