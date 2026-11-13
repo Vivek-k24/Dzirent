@@ -86,9 +86,30 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E3010` | error | saving | 403 |  |  | Cannot save blocked studio |
 | `DZ-E3020` | error | blocking | 403 |  |  | Not your block relationship |
 
-## 4xxx - Rentals, payments, deposits (reserved)
+## 4xxx - Rentals, condition photos (C3); payments, deposits (reserved)
 
-Reserved: no codes yet.
+| Code | Kind | Area | Status | Field | Server words | Message |
+| --- | --- | --- | --- | --- | --- | --- |
+| `DZ-E4001` | error | rentals | 404 |  |  | Rental not found |
+| `DZ-E4002` | error | rentals | 403 |  |  | Only the lender can do this. |
+| `DZ-E4003` | error | rentals | 403 |  |  | You can't rent with this person. |
+| `DZ-E4004` | error | rentals | 400 |  |  | You can't rent your own piece. |
+| `DZ-E4005` | error | rentals | 400 | `dates` |  | Choose the dates you want to rent. |
+| `DZ-E4006` | error | rentals | 400 | `dates` |  | Pick dates from today on. |
+| `DZ-E4007` | error | rentals | 400 | `dates` |  | The last day can't be before the first day. |
+| `DZ-E4008` | error | rentals | 409 | `dates` |  | Those dates aren't open for this piece. Pick dates inside its available dates. |
+| `DZ-E4009` | error | rentals | 409 | `dates` |  | Those dates are already booked. Pick other dates. |
+| `DZ-E4010` | error | rentals | 409 |  |  | You already have a rental for this piece in progress. |
+| `DZ-E4011` | error | rentals | 409 |  |  | This piece isn't available to rent right now. |
+| `DZ-E4012` | error | rentals | 409 |  |  | This rental can't be changed now. |
+| `DZ-E4013` | error | rentals | 409 |  |  | This request has expired. |
+| `DZ-E4014` | error | rentals | 409 |  |  | This rental can't be cancelled now. |
+| `DZ-E4016` | error | rentals | 400 |  |  | Answer accept or decline. |
+| `DZ-E4017` | error | rentals | 400 | `note` |  | Keep the note under 300 characters. |
+| `DZ-E4018` | error | rentals | 409 |  |  | To turn down a request, decline it. |
+| `DZ-E4020` | error | condition photos | 409 | `photos` |  | Add at least 2 photos of the piece first. |
+| `DZ-E4021` | error | condition photos | 403 |  |  | Photos for this step can't be added now. |
+| `DZ-E4022` | error | condition photos | 503 |  |  | Couldn't load the condition photos. Please try again. |
 
 ## 5xxx - Reports, moderation, admin
 
@@ -108,6 +129,8 @@ Reserved: no codes yet.
 | `DZ-E5012` | error | reports | 403 |  |  | You can only report messages in your own chats. |
 | `DZ-E5013` | error | reports | 400 | `reason` |  | Reason is required |
 | `DZ-E5014` | error | admin | 400 |  |  | Pick a report |
+| `DZ-E5015` | error | reports | 403 |  |  | You can only report your own rentals. |
+| `DZ-E5016` | error | admin | 409 |  |  | A rental report has no content to remove. Warn, suspend or dismiss instead. |
 | `DZ-E5020` | error | admin | 404 |  |  | User not found |
 | `DZ-E5021` | error | admin | 409 |  |  | Admins can't ban themselves |
 | `DZ-E5022` | error | admin | 409 |  |  | Admins can't suspend themselves |
@@ -142,7 +165,7 @@ Reserved: no codes yet.
 | `DZ-E7001` | error | data download | 429 |  | yes | You can download your data once a day. |
 | `DZ-E7002` | error | data download | 500 |  |  | Couldn't prepare your data. Please try again. |
 | `DZ-E7003` | error | data download | 503 |  |  | Downloading your data is unavailable right now. Please try again later. |
-| `DZ-E7010` | error | deletion | 409 |  |  | You have an active rental. In its chat, mark it as returned (or that the deal didn't happen), then delete your account. |
+| `DZ-E7010` | error | deletion | 409 |  |  | You have a rental in progress. Finish or cancel it in its chat (My rentals), then delete your account. |
 | `DZ-E7011` | error | deletion | 503 |  |  | Account deletion is unavailable. Please try again. |
 | `DZ-E7012` | error | deletion | 503 |  |  | Couldn't verify rental status. Please try again. |
 | `DZ-E7013` | error | deletion | 503 |  |  | Couldn't load your listings. Please try again. |
@@ -167,4 +190,4 @@ Reserved: no codes yet.
 | `DZ-E9016` | error | system | 400 |  |  | This request isn't valid. |
 | `DZ-E9999` | error | system | 500 |  |  | Something went wrong. Please try again. |
 
-125 codes: 117 errors, 8 warnings.
+147 codes: 139 errors, 8 warnings.

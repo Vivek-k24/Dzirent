@@ -36,6 +36,7 @@ export const SCRIPTS = [
   ["node", "p2b_admin.mjs"],
   ["node", "p3b_cleanup.mjs"],
   ["node", "c1_codes_price_jobs.mjs"],
+  ["node", "c3_rentals.mjs", { local: true }],
 ];
 
 const args = process.argv.slice(2);

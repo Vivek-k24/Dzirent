@@ -1,3 +1,5 @@
+import type { Range, RentalStatus, RentalView } from "./rentals";
+export type { RentalView } from "./rentals";
 export type Profile = {
   id: string;
   display_name: string;
@@ -86,13 +88,14 @@ export type Message = {
   body: string;
   created_at: string;
 };
+/** A raw rentals row (participants read their own; C3 states, written only by the rental functions). */
 export type Rental = {
   id: string;
   conversation_id: string;
   listing_id: string;
   renter_id: string;
   lender_id: string;
-  status: "active" | "returned" | "cancelled";
+  status: RentalStatus;
   start_date: string | null;
   end_date: string | null;
   updated_by: string;
@@ -119,10 +122,20 @@ export type ChatData = {
   conversation: Conversation;
   card: ConversationCard | null;
   messages: Message[];
-  rental: Rental | null;
-  outcome: Outcome | null;
+  /** C3: the chat's latest rental with its timeline and condition photos (get_rental). */
+  rental: RentalView | null;
+  /** Signed links (1 hour) to the condition photos, by storage path. */
+  photoLinks: Record<string, string>;
+  /** For "Request to rent": the piece's price per day, open windows and booked days (get_listing). */
+  rentable: { price: number | null; availability: Range[]; booked: Range[] } | null;
   blocked: boolean;
   mySuspension?: string | null;
+};
+/** notification_settings; no row means these defaults (C3 adds rental_reminders). */
+export type NotificationChoicesData = {
+  messages: boolean;
+  show_message_text: boolean;
+  rental_reminders: boolean;
 };
 export type SettingsData = {
   profile: Profile;
@@ -131,6 +144,7 @@ export type SettingsData = {
   blocks: { blocked_id: string }[];
   activeRentals: number;
   activeListings: number;
+  notifications: NotificationChoicesData;
 };
 export const itemTypes = [
   "Sunglasses",
@@ -251,56 +265,44 @@ export function dateRange(start: string | null, end: string | null) {
     }).format(new Date(s + "T12:00:00Z"));
   return start === end ? format(start) : format(start) + " - " + format(end);
 }
+/** C3: Inbox > Activity, the latest step of each chat's rental (the apps' Activity.kt). */
 export function activity(data: InboxData) {
   const cards = new Map(data.cards.map((c) => [c.id, c]));
-  const updates = data.rentals.map((r) => {
+  const latest = new Map<string, Rental>();
+  for (const r of data.rentals) {
+    const before = latest.get(r.conversation_id);
+    if (!before || (r.updated_at || r.created_at) > (before.updated_at || before.created_at))
+      latest.set(r.conversation_id, r);
+  }
+  const updates = [...latest.values()].map((r) => {
     const c = cards.get(r.conversation_id);
     const who =
       r.updated_by === data.me ? "You" : c?.other_name || "Dzirent member";
-    const title = c?.listing_title || "Listing no longer available";
+    const title = "“" + (c?.listing_title || "Listing no longer available") + "”";
+    const forDates = r.start_date ? " for " + dateRange(r.start_date, r.end_date) : "";
+    const text: Record<string, string> = {
+      requested: who + " asked to rent " + title + forDates,
+      accepted: who + " accepted the rental of " + title + forDates,
+      awaiting_payment: who + " accepted the rental of " + title + forDates,
+      paid: who + " accepted the rental of " + title + forDates,
+      declined: who + " declined the request for " + title,
+      expired: "The request for " + title + " expired without an answer",
+      picked_up: who + " marked " + title + " as picked up",
+      returned: who + " marked " + title + " as returned",
+      completed: "The rental of " + title + " is complete",
+      cancelled: who + " cancelled the rental of " + title,
+    };
     return {
       id: r.id,
       conversationId: r.conversation_id,
       time: r.updated_at || r.created_at,
-      text:
-        r.status === "active"
-          ? who +
-            " marked “" +
-            title +
-            "” as rented" +
-            (r.start_date ? " for " + dateRange(r.start_date, r.end_date) : "")
-          : r.status === "returned"
-            ? who + " marked “" + title + "” as returned"
-            : who + " said the deal for “" + title + "” didn’t happen",
+      text: text[r.status] ?? "The rental of " + title + " changed",
       isNew:
         r.updated_by !== data.me &&
         (!data.activitySeen ||
           (r.updated_at || r.created_at) > data.activitySeen),
     };
   });
-  for (const c of data.conversations) {
-    if (
-      data.now - Date.parse(c.created_at) < 3 * 86400000 ||
-      data.rentals.some((r) => r.conversation_id === c.id) ||
-      data.outcomes.some((o) => o.conversation_id === c.id)
-    )
-      continue;
-    const card = cards.get(c.id);
-    updates.push({
-      id: "reminder-" + c.id,
-      conversationId: c.id,
-      time: new Date(Date.parse(c.created_at) + 3 * 86400000).toISOString(),
-      text:
-        "Did you rent “" +
-        (card?.listing_title || "this piece") +
-        "” with " +
-        (card?.other_name || "Dzirent member") +
-        "? Answer in the chat.",
-      isNew:
-        !data.activitySeen ||
-        Date.parse(c.created_at) + 3 * 86400000 > Date.parse(data.activitySeen),
-    });
-  }
   return updates.sort((a, b) => b.time.localeCompare(a.time));
 }
 export class WorkflowClientError extends Error {

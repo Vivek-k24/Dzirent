@@ -11,7 +11,6 @@ import { browserClient } from "@/lib/supabase/client";
 import { photoUrl } from "@/lib/supabase/config";
 import { perDay, type BrowseContext } from "@/lib/types";
 import {
-  dateRange,
   dateChip,
   workflow,
   WorkflowClientError,
@@ -22,6 +21,8 @@ import {
   type Message,
 } from "@/lib/workflows";
 import { WorkflowModal, Notice, Changed } from "./workflow-ui";
+import { RentalCard, RentalRequestForm } from "./rental-card";
+import { OPEN } from "@/lib/rentals";
 import { Photo } from "./photo";
 import { Icon } from "./icon";
 export function Chat({
@@ -37,8 +38,10 @@ export function Chat({
   const [sendError, setSendError] = useState("");
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState<
-    "dates" | "rental" | "report" | "block" | "cancel_deal" | null
+    "dates" | "request" | "report" | "block" | "cancel_rental" | null
   >(null);
+  const [reportRental, setReportRental] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [reportId, setReportId] = useState("");
   const [reportDetails, setReportDetails] = useState("");
   const [reportDetailsError, setReportDetailsError] = useState("");
@@ -49,7 +52,8 @@ export function Chat({
   const id = initial.conversation.id;
   const renter = data.conversation.renter_id === data.me;
   const other = data.card?.other_name || "Dzirent member";
-  function openReport(msgId: string) {
+  function openReport(msgId: string, aboutRental = false) {
+    setReportRental(aboutRental);
     setReportId(msgId);
     setReportDetails("");
     setReportDetailsError("");
@@ -194,10 +198,9 @@ export function Chat({
     }
   }
   const rental = data.rental;
-  const prompt =
-    !rental &&
-    !data.outcome &&
-    data.now - Date.parse(data.conversation.created_at) >= 3 * 86400000;
+  // C3: the renter can request while the chat has no open rental.
+  const canRequest =
+    renter && !data.blocked && !data.mySuspension && (!rental || !OPEN.includes(rental.status));
   return (
     <div className="page-width workflow-page chat-page">
       <div className="chat-top">
@@ -213,6 +216,16 @@ export function Chat({
             <Icon name="more" />
           </summary>
           <div>
+            {rental && (
+              <button
+                onClick={() => {
+                  menuRef.current?.removeAttribute("open");
+                  openReport("", true);
+                }}
+              >
+                Report this rental
+              </button>
+            )}
             <button
               onClick={() => {
                 menuRef.current?.removeAttribute("open");
@@ -293,17 +306,33 @@ export function Chat({
         </div>
       )}
       {rental && (
-        <div className="rental-banner">
-          <strong>
-            {rental.status === "cancelled"
-              ? "Deal didn't happen"
-              : rental.status === "active"
-                ? "Rented · " + dateRange(rental.start_date, rental.end_date)
-                : "Returned · " + dateRange(rental.start_date, rental.end_date)}
-          </strong>
-          <small>
-            Marked by {rental.updated_by === data.me ? "you" : other}
-          </small>
+        <RentalCard
+          rental={rental}
+          links={data.photoLinks}
+          busy={busy}
+          conversationId={id}
+          onStep={action}
+          onCancel={() => {
+            setCancelReason("");
+            setError("");
+            setModal("cancel_rental");
+          }}
+          onUploaded={refresh}
+        />
+      )}
+      {canRequest && (
+        <div className="rental-actions">
+          <button
+            className="button secondary compact"
+            disabled={busy || !data.rentable}
+            onClick={() => {
+              setError("");
+              setModal("request");
+            }}
+          >
+            {rental ? "Request to rent again" : "Request to rent"}
+          </button>
+          {!data.rentable && <small className="muted">This piece isn&apos;t available to rent right now.</small>}
         </div>
       )}
       <div
@@ -362,30 +391,6 @@ export function Chat({
         )}
         <div ref={bottom} />
       </div>
-      {prompt && (
-        <div className="rental-followup">
-          <strong>Did this rental happen?</strong>
-          <p>
-            Your answer helps us improve Dzirent. Only you see this question.
-          </p>
-          <div className="button-row">
-            <button
-              className="button compact"
-              disabled={busy}
-              onClick={() => setModal("rental")}
-            >
-              Yes
-            </button>
-            <button
-              className="button secondary compact"
-              disabled={busy}
-              onClick={() => void action("rental", { status: "no" })}
-            >
-              No
-            </button>
-          </div>
-        </div>
-      )}
       <Notice message={error} error />
       <Notice message={notice} />
       {data.mySuspension ? (
@@ -441,38 +446,9 @@ export function Chat({
           )}
         </>
       )}
-      <div className="rental-actions">
-        <button
-          className="text-button"
-          disabled={busy}
-          onClick={() => setModal("rental")}
-        >
-          {rental?.status === "active"
-            ? "Change rental dates"
-            : "Mark as rented"}
-        </button>
-        {rental?.status === "active" && (
-          <button
-            className="text-button"
-            disabled={busy}
-            onClick={() => void action("rental", { status: "returned" })}
-          >
-            Mark as returned
-          </button>
-        )}
-        {(!rental || rental.status === "active") && (
-          <button
-            className="text-button"
-            disabled={busy}
-            onClick={() => setModal("cancel_deal")}
-          >
-            Deal didn&apos;t happen
-          </button>
-        )}
-      </div>
-      {(modal === "dates" || modal === "rental") && (
+      {modal === "dates" && (
         <WorkflowModal
-          title={modal === "dates" ? "Your dates" : "Rental dates"}
+          title="Your dates"
           busy={busy}
           onClose={() => setModal(null)}
         >
@@ -480,8 +456,7 @@ export function Chat({
             onSubmit={async (e) => {
               e.preventDefault();
               const f = new FormData(e.currentTarget);
-              await action(modal === "dates" ? "dates" : "rental", {
-                status: "active",
+              await action("dates", {
                 start: f.get("start"),
                 end: f.get("end"),
               });
@@ -493,12 +468,8 @@ export function Chat({
                 <input
                   type="date"
                   name="start"
-                  min={modal === "dates" ? isoToday() : undefined}
-                  defaultValue={
-                    (modal === "rental"
-                      ? rental?.start_date
-                      : data.conversation.requested_start) || ctx.start
-                  }
+                  min={isoToday()}
+                  defaultValue={data.conversation.requested_start || ctx.start}
                   required
                   disabled={busy}
                 />
@@ -508,12 +479,8 @@ export function Chat({
                 <input
                   type="date"
                   name="end"
-                  min={modal === "dates" ? isoToday() : undefined}
-                  defaultValue={
-                    (modal === "rental"
-                      ? rental?.end_date
-                      : data.conversation.requested_end) || ctx.end
-                  }
+                  min={isoToday()}
+                  defaultValue={data.conversation.requested_end || ctx.end}
                   required
                   disabled={busy}
                 />
@@ -521,14 +488,32 @@ export function Chat({
             </div>
             <Notice message={error} error />
             <button className="button full" disabled={busy}>
-              {modal === "dates" ? "Change dates" : "Mark as rented"}
+              Change dates
             </button>
           </form>
         </WorkflowModal>
       )}
+      {modal === "request" && data.rentable && (
+        <WorkflowModal
+          title="Request to rent"
+          busy={busy}
+          onClose={() => setModal(null)}
+        >
+          <RentalRequestForm
+            rentable={data.rentable}
+            initial={{
+              start: data.conversation.requested_start || ctx.start,
+              end: data.conversation.requested_end || ctx.end,
+            }}
+            busy={busy}
+            onSubmit={(range) => void action("rental_request", range)}
+          />
+          <Notice message={error} error />
+        </WorkflowModal>
+      )}
       {modal === "report" && (
         <WorkflowModal
-          title={reportId ? "Report message" : "Report user"}
+          title={reportRental ? "Report this rental" : reportId ? "Report message" : "Report user"}
           busy={busy}
           onClose={() => setModal(null)}
         >
@@ -545,11 +530,18 @@ export function Chat({
               setError("");
               setReportDetailsError("");
               try {
-                await workflow("chat/" + id + "/report", {
-                  messageId: reportId,
-                  reason: f.get("reason"),
-                  details: reportDetails,
-                });
+                if (reportRental && rental)
+                  await workflow("chat/" + id + "/rental_report", {
+                    rentalId: rental.id,
+                    reason: f.get("reason"),
+                    details: reportDetails,
+                  });
+                else
+                  await workflow("chat/" + id + "/report", {
+                    messageId: reportId,
+                    reason: f.get("reason"),
+                    details: reportDetails,
+                  });
                 await refresh();
                 setModal(null);
                 setNotice("Report sent. Thanks. We'll review this.");
@@ -619,8 +611,9 @@ export function Chat({
           onClose={() => setModal(null)}
         >
           <p>
-            You won’t be able to message each other, and pending deals will be
-            canceled.
+            You won’t be able to message each other or start a new rental. A
+            rental already arranged stays until one of you cancels it or it’s
+            returned.
           </p>
           <Notice message={error} error />
           <div className="button-row">
@@ -644,26 +637,36 @@ export function Chat({
           </div>
         </WorkflowModal>
       )}
-      {modal === "cancel_deal" && (
+      {modal === "cancel_rental" && rental && (
         <WorkflowModal
-          title="Deal didn't happen?"
+          title="Cancel this rental?"
           busy={busy}
           onClose={() => setModal(null)}
         >
           <p>
-            Mark this deal as cancelled. You and the other member will still be
-            able to message each other.
+            {other} sees that it was cancelled, and your reason if you give one.
+            You can still message each other.
           </p>
+          <label className="field">
+            <span>Reason (optional)</span>
+            <textarea
+              maxLength={300}
+              rows={3}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              disabled={busy}
+            />
+          </label>
           <Notice message={error} error />
           <div className="button-row">
             <button
               className="button"
               disabled={busy}
               onClick={async () => {
-                await action("rental", { status: "cancelled" });
+                await action("rental_cancel", { rentalId: rental.id, note: cancelReason });
               }}
             >
-              Cancel deal
+              Cancel rental
             </button>
             <button
               type="button"
@@ -671,7 +674,7 @@ export function Chat({
               disabled={busy}
               onClick={() => setModal(null)}
             >
-              Keep deal
+              Keep it
             </button>
           </div>
         </WorkflowModal>

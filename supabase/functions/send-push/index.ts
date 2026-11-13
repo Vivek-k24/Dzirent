@@ -8,7 +8,12 @@ import { errorBody, errorStatus } from "../_shared/errors.ts";
 
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
-const KINDS = new Set(["message", "new_chat", "dates"]);
+// C3 adds the rental kinds (app_private.queue_rental_push): requests, answers, reminders, completion.
+const KINDS = new Set([
+  "message", "new_chat", "dates",
+  "rental_request", "rental_accepted", "rental_declined",
+  "pickup_tomorrow", "return_tomorrow", "return_overdue", "rental_completed",
+]);
 // A chat notification that couldn't be delivered for a day is stale; the inbox has it.
 const TTL = "86400s";
 

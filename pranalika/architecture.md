@@ -190,7 +190,7 @@ flowchart TB
 
 ### 5.4 Database (`supabase/`) - C4 level 3
 
-**Schemas.** `public` (application data and API functions), `app_private` (closed: admin, evidence, settings, filters, counters, job runs; not exposed by the API), `storage` (bucket `listing-photos`).
+**Schemas.** `public` (application data and API functions), `app_private` (closed: admin, evidence, settings, filters, counters, job runs; not exposed by the API), `storage` (buckets `listing-photos`, public, and since C3 `rental-photos`, private condition photos).
 
 **Table groups** (full columns in Appendix C.1):
 
@@ -199,7 +199,7 @@ flowchart TB
 | People | `profiles`, `private_profiles`, `age_checks`, `legal_acceptances`, `notification_settings`, `device_tokens`, `data_exports`, `user_warnings` |
 | Catalog | `listings`, `listing_photos`, `listing_measurements`, `availability`, `listing_events`, `listing_declarations`, `accessory_declarations`, `us_cities`, `policy_item_types` |
 | Photo checks | `listing_scans`, `photo_scans` (768-dimension fingerprint, `pgvector`) |
-| Social | `conversations`, `messages`, `conversation_reads`, `rentals`, `rental_outcomes`, `saved_listings`, `saved_studios`, `blocks`, `reports`, `suggestion_events` |
+| Social | `conversations`, `messages`, `conversation_reads`, `rentals`, `rental_events` (C3), `rental_outcomes`, `saved_listings`, `saved_studios`, `blocks`, `reports`, `suggestion_events` |
 | Configuration | `app_settings` (feature flags), `legal_documents` |
 | Closed (`app_private`) | `admin_users`, `admin_actions` (append-only), `report_evidence`, `takedown_requests`, `settings`, `text_filter_terms`, `text_filter_allowed`, `rate_counters`, `job_runs` |
 
@@ -212,7 +212,7 @@ flowchart TB
 | Function | Called by | Purpose | Auth |
 |---|---|---|---|
 | `scan-listing` | Database (`queue_scan` via `pg_net`) | Sends photo URLs to the vision service, writes `listing_scans` and `photo_scans` | Vault shared secret; signs in to Cloud Run as `vision-invoker` |
-| `send-push` | Database triggers (new message, new chat, dates changed) | Builds and sends Firebase notifications; removes dead tokens | Vault shared secret; Firebase service account |
+| `send-push` | Database triggers (new message, new chat, dates changed) and, since C3, the rental functions and the daily reminder job | Builds and sends Firebase notifications; removes dead tokens | Vault shared secret; Firebase service account |
 | `cleanup-files` | `pg_cron` | Deletes orphan and abandoned-draft photo files through the Storage API | Vault shared secret |
 | `delete-listing` | Apps and website | Deletes a listing's photos, then the listing | User token verified in code |
 | `delete-account` | Apps and website | Deletes the caller's photos, then the account | User token verified in code |
@@ -296,8 +296,14 @@ Photos changed on an active listing are re-scanned automatically (`rescan_on_pho
 ### 6.7 Nightly cleanup
 `pg_cron` 09:15 UTC runs `run_cleanup_jobs` (database cleanups); 09:30 UTC calls `cleanup-files` (file deletions). Each job is count-only until an admin switches it to delete; each run is recorded in `job_runs`.
 
-### 6.8 Planned flows
-ID verification: Appendix B, section B.3. Rental request, payment, deposit hold, return and claim: Appendix A, section A.4.
+### 6.8 Rental request to completion (C3)
+1. In the chat the renter picks dates inside the piece's open days (`get_listing` availability minus `booked`) and sends `request_rental`; the lender gets a `rental_request` push.
+2. The lender answers with `respond_rental` (accept or decline) within 48 hours, else `dzirent-rental-expiry` marks it expired. Accepting books the days (exclusion constraint).
+3. At pickup both may upload condition photos to `rental-photos/{rental}/pickup/`; the lender (2 or more photos) calls `mark_picked_up`. At return the same with `return/` and `mark_returned`, which completes the rental while payments are off.
+4. Every step writes `rental_events`; the chat's rental card reloads on Realtime changes to `rentals`. `dzirent-rental-reminders` sends pickup, return and overdue reminders at 9 AM Austin time.
+
+### 6.9 Planned flows
+ID verification: Appendix B, section B.3. Payment, deposit hold and claim: Appendix A, section A.4 (the rental states exist since C3).
 
 ---
 
@@ -452,7 +458,7 @@ This is what writing the blueprint exposed. Ranked by impact.
 | Id | Gap | Why it matters | Where it closes |
 |---|---|---|---|
 | G1 | **Price has no unit.** `listings.price_usd` does not say per day, per rental or for how many days; the website and apps only show "$price". | Payments, fees and deposits cannot be computed correctly without it. | Decision now, then P6B |
-| G2 | **Rentals have no request or confirmation states.** `rentals.status` is only active, returned, cancelled; dates live in both `conversations` and `rentals`. | Payments, deposit holds and reminders all need requested, accepted, paid, picked up, returned, completed, disputed. | P6B (Appendix A.3) |
+| G2 | ~~**Rentals have no request or confirmation states.**~~ **Closed in C3 (2026-11-13):** the A.3 states, writes only through functions, `rental_events`, a price snapshot, no double booking, 48-hour expiry, reminders (`contract.md` section 6). Payment states exist but are unused until payments. | - | Done (C3) |
 | G3 | **One database for everything.** Preview site, debug apps, agent tests and production share `dzirent-server`. | Every test writes production data; every migration lands on production first; no rehearsal. Industry standard is a separate staging project. | Before P8 |
 | G4 | **Password reset and confirmation emails do not reach normal users.** No custom email service; built-in Supabase email is for team addresses. | A user who forgets their password is locked out. | Move from P6C to now |
 | G5 | **Photos are not in the database backups.** | A storage loss deletes every listing photo permanently. | P5B |
@@ -478,8 +484,13 @@ This is what writing the blueprint exposed. Ranked by impact.
 | G25 | **Accessibility and iOS tests unverified on devices.** | Claims rest on code review. | Owner device tests, Mac session |
 | G26 | **Two client implementations of every workflow** (TypeScript website, Kotlin apps) with hand-copied enums and types. | Drift between platforms; double work. | Generate types from the database (P7A) |
 | G27 | **Dependency age**: Kotlin 2.1.0, Compose Multiplatform 1.7.3, Navigation 2.8.0-alpha10. | Upgrades get harder; alpha APIs. | Planned upgrade after launch |
-| G28 | **Item condition, cleaning and handover not modeled** (packaging decision pending). | Deposit claims need a before and after record. | With P6B (condition photos at pickup and return) |
+| G28 | ~~**Item condition and handover not modeled.**~~ **Closed in C3 (2026-11-13):** private condition photos at pickup and return (bucket `rental-photos`, at least 2 by the lender), in the rental's timeline and report evidence. Cleaning and packaging are still undecided. | - | Done (C3) |
 | G29 | **Stray document** `iOS_Toolchain_and_Packages.md` at the repo root describes a different stack. | Confuses anyone reading the public repo. | Delete |
+| G30 | **Accepted rentals never time out** (C3). A rental accepted but never picked up stays accepted after its dates pass. | It keeps its dates booked and blocks both people's account deletion until someone cancels it. | Next rental step (an expiry for accepted rentals past their end date) |
+| G31 | **No admin tool to end a rental** (C3). Only the lender can mark a piece returned; a suspended or banned lender can't. | A renter can be stuck unable to delete their account. | Admin rental actions (with payments, A.5) |
+| G32 | **Availability rules differ** (C3). `browse_listings` treats a listing with no availability windows as always available; `request_rental` refuses it. | Such a piece shows in date searches but can't be requested. | Product decision: require availability when publishing, or allow any date |
+| G33 | **Rental reminders use Austin time** (C3) for "tomorrow", "overdue" and the 9 AM send. | Wrong day boundaries for people outside Central time. | When Dzirent leaves Austin |
+| G34 | **Privacy text changed without a version bump** (C3: condition photos, rental reminders). | People aren't asked to accept the new text. | Owner and attorney: bump `PRIVACY_VERSION` with a `legal_documents` migration if needed |
 
 ---
 

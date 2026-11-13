@@ -21,7 +21,7 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - `p_size` (text, default null): size label match (normalized or split on `/`, `,`, `|`).
   - `p_styles` (text[], default null): array of listing styles to match (`operator(pg_catalog.&&)` overlap).
   - `p_start_date` (date, default null): start date of requested rental window.
-  - `p_end_date` (date, default null): end date of requested rental window (only listings available for the full range).
+  - `p_end_date` (date, default null): end date of requested rental window (only listings available for the full range; since C3 also leaves out listings with booked days in the range: an accepted, awaiting-payment, paid or picked-up rental).
   - `p_min_price` (numeric, default null): minimum price per day, USD.
   - `p_max_price` (numeric, default null): maximum price per day, USD.
   - `p_new_days` (integer, default null): listings created within last N days (for "New near you").
@@ -57,6 +57,7 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - `availability` (jsonb): array of `{ start_date, end_date }` in date order.
   - `created_at` (timestamptz).
   - `price_per_day` (numeric), `price_unit` (text), `days` (integer), `total` (numeric): as in `browse_listings` (C1). `price` is the price per day.
+  - `booked` (jsonb, C3): array of `{ start_date, end_date }`, the booked days from today on (rentals accepted, awaiting payment, paid or picked up). Never who booked them. Clients show them as unavailable in the request date picker.
 
 ### `get_studio`
 - **Who can call:** Signed-in only (`authenticated`).
@@ -66,7 +67,7 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - `p_lng` (double precision, default null): caller's longitude.
 - **Returns:** Table with one row:
   - `studio_name` (text), `studio_handle` (text), `studio_bio` (text), `style_tags` (text[]), `city` (text), `pickup_area` (text).
-  - `rental_count` (integer): count of completed/active rentals.
+  - `rental_count` (integer): count of the lender's completed rentals (C3; before: active and returned).
   - `reply_minutes` (integer): median first-reply time across conversations in last 90 days (null if <3).
   - `is_saved` (boolean): whether caller has saved this studio.
   - `listings` (jsonb): array of up to 30 active listing cards from this studio.
@@ -165,7 +166,7 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 ### Push notifications (Step 7A)
 - `register_push_token(p_token text, p_platform text)`: Signed-in only. Saves this phone's push token for the caller; `p_platform` is `'android'` or `'ios'`. A token saved for another account moves to the caller (the phone changed hands). Call on sign-in, on every app start while signed in, and when Firebase issues a new token. Returns nothing.
 - `unregister_push_token(p_token text)`: Signed-in only. Removes the token if it is the caller's. Call before signing out. Returns nothing.
-- Settings are the caller's own `notification_settings` row (table below). No row means Messages on and message text hidden.
+- Settings are the caller's own `notification_settings` row (table below). No row means Messages on, message text hidden and (C3) Rental reminders on.
 
 ### Terms acceptance and measurements consent (P1B part 1)
 - `needs_legal_acceptance()`: Signed-in only. Returns `boolean`: true while the caller hasn't accepted the current version (`legal_documents`) of the Terms of Use or the Privacy Policy. Runs as the caller. The apps ask it after sign-in and when a saved session opens; while true they show only the "We've updated our terms" step (Agree or Sign out).
@@ -259,6 +260,7 @@ Suspension and holds (any client):
 
 Reports (P2B changes):
 - **New columns:** `target_user_id` (who the report is about, set by the server), `status` (`open` / `closed`), `outcome`, `outcome_note`, `closed_at`, `closed_by`. Apps always insert `open`.
+- **Rental reports (C3):** `target_type = 'rental'`, `target_id` = the rental. Only its renter or lender may report it (else `DZ-E5015`); it is about the other one. The evidence holds the rental (people, dates, price), its whole timeline and its condition photo paths. "Remove content" is refused for a rental report (`DZ-E5016`).
 - **Message reports:** a reporter can only report messages in their own chats ("You can only report messages in your own chats.").
 - **Evidence:** at insert, the server saves a snapshot in `app_private.report_evidence`, which never changes and is readable only through `admin_list_reports`:
   - a message with up to 5 messages before and after it in that chat, each with sender id, name, handle and time;
@@ -283,11 +285,11 @@ Reports (P2B changes):
 ### Download my data (P3A)
 - **Clients call the Edge Function `export-my-data`** (below). It returns the file; the database function behind it is `export_my_data()`.
 - `export_my_data()` → `jsonb`: Signed-in only. Everything Dzirent holds about the caller, built from `auth.uid()` only. Once per 24 hours: a second call is refused with `P0001` "You can download your data once a day. Try again after Nov 8, 2026, 6:51 PM UTC." Each successful call adds a row to `data_exports`.
-- **Parts:** `account` (email, created, last sign-in), `profile`, `private_profile`, `listings` (each with `measurements`, `availability`, `photos`, `photo_checks` with per-photo results), `saved_pieces`, `saved_studios`, `chats` (with `messages`), `rentals`, `blocked_people`, `reports_filed`, `warnings`, `accessory_declarations`, `listing_declarations`, `legal_acceptances`, `age_checks`, `notification_settings`, `devices` (platform and dates, never tokens), `suggestion_choices`, `listing_activity`, `earlier_exports`.
+- **Parts:** `account` (email, created, last sign-in), `profile`, `private_profile`, `listings` (each with `measurements`, `availability`, `photos`, `photo_checks` with per-photo results), `saved_pieces`, `saved_studios`, `chats` (with `messages`), `rentals` (since C3 with `price_per_day`, `days`, `total`, `currency` and `events`: from, to, by you / other person / Dzirent, note, time), `condition_photos` (C3: the caller's own pickup and return photos, `rental_id`, `stage`, `storage_path`, `uploaded_at`; the Edge Function adds `link`, a signed link valid 7 days), `blocked_people`, `reports_filed`, `warnings`, `accessory_declarations`, `listing_declarations`, `legal_acceptances`, `age_checks`, `notification_settings`, `devices` (platform and dates, never tokens), `suggestion_choices`, `listing_activity`, `earlier_exports`.
 - **Other people** appear only as `{ name, handle }` (studio name, else display name; studio handle). Messages say `from: "you"` or `"other person"`. Never another user's account id, email, location, measurements or private fields. Reports about the caller, report evidence, outcomes and admin notes are not included.
 
 ### Cleanup and retention jobs (P3B)
-- **Nine jobs, nightly** (pg_cron, UTC): the seven database jobs at 09:15 (`app_private.run_cleanup_jobs()`), the two file jobs at 09:30 (`app_private.request_file_cleanup()` → Edge Function `cleanup-files`).
+- **Ten jobs, nightly** (pg_cron, UTC): the seven database jobs at 09:15 (`app_private.run_cleanup_jobs()`), the three file jobs at 09:30 (`app_private.request_file_cleanup()` → Edge Function `cleanup-files`; C3 added `old_condition_photos`).
 - **Each job counts only until its switch is on.** The switch is the `app_settings` flag `cleanup_<job>`: off (default) = count only, on = delete. Admins switch it on the admin Flags page (`set_flag`, logged). Every run, in either mode, adds a row to `app_private.job_runs` (job, mode, counts, error, start and finish).
 - **Retention settings** in `app_private.settings` (key → default, who decides):
 
@@ -295,6 +297,7 @@ Reports (P2B changes):
 | --- | --- | --- | --- |
 | `abandoned_drafts` | Listings never published (`published_at` null), paused, not held, not edited for N days, with their photo files | `draft_retention_days` (60) | Owner |
 | `orphan_photos` | Files in `listing-photos` with no `listing_photos` row, older than N days | `orphan_photo_days` (1) | Owner |
+| `old_condition_photos` (C3, file job) | Files in `rental-photos` of rentals that ended (completed, cancelled, declined, expired) more than N days ago, and of rentals that no longer exist | `condition_photo_retention_days` (365, placeholder) | Attorney |
 | `old_photo_checks` | Finished photo checks older than N days except the latest per listing, with their per-photo results | `photo_check_retention_days` (90) | Owner |
 | `expired_reports` | Closed reports past the period, with their evidence | `report_retention_days` (730, placeholder) | Attorney |
 | `old_data_exports` | `data_exports` rows older than N days | `data_export_retention_days` (30) | Owner |
@@ -307,8 +310,8 @@ Reports (P2B changes):
 - **Listings** have two new server-written columns: `updated_at` (any change to the listing, its photos, measurements or dates) and `published_at` (the first time it became `active`). Apps can't set them. Existing listings were all counted as published.
 - `cleanup-files` (`POST /functions/v1/cleanup-files`, `verify_jwt = false`):
   - Called only by the database, with the header `x-cleanup-secret` = function secret `CLEANUP_FILES_SECRET` (Vault `cleanup_files_secret`); anything else gets 401.
-  - It reads `cleanup_file_plan()` (service role only). In delete mode it empties each abandoned draft's folder through the Storage API and then deletes the listing, and removes orphan files through the Storage API. It records both runs with `cleanup_record_run()` (service role only).
-  - It returns `{ ok, abandoned_drafts: {...}, orphan_photos: {...} }` with counts.
+  - It reads `cleanup_file_plan()` (service role only). In delete mode it empties each abandoned draft's folder through the Storage API and then deletes the listing, and removes orphan files and (C3) old condition photos through the Storage API. It records each run with `cleanup_record_run()` (service role only).
+  - It returns `{ ok, abandoned_drafts: {...}, orphan_photos: {...}, old_condition_photos: {...} }` with counts.
 - `admin_cleanup_status()` → `jsonb` (admin + two-step sign-in, logged): each job's `deletes` switch, description and `last_run` (`mode`, `counts`, `error`, `started_at`, `finished_at`). The admin overview's "Cleanup jobs" card shows it.
 
 ### Sample data
@@ -335,7 +338,7 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 - `<name>` is the sender's studio name, else display name.
 - Never between blocked users (either direction), never when the recipient turned Messages off, never to a recipient with no registered phone.
 - Never phone numbers, email or street addresses, map links or coordinates: text that looks like one of these is left out entirely.
-- FCM data message, high priority, all values strings: `kind` (`message`, `new_chat`, `dates`), `conversation_id`, `recipient_id`, `title`, `body` (only when there is one), `tag` (`chat_<conversation_id>`). The app builds the notification: one per chat (the tag), "Messages" channel, nothing while that chat is on screen, a tap opens the chat.
+- FCM data message, high priority, all values strings: `kind` (`message`, `new_chat`, `dates`, and since C3 the rental kinds in section 6), `conversation_id`, `recipient_id`, `title`, `body` (only when there is one), `tag` (`chat_<conversation_id>`). The app builds the notification: one per chat (the tag), "Messages" channel, nothing while that chat is on screen, a tap opens the chat (rental pushes carry the rental's chat, where the rental card is).
 
 ---
 
@@ -366,7 +369,7 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 - **Payload:** None (user ID comes exclusively from verified token).
 - **Behavior:**
   1. Verifies caller authentication.
-  2. Refuses with HTTP 409 if caller has active rentals as renter or lender.
+  2. Refuses with HTTP 409 `DZ-E7010` while the caller has a rental in progress as renter or lender: `accepted`, `awaiting_payment`, `paid`, `picked_up`, `returned`, `claimed` or `disputed` (C3; asked with `account_has_rental_in_progress(p_user)`, server key only). A request alone doesn't block.
   3. Finds all caller listings and deletes their folders from `listing-photos` via Storage API.
   4. Deletes auth user via admin client; foreign keys cascade profile, listings, and child rows.
 - **Returns:** HTTP 200 `{ "ok": true }`.
@@ -374,7 +377,7 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 ### `send-push`
 - **Who can call:** The database only (`app_private.queue_push`, through the `async_jobs` outbox and `pg_net`, C1). Never apps.
 - **Auth:** Header `x-send-push-secret` must equal the function secret `SEND_PUSH_SECRET` (the same value is in Vault as `send_push_secret`); compared in constant time. `verify_jwt = false`. Anything else gets HTTP 401.
-- **Payload:** `{ "kind": "message" | "new_chat" | "dates", "conversation_id": "<uuid>", "recipient_id": "<uuid>", "title": "<text>", "body": "<text>" | null }`, already checked and worded by the database.
+- **Payload:** `{ "kind": "message" | "new_chat" | "dates" | "rental_request" | "rental_accepted" | "rental_declined" | "pickup_tomorrow" | "return_tomorrow" | "return_overdue" | "rental_completed", "conversation_id": "<uuid>", "recipient_id": "<uuid>", "title": "<text>", "body": "<text>" | null }`, already checked and worded by the database (rental kinds since C3).
 - **Behavior:** Gets a Google access token with the Firebase server key (`FIREBASE_SERVICE_ACCOUNT_BASE64`), sends the data message above through the FCM HTTP v1 API to each of the recipient's Android tokens (TTL one day), then deletes the tokens Firebase reports as unregistered or invalid.
 - **Returns:** HTTP 200 `{ "sent", "failed", "removed", "errors" }`: counts and Firebase error codes only, never tokens or text. Since C1, when nothing was delivered and a phone failed for a reason other than a dead token, HTTP 503 `DZ-E9003` with the same counts, so the outbox tries again.
 
@@ -419,8 +422,9 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `conversations` | SELECT, INSERT | SELECT: participant (`auth.uid() in (renter_id, lender_id)`). INSERT: renter only (`renter_id = auth.uid()`), validated by trigger. |
 | `messages` | SELECT, INSERT | SELECT: conversation participant. INSERT: `sender_id = auth.uid()` in participated conversation. |
 | `conversation_reads` | ALL | `user_id = auth.uid()` |
-| `rentals` | SELECT, INSERT, UPDATE | SELECT: participant. INSERT: participant with active conversation. UPDATE: state transitions by participant. |
-| `rental_outcomes` | SELECT, INSERT | `user_id = auth.uid()` |
+| `rentals` | SELECT | Participant (`auth.uid() in (renter_id, lender_id)`). Since C3 no insert, update or delete by apps: every change goes through the rental functions (section 6). |
+| `rental_events` | SELECT | C3. Participants of the rental. Written only by the rental functions; append-only. Columns `id`, `rental_id`, `from_status`, `to_status`, `actor_id`, `actor_role` (`renter`, `lender`, `system`), `note`, `created_at`. |
+| `rental_outcomes` | SELECT, INSERT | `user_id = auth.uid()`. Old "did it happen?" answers; kept readable, no longer written by the apps (C3). |
 | `saved_listings` | ALL | `user_id = auth.uid()` |
 | `saved_studios` | ALL | `user_id = auth.uid()` |
 | `blocks` | ALL | `blocker_id = auth.uid()` |
@@ -431,7 +435,7 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `accessory_declarations`| SELECT | `user_id = auth.uid()` |
 | `listing_declarations`  | SELECT | `user_id = auth.uid()` |
 | `device_tokens` | SELECT, DELETE | `user_id = auth.uid()`. Added only through `register_push_token`. Columns `token` (unique), `user_id`, `platform`, `created_at`, `last_seen_at`. Removed with the account. |
-| `notification_settings` | SELECT, INSERT, UPDATE | `user_id = auth.uid()`. Columns `messages` (default true), `show_message_text` (default false), `updated_at`. Removed with the account. |
+| `notification_settings` | SELECT, INSERT, UPDATE | `user_id = auth.uid()`. Columns `messages` (default true), `show_message_text` (default false), `rental_reminders` (default true, C3), `updated_at`. Removed with the account. |
 | `us_cities` | None | Closed to all direct access; query via `search_cities`. |
 | `listing_scans` | SELECT | Owned listing only (`l.lender_id = auth.uid()`). Written only by `request_scan` and the server. Columns `id`, `listing_id`, `status` (`queued`, `running`, `done`, `failed`), `verdict` (`allowed`, `rejected`, `review`; set when done or failed), `reason` (plain words for the lender), `suggestions` (JSON: `item_key`, `item_label`, `category`, `item_type`, `garment_type`, `colors`, `pattern`, `fabric`, `styles`, `title`, `description`, `alternatives`, `confidence` when there is a confident allowed item, plus always `quality` `{ summary, photos, photos_with_warnings, warnings }`, `duplicate`, `model`), `photo_set_hash`, `admin_decision` (`approved`, `rejected` or null), `error` (short code), `created_at`, `started_at`, `finished_at`, `admin_decided_at`. Removed with the listing. In the `supabase_realtime` publication (Step 8B): owners receive changes to their own scans only (RLS applies). |
 | `photo_scans` | SELECT | Owned listing only. Written only by the server. One row per scanned photo: `scan_id`, `listing_id`, `photo_id`, `storage_path`, `slot`, `blur_score` (0 sharp to 1 blurry), `brightness_score` (0 black to 1 white), `framing_score` (0 = whole piece in frame; higher = more of its outline on the edge), `worn_probability`, `fingerprint` (`vector(768)`), `labels` (JSON label scores), `warnings` (text[], worded as on the phone), `decision` (`allowed`, `not_allowed`, `not_clothing`, `detail`, `unsure`), `scanned_at`. Removed with the photo or listing. |
@@ -516,3 +520,61 @@ Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.k
 ### Read retries (clients)
 - Reads only: GET and HEAD, and the read-only database functions (`browse_listings`, `get_listing`, `get_studio`, `fit_listings`, `search_cities`, `my_*`, `needs_legal_acceptance`, `age_blocked`, `is_admin`, `check_text`; the website also the admin status reads). After a network failure, 408 or 5xx (not 501): 2 retries, after 0.5 s and then 2 s. Writes are never retried; their error shows its code.
 - Android/iPhone: Ktor `HttpRequestRetry` in `createDzirentSupabaseClient` (`util/ReadRetry.kt`). Website: `retryingFetch` (`lib/retry.ts`) in all three Supabase clients.
+
+---
+
+## 6. Rentals (C3)
+
+### States
+`requested` → `accepted` (or `declined`, `expired`, `cancelled`) → `picked_up` → `returned` → `completed`; `cancelled` from `accepted` too. `awaiting_payment`, `paid`, `claimed` and `disputed` exist for payments (Appendix A.3 of `architecture.md`) and are used only while `payments_enabled` is on: then accept gives `awaiting_payment`, and return gives `returned` (completed later). While it is off (now), accept gives `accepted` and `mark_returned` completes the rental at once. Rows from before C3 were mapped: `active` → `picked_up`, `returned` → `completed`.
+
+### Who may act
+Every function below is for signed-in callers and refuses (before anything else): not signed in `DZ-E1001`, age-blocked `DZ-E1030`, suspended `DZ-E1040`, current terms not accepted `DZ-E1010`, not one of the rental's two people `DZ-E4001`. Blocked pairs (either direction) are refused with `DZ-E4003` for `request_rental`, `respond_rental` and `mark_picked_up`; `cancel_rental`, `mark_returned` and `complete_rental` stay allowed so a block never leaves a rental stuck. A wrong state is `DZ-E4012`. Every change writes a `rental_events` row.
+
+| Function | Who, from which state | Returns |
+| --- | --- | --- |
+| `request_rental(p_listing_id uuid, p_start date default null, p_end date default null)` | The renter (not the lender: `DZ-E4004`). Dates default to the chat's requested dates (else `DZ-E4005`, hint `dates`). Refused: last day before first `DZ-E4007`; start before today in Austin `DZ-E4006`; outside the listing's availability windows (adjacent windows join; none means not rentable) `DZ-E4008`; over booked days `DZ-E4009`; listing not active, held or without a price `DZ-E4011`; an open rental already in this chat `DZ-E4010`; more than 20 requests a day `DZ-E9001` (`rate_limit_rental_request`). Starts the chat if there is none. Stores the price snapshot (`price_per_day`, `days` counted both ends, `total`, `currency` USD) and `expires_at` = now + 48 hours. | the rental id |
+| `respond_rental(p_rental_id uuid, p_answer text, p_note text default null)` | The lender (`DZ-E4002`), while `requested`. `p_answer` `accept` or `decline` (else `DZ-E4016`); an expired request `DZ-E4013`; accepting over days booked meanwhile `DZ-E4009`. | the new state |
+| `cancel_rental(p_rental_id uuid, p_reason text default null)` | A request: the renter only (the lender declines instead, `DZ-E4018`). `accepted`, `awaiting_payment`, `paid`: either. Never after pickup (`DZ-E4014`). The reason (at most 300 characters, `DZ-E4017`) is the event's note. | `cancelled` |
+| `mark_picked_up(p_rental_id uuid, p_note text default null)` | The lender, from `accepted` or `paid`, after uploading at least 2 pickup photos (`DZ-E4020`, hint `photos`). | `picked_up` |
+| `mark_returned(p_rental_id uuid, p_note text default null)` | The lender, from `picked_up`, after uploading at least 2 return photos (`DZ-E4020`). Payments off: also completes (a second event by the system). | `completed` (or `returned`) |
+| `complete_rental(p_rental_id uuid)` | The lender, or the server (service role, no user), from `returned`. | `completed` |
+| `get_rental(p_rental_id uuid default null, p_conversation_id uuid default null)` | One of the two people. By id, or the chat's latest rental. Null when there is none. | `jsonb` (below) |
+| `my_rentals(p_limit int default 30 (max 100), p_offset int default 0)` | Every rental the caller is in: requests to the caller as lender first, then requested, upcoming, in progress, past. | `jsonb` array (below, without `events` and `photos`) |
+
+The rental `jsonb`: `id`, `conversation_id`, `listing_id`, `listing_title`, `cover_photo_path`, `your_role` (`renter` or `lender`), `other_name`, `other_handle` (never the other person's id), `status`, `start_date`, `end_date`, `price_per_day`, `days`, `total`, `currency`, `expires_at`, `created_at`, `updated_at`, `payments_enabled`, and from `get_rental` also `events` (`from`, `to`, `by` = `you` / `other` / `dzirent`, `by_role`, `note`, `at`) and `photos` (`storage_path`, `stage`, `by` = `you` / `other`, `by_role`, `uploaded_at`).
+
+### No double booking
+Exclusion constraint `rentals_no_double_booking` (btree_gist): one listing can't have two rentals in `accepted`, `awaiting_payment`, `paid` or `picked_up` whose days overlap. Days are inclusive, so Nov 5 - 8 and Nov 9 - 12 are back-to-back and allowed; Nov 5 - 8 and Nov 8 - 10 are refused. Booked days show in `get_listing.booked` and are left out of `browse_listings` with dates. One open rental per chat (`rentals_one_open_per_chat`); a chat can have several rentals over time.
+
+### Expiry and reminders (pg_cron, UTC)
+- `dzirent-rental-expiry`, every 10 minutes: `requested` with `expires_at` passed → `expired` (by the system, note "No answer in 48 hours"). Setting `rental_request_hours` (48).
+- `dzirent-rental-reminders`, daily 15:00 (9 AM in Austin): to both people, `pickup_tomorrow` (accepted or paid, starts tomorrow), `return_tomorrow` (picked up, ends tomorrow), `return_overdue` (picked up, ended 1 to 3 days ago; setting `rental_overdue_reminder_days` 3). At most one per rental, kind, person and day (`app_private.rental_reminders`).
+
+### Pushes
+Through `send-push` and the outbox, like chat pushes, to a person with a registered phone. Never between blocked people.
+
+| Kind | To | Title | Body | Switch |
+| --- | --- | --- | --- | --- |
+| `rental_request` | lender | "Rental request from <name>" | "Nov 5 - 8 · <title> · 4 days · $220.00" | Messages |
+| `rental_accepted` | renter | "<name> accepted your request" | dates · title | Messages |
+| `rental_declined` | renter | "<name> declined your request" | dates · title | Messages |
+| `rental_completed` | renter | "Rental completed" | title · dates | Messages |
+| `pickup_tomorrow` | both | "Pickup tomorrow" | title · dates | Rental reminders |
+| `return_tomorrow` | both | "Return due tomorrow" | title · dates | Rental reminders |
+| `return_overdue` | both | "Return overdue" | "<title> was due back Nov 8." | Rental reminders |
+
+Cancelling, declining-by-expiry and pickup send no push; the rental card updates live (Realtime on `rentals`).
+
+### Condition photos (bucket `rental-photos`, private)
+- Paths `{rental_id}/{stage}/{random}.jpg`, `stage` `pickup` or `return`, `{random}` 16 to 64 letters, digits, `_` or `-`. JPEG, PNG or WebP, at most 10 MB (Storage answers 415 / 413, shown as `DZ-E2064` / `DZ-E2065`).
+- **Upload:** either person of the rental, only in the matching state: `pickup` while `accepted`, `paid` or `picked_up`; `return` while `picked_up` or `returned`. Otherwise Storage refuses (row-level security, shown as `DZ-E4021`). No updates and no deletes by people: the photos are the record.
+- **Read:** the two people and admins (two-step, fresh), by signed links (`createSignedUrl`); the bucket has no public address.
+- The lender needs 2 photos of each stage before marking picked up or returned; the renter may add theirs.
+- Kept `condition_photo_retention_days` (365, attorney to set) after the rental ends, then removed by the `old_condition_photos` cleanup job (count only until switched on).
+
+### Admin
+- `admin_user_rentals(p_user_id uuid, p_limit int default 20 (max 50))` → `jsonb` array of rental snapshots (people with ids, names and handles, dates, price, every event with actor id and role, photo paths with stage and uploader role). Two-step admins only; logged as `view_user_rentals`. The website's user lookup shows it with signed photo links; report detail shows a rental report's frozen snapshot the same way.
+
+### Errors
+`DZ-E4001`-`E4022` (`contracts/error-codes.json`, `pranalika/error-codes.md`), `DZ-E5015`, `DZ-E5016`; `DZ-E7010` reworded ("You have a rental in progress. Finish or cancel it in its chat (My rentals), then delete your account.").

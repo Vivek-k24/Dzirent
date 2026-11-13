@@ -60,16 +60,16 @@ Deno.serve(async (req) => {
       return refuse("DZ-E1003");
     }
 
-    // 2. Refuse deletion while having active rentals (as renter or lender)
-    const { count, error: rentalError } = await admin
-      .from("rentals")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active")
-      .or(`renter_id.eq.${userId},lender_id.eq.${userId}`);
-    if (rentalError) {
+    // 2. Refuse deletion while a rental is in progress (as renter or lender). C3: from accepted
+    // until it is completed or cancelled; a request alone doesn't block. The database decides
+    // (account_has_rental_in_progress, server key only).
+    const { data: inProgress, error: rentalError } = await admin.rpc("account_has_rental_in_progress", {
+      p_user: userId,
+    });
+    if (rentalError || typeof inProgress !== "boolean") {
       return refuse("DZ-E7012");
     }
-    if ((count ?? 0) > 0) {
+    if (inProgress) {
       return refuse("DZ-E7010");
     }
 

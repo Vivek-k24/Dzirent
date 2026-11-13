@@ -34,7 +34,7 @@ const exportData = (token) => http("/functions/v1/export-my-data", { method: "PO
 
 const PARTS = [
   "account", "profile", "private_profile", "listings", "saved_pieces", "saved_studios", "chats",
-  "rentals", "blocked_people", "reports_filed", "warnings", "accessory_declarations",
+  "rentals", "condition_photos", "blocked_people", "reports_filed", "warnings", "accessory_declarations",
   "listing_declarations", "legal_acceptances", "age_checks", "notification_settings", "devices",
   "suggestion_choices", "listing_activity", "earlier_exports",
 ];
@@ -78,6 +78,8 @@ async function run() {
   assert.equal(file.profile.id, u3.id, "the caller's own profile");
   assert.ok(file.chats.length > 0, "test user 3 has chats");
   for (const l of file.listings) for (const p of l.photos) assert.ok(String(p.link).includes("/storage/v1/object/public/listing-photos/"), "photo link");
+  // C3: condition photos are private; their links are signed.
+  for (const p of file.condition_photos) assert.ok(String(p.link).includes("/storage/v1/object/sign/rental-photos/"), "condition photo link is signed");
   const sizes = PARTS.map((p) => `${p} ${Array.isArray(file[p]) ? file[p].length : file[p] === null ? "none" : "yes"}`);
   console.log(`   ${res.headers.get("content-disposition")}; ${res.text.length} characters`);
   console.log(`   parts: ${sizes.join(", ")}`);

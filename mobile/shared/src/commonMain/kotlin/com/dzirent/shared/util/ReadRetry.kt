@@ -14,7 +14,9 @@ object ReadRetry {
     val READ_RPCS: Set<String> = setOf(
         "browse_listings", "get_listing", "get_studio", "fit_listings", "search_cities",
         "my_conversations", "my_saved_listings", "my_saved_studios", "my_blocked_users", "my_block_peer_ids",
-        "needs_legal_acceptance", "age_blocked", "is_admin", "check_text"
+        "needs_legal_acceptance", "age_blocked", "is_admin", "check_text",
+        // C3: reading rentals.
+        "get_rental", "my_rentals"
     )
 
     private val rpcPath = Regex("""/rest/v1/rpc/([A-Za-z0-9_]+)/?$""")

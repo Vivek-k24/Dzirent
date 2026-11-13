@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { photoUrl } from "@/lib/supabase/config";
 import { ActionDialog } from "./action-dialog";
+import { RentalEvidence } from "./rental-evidence";
 import {
   dismissReportAction,
   warnUserAction,
@@ -17,7 +18,7 @@ export type ReportRow = {
   id: string;
   created_at: string;
   status: "open" | "closed";
-  target_type: "message" | "listing" | "profile" | "user";
+  target_type: "message" | "listing" | "profile" | "user" | "rental";
   target_id: string;
   target_user_id: string;
   reason: string;
@@ -35,7 +36,14 @@ export type ReportRow = {
   evidence_captured_at: string | null;
 };
 
-export function ReportsView({ initialReports }: { initialReports: ReportRow[] }) {
+export function ReportsView({
+  initialReports,
+  rentalLinks = {},
+}: {
+  initialReports: ReportRow[];
+  /** C3: signed links to rental reports' condition photos, by storage path. */
+  rentalLinks?: Record<string, string>;
+}) {
   const [reports, setReports] = useState(initialReports);
   const [filter, setFilter] = useState<"open" | "closed">("open");
   const [selectedReport, setSelectedReport] = useState<ReportRow | null>(null);
@@ -149,6 +157,11 @@ export function ReportsView({ initialReports }: { initialReports: ReportRow[] })
   function renderEvidence(report: ReportRow) {
     const e = report.evidence;
     if (!e) return <p className="muted">No evidence snapshot recorded.</p>;
+
+    // C3: rental evidence (timeline and condition photos as they were at report time).
+    if (report.target_type === "rental" || e.type === "rental") {
+      return <RentalEvidence snapshot={e} links={rentalLinks} />;
+    }
 
     // Message evidence
     if (e.message || report.target_type === "message") {
@@ -446,13 +459,16 @@ export function ReportsView({ initialReports }: { initialReports: ReportRow[] })
                     >
                       Warn user
                     </button>
-                    <button
-                      type="button"
-                      className="button secondary compact"
-                      onClick={() => setActionType("remove_content")}
-                    >
-                      Remove content
-                    </button>
+                    {/* A rental report has no content to remove (DZ-E5016). */}
+                    {selectedReport.target_type !== "rental" && (
+                      <button
+                        type="button"
+                        className="button secondary compact"
+                        onClick={() => setActionType("remove_content")}
+                      >
+                        Remove content
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="button secondary compact"

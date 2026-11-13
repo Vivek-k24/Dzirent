@@ -40,7 +40,10 @@ function refuse(code: string, message?: string): Response {
 type Plan = {
   abandoned_drafts: { delete: boolean; listings: { id: string; files: number }[] };
   orphan_photos: { delete: boolean; paths: string[] };
+  // C3: rental condition photos past their retention, or whose rental is gone (bucket rental-photos).
+  old_condition_photos?: { delete: boolean; paths: string[] };
 };
+const CONDITION_BUCKET = "rental-photos";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return refuse("DZ-E9005");
@@ -69,6 +72,7 @@ Deno.serve(async (req) => {
     const message = `plan failed: ${planError?.code ?? "no data"}`;
     await record("abandoned_drafts", "count", null, message, started);
     await record("orphan_photos", "count", null, message, started);
+    await record("old_condition_photos", "count", null, message, started);
     return refuse("DZ-E9999");
   }
   const plan = data as Plan;
@@ -128,6 +132,25 @@ Deno.serve(async (req) => {
     }
     await record("orphan_photos", mode, counts, errors.length ? errors.join("; ") : null, started);
     result.orphan_photos = { mode, ...counts, errors: errors.length };
+  }
+
+  // Old condition photos (C3), the same way: count only until the switch is on.
+  if (plan.old_condition_photos) {
+    const job = plan.old_condition_photos;
+    const mode = job.delete ? "delete" : "count";
+    const counts = { files: job.paths.length, deleted_files: 0 };
+    const errors: string[] = [];
+    if (job.delete) {
+      const conditionBucket = admin.storage.from(CONDITION_BUCKET);
+      for (let i = 0; i < job.paths.length; i += REMOVE_BATCH) {
+        const batch = job.paths.slice(i, i + REMOVE_BATCH);
+        const { error: removeError } = await conditionBucket.remove(batch);
+        if (removeError) errors.push(`batch ${i / REMOVE_BATCH + 1}: remove failed`);
+        else counts.deleted_files += batch.length;
+      }
+    }
+    await record("old_condition_photos", mode, counts, errors.length ? errors.join("; ") : null, started);
+    result.old_condition_photos = { mode, ...counts, errors: errors.length };
   }
 
   return json(200, { ok: true, ...result });

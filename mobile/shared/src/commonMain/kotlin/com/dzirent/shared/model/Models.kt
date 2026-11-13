@@ -137,7 +137,9 @@ data class ListingDetail(
     val photos: List<ListingPhotoDetail> = emptyList(),
     val measurements: List<ListingMeasurementDetail> = emptyList(),
     val availability: List<AvailabilityRange> = emptyList(),
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("created_at") val createdAt: String? = null,
+    /** Booked days (C3): accepted, paid or picked-up rentals, never who booked them. */
+    val booked: List<AvailabilityRange> = emptyList()
 )
 
 /** Studio details returned by get_studio RPC. */
@@ -346,7 +348,8 @@ data class Rental(
     @SerialName("listing_id") val listingId: String,
     @SerialName("renter_id") val renterId: String,
     @SerialName("lender_id") val lenderId: String,
-    val status: String = "active", // 'active' | 'returned' | 'cancelled'
+    /** C3 states (util/Rentals.kt RentalStatus); written only by the rental functions. */
+    val status: String = "requested",
     @SerialName("start_date") val startDate: String? = null,
     @SerialName("end_date") val endDate: String? = null,
     @SerialName("updated_by") val updatedBy: String? = null,
@@ -357,6 +360,59 @@ data class Rental(
     val lender: Profile? = null,
     val renter: Profile? = null
 )
+
+/** One step of a rental's timeline (get_rental): [by] is "you", "other" or "dzirent". */
+@Serializable
+data class RentalEvent(
+    val from: String? = null,
+    val to: String,
+    val by: String,
+    @SerialName("by_role") val byRole: String? = null,
+    val note: String? = null,
+    val at: String? = null
+)
+
+/** A condition photo (private bucket rental-photos); [stage] is "pickup" or "return". */
+@Serializable
+data class RentalPhoto(
+    @SerialName("storage_path") val storagePath: String,
+    val stage: String,
+    val by: String,
+    @SerialName("by_role") val byRole: String? = null,
+    @SerialName("uploaded_at") val uploadedAt: String? = null
+)
+
+/**
+ * A rental as get_rental and my_rentals return it (C3): the other person only by name and handle,
+ * the price agreed at request time, and (get_rental only) the timeline and condition photos.
+ */
+@Serializable
+data class RentalView(
+    val id: String,
+    @SerialName("conversation_id") val conversationId: String,
+    @SerialName("listing_id") val listingId: String,
+    @SerialName("listing_title") val listingTitle: String? = null,
+    @SerialName("cover_photo_path") val coverPhotoPath: String? = null,
+    @SerialName("your_role") val yourRole: String,
+    @SerialName("other_name") val otherName: String? = null,
+    @SerialName("other_handle") val otherHandle: String? = null,
+    val status: String,
+    @SerialName("start_date") val startDate: String? = null,
+    @SerialName("end_date") val endDate: String? = null,
+    @SerialName("price_per_day") val pricePerDay: Double? = null,
+    val days: Int? = null,
+    val total: Double? = null,
+    val currency: String = "USD",
+    @SerialName("expires_at") val expiresAt: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("payments_enabled") val paymentsEnabled: Boolean = false,
+    val events: List<RentalEvent> = emptyList(),
+    val photos: List<RentalPhoto> = emptyList()
+) {
+    val iAmLender: Boolean get() = yourRole == "lender"
+    val dates: DateRange? get() = parseDateRange(startDate, endDate)
+}
 
 @Serializable
 data class ConversationRead(
@@ -384,14 +440,16 @@ data class Block(
 @Serializable
 data class NotificationSettings(
     val messages: Boolean = true,
-    @SerialName("show_message_text") val showMessageText: Boolean = false
+    @SerialName("show_message_text") val showMessageText: Boolean = false,
+    /** Pickup, return and overdue reminders (C3), on by default. */
+    @SerialName("rental_reminders") val rentalReminders: Boolean = true
 )
 
 @Serializable
 data class Report(
     val id: String? = null,
     @SerialName("reporter_id") val reporterId: String,
-    @SerialName("target_type") val targetType: String, // 'listing' | 'user' | 'message'
+    @SerialName("target_type") val targetType: String, // 'listing' | 'user' | 'message' | 'rental' (C3)
     @SerialName("target_id") val targetId: String,
     val reason: String,
     val details: String? = null

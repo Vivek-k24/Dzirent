@@ -13,6 +13,55 @@ import { WorkflowModal, Notice } from "./workflow-ui";
 import { Icon } from "./icon";
 import { Empty } from "./cards";
 import { UpdateLocation } from "./shell";
+import type { NotificationChoicesData } from "@/lib/workflows";
+
+/**
+ * Settings > Notifications (C3): the same three switches as the apps. Notifications go to the
+ * Dzirent app on your phone; the website itself sends none. Rental reminders: the day before a
+ * pickup or return, and overdue returns.
+ */
+function NotificationChoices({ initial }: { initial: NotificationChoicesData }) {
+  const [saved, setSaved] = useState(initial);
+  const [error, setError] = useState("");
+  async function save(next: NotificationChoicesData) {
+    const before = saved;
+    setSaved(next);
+    setError("");
+    try {
+      await workflow("account/notifications", next);
+    } catch (e) {
+      setSaved(before);
+      setError((e as Error).message);
+    }
+  }
+  const rows: [keyof NotificationChoicesData, string, string][] = [
+    ["messages", "Messages", "New messages, new chats, date changes and rental requests and answers"],
+    ["show_message_text", "Show message text", "Show what they wrote in notifications, also on the lock screen"],
+    ["rental_reminders", "Rental reminders", "The day before a pickup or return, and when a return is overdue"],
+  ];
+  return (
+    <div className="account-section">
+      <h3>Notifications</h3>
+      <p className="muted">Notifications go to the Dzirent app on your phone.</p>
+      {rows.map(([key, label, hint]) => (
+        <div key={key} className="toggle-row">
+          <input
+            id={"notify-" + key}
+            type="checkbox"
+            checked={saved[key]}
+            disabled={key === "show_message_text" && !saved.messages}
+            onChange={(e) => void save({ ...saved, [key]: e.target.checked })}
+          />
+          <label htmlFor={"notify-" + key}>
+            <strong>{label}</strong>
+            <small className="muted"> {hint}</small>
+          </label>
+        </div>
+      ))}
+      <Notice message={error} error />
+    </div>
+  );
+}
 export function Settings({
   initial,
   section = "profile",
@@ -243,6 +292,8 @@ export function Settings({
                   : "Not set yet"}
               </p>
               <UpdateLocation />
+
+              <NotificationChoices initial={data.notifications} />
 
               <h3 id="privacy">Privacy &amp; safety</h3>
               <div className="account-section">

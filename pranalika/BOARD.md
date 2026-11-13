@@ -218,7 +218,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (C1, C2, S1, S1b) | |
+| Done by: Claude Code (C1, C2, S1, S1b, C3) | |
 | C1 Error and warning codes (one catalog, generated Kotlin/TypeScript, every database refusal and Edge Function error coded), price per day, background job outbox with retries and dead-letter list, client read retries, stray root doc removed | Done (Claude Code) |
 | C2 Test foundation: local backend in Docker (migrations from scratch + local seed, stubs for push and vision, functions served locally), pgTAP suite (9 files), integration scripts local by default with one runner, vision model tests marked, CI on every pull request (`.github/workflows/ci.yml`), `pranalika/testing.md` | Done (Claude Code) |
 | S1 Security updates: vision service on Pillow 13.0.0, torch 2.14.1 (CPU), transformers 5.20.2, FastAPI 0.162.0 / Starlette 1.7.0, open_clip 3.3.0 (no verdict changed on 92 photos and 12 listings in a local Linux image); website minimatch 11.0.3 through an npm override; 5 code scanning alerts dismissed ("used in tests"); `security-log.md` "GitHub security alerts (S1)" | Done (Claude Code); deployed in S1b |
@@ -226,7 +226,10 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | S1b: Pygments 2.21.0 and the CI vision job's separate pin dropped; `.venv/` kept out of Cloud Build and Docker uploads; `contracts/generate.mjs` escapes backslashes and control characters for Kotlin and Markdown (CodeQL #9 fixed on PR #103, generated files unchanged) | Done (Claude Code) |
 | Owner: merge `Preview` into `main` (PR #103): the 82 Dependabot alerts are on `main` and close with the merge | To do |
 | Request from S1: seed and test scripts stop putting the email in sign-in errors (`supabase/`) | To do |
-| C3 | To do |
+| C3 Rental lifecycle: request, accept or decline (48-hour expiry), pickup and return with private condition photos (at least 2 by the lender), completed; writes only through database functions with `rental_events`; price snapshot; no double booking (exclusion constraint, back-to-back allowed); rental pushes and daily reminders with a Rental reminders switch; rental reports; condition photo retention (count-only cleanup); payment states present but unused (`payments_enabled` off). Apps and website: Request to rent, rental card, My rentals, Settings > Notifications; admin user lookup and report detail show the timeline and photos. Live: migration applied, 4 Edge Functions redeployed | Done (Claude Code) |
+| Owner: phone test of C3 (see the C3 handoff) | To do |
+| Mac: build-check the C3 shared code on iPhone (`RentalViews.kt`, `Rentals.kt`, `rememberPhotoSources` for condition photos), see the C3 handoff | To do |
+| Owner and attorney: condition photo retention (placeholder 365 days after the rental ends); whether the privacy text change needs a version bump (gap G34) | To do |
 | C4 | To do |
 | C5 | To do |
 | C6 | To do |

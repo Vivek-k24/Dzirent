@@ -135,9 +135,25 @@ export default function PrivacyPage() {
             them when handling a report.
           </li>
           <li>
-            <strong>Rental records:</strong> Requested date ranges, status
-            updates (such as arranged or completed), and post-rental outcome
-            answers (&ldquo;did the rental happen?&rdquo;).
+            <strong>Rental records:</strong> Each rental request and its
+            dates, the price per day, number of days and total shown when it
+            was requested, and every step after it (accepted, declined,
+            cancelled with the reason given, picked up, returned, completed),
+            with who took it and when. Older records may also hold a
+            post-rental answer (&ldquo;did the rental happen?&rdquo;).
+          </li>
+          <li>
+            <strong>Condition photos:</strong> At pickup and at return, the
+            lender adds photos of the piece, and the renter may add theirs.
+            These photos are private: only the two people in that rental can
+            see them, and Dzirent staff when they handle a report about it.
+            They are never shown in the shop or on a listing. They are kept
+            for{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="condition photo retention period (currently 1 year after the rental ends, pending attorney review)"
+            />
+            .
           </li>
           <li>
             <strong>Saved items:</strong> The pieces and studios you choose to
@@ -172,9 +188,17 @@ export default function PrivacyPage() {
           <li>
             <strong>Notification registration:</strong> If you use our Android
             app, your phone is registered for notifications so we can tell you
-            about new messages and date changes. Our notification provider
+            about new messages, date changes, rental requests and answers, and
+            completed rentals. Our notification provider
             delivers them for us, and its software in the app sends the provider
             an identifier for the app installation and delivery details.
+          </li>
+          <li>
+            <strong>Rental reminders:</strong> The day before a pickup or a
+            return, and once a day for up to 3 days when a return is overdue,
+            both people in the rental get a reminder. Turn them off in
+            Settings &gt; Notifications (&ldquo;Rental reminders&rdquo;). There
+            are no reminders between people who have blocked each other.
           </li>
           <li>
             <strong>Safe notification text:</strong> Notifications never include
@@ -489,6 +513,14 @@ export default function PrivacyPage() {
           <li>
             <strong>Reports:</strong> deleted when the report retention period
             above ends.
+          </li>
+          <li>
+            <strong>Condition photos:</strong> deleted{" "}
+            <LegalPlaceholder
+              name="DATA_RETENTION"
+              label="condition photo retention period (currently 1 year after the rental ends, pending attorney review)"
+            />
+            , and as soon as their rental no longer exists.
           </li>
         </ul>
         <p>

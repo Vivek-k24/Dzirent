@@ -89,6 +89,7 @@ Today's column is from `compliance.md`. The last column is for the owner and att
 | Listings, photos, garment measurements, availability | Until the lender deletes them or the account | |
 | Chats and messages | Until either person's account or the listing is deleted | |
 | Rentals and rental answers | Until either person's account is deleted | |
+| Rental condition photos (C3, pickup and return) | `condition_photo_retention_days` = 365 days after the rental ends (placeholder), then deleted by a cleanup job once it is switched on | Attorney: how long photos are needed for disputes |
 | Reports | Until the reporter's account is deleted | |
 | Blocks | Until unblocked or either account is deleted | |
 | Accessory and listing declarations | Kept with no end date, also after account deletion | |

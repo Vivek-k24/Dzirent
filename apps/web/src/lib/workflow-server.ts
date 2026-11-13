@@ -14,8 +14,10 @@ import type {
   PrivateProfile,
   Profile,
   Rental,
+  RentalView,
   SettingsData,
 } from "./workflows";
+import { IN_PROGRESS, type Range } from "./rentals";
 export class WorkflowError extends Error {
   constructor(
     message: string,
@@ -124,10 +126,24 @@ export async function readInbox(): Promise<InboxData> {
     activitySeen: must(priv)?.activity_seen_at || null,
   };
 }
+/** C3: signed links (1 hour) to a rental's condition photos; the bucket is private. */
+async function photoLinks(paths: string[]): Promise<Record<string, string>> {
+  if (!paths.length) return {};
+  const { client } = await session();
+  const { data } = await client.storage.from("rental-photos").createSignedUrls(paths, 3600);
+  const links: Record<string, string> = {};
+  for (const link of data || []) if (link.path && link.signedUrl) links[link.path] = link.signedUrl;
+  return links;
+}
+/** C3: every rental I'm in (my_rentals), incoming requests to me first. */
+export async function readRentals(): Promise<RentalView[]> {
+  const { client } = await session();
+  return (must(await client.rpc("my_rentals", { p_limit: 100 })) || []) as RentalView[];
+}
 export async function readChat(id: string): Promise<ChatData> {
   const { user, client, c } = await conversation(id);
   const peer = c.renter_id === user.id ? c.lender_id : c.renter_id;
-  const [cards, messages, rental, outcome, block, myProf] = await Promise.all([
+  const [cards, messages, rental, listing, block, myProf] = await Promise.all([
     client.rpc("my_conversations", {
       p_conversation_id: id,
       p_limit: 1,
@@ -139,13 +155,11 @@ export async function readChat(id: string): Promise<ChatData> {
       .eq("conversation_id", id)
       .order("created_at", { ascending: false })
       .limit(1000),
-    client.from("rentals").select("*").eq("conversation_id", id).maybeSingle(),
-    client
-      .from("rental_outcomes")
-      .select("conversation_id,user_id,happened")
-      .eq("conversation_id", id)
-      .eq("user_id", user.id)
-      .maybeSingle(),
+    client.rpc("get_rental", { p_conversation_id: id }),
+    // The renter's "Request to rent" needs the piece's open and booked days.
+    c.renter_id === user.id
+      ? client.rpc("get_listing", { p_listing_id: c.listing_id })
+      : Promise.resolve({ data: [], error: null }),
     client
       .from("blocks")
       .select("blocked_id")
@@ -158,14 +172,24 @@ export async function readChat(id: string): Promise<ChatData> {
       .eq("id", user.id)
       .maybeSingle(),
   ]);
+  const view = (must(rental) as RentalView | null) || null;
+  const piece = ((must(listing) as Array<{ price: number | null; availability: Range[]; booked: Range[] }>) || [])[0];
+  const toRange = (r: { start_date: string; end_date: string }) => ({ start: r.start_date, end: r.end_date });
   return {
     now: Date.now(),
     me: user.id,
     conversation: c,
     card: (must(cards) as ConversationCard[])[0] || null,
     messages: (must(messages) || []).reverse() as Message[],
-    rental: must(rental) as Rental | null,
-    outcome: must(outcome) as Outcome | null,
+    rental: view,
+    photoLinks: await photoLinks((view?.photos || []).map((p) => p.storage_path)),
+    rentable: piece
+      ? {
+          price: piece.price,
+          availability: (piece.availability as unknown as { start_date: string; end_date: string }[]).map(toRange),
+          booked: ((piece.booked || []) as unknown as { start_date: string; end_date: string }[]).map(toRange),
+        }
+      : null,
     blocked: Boolean(must(block)),
     mySuspension: suspensionNotice(
       myProf.data?.suspended_until,
@@ -239,7 +263,7 @@ export async function readCloset() {
 }
 export async function readSettings(): Promise<SettingsData> {
   const { user, client } = await session();
-  const [profile, priv, blocks, rentals, listings] = await Promise.all([
+  const [profile, priv, blocks, rentals, listings, notifications] = await Promise.all([
     client.from("profiles").select("*").eq("id", user.id).single(),
     client
       .from("private_profiles")
@@ -250,13 +274,18 @@ export async function readSettings(): Promise<SettingsData> {
     client
       .from("rentals")
       .select("id", { count: "exact", head: true })
-      .eq("status", "active")
+      .in("status", IN_PROGRESS)
       .or("renter_id.eq." + user.id + ",lender_id.eq." + user.id),
     client
       .from("listings")
       .select("id", { count: "exact", head: true })
       .eq("lender_id", user.id)
       .eq("status", "active"),
+    client
+      .from("notification_settings")
+      .select("messages,show_message_text,rental_reminders")
+      .eq("user_id", user.id)
+      .maybeSingle(),
   ]);
   must(rentals);
   must(listings);
@@ -267,6 +296,7 @@ export async function readSettings(): Promise<SettingsData> {
     blocks: must(blocks) || [],
     activeRentals: rentals.count || 0,
     activeListings: listings.count || 0,
+    notifications: must(notifications) || { messages: true, show_message_text: false, rental_reminders: true },
   };
 }
 export async function editorData(id?: string) {

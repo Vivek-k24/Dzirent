@@ -528,3 +528,12 @@ Vault also holds `scan_listing_url`, the function's address (public, not a secre
 | `google-services.json` (Firebase app config) | `H:\DziRent\secrets\` (local builds, path in `GOOGLE_SERVICES_JSON`); GitHub secret `GOOGLE_SERVICES_JSON_BASE64` (release workflow) | Not a server secret, but kept out of this public repo: `.gitignore` lists it, and Gradle reads it from the path without copying it into the repo. |
 
 Vault also holds `send_push_url`, the function's address (public, not a secret).
+
+## dzirent-server Advisor check (C3 rental lifecycle, 2026-11-13)
+
+Run with the Supabase MCP `get_advisors` (security) right after `supabase db push` of `20261113100000_c3_rental_lifecycle.sql`.
+- **Signed-in users can execute SECURITY DEFINER functions (WARN, 65 in total):** the 9 new ones are `request_rental`, `respond_rental`, `cancel_rental`, `mark_picked_up`, `mark_returned`, `complete_rental`, `get_rental`, `my_rentals` and `admin_user_rentals`. Intended: they are the only way to change rentals (apps have no write grant on `rentals` any more), each has a fixed empty search path and starts by checking the caller (signed in, one of the rental's two people, the right role and state, not age-blocked, suspended, blocked where it applies, current terms). `admin_user_rentals` starts with `require_admin()` (two-step, fresh) and is logged.
+- **Not flagged, as intended:** `account_has_rental_in_progress` is executable by `service_role` only (delete-account uses it). The `app_private` rental helpers are closed to every API role. No new guest (`anon`) finding: `get_listing` and `browse_listings` were already guest functions; `get_listing` now also returns booked dates, never who booked them.
+- **RLS enabled, no policy (INFO, 11):** unchanged set; the new `app_private.rental_reminders` has its privileges revoked from every API role instead.
+- **Storage:** new private bucket `rental-photos` with two policies: participants (and fresh two-step admins) read; participants insert only at `{rental}/{pickup|return}/{random}.jpg` in the matching state. No update or delete policy (condition photos are a record).
+- **Writes removed:** `rentals_participant_insert` and `rentals_participant_update` dropped; table and column `INSERT`/`UPDATE`/`DELETE` grants on `rentals` revoked from `anon` and `authenticated` (checked live: 0 write grants, only `rentals_participant_read`).

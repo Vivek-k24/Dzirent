@@ -38,7 +38,11 @@ fun chatNotificationTag(conversationId: String): String = "chat_$conversationId"
 
 /** A chat notification, from the data message send-push sends. */
 data class ChatPush(
-    /** "message", "new_chat" or "dates". */
+    /**
+     * "message", "new_chat" or "dates"; since C3 also the rental kinds (rental_request,
+     * rental_accepted, rental_declined, pickup_tomorrow, return_tomorrow, return_overdue,
+     * rental_completed). Every kind opens its chat, where the rental card is.
+     */
     val kind: String,
     val conversationId: String,
     val recipientId: String?,

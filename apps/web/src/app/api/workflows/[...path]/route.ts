@@ -6,6 +6,7 @@ import {
   readChat,
   readCloset,
   readSettings,
+  readRentals,
   editorData,
   ownListing,
   must,
@@ -13,7 +14,7 @@ import {
   WorkflowError,
   uuid,
 } from "@/lib/workflow-server";
-import { chatMutation, accountMutation, dates } from "@/lib/workflow-mutations";
+import { chatMutation, accountMutation, dates, uploadRentalPhoto } from "@/lib/workflow-mutations";
 import {
   saveListing,
   finishListing,
@@ -82,6 +83,8 @@ export async function GET(_request: NextRequest, { params }: Params) {
         return reply(await readCloset());
       case "settings":
         return reply(await readSettings());
+      case "rentals":
+        return reply(await readRentals());
       case "editor":
         return reply(await editorData(path[1]));
       case "listing":
@@ -101,6 +104,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     const { path } = await params;
     if (path[0] === "photo" && path[2] === "upload")
       return reply(await uploadPhoto(request, path[1]));
+    // C3: a condition photo for a rental in this chat (multipart, like listing photos).
+    if (path[0] === "chat" && path[2] === "rental-photo")
+      return reply(await uploadRentalPhoto(request, path[1]));
     let body: Record<string, unknown>;
     try {
       body = await request.json();
