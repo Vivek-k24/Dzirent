@@ -2,6 +2,117 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## C3 - 2026-11-13 - rental lifecycle
+
+**Before starting:** clean tree, `Preview` up to date at `442ac3e`. The live project had 0 rental rows, so mapping old rows touched nothing there.
+
+**Done:**
+- **Database** (`supabase/migrations/20261113100000_c3_rental_lifecycle.sql`):
+  - **States:** the 12 states. Old rows map `active` → `picked_up`, `returned` → `completed`, and each gets one "recorded before rental requests existed" event. `rental_outcomes` is unchanged and readable.
+  - **Writes only through functions:** the insert and update policies on `rentals` are dropped, and every table and column write grant is revoked. The functions are `request_rental`, `respond_rental`, `cancel_rental`, `mark_picked_up`, `mark_returned` and `complete_rental`. Each one checks the caller, role, state, age block, suspension, current terms and blocks, then writes `rental_events`.
+  - **Reads:** `get_rental` (by id, or a chat's latest) and `my_rentals` (incoming requests to the lender first).
+  - **Price:** a snapshot at request time: `price_per_day`, `days`, `total`, USD.
+  - **Dates:** a request must be inside the availability windows (adjacent windows join). The `btree_gist` exclusion constraint `rentals_no_double_booking` covers accepted, awaiting payment, paid and picked up. Days are inclusive, so back-to-back means the next day. There is one open rental per chat; a chat can hold several over time.
+  - **Expiry:** `dzirent-rental-expiry` runs every 10 minutes and expires requests older than 48 hours.
+  - **Condition photos:** private bucket `rental-photos` (JPEG, PNG or WebP; 10 MB), paths `{rental}/{pickup|return}/{random}.jpg`. Reads are for the two people and fresh two-step admins. Writes are for the two people, only in the matching state. There are no updates or deletes. The lender needs 2 photos per stage before marking picked up or returned.
+  - **Pushes:** 7 rental kinds through the outbox. The daily `dzirent-rental-reminders` job runs at 15:00 UTC: pickup tomorrow, return tomorrow, and return overdue for up to 3 days. It sends to both people, at most once per rental, person and day (`app_private.rental_reminders`), and never between blocked people. `notification_settings.rental_reminders` defaults to on. Requests and answers follow the Messages switch.
+  - **Changed readers:** `get_studio` now counts completed rentals. `get_listing` returns `booked`, and `browse_listings` with dates leaves out booked pieces. `export_my_data` adds rental prices and events and the caller's own `condition_photos`. `account_has_rental_in_progress` is a server-only check for delete-account.
+  - **Reports:** `target_type = 'rental'`. The evidence holds the timeline and photo paths; strangers are refused (`DZ-E5015`). "Remove content" is refused for rentals (`DZ-E5016`). `admin_user_rentals` is logged.
+  - **Cleanup:** `condition_photo_retention_days` (365, attorney placeholder) and the file job `old_condition_photos`, count-only. The `job_runs` and `rate_counters` checks were widened.
+  - **Rate limit:** `rental_request`, 20 a day.
+- **Error codes:** `DZ-E4001`-`E4022`, `DZ-E5015`, `DZ-E5016`. `DZ-E7010` is reworded. 147 codes, regenerated, and the freshness check passes.
+- **Edge Functions:**
+  - `send-push` accepts the rental kinds.
+  - `delete-account` asks `account_has_rental_in_progress`.
+  - `export-my-data` adds `condition_photos` with 7-day signed links, made with the caller's own token.
+  - `cleanup-files` runs `old_condition_photos`.
+- **Apps (shared Kotlin):**
+  - **Rules:** `util/Rentals.kt` (states, actions per state and role, groups, request-date checks).
+  - **UI:** `ui/RentalViews.kt` has the rental card (state, total, photos, timeline, actions), the "Request to rent" date picker (only open days, with "5 days · $75") and the cancel dialog with a reason.
+  - **Chat:** the old `saveRental` and "Did this rental happen?" follow-up are gone. The rental card and a "Request to rent" button replace them. "Report this rental" is in the menu. Condition photos come from camera or gallery, are compressed and uploaded.
+  - **My rentals:** grouped, with requests to you first.
+  - **Inbox > Activity:** shows the latest step of each rental.
+  - **Settings > Notifications:** a "Rental reminders" switch.
+- **Website:**
+  - **Rules:** `lib/rentals.ts`, the same rules as the apps.
+  - **Chat:** `components/rental-card.tsx` has the card and the request form (dates checked against open and booked days, with the total). Cancel takes a reason, and "Report this rental" is in the menu. Condition photos upload through a new multipart route, `chat/{id}/rental-photo`.
+  - **Closet:** My Rentals uses `my_rentals`, grouped. Lenders now get the tab too.
+  - **Settings:** a new Notifications block with the same 3 switches.
+  - **Admin:** user lookup has "Show rentals" (timeline and signed photo links). Report detail shows rental evidence, and "Remove content" is hidden for rental reports.
+  - **Text:** the privacy page covers condition photos (who sees them, retention placeholder) and rental reminders; the delete-account page text is updated.
+- **Docs:**
+  - `contract.md`: new section 6 "Rentals", plus the changed fields.
+  - `decisions.md`: "Rentals (2026-11-13)".
+  - `architecture.md`: G2 and G28 closed; new gaps G30-G34; flow 6.8.
+  - `testing.md`, `compliance.md`, `legal-placeholders.md` and `security-log.md` are updated, and `error-codes.md` is regenerated.
+
+**What I ran:**
+1. **Local backend, fresh** (`supabase stop --no-backup`, then `supabase start`):
+   - `supabase test db --local supabase/tests/database`: **10 files, 181 tests, PASS**. The new `10_rentals` has 75 tests.
+   - `node supabase/tests/run-all.mjs`: **17 of 17 passed**, including the new local-only `c3_rentals.mjs`.
+   - pgTAP again on the used database: PASS.
+2. **Fixes found locally before CI:**
+   - `rate_counters` and `job_runs` had check constraints listing their allowed values; both are widened in the migration.
+   - My first integration run left a chat and photos behind, which broke `01_roles_rls` and an export count on a used database. The script now removes its photos (Storage API, local service key), rentals and chats, and the pgTAP export check counts only its own rental.
+3. **Shared Kotlin**, with the backend stopped: `:androidApp:assembleDebug :shared:testDebugUnitTest` (JDK 21, env loaded, `GOOGLE_SERVICES_JSON` set): **BUILD SUCCESSFUL** on the first run. **57 tests, 0 failures, 1 skipped**, including the new `RentalRulesTest` (7).
+4. **Website** (Node 22): `npm test` **12 of 12** (6 new in `rentals.test.ts`); `npm run lint` clean after fixing 2 accessibility findings in my code; `npm run build` passed; `tsc --noEmit` clean.
+5. **CI:** [run 43362479198](https://github.com/Vivek-k24/Dzirent/actions/runs/43362479198) on `2682952`, **all 5 jobs green**. In CI, pgTAP passed 181 tests, integration 17 of 17, website 12 of 12.
+6. **Live** (after CI):
+   - `supabase db push --linked`: the C3 migration applied.
+   - `supabase functions deploy` for `send-push`, `delete-account`, `export-my-data` and `cleanup-files` (`--no-verify-jwt --use-api`): all 4 deployed.
+7. **Live read-only checks** (`supabase db query --linked`):
+   - `rental_events` and `app_private.rental_reminders` exist, and `btree_gist` is installed.
+   - The constraint `rentals_no_double_booking` is in place, with the 4 booked states.
+   - Bucket `rental-photos`: private, 10 MB, both policies present.
+   - Cron jobs `dzirent-rental-expiry */10 * * * *` and `dzirent-rental-reminders 0 15 * * *` are scheduled.
+   - The push kinds are in `queue_rental_push`.
+   - The 10 functions are present.
+   - The new status check is in place, and 0 rows remain in `active`/`returned` (0 rentals live).
+   - On `rentals`, only `rentals_participant_read` remains, with 0 write grants (table and column) for `anon`/`authenticated`.
+   - `rental_reminders` defaults to true; retention is 365; the cleanup switch is off; reports accept `rental`.
+8. **Security Advisor:** only the expected findings, logged in `security-log.md`.
+9. No emulator, device or browser; no tests or load against live.
+
+**Test counts:**
+
+| Suite | Count |
+| --- | --- |
+| pgTAP | 181 (10 files; `10_rentals` 75) |
+| Integration | 17 runs (16 scripts) |
+| Shared Kotlin | 57 (1 skipped) |
+| Website | 12 |
+| Contracts | 147 codes, fresh |
+
+**APK (built 2026-11-12 21:34 local):**
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, replacing the C1 copy. Both are 23,463,660 bytes with the same SHA-256.
+
+**Phone test (Android, two accounts A = renter, B = lender):**
+1. A opens a chat on B's piece and taps **Request to rent**. Only open days can be picked, and the line shows "n days · $total". Send it: B gets "Rental request from …", and both see the rental card "Requested".
+2. B taps **Accept**. Then **Add pickup photos**, add 2 (camera or gallery), then **Mark picked up**. Try marking with fewer than 2 first: "(DZ-E4020)".
+3. A can add pickup photos too; both see the thumbnails.
+4. B adds 2 return photos and taps **Mark returned**. The card says Completed, and A gets "Rental completed".
+5. Try a request for dates that overlap the accepted rental: "(DZ-E4009)". The day after the end works.
+6. A new request, then **Decline**, and another, then **Cancel rental** with a reason: the reason shows in the timeline.
+7. **My rentals** groups them, with B's incoming requests first. **Settings > Notifications** shows Rental reminders.
+8. **Website admin:** Users > find A > **Show rentals**: the timeline and photos.
+
+**iPhone, for the Mac session (not compiled on iOS):** `RentalViews.kt`, `Rentals.kt` and the ChatScreens changes are common code. They use `rememberPhotoSources`, `DateRangePicker` with custom `SelectableDates`, `FlowRow`, and the supabase-kt storage `createSignedUrl`. All of these should compile for iOS; the iOS photo sources are the same `expect` the listing editor uses.
+
+**Open issues:**
+- **Deviation: blocked pairs.** The prompt said every function refuses blocked pairs. `cancel_rental`, `mark_returned` and `complete_rental` stay allowed, so a block never traps a booking or a picked-up piece. This is in `decisions.md` and `contract.md` 6.
+- **Deviation: no push for a cancel or an expiry.** They weren't in the push list; the card updates live.
+- **G30:** an accepted rental that is never picked up doesn't time out. It keeps its days booked and blocks deletion until cancelled.
+- **G31:** there's no admin tool to end a rental (for example when the lender is banned).
+- **G32:** a listing with no availability windows shows in date browsing but can't be requested.
+- **G33:** reminders and "today" use Austin time.
+- **G34:** the privacy text changed without a `PRIVACY_VERSION` bump. The owner and attorney decide.
+- **Old installed apps:** "Mark as rented" and the follow-up now fail (no write grant). Updating the app fixes it.
+- **Website condition photos:** uploads take JPEG after the browser compresses them (as listing photos do). Very large originals may take a moment.
+- **Request from S1** (email in sign-in errors in `supabase/` scripts): still open, not part of C3.
+
+**Requests:** none.
+
 ## S1b - 2026-11-12 - security updates finished
 
 **Before starting:**
