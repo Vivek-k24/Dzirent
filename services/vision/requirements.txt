@@ -57,5 +57,5 @@ typer==0.27.3
 rich==15.0.0
 markdown-it-py==4.2.0
 mdurl==0.1.2
-Pygments==2.19.2
+Pygments==2.21.0
 shellingham==1.5.4

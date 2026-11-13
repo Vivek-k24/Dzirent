@@ -411,7 +411,7 @@ Totals: 11 INFO (the 10 known plus `async_jobs`), 4 guest WARN (unchanged), 56 s
 
 ## GitHub security alerts (S1)
 
-Read with `gh api` on 2026-11-12. GitHub computes Dependabot and code scanning alerts on the default branch, `main`. The fixes below are on `Preview`, so these alerts close only when the owner merges `Preview` into `main`.
+Read with `gh api` on 2026-11-12; S1b (the deploy, Pygments, generator escaping) finished it the same day. GitHub computes Dependabot and code scanning alerts on the default branch, `main`. The fixes below are on `Preview`, so these alerts close only when the owner merges `Preview` into `main`.
 
 ### Before S1
 
@@ -449,15 +449,18 @@ Every new version was released at least two weeks before 2026-11-12 (PyPI and np
 - A local Linux image built from the Dockerfile matched the P2A deployed eval (`vision-00005-9cg`): **0 of 92 photos** and **0 of 12 listings** changed, counting verdict, reason, label, warnings and suggestions.
 - **New in the image:** `chmod -R a+rX /opt/model`. safetensors 0.8 writes `visual.safetensors` owner-only (0600), and the service runs as the unprivileged `vision` user, so without the chmod the container can't start. The model files stay owned by root and read-only for the service.
 - `app/main.py` also silences the `httpx2` and `httpcore2` loggers, as it already did for `httpx`, so request URLs never reach the logs. The container's log had no URLs.
-- **Not redeployed yet:** gcloud needs the owner to sign in again (`gcloud auth login`), so Cloud Run still serves `vision-00005-9cg` with the **old** packages. Until it is redeployed, the live service has the old Pillow, torch, transformers and Starlette.
-  - The service is not public (Cloud Run invoker only), and it decodes only photos from the public `listing-photos` bucket or `data:` URLs sent by `scan-listing`.
-  - **Revisit:** redeploy right after the owner signs in.
+- **Deployed in S1b (2026-11-12):** revision `vision-00006-sxv` serves 100% (it replaced `vision-00005-9cg`, which had the old packages).
+  - Settings are unchanged from Step 8A: min 0, max 1, 2 CPU, 4 GiB, 120 s, concurrency 4, CPU only, runs as `vision-runtime`, the same `VISION_ALLOWED_URL_PREFIXES`.
+  - The only IAM binding is still `roles/run.invoker` for `vision-invoker`. No token gets 403, a made-up token 401.
+  - `/health` reports `s1.1`.
+  - The deployed eval matched S1's local image and P2A on all 92 photos and 12 listings.
+  - The app's log lines carry no URLs.
+- **Upload size:** `.venv/` is now in `.gcloudignore` and `.dockerignore`. The local test venv (created in C2) would otherwise have been uploaded to Cloud Build with every deploy.
 
-### Expected after the merge, to dismiss then (not open yet)
+### Pygments (fixed in S1b, nothing to dismiss)
 
-| Package | Advisory | Why it does not apply | Revisit |
-| --- | --- | --- | --- |
-| Pygments 2.19.2 (`services/vision/requirements.txt`, new pin, low) | GHSA-5239-wwwm-4pmq (CVE-2026-4539): ReDoS in `AdlLexer`, local access only, fixed in 2.20.0 | Pygments is only there because transformers needs typer, which needs rich. The service never highlights text, so `AdlLexer` never runs. It stays at 2.19.2 because CI installs `pygments==2.19.2` next to `requirements.txt` for pytest, and two different pins make CI's `pip install` fail. Dismiss as "vulnerable code is not used" when the alert appears. | When `.github/workflows/ci.yml` drops its `pygments==2.19.2` (Request in the S1 handoff), pin Pygments 2.21.0 in `requirements.txt`. |
+- S1 pinned Pygments 2.19.2, which has GHSA-5239-wwwm-4pmq (CVE-2026-4539, low: a ReDoS in `AdlLexer`, fixed in 2.20.0). CI also installed `pygments==2.19.2` next to `requirements.txt`, and two different pins break CI's `pip install`.
+- S1b removed the separate pin from `.github/workflows/ci.yml` and set Pygments 2.21.0 (2026-08-17) in `requirements.txt`. GitHub's advisory database lists nothing for 2.21.0, so the alert S1 expected after the merge won't appear.
 
 ### Code scanning: dismissed as "used in tests" (5)
 
@@ -467,6 +470,22 @@ Every new version was released at least two weeks before 2026-11-12 (PyPI and np
 | #7, #8 | `supabase/tests/step1b.mjs`, `step4c_parity_test.mjs` | Integration tests. Same flow and same content. In CI they run against the local stack, so the email is a throwaway `test1@dzirent.local`-style seed user. |
 
 **Revisit:** take the email out of those `Sign in failed for …` messages; `supabase/` was outside S1's folders (Request in the S1 handoff). Then CodeQL has nothing left to report.
+
+Later alerts:
+- **#10–#12:** the same rule in `supabase/tests/run-all.mjs` and `supabase/tests/lib/local_photos.mjs`, found on the pull request `Preview` → `main` (#103). Dismissed as "used in tests" from the owner's account (2026-11-13).
+
+### Code scanning: generator escaping (S1b)
+
+- **Alert #9:** `js/incomplete-sanitization` (high) at `contracts/generate.mjs:97`, found on PR #103. The Markdown cell escaper turned `|` into `\|` but left backslashes alone, so a message ending in `\` would undo the escape and split the table row.
+- **The fix**, one escaper per target:
+  - **Markdown:** escapes `\` first, then `|` and backticks, and turns line breaks into `<br>`.
+  - **Kotlin:** already escaped `\`, `"` and `$`; now also line breaks, tabs and other control characters (`\uXXXX`), since a raw line break isn't allowed in a `"…"` literal.
+  - **TypeScript:** `JSON.stringify`, which is already safe.
+  - **Fields:** `field` must be an input name (`a-z`, `0-9`, `_`), because it is written into inline code and into Kotlin and TypeScript identifiers' strings.
+- **Output:** the current catalog has none of these characters, so all four generated files are byte-identical and the freshness check passes.
+- **Round-trip test** (scratch) with messages containing `\`, `"`, `$`, `|`, backticks, line breaks, tabs and control characters:
+  - the new generator: every Kotlin literal decodes back exactly, the TypeScript evaluates back exactly, every Markdown row keeps its 7 cells, and a bad field is refused;
+  - the old generator fails 6 of these checks.
 
 ## Google Cloud (Step 8A)
 

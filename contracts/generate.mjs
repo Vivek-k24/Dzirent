@@ -29,7 +29,9 @@ export function loadCatalog(path = SOURCE) {
     if (typeof e.area !== "string" || !e.area) problems.push(`${e.code}: area is required`);
     if (typeof e.message !== "string" || !e.message.trim()) problems.push(`${e.code}: message is required`);
     if (!Number.isInteger(e.status) || e.status < 100 || e.status > 599) problems.push(`${e.code}: status is an HTTP status`);
-    if (e.field !== undefined && (typeof e.field !== "string" || !e.field)) problems.push(`${e.code}: field is text`);
+    if (e.field !== undefined && (typeof e.field !== "string" || !/^[a-z][a-z0-9_]*$/.test(e.field))) {
+      problems.push(`${e.code}: field is an input name (a-z, 0-9, _)`);
+    }
     const extra = Object.keys(e).filter((k) => !["code", "kind", "area", "status", "message", "field", "server_detail"].includes(k));
     if (extra.length) problems.push(`${e.code}: unknown keys ${extra.join(", ")}`);
   }
@@ -38,7 +40,18 @@ export function loadCatalog(path = SOURCE) {
   return catalog;
 }
 
-const kt = (s) => '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\$/g, "\\$") + '"';
+// S1b: every string goes through one escaper per target language, backslash included.
+// Kotlin "..." literal: \ " $ and control characters (a raw line break isn't allowed in one).
+const KT_ESCAPES = { "\\": "\\\\", '"': '\\"', $: "\\$", "\n": "\\n", "\r": "\\r", "\t": "\\t", "\b": "\\b" };
+const kt = (s) =>
+  '"' +
+  String(s).replace(/[\\"$\u0000-\u001f\u007f]/g,
+    (c) => KT_ESCAPES[c] ?? "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")) +
+  '"';
+// TypeScript: JSON.stringify escapes \ " and control characters, and JSON is valid TypeScript.
+const ts = (v) => JSON.stringify(v);
+// Markdown table cell: backslash first, then the characters a cell or inline code would take as syntax.
+const md = (s) => String(s).replace(/[\\|`]/g, "\\$&").replace(/\r\n|\r|\n/g, "<br>");
 
 function kotlin(catalog) {
   const rows = catalog.codes.map((e) =>
@@ -74,7 +87,7 @@ function typescript(catalog) {
     const o = { kind: e.kind, area: e.area, message: e.message, status: e.status };
     if (e.field) o.field = e.field;
     if (e.server_detail) o.serverDetail = true;
-    return `  ${JSON.stringify(e.code)}: ${JSON.stringify(o)},`;
+    return `  ${ts(e.code)}: ${ts(o)},`;
   });
   return `// ${NOTE}
 export type ErrorCodeEntry = {
@@ -94,7 +107,6 @@ ${rows.join("\n")}
 }
 
 function markdown(catalog) {
-  const esc = (s) => String(s).replace(/\|/g, "\\|");
   const lines = [
     "# Error and warning codes",
     "",
@@ -105,14 +117,14 @@ function markdown(catalog) {
   ];
   for (const [digit, name] of Object.entries(catalog.families)) {
     const rows = catalog.codes.filter((e) => e.code[4] === digit);
-    lines.push(`## ${digit}xxx - ${name}`, "");
+    lines.push(`## ${digit}xxx - ${md(name)}`, "");
     if (!rows.length) {
       lines.push("Reserved: no codes yet.", "");
       continue;
     }
     lines.push("| Code | Kind | Area | Status | Field | Server words | Message |", "| --- | --- | --- | --- | --- | --- | --- |");
     for (const e of rows) {
-      lines.push(`| \`${e.code}\` | ${e.kind} | ${esc(e.area)} | ${e.status} | ${e.field ? "`" + e.field + "`" : ""} | ${e.server_detail ? "yes" : ""} | ${esc(e.message)} |`);
+      lines.push(`| \`${e.code}\` | ${e.kind} | ${md(e.area)} | ${e.status} | ${e.field ? "`" + e.field + "`" : ""} | ${e.server_detail ? "yes" : ""} | ${md(e.message)} |`);
     }
     lines.push("");
   }
