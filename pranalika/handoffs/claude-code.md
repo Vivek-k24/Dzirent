@@ -2,6 +2,143 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## C6 - 2026-11-14 - ID verification live
+
+**Before starting:** clean tree, `Preview` up to date at `187b906`. `providers.env` has `DIDIT_API_KEY` and `DIDIT_WEBHOOK_SECRET` (values never printed). Its `DIDIT_WORKFLOW_ID` is stale: it isn't one of the application's 3 workflows (read-only `GET /v3/workflows/` with the key; it lists the task's `7051bbe4-…` as "Free KYC", the default). The setting `didit_workflow_id` holds the task's id, and no code reads that env value.
+
+**Done:**
+- **Database** (`supabase/migrations/20261114100000_c6_id_verification.sql`; the 14 changed functions were built from their current bodies, with each edit asserted to apply exactly once. Follow-up `20261114110000_c6_closed_tables_rls.sql`):
+  - **Settings:** `didit_workflow_id` and `didit_application_id` (new value type `uuid`, new area `verification`, decided by the owner) and `id_verification_max_attempts` (3, 1-10), all editable on admin Settings.
+  - **Data:** `public.identity_verifications` (one row per person: status, the provider's session id, legal name, `is_adult`, attempts, reason, dates). The owner reads only `user_id`, `status`, `updated_at`, and the row is on Realtime. Closed `app_private.didit_sessions` (each session Dzirent started) and `app_private.didit_events` (event id primary key, kept 30 days, never the payload).
+  - **Badge:** `profiles.is_verified`, set from the status by a trigger and kept by a trigger against app updates. It shows through the shop window: `browse_listings`, `get_listing`, `fit_listings`, `my_saved_listings`, `get_studio` (and its listings), and `my_conversations` (`other_is_verified`).
+  - **Gate:** `app_private.require_verified` (`DZ-E6001`) on a new chat, a message and publishing, only while `verification_required` is on. It is off.
+  - **Age:** the ID's result (`age_checks` source `id_verification`) outranks the store and self-declared signals. An approved ID of someone under 18 is declined ("Under 18 (from the ID)") and blocks the account (listings paused).
+  - **Server steps** (service key only): `didit_start_prepare` / `didit_start_release` / `didit_start_record`, `didit_webhook_received`, `didit_apply_decision` (a duplicate face goes to `in_review`; an admin's decision stands), `didit_sessions_for`, `didit_forget`. `my_verification()` is for signed-in people.
+  - **Background:** outbox kind `didit_sync` (Vault `didit_sync_url` and a generated `didit_job_secret`). Cron `dzirent-didit-reconcile` runs every 10 minutes and re-checks sessions still in progress after 30 minutes, because Didit retries a webhook only twice.
+  - **Admin:** `admin_list_id_reviews` (no legal name), `admin_decide_id_verification`, `admin_reset_id_attempts` (two-step, a reason, logged). `admin_queues` counts reviews. `export_my_data` adds `id_verification`.
+  - **Follow-up:** RLS on `didit_sessions`, `didit_events` and C3's `rental_reminders`, and a pgTAP check that every table in `public` and `app_private` has RLS (Open issues).
+- **Edge Functions** (shared `_shared/didit.ts`). With either key blank, every Didit function answers 503 `DZ-E6002`.
+  - `didit-start` (start or check): `vendor_data` is always the caller, the workflow comes from the settings, and the return address is allow-listed.
+  - `didit-webhook`: checks the signature on the raw body, the body's `timestamp` within 300 s, the application id, and the event id once. It answers at once; the decision goes through the outbox.
+  - `didit-sync` (outbox secret): reads the decision and keeps only the status, legal name, 18+ result, duplicate flag and reason codes.
+  - `delete-account` deletes the person's Didit sessions and Didit user first (`DZ-E6013` when Didit can't be reached with the keys set). `export-my-data` describes the new part, plus the claims, payments and emails parts its description was missing. `admin-integrations` names "ID verification".
+- **Error codes:** `DZ-E6001`-`E6015`; 196 codes, regenerated.
+- **Website:**
+  - **Settings > ID verification** (`/app/settings/verification`): status, attempts left, and the note on what Dzirent keeps and never keeps. Verify ID goes to Didit's hosted flow. Didit shows its own consent; there is no second checkbox.
+  - **`/verify/done`:** waits on Realtime plus a 3-second poll, up to 3 minutes, then goes back to where the person was.
+  - **Badge and gate:** the Verified badge on cards, the listing byline, the studio and the chat header. On `DZ-E6001` the gate shows a Verify ID link and keeps the chat draft.
+  - **Admin:** `/admin/id-verification` (queue; Approve, Reject and Reset attempts, each with a reason), the queue count, and the `uuid` type in the settings editor.
+  - **Privacy page:** new section 6 "ID Verification" (later sections renumbered).
+- **Android** (shared Kotlin):
+  - **Screens:** Settings > ID verification and `VerificationScreen` (explainer, Didit's native SDK, "Checking…" until the result).
+  - **Gate:** a full-screen dialog over the refused action (send, publish, a new chat, re-listing from the closet) that runs it again once the person is verified.
+  - **Badge** on cards, the listing, the studio and the chat.
+  - **SDK:** `IdVerification.android.kt` uses Didit SDK 4.9.1 (`me.didit:didit-sdk` without the `didit-sdk-wallet` add-on, from Didit's Maven repository for the `me.didit` group only). `IdVerification.ios.kt` is a stub that opens the hosted page.
+- **Docs:**
+  - `contract.md`: new section 10 (statuses, data, functions, webhook, screens, runbooks for rotating the key or webhook secret and switching the gate on), plus the shop window, admin, age gate, functions table, tables and settings.
+  - `decisions.md`: "ID verification (2026-11-14)".
+  - `architecture.md`: R11, functions, 5.5, configuration names, webhooks, G9 narrowed, new G43-G45, Appendix B.
+  - `compliance.md`: 1.3a, age, the provider row, children, the biometric row, gaps 37-40.
+  - `legal-placeholders.md` section 12; `security-log.md` "ID verification (C6)"; `testing.md`.
+  - Generated: `error-codes.md` and `code-reference.md`.
+
+**What I ran:**
+1. **Local backend** on the default ports (free today), without Studio and the log stack.
+2. **pgTAP:** 13 files, **427 tests, PASS** (`13_c6` 79). After the follow-up: **428, PASS** (`01_roles_rls` 23).
+3. **Integration** (`node supabase/tests/run-all.mjs`, Node 22):
+   - First run: 21 of 22. `c1_codes_price_jobs` failed with "fetch failed" in step 4 (a stale keep-alive socket after its multi-minute retry wait) and passed when re-run alone.
+   - Both C6 runs passed:
+     - **off:** every Didit function answers `DZ-E6002`.
+     - **on** (the Didit stub): start; the status readable without the legal name; a bad signature, a stale timestamp and another application refused and not recorded; Approved → verified through the outbox with the badge and an 18+ check; the same event processed once; Declined; a duplicate face → review → admin approval and attempts reset (logged); the gate only while the flag is on; reconciliation without a webhook; Kyc Expired removes the badge; delete-account removes the Didit session and user at the stub, then the rows.
+   - After the follow-up, one full run: **22 of 22 passed** (`c1_codes_price_jobs` passed too; `c3_rentals`, which uses `rental_reminders`, and both C6 runs included).
+4. **Website** (Node 22): `npm run lint` clean (its `prelint`: 196 codes, code reference fresh); `npm test` **40 of 40** (with `verification.test.ts` and `_shared/didit.test.ts`); `tsc --noEmit` clean; `npm run build` passed.
+5. **Android** (backend stopped, no containers): `:androidApp:assembleDebug :shared:testDebugUnitTest` **BUILD SUCCESSFUL**: **71 tests, 0 failures, 1 skipped** (`VerificationTest` 7). The first build failed on JitPack-only libraries of `didit-sdk-wallet`. Didit documents that add-on as optional, so the build excludes it instead of adding JitPack.
+6. **CI:**
+   - [Run 43633867583](https://github.com/Vivek-k24/Dzirent/actions/runs/43633867583) on `125b7cc`: **all 5 jobs green**.
+   - Follow-up: [run 43636775973](https://github.com/Vivek-k24/Dzirent/actions/runs/43636775973) on `6141765`: **all 5 jobs green**. Database: pgTAP `Files=13, Tests=428`, PASS; integration 22 of 22.
+7. **Live**, after CI:
+   - `supabase db push --linked --dry-run` listed only the C6 migration; `supabase db push --linked` applied it.
+   - Secrets: `DIDIT_API_KEY` and `DIDIT_WEBHOOK_SECRET` from `providers.env`, and `DIDIT_JOB_SECRET` from Vault `didit_job_secret`. All three went through a temporary file, deleted at once, and were never printed. `secrets list` names: the three, and no `DIDIT_API_BASE`.
+   - `supabase functions deploy <name> --no-verify-jwt --use-api` for the 6 changed functions (`didit-start`, `didit-webhook`, `didit-sync`, `delete-account`, `admin-integrations`, `export-my-data`). `functions list`: 18 **ACTIVE**; the three Didit functions at v1 with `verify_jwt` false.
+8. **Live read-only checks** (`supabase db query --linked`):
+   - `identity_verifications` has exactly its 10 columns (none for a birthdate, document, address, nationality, image or IP); the 2 closed tables exist. Owner read grant: `status`, `updated_at`, `user_id`. Write grants for `anon` and `authenticated`: 0. On Realtime: yes. `profiles.is_verified` exists.
+   - The three settings are as above; `verification_required` is **false**; cron `dzirent-didit-reconcile */10 * * * *`; Vault `didit_job_secret` and `didit_sync_url`; all 11 database functions present.
+   - `authenticated` can't execute `didit_start_prepare` and can execute `my_verification`; `anon` can't execute `my_verification`.
+   - **0 rows:** verifications 0, Didit sessions 0, events 0, verified profiles 0, ID age checks 0, `didit_sync` jobs 0.
+9. **Live HTTP checks** (nothing written):
+   - `didit-webhook` unsigned, and with a wrong signature: **401 `DZ-E6007`** (so the keys are set; blank keys would answer 503 `DZ-E6002`).
+   - `didit-sync` without the outbox secret: **401 `DZ-E9004`**.
+   - `didit-start` without sign-in: **401 `DZ-E1003`**.
+10. **Security Advisor** after the deploy: 3 new findings, all expected (`my_verification` and the two admin functions). It didn't report the RLS gap; a catalog query found it, and the follow-up fixed it. Logged in `security-log.md`.
+11. **Follow-up, live** (after its CI):
+    - `db push --dry-run` listed only `20261114110000_c6_closed_tables_rls.sql`; `db push` applied it. The catalog query now finds no table in `public` or `app_private` without RLS.
+    - The 12 functions C6 didn't change were redeployed (only their bundled `_shared/error-codes.ts` was new), so all 18 run the 196-code catalog. `functions list`: all 18 **ACTIVE**, `verify_jwt` false.
+    - An unauthenticated POST to each of the 12 got its usual refusal before any work:
+      - 401 `DZ-E1003`: `admin-actions`, `delete-listing`;
+      - 401 `DZ-E9004`: `cleanup-files`, `scan-listing`, `send-email`, `send-push`;
+      - 503 `DZ-E4030`: the six `stripe-*` functions (payments off).
+    - The four Didit checks in step 9 answered the same again.
+    - Security Advisor: "RLS enabled, no policy" 19 (the three tables), guest definer 5, signed-in definer 78.
+12. Didit was called only to read the workflow list. The claude.ai Didit connector needs authorization, so it wasn't used. I used no emulator, device or browser, and created no data on live. The `on` integration run creates one throwaway account on the local stack only, for the deletion test.
+
+**Test counts:**
+
+| Suite | Count |
+| --- | --- |
+| pgTAP | 428 (13 files; `13_c6` 79, `01_roles_rls` 23) |
+| Integration | 22 runs (20 scripts); C6 off and on (Didit stub) |
+| Shared Kotlin | 71 (1 skipped; `VerificationTest` 7) |
+| Website | 40 (incl. verification rules and the Didit summary and signature tests) |
+| Contracts | 196 codes, fresh; code reference fresh |
+
+**Live test (the owner's own ID, once):** not done yet; it waits for the owner.
+- **Steps:**
+  1. Sign in on the preview site `https://dzirent.vercel.app` with the owner's own account.
+  2. Settings > ID verification (`/app/settings/verification`), Verify ID, read the note, Continue.
+  3. Finish Didit's flow (Didit's consent, ID photo, selfie) with the owner's own ID.
+  4. Back on `/verify/done`: "Checking…", then "You're verified".
+- **Then an agent confirms, read-only:**
+  - the row is `verified` with `is_adult` true;
+  - the badge shows through the shop window;
+  - the webhook event was recorded once;
+  - nothing beyond status, legal name, `is_adult` and reason was stored.
+  
+  Report statuses only, never the name.
+
+**APK** (built 2026-11-14 13:42 local; 96,005,087 bytes, up from 34,313,577 with Didit's SDK, G45):
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, replacing the C5 copy. Same size and SHA-256 (checked again before this entry).
+
+**Phone test** (`verification_required` is off, so nothing is required):
+- Settings > ID verification shows the status and Verify ID, which opens the explainer, then Didit's own screens (consent, ID photo, selfie).
+- A verified person's cards, listing, studio and chat header show "Verified".
+
+**iPhone, for the Mac session:**
+- `ui/IdVerification.ios.kt` is a stub (`available = false`): the shared screen opens Didit's hosted page in the browser, and the result arrives through the same status watch. Add Didit's iOS SDK (Swift Package in `iosApp`) behind `rememberIdVerificationLauncher` with the session token, mapping finished / cancelled / failed as Android does. Add the camera (and, if NFC is used, NFC) usage strings to `Info.plist`.
+- Build-check the C6 common code: `ui/VerificationScreen.kt` (`Dialog` with `DialogProperties(usePlatformDefaultWidth = false)`), `ui/IdVerification.kt`, `MainAppScaffold.kt` (the gate provider and the `verification` route), `ChatScreens.kt`, `ListingEditor.kt`, `MainScreens.kt`, `StudioScreen.kt`, `SettingsScreen.kt`, `model/Models.kt`, the repository's verification calls and `util/Verification.kt`.
+
+**Open issues:**
+- **RLS gap (fixed in the follow-up):** the Advisor's "RLS disabled" check covers only the schemas the API exposes, not `app_private`. A catalog query after the deploy found three tables without RLS: the two new Didit tables and C3's `rental_reminders` (logged in C3 as "privileges revoked instead"). They were closed to every API role, so nothing was reachable. All three now have RLS with no policy, and pgTAP fails if any table is without it.
+- **G43:** no face blocklist for banned people (Dzirent keeps no faces); duplicates found by Didit go to admin review.
+- **G44:** iPhone uses the hosted page until the Mac session.
+- **G45:** Didit's full SDK makes the debug APK about 96 MB (MediaPipe for 4 CPU types). Its manifest adds `RECORD_AUDIO`, `NFC` and `VIBRATE`; the app itself never asks for the microphone. Store disclosures must list them (P8A: consider `didit-sdk-core`, an App Bundle).
+- **Choices made:**
+  - An attempt counts when a session starts, so an abandoned one uses one of the 3. After 3 the screen says to contact support, and an admin can reset them (logged).
+  - A minor's approved ID is declined and blocks the account.
+  - Kyc Expired removes the badge but doesn't reset attempts.
+  - An admin's decision stands against later Didit decisions for that session.
+- **Not exercised against Didit itself** until the owner's live test: the stub reproduces the documented V3 shapes (session, decision with plural arrays, delete, users delete).
+- **Android Lint** wasn't run (the build and unit tests were).
+- **Stale env value:** `DIDIT_WORKFLOW_ID` in `providers.env` (unused); the owner may remove or update it.
+- **Flaky locally:** `c1_codes_price_jobs` (the stale socket above), not a regression signal by itself; it passed in CI.
+- **Dependabot alert 83** (open on `main`, reported by the push): `opentelemetry-api` in `services/vision/requirements.txt`, medium (denial of service through traceparent parsing), fixed in 1.45.2. Opened 2026-11-14 06:13 UTC, not caused by C6, and `services/` is outside this step's folders.
+
+**Requests:**
+- **Owner:** the live test above.
+- **Owner and attorney:** `legal-placeholders.md` section 12 (the consent screen's company name, biometric consent, retention, the Terms) before `verification_required` is switched on.
+- **Root `README.md`** (product features, outside this step's folders): describe ID verification and the Verified badge.
+- **Vision service:** bump `opentelemetry-api` to 1.45.2 or later (Dependabot alert 83) in a step that may change `services/`.
+
 ## C5 - 2026-11-13 - payment screens and email
 
 **Before starting:** clean tree, `Preview` up to date at `ce2f252`. No Stripe or email keys exist (`providers.env` has the three Stripe names blank and no email names).

@@ -202,7 +202,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Owner: phone test of P5C (see the P5C handoff), after the website with `/.well-known/assetlinks.json` is live on dzirent.com (it is served from `main`) | To do |
 | P8A: add the release package and Play signing fingerprint to `assetlinks.json` | To do |
 | P5B Logs and monitoring: error tracking, uptime checks, alerts, backup restore drill, incident plan | To do |
-| P6A ID verification (Didit) on all three platforms; flag off, keys blank | To do |
+| P6A ID verification (Didit) on all three platforms; flag off, keys blank | Done in C6 (Claude Code): Android (native SDK) and website live with the keys set and the flag off; iPhone opens Didit's hosted page until the Mac session |
 | P6B Payments backend: Stripe Connect test mode, deposits, "confirm rental" step, sales tax hook off | To do |
 | P6C Payment screens on all three, rental reminders, email templates; email service key blank | To do |
 | P7A Automated tests on every PR in GitHub Actions; one Mac session for all iPhone checks | To do |
@@ -218,7 +218,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (C1, C2, S1, S1b, C3, C4, C5) | |
+| Done by: Claude Code (C1, C2, S1, S1b, C3, C4, C5, C6) | |
 | C1 Error and warning codes (one catalog, generated Kotlin/TypeScript, every database refusal and Edge Function error coded), price per day, background job outbox with retries and dead-letter list, client read retries, stray root doc removed | Done (Claude Code) |
 | C2 Test foundation: local backend in Docker (migrations from scratch + local seed, stubs for push and vision, functions served locally), pgTAP suite (9 files), integration scripts local by default with one runner, vision model tests marked, CI on every pull request (`.github/workflows/ci.yml`), `pranalika/testing.md` | Done (Claude Code) |
 | S1 Security updates: vision service on Pillow 13.0.0, torch 2.14.1 (CPU), transformers 5.20.2, FastAPI 0.162.0 / Starlette 1.7.0, open_clip 3.3.0 (no verdict changed on 92 photos and 12 listings in a local Linux image); website minimatch 11.0.3 through an npm override; 5 code scanning alerts dismissed ("used in tests"); `security-log.md` "GitHub security alerts (S1)" | Done (Claude Code); deployed in S1b |
@@ -240,7 +240,10 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Owner and agent: the Stripe test-mode rehearsal (`pranalika/stripe-rehearsal.md`) once test keys exist | To do |
 | Owner: an email provider account and the `dzirent.com` DNS records, then the email runbook (`contract.md` section 9) | To do |
 | Business owner and attorney: confirm `payment_deadline_hours` (24 h), the email record retention (30 days) and the email sender (`legal-placeholders.md` sections 10-11) | To do |
-| C6 | To do |
+| C6 ID verification with Didit, live: available to anyone from Settings while the Didit keys are set, `verification_required` (the gate on chats, messages and publishing, `DZ-E6001`) off. `identity_verifications` (owner reads the status only; legal name private; no images, birthdate or document data), the Verified badge in the shop window (cards, listing and studio pages, chat headers), attempts (3, a setting), the ID's 18+ result outranking store signals (a minor is declined and blocked), duplicate faces to admin review, `didit-start` / `didit-webhook` (X-Signature on the raw body, body timestamp, application id, event id once) / `didit-sync` through the outbox, 10-minute reconciliation, Didit deletion at account deletion, admin ID verification queue (approve, reject, reset attempts; logged), Settings > ID verification with the keeps/never-keeps note, website `/verify/done`, Android Didit SDK 4.9.1, privacy page. Live: both C6 migrations applied (the follow-up turns on RLS for the two closed Didit tables and C3's `rental_reminders`; pgTAP now checks every table), all 18 Edge Functions deployed on the 196-code catalog, the Didit key, webhook secret and job secret set | Done (Claude Code) |
+| Owner: the one live verification on the preview site (steps in the C6 handoff), then an agent confirms it read-only | To do |
+| Mac: Didit's iOS SDK behind `rememberIdVerificationLauncher` (the iPhone opens Didit's hosted page until then) and a build check of the C6 common code, see the C6 handoff | To do |
+| Owner and attorney: the consent screen's company name, biometric consent, retention, and the Terms before `verification_required` is switched on (`legal-placeholders.md` section 12) | To do |
 | C7 | To do |
 | C8 | To do |
 | Mac: build-check the C1 shared-code changes on iPhone (`ErrorCatalog.kt`, `ReadRetry.kt`, the Ktor `HttpRequestRetry` in `createDzirentSupabaseClient`, price per day), see the C1 handoff | To do |
