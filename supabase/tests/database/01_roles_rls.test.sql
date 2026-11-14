@@ -5,7 +5,13 @@
 -- 3333... (test user 3), aaaa... (the local admin).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(23);
+
+-- Every table has RLS (the P5A audit; C6 added this check): closed tables have RLS with no policy.
+select is((select coalesce(string_agg(n.nspname || '.' || c.relname, ', ' order by n.nspname, c.relname), 'none')
+           from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+           where n.nspname in ('public', 'app_private') and c.relkind in ('r', 'p') and not c.relrowsecurity),
+  'none', 'every table in public and app_private has row-level security');
 
 -- Guest (anon): no raw table, only the shop window.
 set local role anon;

@@ -5151,3 +5151,9 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L2093: `CREATE OR REPLACE FUNCTION public.my_conversations(p_conversation_id uuid DEFAULT NULL::uuid, p_limit integer DEFAULT 20, p_offset integer DEFAULT 0)`
 - L2172: `revoke execute on function public.my_conversations(uuid, integer, integer) from public, anon;`
 - L2173: `grant execute on function public.my_conversations(uuid, integer, integer) to authenticated, service_role;`
+
+### `supabase/migrations/20261114110000_c6_closed_tables_rls.sql` (14 lines)
+
+- L12: `alter table app_private.didit_sessions enable row level security;`
+- L13: `alter table app_private.didit_events enable row level security;`
+- L14: `alter table app_private.rental_reminders enable row level security;`
