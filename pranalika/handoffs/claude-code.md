@@ -2,6 +2,94 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## C5 - 2026-11-13 - payment screens and email
+
+**Before starting:** clean tree, `Preview` up to date at `ce2f252`. No Stripe or email keys exist (`providers.env` has the three Stripe names blank and no email names).
+
+**Done:**
+- **C4 follow-ups**
+  - **Date pickers:** no availability windows = every day from today (`util/Rentals.kt` `rentalDatesProblem`, `apps/web/src/lib/rentals.ts`); the website's request form has no last day then and says "Open: any day from today". Tests on both.
+  - **Request answer time:** `rentalStatusLabel(status, iAmLender, requestHours)` on both clients uses `rental_settings().rental_request_hours`; without it the label has no number. No "48 hours" is left in client code.
+  - **Payment deadline:** setting `payment_deadline_hours` (24, 1-72 "hours after acceptance", business owner, legal pages). `rentals.payment_due_at` is fixed by a trigger when a rental starts waiting for payment. `dzirent-rental-expiry` cancels an unpaid one past it (by Dzirent, note "Not paid within 24 hours after it was accepted"), cancels an unpaid PaymentIntent, and sends `rental_cancelled` "Not paid in time" to both. A payment recorded in time is never cancelled by it.
+  - **Code reference:** `tools/gen-code-reference.py` regenerates `pranalika/code-reference.md` in the original format (rules fitted to the old file: TypeScript exactly, SQL with 5 deliberate exclusions, lines cut at 170; generated error-code copies and the city data migration left out; files from git, sorted). 339 files. `--check` runs inside `node contracts/generate.mjs --check`, which CI already runs (the `contracts` job and the website's `prelint`), because `.github/` isn't in this step's folders (Requests).
+  - **Edge Functions:** all 15 redeployed (every one imports the error catalog), so each runs the 181-code catalog.
+  - **S1 request:** the 5 `supabase/` scripts that printed a test user's email on a failed sign-in print only the HTTP status and Auth's error code.
+- **Database** (`supabase/migrations/20261113230000_c5_payment_screens_email.sql`, built from the C1/C4 function bodies with each edit asserted once):
+  - `rental_settings()` for guests and signed-in people (request hours, payment deadline, claim window, cancellation rule, fee, payments on).
+  - `rental_json` adds fee, tax, captured deposit, hold end, payment deadline, each step's time and `lender_can_take_payment`.
+  - Emails: `notification_settings.email_rentals` (default on), closed `app_private.email_messages` (template, account, rental, outcome; never text), outbox kind `send_email` and job status `skipped`, Vault `send_email_url` + generated `email_job_secret`; rental emails queued inside `queue_rental_push` after its blocked-pair check; the payment receipt by a trigger on `payment_status` paid; `queue_account_deleted_email`, `email_prepare`, `email_finish` (server key). Setting `email_log_retention_days` (30, attorney, legal pages) instead of a number in code. `export_my_data` adds the switch and the emails list; admin Background jobs counts skipped emails and names the template of a dead one.
+- **Edge Function `send-email`** with `_shared/email.ts` (one HTTPS call; `EMAIL_PROVIDER` resend or postmark, `EMAIL_API_KEY`, `EMAIL_FROM`; `EMAIL_API_URL` tests only) and `_shared/email-templates.ts` (9 templates, plain HTML and text, Dzirent's burgundy look, values escaped, only a fixed list of fields). Key blank: the email is marked skipped before anything is read, 200, and the outbox marks the job skipped. `delete-account` queues the account-deleted email after the deletion.
+- **Auth email templates:** `supabase/templates/confirmation.html`, `recovery.html`, `email_change.html` in the same look, in `config.toml` for the local stack only. No live Auth setting changed; the runbook is `contract.md` section 9.
+- **Payment screens, Android** (shared Kotlin; hidden while payments are off):
+  - Rules in `util/Rentals.kt`: `PaymentFacts`, payment-aware `rentalActions` (Pay, Place deposit hold and mark picked up, File a claim, Accept / Dispute the claim, Receipt), labels for every payment state, `depositLine`, `claimLine`, claim limits (`claimAmountProblem` etc.), `parseDepositAmount`, `rentalReceipt`, `payoutState`.
+  - `ui/RentalViews.kt`: payment lines on the card (pay-by time, the lender's `DZ-W4001` notice, deposit "held, not charged", claim window end, claim, refund), Pay, Claim, Claim answer and Receipt dialogs. `ui/ChatScreens.kt` wires them: Pay → the pay dialog (saved-card consent) → `stripe-pay` → Stripe's PaymentSheet; Place hold → `stripe-deposit`.
+  - `ui/PaymentSheet.kt` (`expect`), `PaymentSheet.android.kt` (Stripe Android SDK `com.stripe:paymentsheet` 21.29.2, pinned in `libs.versions.toml`), `PaymentSheet.ios.kt` (a stub: "Pay on dzirent.com", `DZ-E4049`).
+  - My studio > Payouts (`PayoutsSection`): status from `payout_accounts`, "Set up payouts" opens Stripe's onboarding in the browser, refreshed with `stripe-account-status` when the app resumes.
+  - Listing editor: optional "Deposit ($)" while payments are on (`DZ-E4051`), saved with the listing and in drafts. Settings > Notifications: "Email me about rentals".
+- **Payment screens, website** (same rules in `lib/rentals.ts`): `components/rental-card.tsx` (payment lines and actions; claim form with return photo picks, claim answer, receipt), `components/payouts.tsx` on Settings > My studio (`/app/settings/payouts` opens it too, Stripe's default return), the deposit field in the listing editor, the email switch in Settings, and the pay page `app/app/pay/[id]` + `components/pay-form.tsx` (Stripe's Payment Element through `@stripe/stripe-js/pure` 9.17.0, `confirmPayment` with `redirect: "if_required"`; wallets off). The Pay button and the way back are plain links (full page loads). `next.config.ts` gives `/app/pay/:path*` its own CSP with Stripe's domains; every other page keeps the strict one (checked on the production server, below). New workflow routes: `chat/<id>/rental_hold`, `rental_claim`, `rental_claim_answer`, `pay`, `payouts/link`, `payouts/status`. Admin Background jobs shows the Emails kind and skipped counts. Privacy page: the emails, what they contain, the switch, what is kept (no company names).
+- **Error codes:** `DZ-E4049` (no payment sheet on this phone), `DZ-E4050` (payment didn't go through), `DZ-E4051` (deposit amount), `DZ-W4001` (set up payouts first); 181 codes, regenerated.
+- **Docs:** `contract.md` (sections 5-8 updated, section 7 "Screens (C5)", new section 9 Email with both runbooks), `decisions.md` ("Payments screens (2026-11-13)", "Email (2026-11-13)"), `architecture.md` (G4, G32, G35, G37, G38 updated; new G39-G42; 5.5; Appendix A status), `compliance.md` (1.11a emails, notification settings, the email service row, gap 34 progress, new gaps 35-36), `legal-placeholders.md` (payment deadline in section 10, new section 11 Emails), `security-log.md` ("Payments screens (C5)", "Email (C5)"), `testing.md`, `error-codes.md` (generated), `code-reference.md` (generated), and the rehearsal checklist `pranalika/stripe-rehearsal.md`.
+
+**What I ran:**
+1. **Local backend.** Windows again reserved 54243-54342, so the stack ran on 55xxx (`SUPABASE_*_PORT` in the same shell; no repo change), without Studio and the log stack.
+2. **pgTAP:** on the first stack, the 11 earlier files passed with the new migration (294), then `12_c5` (53). After renaming the migration to today's date and adding `email_log_retention_days`, a **fresh stack** (`supabase stop --no-backup`, `start`): **12 files, 348 tests, PASS** (`12_c5` 54).
+3. **Integration** (`node supabase/tests/run-all.mjs`, Node 22): on the first stack **20 of 20 passed** (19 scripts; the new `c5_payments_email.mjs` with 7 Stripe calls through stripe-mock, all accepted; 6 emails queued, all skipped `not_configured`, their jobs `skipped`). On the fresh stack 18 of 20: Docker restarted mid-run (I was running the website build and a production server at the same time; the containers I had left out came back up and the stubs, stripe-mock and functions containers were gone), so `c4_payments` failed on a socket error and `c5_payments_email` on a database connection. I stopped the extra containers and re-ran those two once: **2 of 2 passed**.
+4. **Fixes found locally:** a `waitFor` with `await` inside a non-async arrow (syntax), a PowerShell `Set-Content` BOM on the new pgTAP file (removed), the "unused eslint-disable" warnings, `Stripe` types imported from `@stripe/stripe-js` instead of `/pure`, and the pay page calling a client-module function on the server (moved into `PaySummary`). One Gradle run failed on DNS ("No such host is known" for the Maven repositories); the re-run worked.
+5. **Website** (Node 22): `npm run lint` clean (its `prelint` ran both freshness checks: 181 codes, code reference up to date); `npm test` **27 of 27** (13 in `rentals.test.ts`, 5 in the email template test); `tsc --noEmit` clean; `npm run build` passed (`/app/pay/[id]` listed). `next start` of that build: `/app/pay/<id>` sends a CSP with `js.stripe.com` in `script-src`, `hooks.stripe.com` in `frame-src` and `api.stripe.com` in `connect-src`; `/app/messages` and `/` have none of them.
+6. **Lockfile:** `npm install` rewrote about 4,200 lines of `package-lock.json` (this npm re-hoists the v1 lockfile), so I restored it and added only the `@stripe/stripe-js` 9.17.0 entry (5 lines, integrity from the registry); `npm ci` installed from it cleanly.
+7. **Android** (backend stopped, no containers; JDK 21, env loaded silently, `GOOGLE_SERVICES_JSON` set): `:androidApp:assembleDebug :shared:testDebugUnitTest` **BUILD SUCCESSFUL**. **64 tests, 0 failures, 1 skipped**, `RentalRulesTest` 14 (6 new). One warning: Stripe's `rememberPaymentSheet` is deprecated in favour of `PaymentSheet.Builder` (open issues).
+8. **CI:** [run 43554529600](https://github.com/Vivek-k24/Dzirent/actions/runs/43554529600) on `6ec9591`, **all 5 jobs green**: contracts (with the code-reference check), website, android, vision, database (pgTAP 348 PASS; integration 20 of 20, C4 18 and C5 7 Stripe calls through stripe-mock).
+9. **Live**, after CI:
+   - `supabase db push --linked --dry-run` listed only the C5 migration; `supabase db push --linked` applied it.
+   - `supabase functions deploy <name> --no-verify-jwt --use-api` for all 15 functions; `functions list`: all 15 **ACTIVE**, each updated in the same minute, `send-email` v1, `verify_jwt` false.
+   - `EMAIL_JOB_SECRET` set from Vault `email_job_secret` (64 characters) through a temporary file, deleted at once, never printed. `secrets list` names: no `EMAIL_API_KEY`, no `STRIPE_*`.
+10. **Live read-only checks** (`supabase db query --linked`, two HTTP calls that write nothing):
+    - Settings: 30; `payment_deadline_hours` 24 (1-72, "hours after acceptance", business owner, payments, legal pages); `email_log_retention_days` 30 (7-365, attorney, retention, legal pages). `payments_enabled` **false**.
+    - Cron: `dzirent-rental-expiry */10 * * * *` (it now runs the payment deadline too), `dzirent-async-jobs * * * * *`, `dzirent-deposit-holds 45 9 * * *`, `dzirent-rental-reminders 0 15 * * *`, the two cleanup jobs.
+    - **0 payment and email rows:** email messages 0, `send_email` jobs 0, rentals 0 (0 with a deadline), payout accounts 0, customers 0, claims 0, payment events 0, operations 0, card disputes 0, listings with a deposit 0.
+    - Present: the 8 new functions, the 2 triggers, `notification_settings.email_rentals` and `rentals.payment_due_at`, the outbox `send_email` kind and `skipped` status, Vault `send_email_url` and `email_job_secret`. `anon` can execute `rental_settings()`; `authenticated` can't execute `email_prepare`.
+    - `POST /functions/v1/send-email` without the secret: **401 `DZ-E9004`**. `rental_settings` as a guest: payments off, request 48 h, deadline 24 h, claim window 48 h.
+11. **Security Advisor:** two new findings, both expected (`email_messages` closed; `rental_settings()` public on purpose), logged in `security-log.md`.
+12. I used no emulator, device or browser, created no data on live, and called neither Stripe nor an email provider.
+
+**Test counts:**
+
+| Suite | Count |
+| --- | --- |
+| pgTAP | 348 (12 files; `12_c5` 54) |
+| Integration | 20 runs (19 scripts); C5 7 Stripe calls through stripe-mock |
+| Shared Kotlin | 64 (1 skipped) |
+| Website | 27 (incl. 5 email template tests) |
+| Contracts | 181 codes, fresh; code reference fresh |
+
+**APK** (built 2026-11-13 21:58 local; 34,313,577 bytes, up from 23,463,660 with the Stripe SDK):
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, replacing the C4 copy. Same size and SHA-256.
+
+**Stripe rehearsal checklist:** `pranalika/stripe-rehearsal.md` (payouts, pay on Android and the website with 3-D Secure and a decline, the payment deadline, the hold, a disputed claim, receipts, refunds, a card dispute, the CSP, switching off afterwards). The runbook in `contract.md` section 7 points to it.
+
+**Phone test** (payments are off, so almost nothing changes): a listing with no availability windows can now be requested for any day from today; a lender's request card says "answer within 48 hours" (from the server); Settings > Notifications has "Email me about rentals"; the app is larger (Stripe SDK). The payment screens appear only during the rehearsal, with payments switched on.
+
+**iPhone, for the Mac session:**
+- `ui/PaymentSheet.ios.kt` is a stub (`available = false`; Pay shows "Pay on dzirent.com (DZ-E4049)"). Add the Stripe iOS SDK (`StripePaymentSheet`, Swift Package in `iosApp`) and present `PaymentSheet` with the client secret and publishable key behind `rememberPaymentSheetLauncher`, mapping completed / canceled / failed as Android does.
+- Build-check the common code: `util/Rentals.kt`, `ui/RentalViews.kt` (new dialogs, `FilterChip` with a leading thumbnail), `ui/ChatScreens.kt`, `ui/MyStudioScreen.kt` (`LocalUriHandler`, `LifecycleResumeEffect` for the payouts refresh), the listing editor's deposit field, `model/Models.kt`, the repository's new calls.
+
+**Open issues:**
+- **Not exercised against Stripe:** the payment sheet and Payment Element need test keys (G38); the checklist covers them. stripe-mock showed only that the client secret and publishable key come back.
+- **Deprecation:** `rememberPaymentSheet` (21.29.2) still works but is deprecated for `PaymentSheet.Builder`; switch when the SDK is next upgraded (the 22.x/23.x lines need newer Kotlin and Compose, G27).
+- **Choices made:**
+  - The app's payout onboarding returns to the website's My studio (`https://dzirent.com/app/settings/studio?payouts=return`); the app refreshes when it resumes. `/app/settings/payouts` (Stripe's default in `stripe-onboard`) opens the same page.
+  - Rental emails follow the push rules for blocked pairs (no email between blocked people, claims included); the receipt and the account-deleted email don't depend on blocks. Cancels, expiries, completion and hold renewals send no email (not in the list).
+  - The account-deleted email is always sent (no account left to hold the switch); its address sits in `email_messages` until it finishes (G42, compliance gap 35).
+  - "Email me about rentals" shows now although nothing is sent while the key is blank: it is stored for when email is switched on.
+  - **Added:** the email record retention is a setting (`email_log_retention_days`, 30, attorney) rather than a number in code, as the decisions require for retention periods.
+  - Wallet buttons (Apple Pay / Google Pay) are off on both sheets, so `Permissions-Policy: payment=()` stays.
+- **`legal-placeholders.md`:** the file ended with two stray lines (`</content>`, `</invoke>`) from an earlier session's tool call; I removed them so the new rows sit in their tables.
+- **Docker on this PC:** with 16 GB, running the website build next to the full local stack restarted Docker. Run one heavy job at a time.
+
+**Requests:**
+- **CI (`.github/workflows/ci.yml`, outside this step's folders):** the code-reference check runs inside `node contracts/generate.mjs --check` (the `contracts` job and the website's `prelint`). A separate step (`python3 tools/gen-code-reference.py --check`) would make its failure easier to read.
+- **Root `README.md`** (product features, outside this step's folders): describe paying in the app, deposits, claims, receipts and rental emails once payments go live.
 ## C4 - 2026-11-13 - payments backend
 
 **Before starting:** clean tree, `Preview` up to date at `4919df2`. The live project had 0 rentals and 18 settings, all within the new ranges.
