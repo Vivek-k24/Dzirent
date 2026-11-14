@@ -161,6 +161,31 @@ export default function PrivacyPage() {
           </li>
         </ul>
 
+        <h3>Payments and Payouts (when in-app payments are turned on)</h3>
+        <ul>
+          <li>
+            <strong>A payment processor handles the money:</strong> When
+            in-app payments are on, a payment processor takes rental payments,
+            places and releases refundable deposit holds on the renter&apos;s
+            card, sends refunds, and pays lenders out to their bank account. You
+            enter your card and bank details on the processor&apos;s own forms.
+          </li>
+          <li>
+            <strong>Dzirent never stores card or bank details:</strong> We keep
+            only the processor&apos;s reference numbers for your payment
+            profile, your payout account and each payment, plus the amounts,
+            the fee, refunds, deposit holds, and whether your payout account is
+            ready. Lenders give their identity, bank and tax details to the
+            processor directly when they set up payouts.
+          </li>
+          <li>
+            <strong>Damage claims:</strong> If a lender claims part of a
+            deposit after a return, we keep the amount, the reason, the return
+            photos chosen as evidence, the renter&apos;s answer and, when
+            Dzirent decides a disputed claim, the decision.
+          </li>
+        </ul>
+
         <h3>Accessory and Listing Attestations</h3>
         <ul>
           <li>
@@ -396,6 +421,13 @@ export default function PrivacyPage() {
           they host our database and photos, run our website, check listing
           photos, and send app notifications. They handle data only to run
           Dzirent for us, in the United States.
+        </p>
+        <p>
+          When in-app payments are on, a payment processor also handles
+          payments, deposit holds, refunds and lender payouts. It receives the
+          rental amount, your payment profile reference and, for lenders, the
+          details they give it to get paid. Dzirent never stores card or bank
+          details.
         </p>
       </section>
 

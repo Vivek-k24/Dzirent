@@ -86,7 +86,7 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E3010` | error | saving | 403 |  |  | Cannot save blocked studio |
 | `DZ-E3020` | error | blocking | 403 |  |  | Not your block relationship |
 
-## 4xxx - Rentals, condition photos (C3); payments, deposits (reserved)
+## 4xxx - Rentals, condition photos (C3); payments, deposits, claims (C4)
 
 | Code | Kind | Area | Status | Field | Server words | Message |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -110,6 +110,25 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E4020` | error | condition photos | 409 | `photos` |  | Add at least 2 photos of the piece first. |
 | `DZ-E4021` | error | condition photos | 403 |  |  | Photos for this step can't be added now. |
 | `DZ-E4022` | error | condition photos | 503 |  |  | Couldn't load the condition photos. Please try again. |
+| `DZ-E4030` | error | payments | 503 |  |  | Payments aren't available yet. |
+| `DZ-E4031` | error | payments | 409 |  |  | The lender hasn't finished setting up payouts yet. |
+| `DZ-E4032` | error | payments | 403 |  |  | Only the renter can do this. |
+| `DZ-E4033` | error | payments | 409 |  |  | Place the deposit hold before marking the piece picked up. |
+| `DZ-E4034` | error | payments | 409 |  |  | There's no saved card for this rental. |
+| `DZ-E4035` | error | payments | 402 |  |  | The deposit hold couldn't be placed. Ask the renter to check their card. |
+| `DZ-E4036` | error | payments | 502 |  |  | The payment service didn't answer. Please try again. |
+| `DZ-E4037` | error | payments | 403 |  |  | Only lenders can set up payouts. |
+| `DZ-E4038` | error | payments | 400 |  |  | This payment event isn't signed correctly. |
+| `DZ-E4039` | error | payments | 409 |  |  | This rental has no deposit hold to change. |
+| `DZ-E4040` | error | claims | 409 |  |  | Claims can be filed only after the return, until the claim window ends. |
+| `DZ-E4041` | error | claims | 400 | `amount` | yes | Claim an amount above $0 and up to the deposit. |
+| `DZ-E4042` | error | claims | 400 | `reason` |  | Give a reason for the claim (3 to 500 characters). |
+| `DZ-E4043` | error | claims | 400 | `photos` |  | Add at least one return photo of this rental as evidence. |
+| `DZ-E4044` | error | claims | 404 |  |  | Claim not found |
+| `DZ-E4045` | error | claims | 409 |  |  | This claim can't be changed now. |
+| `DZ-E4046` | error | claims | 400 |  |  | Answer accept or dispute. |
+| `DZ-E4047` | error | claims | 409 |  |  | This rental has no deposit to claim from. |
+| `DZ-E4048` | error | claims | 409 |  |  | A claim was already filed for this rental. |
 
 ## 5xxx - Reports, moderation, admin
 
@@ -153,6 +172,16 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E5052` | error | admin | 400 |  |  | Search for an email, handle or account id |
 | `DZ-E5060` | error | admin | 404 |  |  | Background job not found |
 | `DZ-E5061` | error | admin | 409 |  |  | Only a dead background job can be retried |
+| `DZ-E5070` | error | admin settings | 400 | `value` | yes | This value is outside the setting's allowed range. |
+| `DZ-E5071` | error | admin settings | 404 |  |  | Setting not found |
+| `DZ-E5072` | error | admin settings | 400 | `value` | yes | This value isn't the right kind for this setting. |
+| `DZ-E5080` | error | admin rentals | 400 |  |  | Choose cancelled or completed. |
+| `DZ-E5081` | error | admin rentals | 409 |  |  | This rental has already ended. |
+| `DZ-E5082` | error | admin rentals | 409 |  |  | Only a rental that was picked up can be ended as completed. |
+| `DZ-E5083` | error | admin rentals | 400 |  |  | Choose what happens to the deposit hold: release or capture. |
+| `DZ-E5084` | error | admin payments | 400 | `amount` | yes | Refund an amount above $0 and up to what is still paid. |
+| `DZ-E5085` | error | admin payments | 409 |  |  | This rental has no payment to refund. |
+| `DZ-E5086` | error | admin payments | 400 | `amount` | yes | Capture from $0 up to the deposit amount. |
 
 ## 6xxx - ID verification (reserved)
 
@@ -188,6 +217,7 @@ Reserved: no codes yet.
 | `DZ-E9014` | error | system | 400 |  |  | This request couldn't be read. |
 | `DZ-E9015` | error | system | 400 |  |  | Unknown file job |
 | `DZ-E9016` | error | system | 400 |  |  | This request isn't valid. |
+| `DZ-E9020` | error | system | 500 |  |  | A setting is missing. Please try again later. |
 | `DZ-E9999` | error | system | 500 |  |  | Something went wrong. Please try again. |
 
-147 codes: 139 errors, 8 warnings.
+177 codes: 169 errors, 8 warnings.

@@ -12,6 +12,7 @@ import com.dzirent.shared.util.rentalActions
 import com.dzirent.shared.util.rentalDatesProblem
 import com.dzirent.shared.util.rentalEventLabel
 import com.dzirent.shared.util.rentalGroup
+import com.dzirent.shared.util.rentalStatusLabel
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -92,6 +93,23 @@ class RentalRulesTest {
         assertEquals("Accepted by you", rentalEventLabel(RentalStatus.ACCEPTED, "you", "Studio Rostova"))
         assertEquals("Requested by Jordan", rentalEventLabel(RentalStatus.REQUESTED, "other", "Jordan"))
         assertEquals("Expired (Dzirent)", rentalEventLabel(RentalStatus.EXPIRED, "dzirent", "Jordan"))
+    }
+
+    /** C4: the payment states show a neutral label and offer no payment step (screens come in C5). */
+    @Test
+    fun paymentStatesAreNeutral() {
+        assertEquals(
+            listOf("Accepted: waiting for payment", "Paid: arrange the pickup", "Claim opened", "In dispute"),
+            listOf(RentalStatus.AWAITING_PAYMENT, RentalStatus.PAID, RentalStatus.CLAIMED, RentalStatus.DISPUTED)
+                .map { rentalStatusLabel(it, iAmLender = false) },
+        )
+        for (status in listOf(RentalStatus.AWAITING_PAYMENT, RentalStatus.PAID, RentalStatus.CLAIMED, RentalStatus.DISPUTED)) {
+            for (lender in listOf(true, false)) {
+                assertTrue(rentalActions(status, lender).none { Regex("pay|claim|deposit|refund", RegexOption.IGNORE_CASE).containsMatchIn(it.name) })
+            }
+        }
+        assertEquals(emptyList(), rentalActions(RentalStatus.CLAIMED, iAmLender = true))
+        assertEquals(emptyList(), rentalActions(RentalStatus.DISPUTED, iAmLender = false))
     }
 
     @Test

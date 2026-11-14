@@ -33,7 +33,7 @@ A peer-to-peer clothing rental marketplace. Lenders list pieces they own; renter
 | R9 | Legal: terms acceptance with versions, measurements consent, data download, account deletion, 18+ | ✅ |
 | R10 | Sharing with rich link previews and Android app links | ✅ (iPhone links 🟡) |
 | R11 | ID verification once per account (Didit) | 🟡 Appendix B |
-| R12 | Payments, platform fee and refundable deposits (Stripe Connect) | 🟡 Appendix A |
+| R12 | Payments, platform fee and refundable deposits (Stripe Connect) | ⚠️ backend built and tested against stripe-mock (C4), switched off; screens in C5 (Appendix A) |
 | R13 | Rental reminders and email notifications | 🟡 needs the rental confirmation step (Appendix A) and an email service |
 
 ### 1.3 Top quality goals
@@ -144,7 +144,7 @@ flowchart TB
     RT[Realtime]
     DB[(Postgres 17<br/>public + app_private)]
     Sto[(Storage<br/>listing-photos)]
-    EF[Edge Functions<br/>8 functions]
+    EF[Edge Functions<br/>15 functions]
     Cron[pg_cron jobs]
   end
   Vision[Vision service<br/>FastAPI + PyTorch CPU<br/>Cloud Run us-west1]
@@ -218,6 +218,12 @@ flowchart TB
 | `delete-account` | Apps and website | Deletes the caller's photos, then the account | User token verified in code |
 | `export-my-data` | Apps and website | One JSON file of everything held about the caller, once a day | User token verified in code |
 | `admin-actions` | Admin website | Ban, unban, photo file removal | Admin with fresh two-step session |
+| `stripe-onboard`, `stripe-account-status` (C4) | Apps and website (C5) | A lender's Stripe Express account and onboarding link; its status | User token verified in code |
+| `stripe-pay` (C4) | Apps and website (C5) | The renter's destination-charge PaymentIntent (client secret) | User token verified in code |
+| `stripe-deposit` (C4) | The lender at pickup; the outbox | Place, release, capture and renew deposit holds | User token, or Vault shared secret `payments_job_secret` |
+| `stripe-refund` (C4) | The outbox | Refunds and cancelling unpaid payments | Vault shared secret |
+| `stripe-webhook` (C4) | Stripe | Payment, refund, dispute and account events, once each | Stripe signature on the raw body |
+| `admin-integrations` (C4) | Admin website | Which outside services have their secrets set (yes/no only) | Admin with fresh two-step session |
 | `_shared` | (library) | Input validation and common helpers | - |
 
 ### 5.6 Vision service (`services/vision`)
@@ -303,7 +309,7 @@ Photos changed on an active listing are re-scanned automatically (`rescan_on_pho
 4. Every step writes `rental_events`; the chat's rental card reloads on Realtime changes to `rentals`. `dzirent-rental-reminders` sends pickup, return and overdue reminders at 9 AM Austin time.
 
 ### 6.9 Planned flows
-ID verification: Appendix B, section B.3. Payment, deposit hold and claim: Appendix A, section A.4 (the rental states exist since C3).
+ID verification: Appendix B, section B.3. Payment, deposit hold and claim: Appendix A, section A.4; built in C4 (contract.md section 7), switched off, screens in C5.
 
 ---
 
@@ -322,7 +328,7 @@ ID verification: Appendix B, section B.3. Payment, deposit hold and claim: Appen
 
 **Environments.** There is one database for everything. Preview and production websites, debug apps and agent tests all use `dzirent-server` (see gap G3).
 
-**Configuration names** (values never in the repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY(S)`, `SUPABASE_SECRET_KEYS`, `SEND_PUSH_SECRET`, `SCAN_LISTING_SECRET`, `CLEANUP_FILES_SECRET`, `FIREBASE_SERVICE_ACCOUNT_BASE64`, `VISION_URL`, `VISION_INVOKER_KEY_BASE64`, `VISION_ALLOWED_URL_PREFIXES`, `VISION_MODEL_DIR`, `VISION_SAFETY_DIR`, `VISION_TORCH_THREADS`, `GOOGLE_SERVICES_JSON`; Vault: `send_push_*`, `scan_listing_*`, `cleanup_files_*`; GitHub (release): keystore, passwords, alias, Play service account, `ANDROID_VERSION_CODE_OFFSET`. Planned: `DIDIT_*`, `STRIPE_*`, email service key.
+**Configuration names** (values never in the repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY(S)`, `SUPABASE_SECRET_KEYS`, `SEND_PUSH_SECRET`, `SCAN_LISTING_SECRET`, `CLEANUP_FILES_SECRET`, `FIREBASE_SERVICE_ACCOUNT_BASE64`, `VISION_URL`, `VISION_INVOKER_KEY_BASE64`, `VISION_ALLOWED_URL_PREFIXES`, `VISION_MODEL_DIR`, `VISION_SAFETY_DIR`, `VISION_TORCH_THREADS`, `GOOGLE_SERVICES_JSON`; Vault: `send_push_*`, `scan_listing_*`, `cleanup_files_*`; GitHub (release): keystore, passwords, alias, Play service account, `ANDROID_VERSION_CODE_OFFSET`. C4 (set, blank until the keys arrive): `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, optional `STRIPE_CONNECT_WEBHOOK_SECRET`, `PAYMENTS_JOB_SECRET` (Vault `payments_job_secret`, `stripe_deposit_url`, `stripe_refund_url`); `STRIPE_API_BASE` for tests only. Planned: `DIDIT_*`, `EMAIL_API_KEY`.
 
 ---
 
@@ -464,7 +470,7 @@ This is what writing the blueprint exposed. Ranked by impact.
 | G5 | **Photos are not in the database backups.** | A storage loss deletes every listing photo permanently. | P5B |
 | G6 | **No monitoring.** No error tracking, uptime checks or alerts; logs only in provider consoles. | Failures are found by users. | P5B |
 | G7 | **One admin, one authenticator.** | Losing the phone locks everyone out of moderation. | P5B (second admin or factor, recovery runbook) |
-| G8 | **No disputes, claims or reviews model.** | Deposits need a claim and decision flow; trust needs ratings. | P6B (claims); reviews undecided |
+| G8 | ~~**No disputes, claims or reviews model.**~~ **Claims closed in C4 (2026-11-13):** `rental_claims` (file, accept or dispute, admin decision) and card disputes on the admin Payments page. Reviews are still undecided. | Trust needs ratings. | Reviews undecided |
 | G9 | **Age is client-reported until ID checks exist.** | A determined user can fake adult via the API. | P6A |
 | G10 | **iPhone gaps**: push, universal links, native data export, VoiceOver, unit tests, the new Keychain storage compile check. | iPhone users get a lesser app. | Mac session, P8B |
 | G11 | **No bot check on sign-up.** | Fake accounts at scale. | P8C |
@@ -486,11 +492,15 @@ This is what writing the blueprint exposed. Ranked by impact.
 | G27 | **Dependency age**: Kotlin 2.1.0, Compose Multiplatform 1.7.3, Navigation 2.8.0-alpha10. | Upgrades get harder; alpha APIs. | Planned upgrade after launch |
 | G28 | ~~**Item condition and handover not modeled.**~~ **Closed in C3 (2026-11-13):** private condition photos at pickup and return (bucket `rental-photos`, at least 2 by the lender), in the rental's timeline and report evidence. Cleaning and packaging are still undecided. | - | Done (C3) |
 | G29 | **Stray document** `iOS_Toolchain_and_Packages.md` at the repo root describes a different stack. | Confuses anyone reading the public repo. | Delete |
-| G30 | **Accepted rentals never time out** (C3). A rental accepted but never picked up stays accepted after its dates pass. | It keeps its dates booked and blocks both people's account deletion until someone cancels it. | Next rental step (an expiry for accepted rentals past their end date) |
-| G31 | **No admin tool to end a rental** (C3). Only the lender can mark a piece returned; a suspended or banned lender can't. | A renter can be stuck unable to delete their account. | Admin rental actions (with payments, A.5) |
-| G32 | **Availability rules differ** (C3). `browse_listings` treats a listing with no availability windows as always available; `request_rental` refuses it. | Such a piece shows in date searches but can't be requested. | Product decision: require availability when publishing, or allow any date |
-| G33 | **Rental reminders use Austin time** (C3) for "tomorrow", "overdue" and the 9 AM send. | Wrong day boundaries for people outside Central time. | When Dzirent leaves Austin |
-| G34 | **Privacy text changed without a version bump** (C3: condition photos, rental reminders). | People aren't asked to accept the new text. | Owner and attorney: bump `PRIVACY_VERSION` with a `legal_documents` migration if needed |
+| G30 | ~~**Accepted rentals never time out**~~ **Closed in C4:** cancelled automatically `rental_autocancel_days` (2) after the start date when not picked up. | - | Done (C4) |
+| G31 | ~~**No admin tool to end a rental**~~ **Closed in C4:** `admin_end_rental` (Users > Show rentals > End rental). | - | Done (C4) |
+| G32 | **Availability rules differ** (C3). **Server side closed in C4** (owner decision: no windows = always available; `request_rental` takes any future dates). The apps' and website's date pickers still offer no days for such a listing. | The piece can be requested through the API but not yet from the screens. | A one-line client change (C4 handoff, Requests) |
+| G33 | **Rental reminders use one time zone** (C3). Since C4 it is the `rental_timezone` setting (America/Chicago) with the `rental_reminder_hour` (9), not code. | Wrong day boundaries for people outside that zone. | Per-person time zones when Dzirent leaves Austin |
+| G34 | **Privacy text changed without a version bump** (C3: condition photos, rental reminders; C4: payments and payouts, claims). | People aren't asked to accept the new text. | Owner and attorney: bump `PRIVACY_VERSION` with a `legal_documents` migration if needed |
+| G35 | **No payment screens** (C4). The backend is built and tested against stripe-mock; the apps and website have no pay, payout set-up, deposit or claim screens, and the terms don't yet describe fees, refunds, deposits or claims. | Payments can't be switched on for people. | C5 (screens), BO and attorney (terms) |
+| G36 | **Payment records go with the rental** (C4). Rentals are deleted for both people when either account is deleted; their payment columns go too (Stripe keeps its own records, and `payment_operations` keeps the money steps without the rental link). | Dzirent's own payment history is incomplete after a deletion. | Attorney: what must be kept for accounting, then a retention design |
+| G37 | **No payment deadline** (C4). An accepted rental waits for payment until the automatic cancel (2 days after its start). | Unpaid rentals hold their dates. | BO decision: a payment deadline setting |
+| G38 | **Live Stripe never exercised** (C4). Tested only against stripe-mock and signed test events; stripe-mock keeps no state. | Real behavior (3-D Secure, declines, Connect onboarding) is unverified. | The runbook's test-mode rehearsal (contract.md section 7) |
 
 ---
 
@@ -512,7 +522,9 @@ This is what writing the blueprint exposed. Ranked by impact.
 
 ---
 
-## Appendix A - Payments and deposits (design, not built)
+## Appendix A - Payments and deposits (design; backend built in C4)
+
+**Status (2026-11-13, C4):** built as designed and switched off: the data model (A.2, with `rental_claims`, `payment_events`, `payout_accounts`, `stripe_customers`, the rental payment columns, and `listings.deposit_amount`), the state machine (A.3), the flows (A.4: `stripe-onboard`, `stripe-account-status`, `stripe-pay`, `stripe-deposit`, `stripe-refund`, `stripe-webhook`), and the admin additions (A.5: the Payments page, refunds, claim decisions, ending a rental). Tested against stripe-mock and signed test events (`pranalika/testing.md`); never against Stripe. `price_unit` and `included_days` stay as C1 left them (per day). The client screens are C5. Contract: `contract.md` section 7, with the runbook for the real keys.
 
 Sources: Stripe documentation on Connect charge types, application fees, and placing holds on payment methods. Nothing here is invented beyond choosing among Stripe's documented options.
 

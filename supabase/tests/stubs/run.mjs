@@ -9,6 +9,10 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const NAME = "dzirent-stubs";
 const IMAGE = "node:22-alpine";
+// C4: the official Stripe API mock, pinned by digest (stripe-mock 0.206.0). In CI it runs as a
+// service container joined to the same network (DZIRENT_STRIPE_MOCK=external); here we start it.
+export const STRIPE_MOCK = "dzirent-stripe-mock";
+export const STRIPE_MOCK_IMAGE = "stripe/stripe-mock@sha256:aeb96b83e87a893d2ac005e363ac01ffa6e59a5ad85b49c155dfc9129de02e78";
 
 function docker(args, opts = {}) {
   return execFileSync("docker", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...opts }).trim();
@@ -26,7 +30,18 @@ function serviceRoleKey(repoRoot) {
   return /^SERVICE_ROLE_KEY="?([^"\r\n]+)"?/m.exec(out)?.[1];
 }
 
+function startStripeMock() {
+  if (process.env.DZIRENT_STRIPE_MOCK === "external") return;
+  const running = docker(["ps", "--filter", `name=^${STRIPE_MOCK}$`, "--format", "{{.Names}}"]);
+  if (running) return;
+  try {
+    docker(["rm", "-f", STRIPE_MOCK]);
+  } catch {}
+  docker(["run", "-d", "--rm", "--name", STRIPE_MOCK, "--network", network(), STRIPE_MOCK_IMAGE]);
+}
+
 export async function startStubs() {
+  startStripeMock();
   const running = docker(["ps", "--filter", `name=^${NAME}$`, "--format", "{{.Names}}"]);
   if (!running) {
     try {
@@ -56,6 +71,11 @@ export function stopStubs() {
   try {
     docker(["rm", "-f", NAME]);
   } catch {}
+  if (process.env.DZIRENT_STRIPE_MOCK !== "external") {
+    try {
+      docker(["rm", "-f", STRIPE_MOCK]);
+    } catch {}
+  }
 }
 
 if (process.argv[1]?.endsWith("run.mjs")) {

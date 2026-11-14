@@ -12,7 +12,7 @@
     "start": "next start",
     "prelint": "node ../../contracts/generate.mjs --check",
     "lint": "eslint .",
-    "test": "node --test --experimental-strip-types src/lib/errors.test.ts src/lib/rentals.test.ts"
+    "test": "node --test --experimental-strip-types src/lib/errors.test.ts src/lib/rentals.test.ts src/lib/admin-settings.test.ts"
   },
   "dependencies": {
     "@fontsource-variable/roboto": "5.3.0",

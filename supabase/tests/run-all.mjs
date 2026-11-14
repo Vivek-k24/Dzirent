@@ -5,7 +5,8 @@
 // Options: --only=step1b,p2b   run some scripts;  --keep   leave the stubs and functions running.
 // --live runs them against dzirent-server instead: it prints a warning, needs the secrets files and
 // writes to production test users; never use it for load or for routine checks.
-import { spawn, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LIVE, REPO_ROOT, SUPABASE_URL, SUPABASE_KEY, CLI, sql } from "./lib/config.mjs";
@@ -37,6 +38,9 @@ export const SCRIPTS = [
   ["node", "p3b_cleanup.mjs"],
   ["node", "c1_codes_price_jobs.mjs"],
   ["node", "c3_rentals.mjs", { local: true }],
+  // C4: first with the Stripe keys blank (local.env), then with stripe-mock's placeholder values.
+  ["node", "c4_payments_off.mjs", { local: true }],
+  ["node", "c4_payments.mjs", { local: true, functionsEnv: "local.stripe-mock.env" }],
 ];
 
 const args = process.argv.slice(2);
@@ -54,15 +58,18 @@ async function functionsUp() {
       body: "{}",
       signal: AbortSignal.timeout(5000),
     });
-    return res.status === 400 || res.status === 503;
+    // C4: the function's own answer carries a DZ code; the gateway's 503 while the functions
+    // container is (re)starting ({"message":"name resolution failed"}) doesn't.
+    const body = await res.json().catch(() => null);
+    return (res.status === 400 || res.status === 503) && typeof body?.code === "string" && body.code.startsWith("DZ-");
   } catch {
     return false;
   }
 }
 
-async function startFunctions() {
+async function startFunctions(envFile = "local.env") {
   if (await functionsUp()) return null;
-  const child = spawn(CLI, ["functions", "serve", "--env-file", join(REPO_ROOT, "supabase/functions/local.env")], {
+  const child = spawn(CLI, ["functions", "serve", "--env-file", join(REPO_ROOT, "supabase/functions", envFile)], {
     cwd: REPO_ROOT, stdio: ["ignore", "ignore", "ignore"], shell: process.platform === "win32",
   });
   for (let i = 0; i < 120; i++) {
@@ -71,6 +78,31 @@ async function startFunctions() {
   }
   child.kill();
   throw new Error("supabase functions serve didn't come up");
+}
+
+// C4: the functions container, so a script can run them with another env file. The runner always
+// serves them itself with a known env file: functions left running by an earlier run may hold
+// another one (on Windows, killing the CLI's shell doesn't stop the container).
+const PROJECT_ID = /^project_id\s*=\s*"([^"]+)"/m.exec(readFileSync(join(REPO_ROOT, "supabase/config.toml"), "utf8"))?.[1];
+let functions = null;
+let functionsEnv = null;
+
+function removeFunctionsContainer() {
+  if (functions) functions.kill();
+  functions = null;
+  try {
+    execFileSync("docker", ["rm", "-f", `supabase_edge_runtime_${PROJECT_ID}`], { stdio: "ignore" });
+  } catch {}
+}
+
+/** Serves the functions with [envFile] (supabase/functions/...), restarting them if needed. */
+async function useFunctionsEnv(envFile) {
+  if (envFile === functionsEnv) return;
+  removeFunctionsContainer();
+  for (let i = 0; i < 30 && (await functionsUp()); i++) await sleep(1000);
+  functions = await startFunctions(envFile);
+  functionsEnv = envFile;
+  console.log(`functions served with supabase/functions/${envFile}\n`);
 }
 
 async function main() {
@@ -85,12 +117,11 @@ async function main() {
 
 async function runAll() {
   console.log(LIVE ? "Target: LIVE dzirent-server" : `Target: local backend ${SUPABASE_URL}`);
-  let functions = null;
   if (!LIVE) {
     console.log("starting the stubs...");
     await startStubs();
     console.log("starting supabase functions serve with supabase/functions/local.env...");
-    functions = await startFunctions();
+    await useFunctionsEnv("local.env");
     console.log("uploading seed photos...");
     const photos = await uploadSeedPhotos();
     console.log(`stubs up, functions served with supabase/functions/local.env, seed photos ${photos.uploaded} uploaded / ${photos.present} present\n`);
@@ -101,6 +132,7 @@ async function runAll() {
       const name = file.replace(/\.(mjs|py)$/, "");
       if (only && !only.includes(name)) continue;
       if (opts.local && LIVE) continue;
+      if (!LIVE) await useFunctionsEnv(opts.functionsEnv ?? "local.env");
       const [cmd, ...pre] = runner.split(" ");
       const started = Date.now();
       const label = [file, ...(opts.args ?? []).slice(0, 1)].join(" ");
@@ -121,7 +153,7 @@ async function runAll() {
     }
   } finally {
     if (!LIVE && !keep) {
-      if (functions) functions.kill();
+      removeFunctionsContainer();
       stopStubs();
     }
   }

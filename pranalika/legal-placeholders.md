@@ -134,5 +134,22 @@ Filled when the phase arrives; listed now so the config has room for them.
 | `STORE_DEVELOPER_NAME` | The developer name on Google Play and Apple. Must equal `COMPANY_LEGAL_NAME` | Owner | P8A, P8B |
 | `PRIVACY_POLICY_URL`, `TERMS_URL`, `SUPPORT_URL` | The page addresses the store forms ask for | Engineering | P8A, P8B |
 | `ACCESSIBILITY_CONTACT` | Where people report an accessibility problem | Owner | P4A |
+
+## 10. Payment settings (C4)
+
+The payments backend (built in C4, switched off) reads these from the closed settings table; admins change them on the admin website's Settings page (each change needs a reason and is logged). The values below are the pilot defaults the owner gave; each still needs the person named here to confirm it, and the Terms of Use must describe it before payments are switched on. "Owner" here is the business owner, as everywhere in this file.
+
+| Setting | What it is, in plain words | Default | Who decides | Used on | Value |
+| --- | --- | --- | --- | --- | --- |
+| `platform_fee_percent` | Dzirent's fee, as a percent of the rental price, taken from each rental payment | 0 | Owner | Terms (`FEES`) | |
+| `claim_window_hours` | How long after a return the lender can claim part of the deposit for damage | 48 hours | Owner (attorney checks the wording) | Terms (`DEPOSIT_RULES`) | |
+| `cancellation_refund_cutoff_hours` | Until how long before the start date a renter who cancels gets a full refund | 48 hours | Owner (attorney checks the wording) | Terms (`CANCELLATION_POLICY`, `REFUND_POLICY`) | |
+| `late_cancellation_refund_percent` | How much of the rental price a renter gets back when cancelling after that cutoff (also for the automatic cancel when a piece isn't picked up) | 0% (the lender keeps the rental price) | Owner (attorney checks the wording) | Terms (`CANCELLATION_POLICY`) | |
+| Lender cancellation | A lender who cancels always refunds the renter in full (a fixed rule, not a setting) | Full refund | Owner confirms | Terms (`CANCELLATION_POLICY`) | |
+| `sales_tax_enabled` | Whether Dzirent adds sales tax to rentals. Only a hook today: it adds $0 even when on, until the tax adviser says how it is computed | Off | Attorney (tax adviser) | Terms (`SALES_TAX_STATEMENT`) | |
+| `rental_autocancel_days` | A rental not picked up this many days after its start date is cancelled automatically | 2 days | Owner | Terms | |
+| `deposit_hold_warning_hours` | A card hold lasts about a week; this long before it ends, while the piece is still out, Dzirent places a new hold and tells both people | 24 hours | Owner | Terms (`DEPOSIT_RULES`) | |
+| Charges to a saved card | The renter's card is saved at payment so the deposit hold and a decided claim can be charged without them present | Always | Attorney (consent wording) | Terms, pay screen (C5) | |
+| `PAYMENT_PROVIDER` | The payment processor's name for the Terms (the website's privacy page says "a payment processor" on purpose) | - | Owner + attorney | Terms, Privacy | |
 </content>
 </invoke>

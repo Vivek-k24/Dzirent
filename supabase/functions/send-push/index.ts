@@ -9,10 +9,12 @@ import { errorBody, errorStatus } from "../_shared/errors.ts";
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 // C3 adds the rental kinds (app_private.queue_rental_push): requests, answers, reminders, completion.
+// C4 adds cancelled and expired rentals, claims and the deposit hold renewal.
 const KINDS = new Set([
   "message", "new_chat", "dates",
   "rental_request", "rental_accepted", "rental_declined",
   "pickup_tomorrow", "return_tomorrow", "return_overdue", "rental_completed",
+  "rental_cancelled", "rental_expired", "claim_filed", "claim_decided", "deposit_hold_ending",
 ]);
 // A chat notification that couldn't be delivered for a day is stale; the inbox has it.
 const TTL = "86400s";

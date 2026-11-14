@@ -10,8 +10,78 @@ import {
   warnUserAction,
 } from "@/lib/admin-actions";
 import { ActionDialog } from "./action-dialog";
-import { userRentalsAction } from "@/lib/admin-actions";
+import { endRentalAction, userRentalsAction } from "@/lib/admin-actions";
 import { RentalEvidence } from "./rental-evidence";
+
+const OPEN_STATES = ["requested", "accepted", "awaiting_payment", "paid", "picked_up", "returned", "claimed", "disputed"];
+const PICKED_UP_STATES = ["picked_up", "returned", "claimed", "disputed"];
+
+/**
+ * C4: an admin ends a stuck rental (for example when the lender is banned) as cancelled or
+ * completed. With a payment: an optional refund, and what happens to a deposit hold.
+ */
+function EndRental({ rentalId, status, onEnded }: { rentalId: string; status: string; onEnded: (status: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [outcome, setOutcome] = useState<"cancelled" | "completed">(PICKED_UP_STATES.includes(status) ? "completed" : "cancelled");
+  const [refund, setRefund] = useState("");
+  const [deposit, setDeposit] = useState<"" | "release" | "capture">("");
+  const [capture, setCapture] = useState("");
+  if (!OPEN_STATES.includes(status)) return null;
+  const amount = (text: string) => (text.trim() === "" ? null : Number(text.trim()));
+  return (
+    <>
+      <button type="button" className="button button-outline compact" onClick={() => setOpen(true)}>
+        End rental...
+      </button>
+      {open && (
+        <ActionDialog
+          title="End this rental"
+          description="For a rental that can't finish on its own. Both people are told. A refund or deposit choice applies only when the rental has a payment."
+          actionLabel="End rental"
+          danger
+          onClose={() => setOpen(false)}
+          onConfirm={async (reason) => {
+            const result = await endRentalAction({
+              rentalId,
+              outcome,
+              reason,
+              refundAmount: amount(refund),
+              depositAction: deposit || null,
+              captureAmount: deposit === "capture" ? amount(capture) : null,
+            });
+            onEnded(String(result.status ?? outcome));
+          }}
+        >
+          <label className="field">
+            <span>Outcome</span>
+            <select value={outcome} onChange={(e) => setOutcome(e.target.value as "cancelled" | "completed")}>
+              <option value="cancelled">Cancelled</option>
+              {PICKED_UP_STATES.includes(status) && <option value="completed">Completed</option>}
+            </select>
+          </label>
+          <label className="field">
+            <span>Refund to the renter, in dollars (optional)</span>
+            <input inputMode="decimal" value={refund} onChange={(e) => setRefund(e.target.value)} />
+          </label>
+          <label className="field">
+            <span>Deposit hold (if there is one)</span>
+            <select value={deposit} onChange={(e) => setDeposit(e.target.value as "" | "release" | "capture")}>
+              <option value="">No deposit hold</option>
+              <option value="release">Release it</option>
+              <option value="capture">Capture part of it for the lender</option>
+            </select>
+          </label>
+          {deposit === "capture" && (
+            <label className="field">
+              <span>Capture, in dollars</span>
+              <input inputMode="decimal" value={capture} onChange={(e) => setCapture(e.target.value)} />
+            </label>
+          )}
+        </ActionDialog>
+      )}
+    </>
+  );
+}
 
 /** C3: a person's rentals (timeline and condition photos), loaded when asked for (logged). */
 function UserRentals({ userId }: { userId: string }) {
@@ -46,7 +116,18 @@ function UserRentals({ userId }: { userId: string }) {
     <div style={{ marginTop: "12px" }}>
       <h4>Rentals ({state.rentals.length})</h4>
       {state.rentals.length ? (
-        state.rentals.map((r) => <RentalEvidence key={String(r.rental_id)} snapshot={r} links={state.links} />)
+        state.rentals.map((r) => (
+          <div key={String(r.rental_id)}>
+            <RentalEvidence snapshot={r} links={state.links} />
+            <EndRental
+              rentalId={String(r.rental_id)}
+              status={String(r.status)}
+              onEnded={(status) =>
+                setState((s) => (s ? { ...s, rentals: s.rentals.map((x) => (x.rental_id === r.rental_id ? { ...x, status } : x)) } : s))
+              }
+            />
+          </div>
+        ))
       ) : (
         <p className="muted">No rentals.</p>
       )}

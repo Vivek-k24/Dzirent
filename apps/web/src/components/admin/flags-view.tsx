@@ -25,7 +25,7 @@ const FLAG_EXPLANATIONS: Record<string, { title: string; enforcement: string }> 
   payments_enabled: {
     title: "In-App Payments Enforcement",
     enforcement:
-      "Enforces integrated payment processing for rental transactions across Dzirent.",
+      "Accepting a rental then waits for the renter's payment, pickup needs the deposit hold, and returns open the claim window. Turn it on only after the Integrations page shows Payments as configured; until then every payment step answers \"Payments aren't available yet.\"",
   },
   preview_label: {
     title: "\"Preview only\" Label",

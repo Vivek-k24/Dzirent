@@ -28,6 +28,31 @@ verify_jwt = false
 [functions.cleanup-files]
 verify_jwt = false
 
+# C4 payments: each handler verifies the caller's token in code (auth.getUser), or the outbox's
+# shared secret (PAYMENTS_JOB_SECRET), or Stripe's webhook signature.
+[functions.stripe-onboard]
+verify_jwt = false
+
+[functions.stripe-account-status]
+verify_jwt = false
+
+[functions.stripe-pay]
+verify_jwt = false
+
+[functions.stripe-deposit]
+verify_jwt = false
+
+[functions.stripe-refund]
+verify_jwt = false
+
+# Stripe sends no Supabase token: the handler checks the Stripe-Signature on the raw body.
+[functions.stripe-webhook]
+verify_jwt = false
+
+# Admins only: the database checks is_admin with the caller's own token and logs the read.
+[functions.admin-integrations]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.

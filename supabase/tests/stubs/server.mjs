@@ -8,9 +8,14 @@
 //                  the scan (vision_start_scan), answers each photo by its file name, and saves the
 //                  result (vision_finish_scan):
 //                    name contains "reject" -> rejected, "review" -> review, anything else -> allowed.
-//   GET  /log    - what was recorded: { push: [...], scan: [...] }.  DELETE /log clears it.
+//   *    /stripe/... - C4: passes the call on to stripe-mock (the official stripe/stripe-mock image,
+//                  container "dzirent-stripe-mock") and records it: method, path, idempotency key
+//                  and form fields, never headers. A repeated POST with the same idempotency key
+//                  gets the first answer again, as Stripe does (stripe-mock itself keeps no state).
+//   GET  /log    - what was recorded: { push: [...], scan: [...], stripe: [...] }.  DELETE /log clears it.
 //   GET  /health - "ok".
-// Environment: SUPABASE_URL (inside the network), SERVICE_ROLE_KEY, PUSH_SECRET, SCAN_SECRET, PORT.
+// Environment: SUPABASE_URL (inside the network), SERVICE_ROLE_KEY, PUSH_SECRET, SCAN_SECRET,
+// STRIPE_MOCK_URL, PORT.
 import { createServer } from "node:http";
 
 const PORT = Number(process.env.PORT ?? 8787);
@@ -18,11 +23,52 @@ const SUPABASE_URL = (process.env.SUPABASE_URL ?? "http://kong:8000").replace(/\
 const SERVICE_ROLE_KEY = process.env.SERVICE_ROLE_KEY ?? "";
 const PUSH_SECRET = process.env.PUSH_SECRET ?? "local-push-secret";
 const SCAN_SECRET = process.env.SCAN_SECRET ?? "local-scan-secret";
+const STRIPE_MOCK_URL = (process.env.STRIPE_MOCK_URL ?? "http://dzirent-stripe-mock:12111").replace(/\/$/, "");
 
-const log = { push: [], scan: [] };
+const log = { push: [], scan: [], stripe: [] };
+/** Idempotency key -> the first answer (Stripe replays it for 24 hours). */
+const replays = new Map();
+
+async function rawBody(req) {
+  const chunks = [];
+  for await (const c of req) chunks.push(c);
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+async function stripe(req, res, url) {
+  const path = url.pathname.slice("/stripe".length) + url.search;
+  const text = req.method === "POST" ? await rawBody(req) : "";
+  const key = req.headers["idempotency-key"] ?? null;
+  const params = Object.fromEntries(new URLSearchParams(req.method === "POST" ? text : url.search));
+  const entry = { method: req.method, path: url.pathname.slice("/stripe".length), idempotency_key: key, params, at: new Date().toISOString() };
+  if (req.method === "POST" && key && replays.has(key)) {
+    const first = replays.get(key);
+    log.stripe.push({ ...entry, status: first.status, replayed: true });
+    res.writeHead(first.status, CLOSE);
+    return res.end(first.body);
+  }
+  const headers = {};
+  for (const h of ["authorization", "stripe-version", "content-type", "idempotency-key"]) {
+    if (req.headers[h]) headers[h] = req.headers[h];
+  }
+  const answer = await fetch(`${STRIPE_MOCK_URL}${path}`, { method: req.method, headers, body: req.method === "POST" ? text : undefined });
+  const body = await answer.text();
+  let id = null;
+  try {
+    id = JSON.parse(body)?.id ?? null;
+  } catch {}
+  if (req.method === "POST" && key && answer.status < 500) replays.set(key, { status: answer.status, body });
+  log.stripe.push({ ...entry, status: answer.status, id });
+  res.writeHead(answer.status, CLOSE);
+  return res.end(body);
+}
+
+// C4: every answer closes its connection. A test that waits longer than the server's keep-alive
+// time between two calls otherwise reuses a socket the server already closed (UND_ERR_SOCKET).
+const CLOSE = { "Content-Type": "application/json", Connection: "close" };
 
 function send(res, status, body) {
-  res.writeHead(status, { "Content-Type": "application/json" });
+  res.writeHead(status, CLOSE);
   res.end(JSON.stringify(body));
 }
 
@@ -142,8 +188,10 @@ createServer(async (req, res) => {
     if (req.method === "DELETE" && url.pathname === "/log") {
       log.push.length = 0;
       log.scan.length = 0;
+      log.stripe.length = 0;
       return send(res, 200, { ok: true });
     }
+    if (url.pathname.startsWith("/stripe/")) return await stripe(req, res, url);
     if (req.method === "POST" && url.pathname === "/push") {
       if (req.headers["x-send-push-secret"] !== PUSH_SECRET) {
         return send(res, 401, { code: "DZ-E9004", message: "This request isn't allowed." });

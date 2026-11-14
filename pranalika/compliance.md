@@ -128,6 +128,22 @@ EXIF and GPS, checked on each platform's upload path:
 | Live updates | Supabase Realtime | `realtime.subscription` holds each live subscriber's JWT claims while connected (0 rows at the check) | Live chat and scans | Server | Automatic | While connected | - |
 | Chat safety tip dismissed (website) | Chat | Browser localStorage `dzirent-safety-<conversation id>` | Show the tip once | The browser's user | - | Until cleared | Stays in the browser |
 
+### 1.8a Payments, deposits and claims (C4; built, switched off)
+
+Nothing here is collected while `payments_enabled` is off (now) and the payment keys are blank: the payment functions answer "Payments aren't available yet." When it is on, a payment processor (Stripe, not named on the website) handles the money. **Dzirent never receives or stores card numbers, bank details or tax details**: people type them into the processor's own forms (its payment sheet, its onboarding pages).
+
+| Data item | Comes from | Stored in | Purpose | Who can see | Required | Kept for | On account deletion |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Payment profile reference | The processor, the first time a renter pays | `stripe_customers.stripe_customer_id` | Charge the same saved card for the deposit hold or a claim | The owner sees that it exists (not the id); Server | To pay | Until deleted | Deleted (cascade); the processor keeps its customer record under its own terms |
+| Payout account reference and status | The processor, when a lender sets up payouts | `payout_accounts` (account id, charges / payouts enabled, details submitted) | Pay lenders; refuse payments to a lender who can't receive them | Owner; admins (Payments page, problems only) | To be paid | Until deleted | Deleted (cascade); the processor keeps the account (identity, bank and tax details) under its own terms |
+| Payment amounts and states | The rental functions and the processor's webhooks | `rentals` (`payment_intent_id`, `payment_status`, `fee_amount`, `tax_amount`, `refund_amount`, `deposit_amount`, `deposit_intent_id`, `deposit_status`, `deposit_capture_before`, `deposit_captured_amount`, `claim_window_ends_at`) | The rental's money: paid, refunded, held, released, captured | Both people; admins | With payments on | With the rental | Deleted with the rental (both people); see gap 33 |
+| The card a rental was paid with | The processor's payment event | `app_private.rental_payment_methods` (a payment method id only, never card data) | Place the deposit hold off-session | Server only (not even the other person) | With payments on | With the rental | Deleted with the rental |
+| Damage claims | The lender (`file_claim`) | `rental_claims`: amount, reason (up to 500 characters, not filtered, private), the return photos chosen as evidence, the renter's answer and note, Dzirent's decision and reason | Settle damage against the deposit | Both people; admins | Optional | With the rental | Deleted with the rental |
+| Money steps | The server | `app_private.payment_operations`: kind (refund, release, capture, renew, cancel), amount, the processor's id, error text (no card data), the admin who asked and the reason | Retries, the admin Payments page, an audit trail | Admins | Automatic | Indefinite (no cleanup job yet); the rental link becomes null when the rental is deleted | Kept without the rental link |
+| Payment events | The processor's webhooks | `app_private.payment_events`: event id, type, a SHA-256 of the payload (**not** the payload), times, result | Process each event once | Nobody (closed) | Automatic | Indefinite (no cleanup job yet) | Not tied to an account |
+| Card disputes | The processor's webhooks | `app_private.card_disputes`: dispute id, rental, amount, reason, status, dates | Admin follow-up | Admins | Automatic | Indefinite; the rental link becomes null | Kept without the rental link |
+| What the processor receives | The payment functions | The processor: the rental amount and fee, the lender's account, the renter's payment profile, Dzirent's account id of the person (as metadata on their customer or account) and the rental id (on each payment) | Payments, holds, refunds, payouts | The processor | With payments on | Its own policy (unconfirmed until contracted) | Not deleted by Dzirent |
+
 ### 1.9 Safety: blocks and reports
 
 | Data item | Comes from | Stored in | Purpose | Who can see | Required | Kept for | On account deletion |
@@ -253,8 +269,11 @@ Live schema on 2026-11-06 (`information_schema.columns`): 26 tables in `public`,
 | `listings`, P3B columns | `updated_at`, `published_at` (server-written; used by the abandoned-drafts job) | 1.5 |
 | `app_private.job_runs` (P3B) | `id`, `job`, `mode`, `counts`, `error`, `started_at`, `finished_at` (no personal data; counts only) | 8, gap 14 |
 | `rental_outcomes` | `conversation_id`, `user_id`, `happened`, `answered_at` | 1.8 |
+| `stripe_customers` (C4) | `user_id`, `stripe_customer_id`, `created_at` | 1.8a |
+| `payout_accounts` (C4) | `user_id`, `stripe_account_id`, `charges_enabled`, `payouts_enabled`, `details_submitted`, `created_at`, `updated_at` | 1.8a |
+| `rental_claims` (C4) | `id`, `rental_id`, `lender_id`, `renter_id`, `amount`, `reason`, `evidence_paths`, `status`, `renter_note`, `decided_by`, `decision`, `decision_amount`, `created_at`, `responded_at`, `decided_at`, `updated_at` | 1.8a |
 | `rental_events` (C3) | `id`, `rental_id`, `from_status`, `to_status`, `actor_id`, `actor_role`, `note`, `created_at` | 1.8 |
-| `rentals` | `id`, `conversation_id`, `listing_id`, `renter_id`, `lender_id`, `status`, `start_date`, `end_date`, `updated_by`, `created_at`, `updated_at`; C3: `price_per_day`, `days`, `total`, `currency`, `expires_at`, `responded_at`, `picked_up_at`, `returned_at`, `completed_at`, `cancelled_at` | 1.8 |
+| `rentals` | `id`, `conversation_id`, `listing_id`, `renter_id`, `lender_id`, `status`, `start_date`, `end_date`, `updated_by`, `created_at`, `updated_at`; C3: `price_per_day`, `days`, `total`, `currency`, `expires_at`, `responded_at`, `picked_up_at`, `returned_at`, `completed_at`, `cancelled_at`; C4: `deposit_amount`, `payment_intent_id`, `payment_status`, `fee_amount`, `tax_amount`, `refund_amount`, `deposit_intent_id`, `deposit_status`, `deposit_capture_before`, `deposit_captured_amount`, `deposit_warned_at`, `claim_window_ends_at` | 1.8, 1.8a |
 | `reports` | `id`, `reporter_id`, `target_type`, `target_id`, `reason`, `created_at`, `details`, `target_user_id`, `status`, `outcome`, `outcome_note`, `closed_at`, `closed_by` (P2B) | 1.9 |
 | `saved_listings` | `user_id`, `listing_id`, `created_at` | 1.8 |
 | `saved_studios` | `user_id`, `lender_id`, `created_at` | 1.8 |
@@ -287,7 +306,7 @@ Privileges checked live: `authenticated` can UPDATE `profiles.adult_confirmed`, 
 | Supabase built-in email | Email addresses for sign-up and password reset emails (no custom SMTP is set) | Auth emails | Supabase |
 | Google (Android backup) | App data if the user has backup on (`allowBackup="true"`) | Phone backup | The user's Google account |
 | Planned: Didit (P6A) | Government ID, face photo or selfie, date of birth, verification result | One-time ID verification | **Unconfirmed** until contracted |
-| Planned: Stripe (P6B) | Payment cards, payouts, lender identity and tax details (Stripe Connect), rental amounts | Deposits and payments | **Unconfirmed** until set up |
+| Stripe (built in C4, switched off; keys not set) | Payment cards and bank details typed into its own forms; lender identity, bank and tax details (Connect Express onboarding); rental amounts, fees, deposit holds, refunds; Dzirent's account id of the person and the rental id as metadata (1.8a) | Payments, deposit holds, refunds, lender payouts | Stripe; region and terms **unconfirmed** until the account is set up |
 | Planned: email service (P6C) | Email addresses, email content (receipts, reminders) | Transactional email | **Unconfirmed** |
 
 ## 3. Tracking and ads
@@ -450,7 +469,7 @@ Laws named here are the compliance plan's list; how each applies is for the atto
 | FTC fair dealing | Plain product rules in the README and apps; no payments, no hidden fees | No terms; no published listing and moderation rules; automatic pause reasons are shown, but no appeal path | P1A, P2B |
 | ADA (website and apps) | Not audited | No WCAG 2.1 AA check | P4A, P4B |
 | CAN-SPAM and TCPA | Only Supabase Auth emails (sign-up, password reset); no marketing email; no SMS | Auth emails come from Supabase's built-in sender; no physical address or unsubscribe for future non-transactional email; email confirmation is off, so emails can go to addresses nobody verified | P6C (email service and templates), P8C (email confirmation on) |
-| Payments | None (product rule: users arrange payment themselves); `payments_enabled` off | Everything (Stripe Connect, deposits, tax, refunds, disclosures) | P6B, P6C |
+| Payments | Backend built in C4 and switched off (`payments_enabled` off, keys blank): Stripe Connect Express, destination charges with a fee setting (0%), deposit holds, claims, refunds, a sales tax hook ($0). Card and bank details never reach Dzirent (1.8a). Privacy page text added | Terms text for fees, refunds, deposits, claims and charges to a saved card (consent to off-session charges); sales tax (tax adviser); store payment disclosures; the screens (C5); payment record retention (gap 33) | C5, BO and attorney |
 | ID verification | None; `verification_required` off | Everything (Didit, consent, retention of ID data) | P6A |
 
 ## 8. Gaps found
@@ -541,6 +560,8 @@ Each gap has a suggested fix and the phase from the handoff plan.
 29. **Not audited for accessibility.** Phase: P4A, P4B.
 30. **Google Play needs a public account deletion URL.** Deletion exists inside the website's Settings only. Phase: P1A (delete-account page).
 31. **Some providers could not be checked this session.** Cloud Logging retention and the billing kill switch (`gcloud` needs an interactive sign-in), the Vercel Web Analytics setting, Supabase backup retention, and the leaked-password setting through the API. Fix: re-check and record in the account inventory. Phase: P7B (P5B for log retention).
+33. **Payment records are deleted with the rental (C4).** A rental, its payment columns and its claim go when either account is deleted. Stripe keeps its records; `payment_operations`, `payment_events` and `card_disputes` stay without the rental link and have no cleanup job. Fix: the attorney decides what must be kept for accounting and for how long; then a retention job, and possibly an anonymized payment record. Phase: before payments go live.
+34. **Charges to a saved card need consent in the terms (C4).** The renter's card is saved at payment so the deposit hold and, after a hold ends, a decided claim can be charged without them present (`setup_future_usage=off_session`). Fix: the terms (and the pay screen in C5) must say so. Phase: C5, attorney.
 32. **Sample listings are owned by test users in what becomes production.** The handoff plan already lists their removal. Phase: P3B.
    - **Ready, not run (P3B, 2026-11-07).** `supabase/seed/remove_sample_data.mjs` deletes the 12 sample listings and their photos through `delete-listing`, signed in as their owners. Run it only when the owner says so (contract.md "Sample data"). The 12 listings are still there.
 </content>

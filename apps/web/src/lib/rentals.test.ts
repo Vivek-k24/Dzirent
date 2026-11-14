@@ -8,6 +8,7 @@ import {
   rentalDatesProblem,
   rentalEventLabel,
   rentalGroup,
+  rentalStatusLabel,
   groupTitles,
   requestTotal,
   rentalDays,
@@ -63,6 +64,19 @@ test("request dates follow the database", () => {
   assert.equal(rentalDatesProblem(r("2026-12-19", "2026-12-22"), windows, booked, today), "DZ-E4008");
   assert.equal(rentalDatesProblem(r("2026-11-12", "2026-11-14"), windows, booked, today), "DZ-E4006");
   assert.equal(rentalDatesProblem(r("2026-11-14", "2026-11-15"), [], booked, today), "DZ-E4008");
+});
+
+test("C4: the payment states show a neutral label and offer no payment step", () => {
+  const labels = ["awaiting_payment", "paid", "claimed", "disputed"].map((s) => rentalStatusLabel(s, false));
+  assert.deepEqual(labels, ["Accepted: waiting for payment", "Paid: arrange the pickup", "Claim opened", "In dispute"]);
+  for (const status of ["awaiting_payment", "paid", "claimed", "disputed"]) {
+    for (const lender of [true, false]) {
+      const actions = rentalActions(status, lender);
+      assert.ok(actions.every((a) => !/pay|claim|deposit|refund/i.test(a)), `${status}: no payment buttons`);
+    }
+  }
+  assert.deepEqual(rentalActions("claimed", true), []);
+  assert.deepEqual(rentalActions("disputed", false), []);
 });
 
 test("timeline wording", () => {

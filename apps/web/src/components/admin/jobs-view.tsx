@@ -5,7 +5,7 @@ import { retryJobAction } from "@/lib/admin-actions";
 
 /** C1: one background job kind's counts (admin_jobs_status). */
 export type JobKindStatus = {
-  kind: "send_push" | "scan_listing";
+  kind: "send_push" | "scan_listing" | "stripe_deposit" | "stripe_refund";
   pending: number;
   running: number;
   done_day: number;
@@ -24,7 +24,7 @@ export type JobsStatus = {
 /** A dead job (admin_list_dead_jobs): what it was for, never the push text. */
 export type DeadJob = {
   id: number;
-  kind: "send_push" | "scan_listing";
+  kind: "send_push" | "scan_listing" | "stripe_deposit" | "stripe_refund";
   attempts: number;
   last_error: string | null;
   created_at: string;
@@ -32,15 +32,19 @@ export type DeadJob = {
   push_kind: string | null;
   conversation_id: string | null;
   scan_id: string | null;
+  operation_id?: string | null;
 };
 
 export const JOB_KIND_NAMES: Record<string, string> = {
   send_push: "Push notifications",
   scan_listing: "Photo checks",
+  stripe_deposit: "Deposit holds",
+  stripe_refund: "Refunds",
 };
 
 function target(job: DeadJob) {
   if (job.kind === "send_push") return `${job.push_kind ?? "push"} · chat ${job.conversation_id?.slice(0, 8) ?? "?"}`;
+  if (job.kind === "stripe_deposit" || job.kind === "stripe_refund") return `payment step ${job.operation_id?.slice(0, 8) ?? "?"}`;
   return `check ${job.scan_id?.slice(0, 8) ?? "?"}`;
 }
 
@@ -72,7 +76,7 @@ export function JobsView({ status, initialDead }: { status: JobsStatus | null; i
         <div>
           <h1>Background jobs</h1>
           <p className="muted">
-            Push notifications and photo checks go out through a queue. A failed attempt is tried again after{" "}
+            Push notifications, photo checks and payment steps go out through a queue. A failed attempt is tried again after{" "}
             {(status?.schedule_minutes ?? [1, 5, 30, 120]).join(", ")} minutes; after{" "}
             {status?.max_attempts ?? 5} attempts the job is dead and waits here for a retry.
           </p>
