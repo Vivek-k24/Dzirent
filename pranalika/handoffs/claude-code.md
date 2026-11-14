@@ -2,6 +2,105 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## C4 - 2026-11-13 - payments backend
+
+**Before starting:** clean tree, `Preview` up to date at `4919df2`. The live project had 0 rentals and 18 settings, all within the new ranges.
+
+**Done:**
+- **Settings (Part 6)** (`supabase/migrations/20261113200000_c4_settings.sql`):
+  - `app_private.settings` now has `label`, `area`, `value_type`, `unit`, `min_value`, `max_value`, `choices`, `decided_by` (owner / business owner / attorney) and `affects_terms`; `note` is the plain description. A trigger refuses a wrong type (`DZ-E5072`) or an out-of-range value (`DZ-E5070`) for every writer, migrations included.
+  - 10 new settings (28 in all): the payment rules (`platform_fee_percent` 0, `claim_window_hours` 48, `cancellation_refund_cutoff_hours` 48, `late_cancellation_refund_percent` 0, `sales_tax_enabled` off, `deposit_hold_warning_hours` 24), `rental_autocancel_days` 2, `rental_reminder_hour` 9, `rental_timezone` America/Chicago, `data_export_interval_hours` 24.
+  - Moved out of code: Austin time (`rental_today`), the 9 AM cron (now scheduled from the hour and time zone, rescheduled after each run so daylight saving is right, and on every change), the "48 hours" expiry note, the once-a-day export window, and the hardcoded fallbacks (48, 3, 365). Typed readers `setting_int/num/bool/text` raise `DZ-E9020` when a setting is missing.
+  - `admin_list_settings()` and `admin_set_setting(key, value, reason)` (two-step, a reason, logged with old and new value).
+- **Payments and the C3 follow-ups** (`supabase/migrations/20261113210000_c4_payments.sql`):
+  - Data: `listings.deposit_amount`; `stripe_customers` (owner sees only that it exists); `payout_accounts` (owner reads); rental payment columns (`payment_intent_id`, `payment_status`, `fee_amount`, `tax_amount`, `refund_amount`, `deposit_amount` snapshot, `deposit_intent_id`, `deposit_status`, `deposit_capture_before`, `deposit_captured_amount`, `claim_window_ends_at`); `rental_claims`; closed `app_private.payment_events` (event id unique, payload hash only), `payment_operations` (each money step, key `dz-op-<id>`), `card_disputes`, `rental_payment_methods`. No card or bank data anywhere.
+  - State rules (only with `payments_enabled` on): accept -> `awaiting_payment`; succeeded webhook -> `paid`; pickup needs the hold when there is a deposit (`DZ-E4033`); return with a hold -> `returned` and the claim window; no claim by its end -> released, completed; accepted claim -> captured; disputed -> admin decides. Without a deposit the rental completes at return, as before.
+  - Follow-ups: automatic cancel 2 days after the start (with the refund rule), no-window listings requestable, `rental_cancelled` / `rental_expired` pushes (plus `claim_filed`, `claim_decided`, `deposit_hold_ending`), `admin_end_rental`.
+  - Claims: `file_claim`, `respond_claim`, `admin_decide_claim`; admin `admin_refund_rental`, `admin_payments_overview`, `admin_record_integrations_check`.
+  - Cancellation rule: full refund until 48 hours before the start (rental time zone), then 0% of the price; a lender cancellation refunds in full; a payment that arrives after the rental ended is refunded in full.
+  - The outbox gained `stripe_deposit` and `stripe_refund` (Vault `stripe_deposit_url`, `stripe_refund_url`, `payments_job_secret`); a dead payment job marks its step failed. `dzirent-deposit-holds` nightly at 09:45 UTC renews holds that end within a day while the piece is out.
+  - `export_my_data` adds claims, the payment states and the payout account status.
+- **Edge Functions:** `stripe-onboard`, `stripe-account-status`, `stripe-pay`, `stripe-deposit`, `stripe-refund`, `stripe-webhook`, `admin-integrations`; shared `_shared/stripe.ts` (fetch, form encoding, idempotency keys, signature check on the raw body, API version pinned `2024-06-20`) and `_shared/payments.ts`. Every one answers 503 `DZ-E4030` "Payments aren't available yet." while `payments_enabled` is off or any of the three keys is blank, before anything else. `send-push` accepts the 5 new kinds.
+- **Error codes:** `DZ-E4030`-`E4048`, `DZ-E5070`-`E5086`, `DZ-E9020`; 177 codes, regenerated.
+- **Website (admin and text only):** `/admin/payments` (claims with evidence photos and Decide, card disputes, failed payments, failed payment steps, payout problems, paid rentals with Refund; each with a reason and a confirmation), `/admin/settings` (grouped, Edit, "From ... to ..." confirmation, a legal-pages warning on fee, refunds, claim window and the retention periods the privacy page names), `/admin/integrations` ("configured" / "not configured" only), "End rental..." in Users > Show rentals, the payments flag's warning, the Background jobs page's new kinds. Privacy page: a payment processor handles payments and payouts; Dzirent never stores card or bank details (no company names).
+- **Apps:** no screen change was needed: the 4 payment states already had neutral labels and no payment actions (C3). New tests pin that on both clients. The generated error catalog changed, so the APK was rebuilt.
+- **Tests and CI:** pgTAP `11_payments` (113 tests); integration `c4_payments_off.mjs` (keys blank) and `c4_payments.mjs` (stripe-mock, signed events); the stub server passes `/stripe/...` to stripe-mock and records each call, replaying a repeated idempotency key like Stripe; `run.mjs` starts stripe-mock (pinned by digest); `run-all.mjs` serves the functions itself with a known env file per script; CI runs stripe-mock as a service container joined to the local network.
+- **Docs:** `contract.md` (section 6 follow-ups and pushes, new section 7 Payments with the keys runbook, section 8 Settings and integrations), `decisions.md` ("Rentals follow-ups", "Payments", "Settings", all 2026-11-13), `architecture.md` (R12, functions, configuration names, G8 and G30-G33 closed or narrowed, new G35-G38, Appendix A status), `compliance.md` (1.8a payments inventory, Stripe row, schema map, gaps 33-34), `legal-placeholders.md` (section 10, payment settings), `testing.md`, `security-log.md`, `error-codes.md` (generated).
+
+**What I ran:**
+1. **Local backend.** Windows had reserved ports 54243-54342 (WinNAT), so I started the stack on 55xxx with the CLI's `SUPABASE_*_PORT` overrides in the same shell (no repo change; noted in `testing.md`).
+2. **pgTAP:** all 11 files, **294 tests, PASS** on a fresh stack and again on the used database. The new `11_payments` has 113 tests; the 181 earlier ones were unchanged.
+3. **Integration** (`node supabase/tests/run-all.mjs`, Node 22): **19 of 19 passed** on a fresh stack (16 Stripe calls through stripe-mock, all accepted). I then added the deposit-renewal checks (3 pgTAP, and a step in `c4_payments.mjs`) and re-ran pgTAP (294, PASS) and the two C4 scripts (2 of 2 passed); CI ran everything again (item 7).
+4. **Fixes found locally before CI:**
+   - stripe-mock 0.206 doesn't accept `payment_method_types` on PaymentIntents. I switched to `automatic_payment_methods` with `allow_redirects: never`, which also lets the card be reused off-session.
+   - The lender's hold carried no `rental_id` metadata (`payment_deposit_prepare` didn't return it).
+   - `run-all.mjs`: on Windows, killing the CLI's shell left `functions serve` running with the previous env file. `c4_payments_off` caught that: keys blank, but onboarding answered 200. The runner now always serves the functions itself and removes the container at the end. Its readiness check no longer counts the gateway's own 503 ("name resolution failed").
+   - The stub server answers `Connection: close`; a reused keep-alive socket gave `UND_ERR_SOCKET` after long waits.
+   - Test fixes: overlapping fixture dates, ties on `created_at` inside one transaction, and a closed-table read under the signed-in role.
+5. **Android** (backend stopped; JDK 21, env loaded silently): `:androidApp:assembleDebug :shared:testDebugUnitTest`, **BUILD SUCCESSFUL**. **58 tests, 0 failures, 1 skipped**, including `RentalRulesTest` (8, 1 new).
+6. **Website** (Node 22): `npm test` **16 of 16** (3 new in `admin-settings.test.ts`, 1 in `rentals.test.ts`). `npm run lint` was clean after one alt-text fix; `tsc --noEmit` clean; `npm run build` passed.
+7. **CI:** [run 43536660928](https://github.com/Vivek-k24/Dzirent/actions/runs/43536660928) on `cd78cdc`, **all 5 jobs green**. stripe-mock ran as a service container joined to the local network. pgTAP 294, integration 19 of 19 (18 Stripe calls), website 16.
+8. **Live**, after CI:
+   - `supabase db push --linked` (dry run first): both C4 migrations applied.
+   - `supabase functions deploy` for `send-push`, `stripe-onboard`, `stripe-account-status`, `stripe-pay`, `stripe-deposit`, `stripe-refund`, `stripe-webhook` and `admin-integrations` (`--no-verify-jwt --use-api`): all 8 deployed.
+   - `PAYMENTS_JOB_SECRET` set from Vault `payments_job_secret` through a temporary file (deleted, never printed).
+9. **Live read-only checks** (`supabase db query --linked`, `functions list`, `secrets list`):
+   - 28 settings, all with metadata (payments 6, rentals 5, rate limits 7, retention 10), with the defaults above. `payments_enabled` is **false**.
+   - Cron: `dzirent-deposit-holds 45 9 * * *`, `dzirent-rental-expiry */10 * * * *`, `dzirent-rental-reminders 0 15 * * *` (9 AM Chicago in winter, computed).
+   - All 7 new tables exist, with **0 payment rows** (customers, payout accounts, claims, events, operations, disputes, card references, rentals with a Stripe id) and 0 listings with a deposit.
+   - The 3 Vault names are present. There is one read policy each on the new public tables and 0 write grants.
+   - The 14 new functions exist, and the outbox accepts `stripe_deposit` and `stripe_refund`.
+   - 14 Edge Functions are active. The only payment secret set is `PAYMENTS_JOB_SECRET`: no `STRIPE_*`.
+   - One POST to the live `stripe-webhook` answered **503 `DZ-E4030` "Payments aren't available yet."**, and nothing was written.
+10. **Security Advisor:** only expected findings, logged in `security-log.md`.
+11. I used no emulator, device or browser, created no test data on live, and called the real Stripe API never.
+
+**Test counts:**
+
+| Suite | Count |
+| --- | --- |
+| pgTAP | 294 (11 files; `11_payments` 113) |
+| Integration | 19 runs (18 scripts), 18 Stripe calls through stripe-mock |
+| Shared Kotlin | 58 (1 skipped) |
+| Website | 16 |
+| Contracts | 177 codes, fresh |
+
+**APK** (built 2026-11-13 18:45 local; the app changed only through the generated error catalog):
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, replacing the C3 copy. Both are 23,463,660 bytes with the same SHA-256.
+
+**Phone test:** nothing changes for people while payments are off. A cancel now sends "… cancelled the rental" to the other person, and an unanswered request sends "Rental request expired" to both. The website admin has new pages: Payments (empty), Settings (try a change and see the confirmation and the audit log) and Integrations (everything "not configured" except what the server has).
+
+**Placeholders for the business owner and the attorney** (`legal-placeholders.md` section 10; the Terms must state them before payments go live):
+- Fee 0%; claim window 48 hours; full refund until 48 hours before the start, then 0%; a lender cancel is always a full refund.
+- Automatic cancel 2 days after the start, counted as a late renter cancellation (the BO may want a different rule when the lender is at fault; an admin can refund by hand).
+- Sales tax off ($0 hook).
+- Hold renewal 24 hours before it ends.
+- Consent wording for charges to a saved card (deposit hold, a claim after the hold ends).
+- The processor's name for the Terms. The privacy page says "a payment processor".
+- Payment record retention after account deletion (`compliance.md` gap 33).
+- `PRIVACY_VERSION` bump (G34).
+
+**iPhone, for the Mac session:** only common code changed: the generated `ErrorCodes.kt` and one test in `RentalRulesTest.kt`. No iOS code changed.
+
+**Open issues:**
+- **Deviation: a fourth, optional key.** Stripe signs Connect events (`account.updated` for lenders' accounts) with a separate endpoint secret, so `stripe-webhook` also accepts `STRIPE_CONNECT_WEBHOOK_SECRET` when it is set. Without it, `stripe-account-status` refreshes a lender's account on return from onboarding. The Integrations page needs only the three keys (plus `PAYMENTS_JOB_SECRET`).
+- **Deviation: renewal only while picked up.** The nightly job renews a hold only while the rental is `picked_up`, as asked. If a hold ends after the return, during the claim window or a dispute, a capture falls back to an off-session charge on the saved card for the decided amount (never above the deposit).
+- **Choices made for the spec:**
+  - A rental without a deposit completes at return, even with payments on (no claim window: claims draw only on a deposit).
+  - Admins can decide an open claim too, not only a disputed one (for a renter who never answers); there is no answer deadline yet.
+  - An automatic cancel follows the late-cancellation rule.
+- **Not tested against real Stripe** (G38). stripe-mock keeps no state, so every Stripe status change in the tests came from signed events. 3-D Secure, declines and real Connect onboarding are unverified until the test-mode rehearsal in the runbook.
+- **No payment deadline** (G37): an `awaiting_payment` rental holds its days until the automatic cancel.
+- **The apps' text "answer within 48 hours"** is written in the clients and doesn't follow `rental_request_hours`.
+- **Left in code on purpose:** the outbox retry schedule, the admin two-step freshness (24 hours), the photo-check timeout, cron cadences, Stripe's 5-minute signature tolerance and the 7-day hold fallback. The `get_studio` reply-time window (90 days) and the `record_age_check` hour are not business rules either.
+- **Not regenerated:** `code-reference.md` (no generator in the repo).
+- **Edge Functions not redeployed:** the others use `_shared/error-codes.ts`, but their codes are unchanged, so they still run the older catalog copy until their next deploy.
+- **Request from S1** (email in sign-in errors in `supabase/` scripts): still open.
+
+**Requests:**
+- **No-window listings in the date pickers.** `rentalDatesProblem` in `mobile/shared/.../util/Rentals.kt` and `apps/web/src/lib/rentals.ts` still treats "no availability windows" as closed (`windows.isEmpty() ||` / `!windows.length ||`). The server now accepts any future dates for such a listing, so those checks should read "no windows = every day open". That's one line each, plus their tests. It was outside this step's client scope ("only what new rental states need to display safely").
+
 ## C3 - 2026-11-13 - rental lifecycle
 
 **Before starting:** clean tree, `Preview` up to date at `442ac3e`. The live project had 0 rental rows, so mapping old rows touched nothing there.
