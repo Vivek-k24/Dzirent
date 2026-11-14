@@ -115,9 +115,21 @@ Deno.serve(async (req) => {
     }
 
     // 4. Delete the auth user. Database foreign keys CASCADE all user data.
+    const email = authData.user.email ?? null;
     const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
     if (deleteError) {
       return refuse("DZ-E7015");
+    }
+
+    // 5. C5: the "your account was deleted" email to the address the account had, through the
+    // outbox (send-email). The database keeps the address only until the email is sent or skipped.
+    // A failure here never undoes or fails the deletion.
+    if (email) {
+      try {
+        await admin.rpc("queue_account_deleted_email", { p_email: email });
+      } catch {
+        // The account is gone either way.
+      }
     }
 
     return json(200, { ok: true });

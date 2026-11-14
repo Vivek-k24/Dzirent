@@ -434,4 +434,18 @@ a.icon-button {
 .rental-card label.button{cursor:pointer}
 .rental-card label.button.disabled{opacity:.5;pointer-events:none}
 .toggle-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;cursor:pointer}
-.toggle-row input{margin-top:3px}
+.toggle-row input{margin-top:3px}/* C5: payment lines, the claim / answer / receipt panels, the pay page, payouts. */
+.rental-card .rental-payment-line{font-size:14px}
+.rental-panel{border-top:1px solid var(--line);padding-top:10px;margin-top:6px;display:grid;gap:8px}
+.rental-panel h3,.pay-page h2{font-size:15px;margin:0}
+.rental-panel fieldset{border:0;padding:0;margin:0}
+.claim-photo{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.claim-photo img{border-radius:4px;object-fit:cover}
+.receipt{width:100%;border-collapse:collapse;font-size:14px}
+.receipt th{text-align:left;font-weight:400;padding:6px 0;border-top:1px solid var(--line)}
+.receipt td{text-align:right;padding:6px 0;border-top:1px solid var(--line)}
+.receipt tr.total th,.receipt tr.total td{font-weight:700}
+.pay-page{max-width:560px}
+.pay-form{display:grid;gap:12px;margin-top:12px}
+.payment-element{min-height:120px}
+.button.disabled{opacity:.5;pointer-events:none}

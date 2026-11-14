@@ -111,6 +111,9 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
     var priceNote by mutableStateOf(original?.priceNote.orEmpty())
     var retailValueText by mutableStateOf(original?.retailValue?.let { formatNumber(it) }.orEmpty())
     var depositNote by mutableStateOf(original?.depositNote.orEmpty())
+    /** C5: the deposit held at pickup, in dollars (empty = none). The field shows only while payments are on. */
+    var depositAmountText by mutableStateOf(priceInputText(original?.depositAmount))
+    var paymentsEnabled by mutableStateOf(false)
     var ranges by mutableStateOf(
         if (original == null || (isDraft && original.availability.isEmpty())) listOf(defaultAvailability(today))
         else original.availability.mapNotNull { parseDateRange(it.startDate, it.endDate) }
@@ -331,6 +334,7 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
         priceNote = priceNote,
         retailValueText = retailValueText,
         depositNote = depositNote,
+        depositAmountText = depositAmountText,
         ranges = ranges.map { DraftRange(it.start.toString(), it.end.toString()) },
         listingDeclarationChecked = listingDeclarationChecked,
         aiReviewNeeded = aiReviewNeeded
@@ -376,6 +380,7 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
         priceNote = draft.priceNote
         retailValueText = draft.retailValueText
         depositNote = draft.depositNote
+        depositAmountText = draft.depositAmountText
         draft.dateRanges?.let { ranges = it }
         listingDeclarationChecked = draft.listingDeclarationChecked
         aiReviewNeeded = aiReviewNeeded || draft.aiReviewNeeded

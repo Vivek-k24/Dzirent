@@ -218,23 +218,28 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (C1, C2, S1, S1b, C3, C4) | |
+| Done by: Claude Code (C1, C2, S1, S1b, C3, C4, C5) | |
 | C1 Error and warning codes (one catalog, generated Kotlin/TypeScript, every database refusal and Edge Function error coded), price per day, background job outbox with retries and dead-letter list, client read retries, stray root doc removed | Done (Claude Code) |
 | C2 Test foundation: local backend in Docker (migrations from scratch + local seed, stubs for push and vision, functions served locally), pgTAP suite (9 files), integration scripts local by default with one runner, vision model tests marked, CI on every pull request (`.github/workflows/ci.yml`), `pranalika/testing.md` | Done (Claude Code) |
 | S1 Security updates: vision service on Pillow 13.0.0, torch 2.14.1 (CPU), transformers 5.20.2, FastAPI 0.162.0 / Starlette 1.7.0, open_clip 3.3.0 (no verdict changed on 92 photos and 12 listings in a local Linux image); website minimatch 11.0.3 through an npm override; 5 code scanning alerts dismissed ("used in tests"); `security-log.md` "GitHub security alerts (S1)" | Done (Claude Code); deployed in S1b |
 | Owner: `gcloud auth login` on this PC, then an agent redeploys `vision` with the S1 packages and runs the eval | Done: owner signed in; S1b deployed `vision-00006-sxv` (`s1.1`), eval unchanged on 92 photos and 12 listings |
 | S1b: Pygments 2.21.0 and the CI vision job's separate pin dropped; `.venv/` kept out of Cloud Build and Docker uploads; `contracts/generate.mjs` escapes backslashes and control characters for Kotlin and Markdown (CodeQL #9 fixed on PR #103, generated files unchanged) | Done (Claude Code) |
 | Owner: merge `Preview` into `main` (PR #103): the 82 Dependabot alerts are on `main` and close with the merge | To do |
-| Request from S1: seed and test scripts stop putting the email in sign-in errors (`supabase/`) | To do |
+| Request from S1: seed and test scripts stop putting the email in sign-in errors (`supabase/`) | Done in C5 (Claude Code) |
 | C3 Rental lifecycle: request, accept or decline (48-hour expiry), pickup and return with private condition photos (at least 2 by the lender), completed; writes only through database functions with `rental_events`; price snapshot; no double booking (exclusion constraint, back-to-back allowed); rental pushes and daily reminders with a Rental reminders switch; rental reports; condition photo retention (count-only cleanup); payment states present but unused (`payments_enabled` off). Apps and website: Request to rent, rental card, My rentals, Settings > Notifications; admin user lookup and report detail show the timeline and photos. Live: migration applied, 4 Edge Functions redeployed | Done (Claude Code) |
 | Owner: phone test of C3 (see the C3 handoff) | To do |
 | Mac: build-check the C3 shared code on iPhone (`RentalViews.kt`, `Rentals.kt`, `rememberPhotoSources` for condition photos), see the C3 handoff | To do |
 | Owner and attorney: condition photo retention (placeholder 365 days after the rental ends); whether the privacy text change needs a version bump (gap G34) | To do |
 | C4 Payments backend (Stripe Connect, switched off, keys blank): Express onboarding, destination charges with a fee setting, deposit holds (place, release, capture, renew), claims with admin decisions, refunds by the cancellation rule, a signed and idempotent webhook, money steps through the outbox with idempotency keys; tested against stripe-mock (pinned) in CI. C3 follow-ups: automatic cancel 2 days after the start, no-window listings always available, `rental_cancelled` / `rental_expired` pushes, `admin_end_rental`. Settings: every business number typed, ranged and logged; admin Payments, Settings and Integrations pages. Live: 2 migrations applied, 8 Edge Functions deployed, `payments_enabled` off | Done (Claude Code) |
 | Business owner and attorney: confirm the payment settings in `legal-placeholders.md` section 10 (fee, claim window, refund cutoff and late refund, sales tax, charges to a saved card) and write them into the Terms before payments go live | To do |
-| Request from C4: the apps' and website's date pickers treat "no availability windows" as always open (one line each in `Rentals.kt` and `rentals.ts`), see the C4 handoff | To do |
+| Request from C4: the apps' and website's date pickers treat "no availability windows" as always open (one line each in `Rentals.kt` and `rentals.ts`), see the C4 handoff | Done in C5 (Claude Code) |
 | Owner: the day real Stripe keys arrive, follow the runbook in `contract.md` section 7 (test mode first) | To do |
-| C5 | To do |
+| C5 Payment screens on Android and the website (hidden while `payments_enabled` is off): My studio payouts (Stripe onboarding in the browser, status on return), the listing deposit amount, the rental card's payment states and actions (Pay through Stripe's own payment sheet / Payment Element on a pay page with its own CSP, the deposit hold at pickup, claims, accept or dispute, receipts), the lender's payout notice; pinned Stripe Android SDK 21.29.2 and `@stripe/stripe-js` 9.17.0. Payment deadline setting (24 h) with the automatic cancel. Transactional emails through the outbox and `send-email` (provider-neutral, key blank: every email skipped), templates, Auth email templates (local only), `Email me about rentals`. C4 follow-ups: no-window date pickers, the request answer time from the server, `tools/gen-code-reference.py` with a freshness check, every Edge Function redeployed, the S1 request. Live: migration applied, 15 Edge Functions deployed, `payments_enabled` off | Done (Claude Code) |
+| Mac: the iPhone payment sheet (Stripe iOS SDK PaymentSheet behind `rememberPaymentSheetLauncher`, `ui/PaymentSheet.ios.kt`) and a build check of the C5 common code, see the C5 handoff | To do |
+| Owner: phone test of C5 with payments off (nothing changes; Settings > Notifications has `Email me about rentals`), see the C5 handoff | To do |
+| Owner and agent: the Stripe test-mode rehearsal (`pranalika/stripe-rehearsal.md`) once test keys exist | To do |
+| Owner: an email provider account and the `dzirent.com` DNS records, then the email runbook (`contract.md` section 9) | To do |
+| Business owner and attorney: confirm `payment_deadline_hours` (24 h), the email record retention (30 days) and the email sender (`legal-placeholders.md` sections 10-11) | To do |
 | C6 | To do |
 | C7 | To do |
 | C8 | To do |

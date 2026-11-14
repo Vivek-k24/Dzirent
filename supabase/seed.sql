@@ -188,7 +188,10 @@ begin
     -- C4: the payment steps go to the locally served functions (which talk to stripe-mock).
     ('stripe_deposit_url', 'http://kong:8000/functions/v1/stripe-deposit'),
     ('stripe_refund_url', 'http://kong:8000/functions/v1/stripe-refund'),
-    ('payments_job_secret', 'local-payments-secret')
+    ('payments_job_secret', 'local-payments-secret'),
+    -- C5: emails go to the locally served send-email (the provider key is blank: skipped).
+    ('send_email_url', 'http://kong:8000/functions/v1/send-email'),
+    ('email_job_secret', 'local-email-secret')
   ) as t(name, value) loop
     select s.id into v_id from vault.secrets s where s.name = v.name;
     if v_id is null then

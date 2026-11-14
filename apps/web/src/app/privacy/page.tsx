@@ -232,6 +232,37 @@ export default function PrivacyPage() {
           </li>
         </ul>
 
+        <h3>Emails About Your Rentals</h3>
+        <ul>
+          <li>
+            <strong>Which emails:</strong> When email is set up, we send short
+            emails to your account&apos;s email address only: a rental request
+            you received, the answer to your request, a payment receipt, the
+            pickup and return reminders, a damage claim filed and its decision,
+            and a confirmation when your account is deleted. Sign-in emails
+            (confirming your address, resetting your password, changing your
+            email) come from our sign-in service.
+          </li>
+          <li>
+            <strong>What they contain:</strong> the other person&apos;s name as
+            Dzirent shows it, the piece&apos;s title, the dates, the amounts
+            (price, total, deposit, claim) and a link to the chat. They never
+            include your messages, a claim&apos;s written reason, body
+            measurements, or any address or location.
+          </li>
+          <li>
+            <strong>Your choice:</strong> Turn rental emails off in Settings
+            &gt; Notifications (&ldquo;Email me about rentals&rdquo;). The
+            account-deleted confirmation is always sent.
+          </li>
+          <li>
+            <strong>What we keep:</strong> for 30 days, which email was sent to
+            which account, when, and whether it was sent or skipped; never its
+            text. For the account-deleted email we hold your address only until
+            that one email is sent.
+          </li>
+        </ul>
+
         <h3>Server Logs</h3>
         <ul>
           <li>
@@ -428,6 +459,11 @@ export default function PrivacyPage() {
           rental amount, your payment profile reference and, for lenders, the
           details they give it to get paid. Dzirent never stores card or bank
           details.
+        </p>
+        <p>
+          When email is set up, an email delivery service sends the rental
+          emails described above. It receives your email address and the
+          email&apos;s text, and delivers it for us.
         </p>
       </section>
 

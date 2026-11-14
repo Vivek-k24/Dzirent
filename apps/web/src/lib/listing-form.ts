@@ -1,5 +1,6 @@
 import { categories, styles } from "./types";
 import { garmentKinds, itemTypes, type Measurement } from "./workflows";
+import { parseDepositAmount } from "./rentals";
 export type ListingForm = {
   title: string;
   category: string;
@@ -11,6 +12,8 @@ export type ListingForm = {
   price_note: string;
   retail_value: string;
   deposit_note: string;
+  /** C5: the deposit held at pickup, in dollars ("" = none). Saved only while payments are on. */
+  deposit_amount?: string;
   listing_styles: string[];
   measurements: Measurement[];
   availability: { start_date: string; end_date: string }[];
@@ -36,6 +39,8 @@ export function validateListing(f: ListingForm) {
     return "Price details can be up to 60 characters.";
   if (f.deposit_note.length > 120)
     return "Deposit note can be up to 120 characters.";
+  if (typeof f.deposit_amount === "string" && parseDepositAmount(f.deposit_amount) === "DZ-E4051")
+    return "Enter the deposit in dollars, up to $99,999.99, or leave it empty. (DZ-E4051)";
   if (
     f.retail_value &&
     (!Number.isFinite(Number(f.retail_value)) || Number(f.retail_value) <= 0)

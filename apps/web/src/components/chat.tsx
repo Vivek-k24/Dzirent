@@ -318,6 +318,7 @@ export function Chat({
             setModal("cancel_rental");
           }}
           onUploaded={refresh}
+          settings={data.settings}
         />
       )}
       {canRequest && (

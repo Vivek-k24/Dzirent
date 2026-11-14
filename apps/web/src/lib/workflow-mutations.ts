@@ -146,6 +146,28 @@ export async function chatMutation(id: string, action: string, body: Body) {
     return { status: must(await client.rpc("mark_returned", { p_rental_id: rentalId, p_note: note })) };
   if (action === "rental_complete")
     return { status: must(await client.rpc("complete_rental", { p_rental_id: rentalId })) };
+  // C5: the lender places the deposit hold at pickup (stripe-deposit "place"); "picked_up" once it holds.
+  if (action === "rental_hold") {
+    const result = await edge<{ status?: string; deposit_status?: string }>("stripe-deposit", { action: "place", rental_id: rentalId }, "DZ-E4035");
+    return { status: result.status || result.deposit_status || "pending" };
+  }
+  // C5: the lender's claim against the deposit; the database checks amount, reason, photos and window.
+  if (action === "rental_claim") {
+    const amount = Number(body.amount);
+    const reason = text(body, "reason");
+    const photos = Array.isArray(body.photos) ? body.photos.filter((p): p is string => typeof p === "string").slice(0, 10) : [];
+    if (!Number.isFinite(amount)) throw codedError({ message: "DZ-E4041: Claim an amount above $0 and up to the deposit." });
+    return {
+      id: must(await client.rpc("file_claim", { p_rental_id: rentalId, p_amount: amount, p_reason: reason, p_photo_paths: photos })),
+    };
+  }
+  if (action === "rental_claim_answer") {
+    const claimId = text(body, "claimId");
+    const answer = text(body, "answer");
+    if (!uuid(claimId)) throw new WorkflowError("Claim not found.", 404, undefined, "DZ-E4044");
+    if (answer !== "accept" && answer !== "dispute") throw codedError({ message: "DZ-E4046: Answer accept or dispute." });
+    return { status: must(await client.rpc("respond_claim", { p_claim_id: claimId, p_answer: answer, p_note: note })) };
+  }
   if (action === "rental_report") {
     const reason = text(body, "reason"),
       details = text(body, "details");
@@ -161,6 +183,52 @@ export async function chatMutation(id: string, action: string, body: Body) {
       }),
     );
     return { ok: true };
+  }
+  throw new WorkflowError("Action not found.", 404);
+}
+
+/**
+ * C5: an Edge Function as the signed-in person; its { code, message } refusal becomes the
+ * catalog's words (DZ-E4030 "Payments aren't available yet." while payments are off).
+ */
+async function edge<T>(name: string, body: Record<string, unknown>, fallback: string): Promise<T> {
+  const { client } = await session();
+  const result = await client.functions.invoke(name, { body });
+  if (result.error) {
+    const context = (result.error as { context?: Response }).context;
+    let refusal: unknown = { message: fallback + ": failed" };
+    if (context) {
+      try {
+        refusal = await context.json();
+      } catch {}
+    }
+    throw codedError(refusal, context?.status && context.status >= 400 ? context.status : 400);
+  }
+  return (result.data ?? {}) as T;
+}
+
+/**
+ * C5: payments from the website. "pay": the client secret for Stripe's Payment Element (the
+ * card is typed into Stripe's own form on /app/pay). "payouts/link": a new Stripe onboarding link
+ * back to My studio. "payouts/status": the payout account as Stripe has it now.
+ */
+export async function paymentMutation(path: string[], body: Body, origin: string) {
+  if (path[0] === "pay") {
+    const rentalId = text(body, "rentalId");
+    if (!uuid(rentalId)) throw new WorkflowError("Rental not found.", 404);
+    const r = await edge<{ client_secret?: string; publishable_key?: string; amount?: number }>("stripe-pay", { rental_id: rentalId }, "DZ-E4036");
+    if (!r.client_secret || !r.publishable_key) throw codedError({ message: "DZ-E4036: no client secret" });
+    return { clientSecret: r.client_secret, publishableKey: r.publishable_key, amount: r.amount ?? null };
+  }
+  if (path[0] === "payouts" && path[1] === "link") {
+    const back = origin + "/app/settings/studio";
+    const r = await edge<{ url?: string }>("stripe-onboard", { return_url: back + "?payouts=return", refresh_url: back + "?payouts=refresh" }, "DZ-E4036");
+    if (!r.url || !r.url.startsWith("https://")) throw codedError({ message: "DZ-E4036: no link" });
+    return { url: r.url };
+  }
+  if (path[0] === "payouts" && path[1] === "status") {
+    const r = await edge<{ account?: unknown }>("stripe-account-status", {}, "DZ-E4036");
+    return { account: r.account ?? null };
   }
   throw new WorkflowError("Action not found.", 404);
 }
@@ -310,7 +378,7 @@ export async function accountMutation(action: string, body: Body) {
     return { ok: true };
   }
   if (action === "notifications") {
-    const flags = ["messages", "show_message_text", "rental_reminders"] as const;
+    const flags = ["messages", "show_message_text", "rental_reminders", "email_rentals"] as const;
     if (flags.some((k) => typeof body[k] !== "boolean"))
       throw new WorkflowError("Choose on or off.");
     must(
@@ -320,6 +388,7 @@ export async function accountMutation(action: string, body: Body) {
           messages: body.messages as boolean,
           show_message_text: body.show_message_text as boolean,
           rental_reminders: body.rental_reminders as boolean,
+          email_rentals: body.email_rentals as boolean,
         },
         { onConflict: "user_id" },
       ),

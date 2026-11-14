@@ -86,7 +86,7 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E3010` | error | saving | 403 |  |  | Cannot save blocked studio |
 | `DZ-E3020` | error | blocking | 403 |  |  | Not your block relationship |
 
-## 4xxx - Rentals, condition photos (C3); payments, deposits, claims (C4)
+## 4xxx - Rentals, condition photos (C3); payments, deposits, claims (C4, C5)
 
 | Code | Kind | Area | Status | Field | Server words | Message |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -129,6 +129,10 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E4046` | error | claims | 400 |  |  | Answer accept or dispute. |
 | `DZ-E4047` | error | claims | 409 |  |  | This rental has no deposit to claim from. |
 | `DZ-E4048` | error | claims | 409 |  |  | A claim was already filed for this rental. |
+| `DZ-E4049` | error | payments | 409 |  |  | Paying in the app isn't available on this phone yet. Pay on dzirent.com. |
+| `DZ-E4050` | error | payments | 402 |  |  | The payment didn't go through. Try again, or use another card. |
+| `DZ-E4051` | error | payments | 400 | `deposit_amount` |  | Enter the deposit in dollars, up to $99,999.99, or leave it empty. |
+| `DZ-W4001` | warning | payments | 200 |  |  | Set up payouts in My studio first: the renter can't pay until your payouts are ready. |
 
 ## 5xxx - Reports, moderation, admin
 
@@ -220,4 +224,4 @@ Reserved: no codes yet.
 | `DZ-E9020` | error | system | 500 |  |  | A setting is missing. Please try again later. |
 | `DZ-E9999` | error | system | 500 |  |  | Something went wrong. Please try again. |
 
-177 codes: 169 errors, 8 warnings.
+181 codes: 172 errors, 9 warnings.

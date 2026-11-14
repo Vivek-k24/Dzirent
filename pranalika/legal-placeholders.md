@@ -151,5 +151,15 @@ The payments backend (built in C4, switched off) reads these from the closed set
 | `deposit_hold_warning_hours` | A card hold lasts about a week; this long before it ends, while the piece is still out, Dzirent places a new hold and tells both people | 24 hours | Owner | Terms (`DEPOSIT_RULES`) | |
 | Charges to a saved card | The renter's card is saved at payment so the deposit hold and a decided claim can be charged without them present | Always | Attorney (consent wording) | Terms, pay screen (C5) | |
 | `PAYMENT_PROVIDER` | The payment processor's name for the Terms (the website's privacy page says "a payment processor" on purpose) | - | Owner + attorney | Terms, Privacy | |
-</content>
-</invoke>
+| `payment_deadline_hours` (C5) | How long after the lender accepts the renter has to pay; an unpaid rental is then cancelled automatically and both people are told | 24 hours (1-72) | Owner | Terms (`CANCELLATION_POLICY`) | |
+
+## 11. Emails (C5)
+
+The transactional emails (built in C5; nothing is sent while the provider key is blank) and the sign-in emails share one look. Before they go live:
+
+| Key | What it is | Who fills | Used on | Value |
+| --- | --- | --- | --- | --- |
+| `EMAIL_SENDER_NAME`, `EMAIL_FROM_ADDRESS` | The sender people see, e.g. "Dzirent" and `rentals@dzirent.com` (the function secret `EMAIL_FROM`); the domain needs the provider's DNS records | Owner | Emails | |
+| `EMAIL_FOOTER_ADDRESS` | A postal address in the footer, if the attorney says transactional emails need one (they carry no marketing) | Owner + attorney | Emails | |
+| `EMAIL_PROVIDER` | The email delivery service (the privacy page says "an email delivery service") | Owner + attorney | Privacy | |
+| `email_log_retention_days` | How long Dzirent keeps the record of each email (which one, to which account, the outcome; never its text) | 30 days (7-365) | Attorney | Privacy | |

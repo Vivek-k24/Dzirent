@@ -53,6 +53,10 @@ verify_jwt = false
 [functions.admin-integrations]
 verify_jwt = false
 
+# C5: called only by the database; the handler checks the shared secret (EMAIL_JOB_SECRET).
+[functions.send-email]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.
@@ -299,6 +303,22 @@ otp_expiry = 3600
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
+
+# C5: Dzirent's sign-in emails (same look as the transactional emails). Used by the local stack
+# only: the live project's Auth settings are never pushed from this file. Switching the live
+# project to a custom email service and these templates is a runbook step (pranalika/contract.md
+# section 9).
+[auth.email.template.confirmation]
+subject = "Confirm your Dzirent email"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Dzirent password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new Dzirent email"
+content_path = "./supabase/templates/email_change.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

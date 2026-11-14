@@ -5,12 +5,14 @@ import { retryJobAction } from "@/lib/admin-actions";
 
 /** C1: one background job kind's counts (admin_jobs_status). */
 export type JobKindStatus = {
-  kind: "send_push" | "scan_listing" | "stripe_deposit" | "stripe_refund";
+  kind: "send_push" | "scan_listing" | "stripe_deposit" | "stripe_refund" | "send_email";
   pending: number;
   running: number;
   done_day: number;
   dead: number;
   retrying: number;
+  /** C5: jobs skipped in 24 h (emails while the provider key is blank). */
+  skipped_day?: number;
 };
 
 export type JobsStatus = {
@@ -24,7 +26,7 @@ export type JobsStatus = {
 /** A dead job (admin_list_dead_jobs): what it was for, never the push text. */
 export type DeadJob = {
   id: number;
-  kind: "send_push" | "scan_listing" | "stripe_deposit" | "stripe_refund";
+  kind: "send_push" | "scan_listing" | "stripe_deposit" | "stripe_refund" | "send_email";
   attempts: number;
   last_error: string | null;
   created_at: string;
@@ -33,6 +35,8 @@ export type DeadJob = {
   conversation_id: string | null;
   scan_id: string | null;
   operation_id?: string | null;
+  /** C5: which email (the template), never its address or text. */
+  email_template?: string | null;
 };
 
 export const JOB_KIND_NAMES: Record<string, string> = {
@@ -40,11 +44,13 @@ export const JOB_KIND_NAMES: Record<string, string> = {
   scan_listing: "Photo checks",
   stripe_deposit: "Deposit holds",
   stripe_refund: "Refunds",
+  send_email: "Emails",
 };
 
 function target(job: DeadJob) {
   if (job.kind === "send_push") return `${job.push_kind ?? "push"} · chat ${job.conversation_id?.slice(0, 8) ?? "?"}`;
   if (job.kind === "stripe_deposit" || job.kind === "stripe_refund") return `payment step ${job.operation_id?.slice(0, 8) ?? "?"}`;
+  if (job.kind === "send_email") return `email ${job.email_template ?? "?"}`;
   return `check ${job.scan_id?.slice(0, 8) ?? "?"}`;
 }
 
@@ -76,7 +82,7 @@ export function JobsView({ status, initialDead }: { status: JobsStatus | null; i
         <div>
           <h1>Background jobs</h1>
           <p className="muted">
-            Push notifications, photo checks and payment steps go out through a queue. A failed attempt is tried again after{" "}
+            Push notifications, photo checks, payment steps and emails go out through a queue. A failed attempt is tried again after{" "}
             {(status?.schedule_minutes ?? [1, 5, 30, 120]).join(", ")} minutes; after{" "}
             {status?.max_attempts ?? 5} attempts the job is dead and waits here for a retry.
           </p>
@@ -90,7 +96,7 @@ export function JobsView({ status, initialDead }: { status: JobsStatus | null; i
               <span className="metric-title">{JOB_KIND_NAMES[k.kind] ?? k.kind}</span>
               <strong className="metric-val">{k.dead}</strong>
               <small className="muted">
-                dead · {k.pending} waiting ({k.retrying} retrying) · {k.running} sending · {k.done_day} done in 24 h
+                dead · {k.pending} waiting ({k.retrying} retrying) · {k.running} sending · {k.done_day} done in 24 h{k.skipped_day ? ` · ${k.skipped_day} skipped (not set up)` : ""}
               </small>
             </div>
           ))}

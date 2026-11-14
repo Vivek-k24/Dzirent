@@ -361,6 +361,14 @@ private fun NotificationSettingsSection(repository: DzirentRepository) {
         enabled = current != null,
         onCheckedChange = { on -> current?.let { save(it.copy(rentalReminders = on)) } }
     )
+    // C5: rental emails to the account's own email (never message text).
+    SwitchSetting(
+        title = "Email me about rentals",
+        subtitle = "Requests, answers, receipts, pickup and return reminders, and claims, to your account's email",
+        checked = current?.emailRentals == true,
+        enabled = current != null,
+        onCheckedChange = { on -> current?.let { save(it.copy(emailRentals = on)) } }
+    )
 }
 
 /** An on/off setting; tapping anywhere on the row switches it. */

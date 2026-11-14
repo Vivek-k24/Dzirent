@@ -9,7 +9,7 @@ async function signIn(email, password) {
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
-    throw new Error(`Sign in failed for ${email}: ${res.status} ${await res.text()}`);
+    throw new Error(`Sign in failed for a test user (no address shown): HTTP ${res.status} ${(await res.json().catch(() => ({}))).error_code ?? ""}`);
   }
   const data = await res.json();
   return { token: data.access_token, user: data.user };

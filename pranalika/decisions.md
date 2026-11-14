@@ -196,3 +196,23 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - Admins change settings on the admin website with a reason; every change is logged. Settings the legal pages state are marked, and the website warns that the pages may need updating. Changing the reminder hour reschedules the reminders.
 - The admin website shows, for each outside service, only "configured" or "not configured". It never shows, accepts or stores a secret.
 - Technical constants stay in code: the outbox retry schedule, the 24-hour freshness of an admin's two-step code, the photo-check timeout and job cadences.
+
+## Payments screens (2026-11-13)
+
+- The apps and the website show the payment steps only while payments are on (the rental's `payments_enabled`; `rental_settings()` for My studio and the listing editor). With payments off the screens stay as in C3.
+- Paying uses the payment processor's own form: the Stripe Android SDK's payment sheet in the Android app and Stripe's Payment Element on the website. Dzirent's code never sees a card number. Before the form opens, the renter is told the card is kept with the processor for the deposit hold and for a claim Dzirent decides, never above the deposit.
+- Stripe.js loads only on the website's pay page (`/app/pay/<rental>`), and only that page's Content-Security-Policy allows Stripe's domains. The Pay button is a full page load. Wallet buttons are off for now.
+- Library versions are pinned and at least two weeks old: Stripe Android SDK `paymentsheet` 21.29.2 (it matches the project's Kotlin 2.1 and Compose 1.7), `@stripe/stripe-js` 9.17.0.
+- A lender sets up payouts from My studio; the processor's onboarding opens in the browser, and the status ("Payouts ready", "Finish setup", "Not set up") is asked again on return. A lender whose payouts aren't ready sees a notice on an incoming request while payments are on.
+- An accepted rental waiting for payment must be paid within `payment_deadline_hours` (24 hours, 1-72, business owner) of the acceptance, or it is cancelled automatically with a timeline event and a push to both people. The deadline is fixed when the rental starts waiting.
+- No availability windows means every day from today in the date pickers too (the C4 server rule). The request answer time shown comes from the server setting, never a number in code.
+- The listing editor has an optional deposit amount in dollars, shown only while payments are on. The deposit note stays.
+- Claims, answers and receipts are shown on the rental card: the lender files a claim up to the deposit with a reason and return photos; the renter accepts or disputes; both see the outcome. A paid rental that ended has a simple receipt.
+
+## Email (2026-11-13)
+
+- Dzirent sends transactional emails only to the account's own email address: a rental request received, the answer to a request, a payment receipt, pickup and return reminders, a claim filed, a claim decided, and the account-deleted confirmation. Emails never include messages, a claim's written reason, body measurements or any address or location.
+- Emails go through the outbox (`send_email`) to the `send-email` Edge Function, which makes one HTTPS call to an email provider chosen by function secrets. While the provider key is blank, every email and its job are marked skipped, not failed.
+- Rental emails follow the push rules for blocked pairs and have their own switch, "Email me about rentals" (on by default). The account-deleted email is always sent.
+- Dzirent keeps which email went to which account, when, and the outcome for 30 days, never the text. The account-deleted email's address is kept only until that email is sent.
+- Sign-in emails use Dzirent's templates in the repo. Switching the live project to a custom email service is a runbook step (`contract.md` section 9); no live Auth setting changes until then.

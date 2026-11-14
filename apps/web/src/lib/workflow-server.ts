@@ -17,7 +17,8 @@ import type {
   RentalView,
   SettingsData,
 } from "./workflows";
-import { IN_PROGRESS, type Range } from "./rentals";
+import { IN_PROGRESS, type Range, type RentalSettings } from "./rentals";
+import type { PayoutAccount } from "./workflows";
 export class WorkflowError extends Error {
   constructor(
     message: string,
@@ -143,7 +144,7 @@ export async function readRentals(): Promise<RentalView[]> {
 export async function readChat(id: string): Promise<ChatData> {
   const { user, client, c } = await conversation(id);
   const peer = c.renter_id === user.id ? c.lender_id : c.renter_id;
-  const [cards, messages, rental, listing, block, myProf] = await Promise.all([
+  const [cards, messages, rental, listing, block, myProf, settings] = await Promise.all([
     client.rpc("my_conversations", {
       p_conversation_id: id,
       p_limit: 1,
@@ -171,6 +172,8 @@ export async function readChat(id: string): Promise<ChatData> {
       .select("suspended_until,suspension_reason")
       .eq("id", user.id)
       .maybeSingle(),
+    // C5: the request answer time and whether payments are on (readable by everyone).
+    client.rpc("rental_settings"),
   ]);
   const view = (must(rental) as RentalView | null) || null;
   const piece = ((must(listing) as Array<{ price: number | null; availability: Range[]; booked: Range[] }>) || [])[0];
@@ -195,7 +198,14 @@ export async function readChat(id: string): Promise<ChatData> {
       myProf.data?.suspended_until,
       myProf.data?.suspension_reason,
     ),
+    settings: settings.error ? null : ((settings.data as RentalSettings | null) ?? null),
   };
+}
+/** C5: the rental and payment rules (rental_settings()), or null when unreadable. */
+export async function readRentalSettings(): Promise<RentalSettings | null> {
+  const { client } = await session();
+  const { data, error } = await client.rpc("rental_settings");
+  return error ? null : ((data as RentalSettings | null) ?? null);
 }
 export async function ownListing(id: string): Promise<OwnListing> {
   if (!uuid(id))
@@ -263,7 +273,7 @@ export async function readCloset() {
 }
 export async function readSettings(): Promise<SettingsData> {
   const { user, client } = await session();
-  const [profile, priv, blocks, rentals, listings, notifications] = await Promise.all([
+  const [profile, priv, blocks, rentals, listings, notifications, settings, payout] = await Promise.all([
     client.from("profiles").select("*").eq("id", user.id).single(),
     client
       .from("private_profiles")
@@ -283,7 +293,13 @@ export async function readSettings(): Promise<SettingsData> {
       .eq("status", "active"),
     client
       .from("notification_settings")
-      .select("messages,show_message_text,rental_reminders")
+      .select("messages,show_message_text,rental_reminders,email_rentals")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    client.rpc("rental_settings"),
+    client
+      .from("payout_accounts")
+      .select("charges_enabled,payouts_enabled,details_submitted")
       .eq("user_id", user.id)
       .maybeSingle(),
   ]);
@@ -296,7 +312,9 @@ export async function readSettings(): Promise<SettingsData> {
     blocks: must(blocks) || [],
     activeRentals: rentals.count || 0,
     activeListings: listings.count || 0,
-    notifications: must(notifications) || { messages: true, show_message_text: false, rental_reminders: true },
+    notifications: must(notifications) || { messages: true, show_message_text: false, rental_reminders: true, email_rentals: true },
+    paymentsEnabled: !settings.error && (settings.data as RentalSettings | null)?.payments_enabled === true,
+    payoutAccount: payout.error ? null : ((payout.data as PayoutAccount | null) ?? null),
   };
 }
 export async function editorData(id?: string) {
@@ -323,5 +341,6 @@ export async function editorData(id?: string) {
     listing,
     signed: Boolean(must(declarations)?.length),
     otherListings: (must(others) || []).filter((l) => l.id !== id),
+    paymentsEnabled: settings.paymentsEnabled,
   };
 }

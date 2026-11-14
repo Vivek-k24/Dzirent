@@ -13,7 +13,9 @@ export default async function SettingsPage({
 }: {
   params: Promise<{ section: string }>;
 }) {
-  const { section } = await params;
+  const { section: asked } = await params;
+  // C5: "payouts" is where the payment processor's onboarding returns by default: My studio.
+  const section = asked === "payouts" ? "studio" : asked;
   if (!["studio", "measurements", "blocked", "preferences"].includes(section))
     notFound();
   if (!(await currentUser()))

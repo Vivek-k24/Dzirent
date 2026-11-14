@@ -31,7 +31,8 @@ import {
 } from "./listing-fields";
 import { Icon } from "./icon";
 import { suspensionNotice } from "@/lib/suspension";
-import { warningText } from "@/lib/errors";
+import { errorText, shown, warningText } from "@/lib/errors";
+import { parseDepositAmount } from "@/lib/rentals";
 
 type ScanSuggestions = {
   title?: string;
@@ -81,6 +82,8 @@ type Props = {
     garment_type: string;
     listing_measurements: Measurement[];
   }[];
+  /** C5: the deposit field shows only while payments are on. */
+  paymentsEnabled?: boolean;
 };
 
 function initialForm(listing: OwnListing | null): ListingForm {
@@ -98,6 +101,7 @@ function initialForm(listing: OwnListing | null): ListingForm {
     price_note: listing?.price_note || "",
     retail_value: listing?.retail_value ? String(listing.retail_value) : "",
     deposit_note: listing?.deposit_note || "",
+    deposit_amount: listing?.deposit_amount != null ? String(listing.deposit_amount) : "",
     listing_styles: listing?.listing_styles || [],
     measurements: listing?.measurements || [],
     availability: listing?.availability?.length
@@ -248,6 +252,7 @@ export function ListingEditor({
   listing,
   signed: initialSigned,
   otherListings,
+  paymentsEnabled = false,
 }: Props) {
   const router = useRouter();
   const [form, setForm] = useState(() => initialForm(listing));
@@ -1535,6 +1540,23 @@ export function ListingEditor({
                       This is a valuable piece. Consider asking renters for a
                       refundable deposit.
                     </p>
+                  )}
+                  {paymentsEnabled && (
+                    <label className="field">
+                      <span>Deposit (USD, optional)</span>
+                      <input
+                        inputMode="decimal"
+                        value={form.deposit_amount ?? ""}
+                        maxLength={9}
+                        aria-invalid={parseDepositAmount(form.deposit_amount ?? "") === "DZ-E4051"}
+                        onChange={(e) => change({ deposit_amount: e.target.value })}
+                      />
+                      <small className={parseDepositAmount(form.deposit_amount ?? "") === "DZ-E4051" ? "form-message error" : "muted"}>
+                        {parseDepositAmount(form.deposit_amount ?? "") === "DZ-E4051"
+                          ? errorText(shown("DZ-E4051"))
+                          : "Held on the renter's card at pickup, not charged. Released after the return unless a claim is decided."}
+                      </small>
+                    </label>
                   )}
                   <label className="field">
                     <span>Deposit note (optional)</span>

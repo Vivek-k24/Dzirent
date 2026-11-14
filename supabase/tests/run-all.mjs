@@ -41,6 +41,9 @@ export const SCRIPTS = [
   // C4: first with the Stripe keys blank (local.env), then with stripe-mock's placeholder values.
   ["node", "c4_payments_off.mjs", { local: true }],
   ["node", "c4_payments.mjs", { local: true, functionsEnv: "local.stripe-mock.env" }],
+  // C5: one paid rental from accept to a decided claim, with the pushes and emails the outbox
+  // queued (the email provider key blank: every email skipped), and the payment deadline.
+  ["node", "c5_payments_email.mjs", { local: true, functionsEnv: "local.stripe-mock.env" }],
 ];
 
 const args = process.argv.slice(2);

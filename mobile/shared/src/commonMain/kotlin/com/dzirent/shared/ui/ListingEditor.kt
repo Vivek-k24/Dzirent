@@ -34,6 +34,8 @@ import com.dzirent.shared.util.SavedDraft
 import com.dzirent.shared.util.declarationNeeded
 import com.dzirent.shared.util.detailsMissing
 import com.dzirent.shared.util.isDraft
+import com.dzirent.shared.util.ErrorCatalog
+import com.dzirent.shared.util.parseDepositAmount
 import com.dzirent.shared.util.parsePrice
 import com.dzirent.shared.util.step2Missing
 import com.dzirent.shared.util.suggestionsFrom
@@ -178,6 +180,10 @@ private fun ListingEditorForm(
     var visionRequired by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         visionRequired = runCatching { repository.getAppSettings()["vision_required"] == true }.getOrDefault(false)
+    }
+    // C5: the deposit field shows only while payments are on.
+    LaunchedEffect(Unit) {
+        state.paymentsEnabled = runCatching { repository.rentalSettings(refresh = true).paymentsEnabled }.getOrDefault(false)
     }
 
     // ---- Accessory declaration (once per user) ----
@@ -446,6 +452,12 @@ private fun ListingEditorForm(
             errorMessage = it.message
             return
         }
+        if (state.paymentsEnabled) {
+            parseDepositAmount(state.depositAmountText).exceptionOrNull()?.message?.let {
+                errorMessage = ErrorCatalog.shown(it).text
+                return
+            }
+        }
         errorMessage = null
         val base = draftRow() ?: return
         val category = state.category!!
@@ -464,6 +476,8 @@ private fun ListingEditorForm(
                 priceNote = state.priceNote.trim(),
                 retailValue = state.retailValueText.toDoubleOrNull(),
                 depositNote = state.depositNote.trim().ifBlank { null },
+                // C5: only while payments are on; otherwise the saved amount stays as it was.
+                depositAmount = if (state.paymentsEnabled) parseDepositAmount(state.depositAmountText).getOrNull() else base.depositAmount,
                 autoPausedReason = null,
                 photos = emptyList(),
                 measurements = emptyList(),
@@ -714,7 +728,11 @@ private fun PublishFailedView(
     }
 }
 
-/** Optional retail value and deposit note, with a deposit tip for valuable pieces. */
+/**
+ * Optional retail value and deposit note, with a deposit tip for valuable pieces. C5: while
+ * payments are on ([depositAmountText] not null), an optional deposit in dollars held on the
+ * renter's card at pickup.
+ */
 @Composable
 fun DepositFields(
     retailValueText: String,
@@ -723,8 +741,30 @@ fun DepositFields(
     onDepositNoteChange: (String) -> Unit,
     retailError: String? = null,
     /** The text filter's refusal for the deposit note, if any. */
-    depositNoteError: String? = null
+    depositNoteError: String? = null,
+    depositAmountText: String? = null,
+    onDepositAmountChange: (String) -> Unit = {}
 ) {
+    if (depositAmountText != null) {
+        val problem = parseDepositAmount(depositAmountText).exceptionOrNull()?.message
+        OutlinedTextField(
+            value = depositAmountText,
+            onValueChange = { input -> if (input.length <= 9) onDepositAmountChange(input.filter { it.isDigit() || it == '.' }) },
+            label = { Text("Deposit (\$) - optional") },
+            isError = problem != null,
+            supportingText = {
+                Text(
+                    problem?.let { ErrorCatalog.shown(it).text }
+                        ?: "Held on the renter's card at pickup, not charged. Released after the return unless a claim is decided.",
+                    modifier = Modifier.announced()
+                )
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+    }
     OutlinedTextField(
         value = retailValueText,
         onValueChange = { input -> onRetailValueChange(input.filter { it.isDigit() || it == '.' }) },

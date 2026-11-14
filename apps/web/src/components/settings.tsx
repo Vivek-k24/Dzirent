@@ -6,6 +6,7 @@ import { workflow, type SettingsData } from "@/lib/workflows";
 import { cityLabel } from "@/lib/types";
 import { signOut } from "@/app/actions";
 import { StudioEditor } from "./studio-editor";
+import { Payouts } from "./payouts";
 import { MeasurementsEditor } from "./measurements-editor";
 import { LocalPreferences } from "./local-preferences";
 import { FinishSetupCard } from "./onboarding";
@@ -38,11 +39,12 @@ function NotificationChoices({ initial }: { initial: NotificationChoicesData }) 
     ["messages", "Messages", "New messages, new chats, date changes and rental requests and answers"],
     ["show_message_text", "Show message text", "Show what they wrote in notifications, also on the lock screen"],
     ["rental_reminders", "Rental reminders", "The day before a pickup or return, and when a return is overdue"],
+    ["email_rentals", "Email me about rentals", "Requests, answers, receipts, pickup and return reminders, and claims, to your account's email"],
   ];
   return (
     <div className="account-section">
       <h3>Notifications</h3>
-      <p className="muted">Notifications go to the Dzirent app on your phone.</p>
+      <p className="muted">Notifications go to the Dzirent app on your phone. Rental emails go to your account&apos;s email and never include message text.</p>
       {rows.map(([key, label, hint]) => (
         <div key={key} className="toggle-row">
           <input
@@ -279,7 +281,11 @@ export function Settings({
               </div>
             </>
           ) : section === "studio" ? (
-            <StudioEditor profile={data.profile} />
+            <>
+              <StudioEditor profile={data.profile} />
+              {/* C5: payouts, only while payments are on. */}
+              {data.paymentsEnabled && data.profile.role !== "renter" && <Payouts initial={data.payoutAccount} />}
+            </>
           ) : section === "measurements" ? (
             <MeasurementsEditor initial={data.privateProfile} />
           ) : section === "preferences" ? (

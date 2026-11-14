@@ -513,7 +513,7 @@ Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.k
 - `browse_listings` and `get_listing` return `price_per_day`, `price_unit`, and with dates `days` and `total` (above). Other functions' `price` (`my_conversations`, `my_saved_listings`, `get_studio` cards, `fit_listings`) is also per day.
 
 ### Background jobs (outbox)
-- `app_private.async_jobs` (closed to every API role): `id`, `kind` (`send_push`, `scan_listing`), `payload` (the Edge Function's body), `status` (`pending`, `running`, `done`, `dead`), `attempts`, `next_attempt_at`, `last_error`, `request_id` (pg_net), `dispatched_at`, `finished_at`, `created_at`, `updated_at`.
+- `app_private.async_jobs` (closed to every API role): `id`, `kind` (`send_push`, `scan_listing`; C4 `stripe_deposit`, `stripe_refund`; C5 `send_email`), `payload` (the Edge Function's body), `status` (`pending`, `running`, `done`, `dead`; C5 `skipped`: an email `send-email` skipped, section 9), `attempts`, `next_attempt_at`, `last_error`, `request_id` (pg_net), `dispatched_at`, `finished_at`, `created_at`, `updated_at`.
 - `queue_push` and `queue_scan` add a job with `app_private.enqueue_job`; its first attempt goes out when the transaction commits, as the direct call did.
 - pg_cron `dzirent-async-jobs` runs `app_private.run_async_jobs()` every minute: a 2xx answer marks the attempt's job `done`; any other answer, a timeout, or no answer 10 minutes later is a failure. After failure 1, 2, 3 and 4 the next attempt is 1, 5, 30 and 120 minutes later; failure 5 marks it `dead`. A dead `scan_listing` job ends its photo check like any failed check (`vision_fail_scan`: `failed`, verdict `review`). A `scan_listing` attempt whose check is no longer `queued` is marked done (skipped).
 - Kept: done jobs 1 day, dead jobs 30 days.
@@ -536,8 +536,8 @@ Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.k
 
 **C4 follow-ups (owner decisions, 2026-11-13):**
 - **Not picked up:** a rental `accepted`, `awaiting_payment` or `paid` and not marked picked up `rental_autocancel_days` (2) after its start date is cancelled by `dzirent-rental-expiry` (by the system, note "Not picked up within 2 days after the start date"), with the cancellation refund rule of section 7 (counted as a late renter cancellation) and a `rental_cancelled` push to both. Exactly 2 days after the start it is still open.
-- **No availability windows = always available:** `request_rental` takes any dates from today for such a listing; windows the lender adds limit the dates as before (`DZ-E4008`). `browse_listings` with dates already listed it. The apps' and website's date pickers still treat "no windows" as closed (C3 rule); see the C4 handoff, Requests.
-- **Expiry note** uses the setting: "No answer in <rental_request_hours> hours".
+- **No availability windows = always available:** `request_rental` takes any dates from today for such a listing; windows the lender adds limit the dates as before (`DZ-E4008`). `browse_listings` with dates already listed it. Since C5 the apps' and website's date pickers match: no windows means every day from today is open (booked days stay closed).
+- **Expiry note** uses the setting: "No answer in <rental_request_hours> hours". Since C5 the apps and website read the request answer time from `rental_settings()` ("answer within <n> hours"), never a number in code.
 
 ### Who may act
 Every function below is for signed-in callers and refuses (before anything else): not signed in `DZ-E1001`, age-blocked `DZ-E1030`, suspended `DZ-E1040`, current terms not accepted `DZ-E1010`, not one of the rental's two people `DZ-E4001`. Blocked pairs (either direction) are refused with `DZ-E4003` for `request_rental`, `respond_rental` and `mark_picked_up`; `cancel_rental`, `mark_returned` and `complete_rental` stay allowed so a block never leaves a rental stuck. A wrong state is `DZ-E4012`. Every change writes a `rental_events` row.
@@ -553,13 +553,13 @@ Every function below is for signed-in callers and refuses (before anything else)
 | `get_rental(p_rental_id uuid default null, p_conversation_id uuid default null)` | One of the two people. By id, or the chat's latest rental. Null when there is none. | `jsonb` (below) |
 | `my_rentals(p_limit int default 30 (max 100), p_offset int default 0)` | Every rental the caller is in: requests to the caller as lender first, then requested, upcoming, in progress, past. | `jsonb` array (below, without `events` and `photos`) |
 
-The rental `jsonb`: `id`, `conversation_id`, `listing_id`, `listing_title`, `cover_photo_path`, `your_role` (`renter` or `lender`), `other_name`, `other_handle` (never the other person's id), `status`, `start_date`, `end_date`, `price_per_day`, `days`, `total`, `currency`, `expires_at`, `created_at`, `updated_at`, `payments_enabled`, since C4 `deposit_amount`, `payment_status`, `deposit_status`, `refund_amount`, `claim_window_ends_at`, and from `get_rental` also `events` (`from`, `to`, `by` = `you` / `other` / `dzirent`, `by_role`, `note`, `at`), `photos` (`storage_path`, `stage`, `by` = `you` / `other`, `by_role`, `uploaded_at`) and (C4) `claim` (`id`, `status`, `amount`, `reason`, `evidence_paths`, `renter_note`, `decision_amount`, `decision`, `created_at`, `responded_at`, `decided_at`, or null). The apps and website show none of the C4 fields yet (C5); they ignore unknown fields.
+The rental `jsonb`: `id`, `conversation_id`, `listing_id`, `listing_title`, `cover_photo_path`, `your_role` (`renter` or `lender`), `other_name`, `other_handle` (never the other person's id), `status`, `start_date`, `end_date`, `price_per_day`, `days`, `total`, `currency`, `expires_at`, `created_at`, `updated_at`, `payments_enabled`, since C4 `deposit_amount`, `payment_status`, `deposit_status`, `refund_amount`, `claim_window_ends_at`, and from `get_rental` also `events` (`from`, `to`, `by` = `you` / `other` / `dzirent`, `by_role`, `note`, `at`), `photos` (`storage_path`, `stage`, `by` = `you` / `other`, `by_role`, `uploaded_at`) and (C4) `claim` (`id`, `status`, `amount`, `reason`, `evidence_paths`, `renter_note`, `decision_amount`, `decision`, `created_at`, `responded_at`, `decided_at`, or null). C5 adds `fee_amount`, `tax_amount`, `deposit_captured_amount`, `deposit_capture_before`, `payment_due_at`, `responded_at`, `picked_up_at`, `returned_at`, `completed_at`, `cancelled_at` and `lender_can_take_payment` (the lender's payout account takes charges; for the renter's Pay and the lender's set-up notice). The C5 screens show them (section 7, Screens); clients ignore unknown fields.
 
 ### No double booking
 Exclusion constraint `rentals_no_double_booking` (btree_gist): one listing can't have two rentals in `accepted`, `awaiting_payment`, `paid` or `picked_up` whose days overlap. Days are inclusive, so Nov 5 - 8 and Nov 9 - 12 are back-to-back and allowed; Nov 5 - 8 and Nov 8 - 10 are refused. Booked days show in `get_listing.booked` and are left out of `browse_listings` with dates. One open rental per chat (`rentals_one_open_per_chat`); a chat can have several rentals over time.
 
 ### Expiry and reminders (pg_cron, UTC)
-- `dzirent-rental-expiry`, every 10 minutes (`app_private.expire_rental_requests()`): `requested` with `expires_at` passed → `expired` (by the system, note "No answer in 48 hours", `rental_expired` push to both). Setting `rental_request_hours` (48). C4: also the automatic cancel of rentals not picked up (above) and the end of claim windows (section 7).
+- `dzirent-rental-expiry`, every 10 minutes (`app_private.expire_rental_requests()`): `requested` with `expires_at` passed → `expired` (by the system, note "No answer in 48 hours", `rental_expired` push to both). Setting `rental_request_hours` (48). C4: also the automatic cancel of rentals not picked up (above) and the end of claim windows (section 7). C5: also the payment deadline (section 7): `awaiting_payment` with `payment_due_at` passed and no payment recorded → `cancelled`.
 - `dzirent-rental-reminders`, daily at `rental_reminder_hour` (9) in `rental_timezone` (America/Chicago), scheduled as UTC by `app_private.schedule_rental_reminders()` after each run and whenever an admin changes either setting (15:00 UTC in winter, 14:00 UTC in summer): to both people, `pickup_tomorrow` (accepted or paid, starts tomorrow), `return_tomorrow` (picked up, ends tomorrow), `return_overdue` (picked up, ended 1 to 3 days ago; setting `rental_overdue_reminder_days` 3). At most one per rental, kind, person and day (`app_private.rental_reminders`). "Today" for rentals is the `rental_timezone` day (`app_private.rental_today()`).
 
 ### Pushes
@@ -574,7 +574,7 @@ Through `send-push` and the outbox, like chat pushes, to a person with a registe
 | `pickup_tomorrow` | both | "Pickup tomorrow" | title · dates | Rental reminders |
 | `return_tomorrow` | both | "Return due tomorrow" | title · dates | Rental reminders |
 | `return_overdue` | both | "Return overdue" | "<title> was due back Nov 8." | Rental reminders |
-| `rental_cancelled` (C4) | the other person; both when Dzirent cancels (automatic cancel, `admin_end_rental`) | "<name> cancelled the rental", or "Rental cancelled" | dates · title (· "Not picked up in time" / "Ended by Dzirent") | Messages |
+| `rental_cancelled` (C4) | the other person; both when Dzirent cancels (automatic cancel, payment deadline (C5), `admin_end_rental`) | "<name> cancelled the rental", or "Rental cancelled" | dates · title (· "Not picked up in time" / "Not paid in time" / "Ended by Dzirent") | Messages |
 | `rental_expired` (C4) | both | "Rental request expired" | title · dates | Messages |
 | `claim_filed` (C4) | renter | "<name> filed a claim" | title · "$30.00 from the deposit" | Messages |
 | `claim_decided` (C4) | lender when the renter accepts; both when Dzirent decides | "Claim decided" | title · "$20.00 from the deposit" or "No charge; the deposit hold is released" | Messages |
@@ -610,8 +610,9 @@ Stripe Connect as designed in `architecture.md` Appendix A: Express accounts for
 ### States with payments on
 | Step | What happens | Who |
 | --- | --- | --- |
-| Accept | `respond_rental` → `awaiting_payment` | lender |
+| Accept | `respond_rental` → `awaiting_payment`; `payment_due_at` = now + `payment_deadline_hours` (24, C5; fixed when it starts waiting) | lender |
 | Pay | `stripe-pay` → the client confirms Stripe's payment sheet (C5) → webhook `payment_intent.succeeded` → `paid` (event by the system, "Payment received"), `payment_status` `paid`, the card kept for off-session use | renter, Stripe |
+| Payment deadline (C5) | unpaid when `payment_due_at` passes (`dzirent-rental-expiry`): `cancelled` by the system, note "Not paid within <n> hours after it was accepted", the cancellation steps (an unpaid PaymentIntent cancelled), `rental_cancelled` "Not paid in time" to both. A payment recorded in time is never cancelled; one that arrives after is refunded in full (below) | system |
 | Pickup | a paid rental with `deposit_amount` needs the hold first: `stripe-deposit` `place` places it and, once Stripe can capture it, marks picked up as the lender. `mark_picked_up` alone answers `DZ-E4033` | lender |
 | Return | `mark_returned` → `returned`, claim window `claim_window_hours` (48) | lender |
 | No claim | when the window ends (`dzirent-rental-expiry`): `completed`, the hold released, `rental_completed` to the renter | system |
@@ -679,6 +680,32 @@ Stripe errors: a failure Stripe decides (4xx) is recorded on the operation (`fai
 
 While `payments_enabled` is off or a key is blank the webhook answers 503 `DZ-E4030`; Stripe retries for up to 3 days.
 
+### Screens (C5)
+Android (shared Kotlin: `util/Rentals.kt`, `ui/RentalViews.kt`, `ui/ChatScreens.kt`, `ui/MyStudioScreen.kt`, `ui/PaymentSheet*.kt`) and the website (`lib/rentals.ts`, `components/rental-card.tsx`, `components/payouts.tsx`, `app/app/pay/[id]`, `components/pay-form.tsx`) have the same rules; the database decides every step. iPhone: the same common code, with the payment sheet for the Mac session (Pay answers `DZ-E4049` "Pay on dzirent.com").
+- **Hidden while payments are off:** every payment action and line follows the rental's `payments_enabled` (and `rental_settings().payments_enabled` for My studio and the listing editor). With it off the screens are the C3 ones.
+- **My studio > Payouts:** state from `payout_accounts` (owner read): "Not set up", "Finish setup" (an account without charges and payouts), "Payouts ready". "Set up payouts" calls `stripe-onboard` (return and refresh URL `https://dzirent.com/app/settings/studio?payouts=return|refresh`; `/app/settings/payouts` opens the same page) and opens the link in the browser; on return (the app resumes, or the website page loads with `?payouts=`) `stripe-account-status` refreshes it.
+- **Lender's notice:** a request while payments are on and the lender can't take payments shows `DZ-W4001` "Set up payouts in My studio first: the renter can't pay until your payouts are ready."
+- **Listing editor:** an optional "Deposit ($)" (`listings.deposit_amount`, > $0, ≤ $99,999.99, cents; `DZ-E4051`), shown only while payments are on; `deposit_note` stays. With payments off the saved amount is left as it is.
+- **Card states and actions** (`rentalActions(status, iAmLender, PaymentFacts)`; labels from `rentalStatusLabel` with the server's `rental_request_hours`):
+
+| State | Renter | Lender | Lines |
+| --- | --- | --- | --- |
+| `requested` | Cancel | Accept, Decline | the lender's `DZ-W4001` notice when needed |
+| `awaiting_payment` | **Pay $total**, Cancel | Cancel | "Pay $X by <time> …" / "The renter has until <time> to pay …"; "The lender is still setting up payouts" |
+| `paid` | Add pickup photos, Cancel | Add pickup photos, **Place deposit hold and mark picked up** (with a deposit not yet held; else Mark picked up), Cancel | "Deposit $40: held on the renter's card at pickup" |
+| `picked_up` | Add return photos | Add return photos, Mark returned | "Deposit $40: held on the renter's card, not charged" |
+| `returned` | Add return photos | Add return photos, **File a claim** (window open, hold in place, no claim yet), Complete rental | "… can file a claim against the deposit until <time> …" |
+| `claimed` | **Accept the claim**, **Dispute the claim** (open claim) | none | "Claim for $30: accept or dispute it" / "… waiting for the renter" |
+| `disputed` | none | none | "Claim for $30: disputed. Dzirent will decide." |
+| `completed`, `cancelled` (paid) | **Receipt** | **Receipt** | the deposit's end ("released, nothing charged" / "$20 charged for the claim"), the claim's decision, "Refunded $X" |
+
+- **Pay:** a dialog first (the amount; the card is kept by the payment processor for the deposit hold and a decided claim, never above the deposit; Dzirent never sees the card: compliance gap 34), then `stripe-pay`'s `client_secret` and `publishable_key` into Stripe's own form: Android the Stripe Android SDK's PaymentSheet (`com.stripe:paymentsheet` 21.29.2), the website the Payment Element on `/app/pay/<rental>` (Stripe.js through `@stripe/stripe-js` 9.17.0, `confirmPayment` with `redirect: "if_required"`, return URL the same page; wallets off). The pay page is the only page that loads Stripe.js and the only one whose CSP allows Stripe (`next.config.ts`; the Pay button is a full page load). A sheet failure shows `DZ-E4050`. The webhook marks it paid; the card updates live.
+- **Deposit hold:** `stripe-deposit` `{ action: "place" }` (200 `picked_up`, or 202 while Stripe confirms: "tap again in a moment").
+- **Claim:** amount ≤ the deposit with cents (`DZ-E4041`), a reason of 3-500 (`DZ-E4042`), 1-10 of the rental's return photos (`DZ-E4043`), then `file_claim`; the renter's `respond_claim` accept or dispute with an optional note (≤ 300).
+- **Receipt** (`rentalReceipt`): renter: "$55.00 × 4 days", sales tax (when > 0), Paid, Refunded, Charged from the deposit, Total; lender: the rental, Dzirent fee and Refunded to the renter (in proportion), From the deposit, You receive; a released hold; the completed or cancelled time.
+- **Website routes** (`/api/workflows/...`, same-origin POST, as the signed-in person): `chat/<id>/rental_hold`, `chat/<id>/rental_claim`, `chat/<id>/rental_claim_answer`, `pay` `{ rentalId }` → `{ clientSecret, publishableKey, amount }` (never stored), `payouts/link`, `payouts/status`.
+- **End-to-end checks** that need Stripe's test keys are listed in `pranalika/stripe-rehearsal.md`.
+
 ### Deposit holds over time
 `dzirent-deposit-holds`, nightly 09:45 UTC (`app_private.check_deposit_holds()`): a held deposit of a rental still `picked_up` whose `capture_before` is within `deposit_hold_warning_hours` (24) plus a day: `deposit_hold_ending` to both (once per hold) and a `deposit_renew` step (a new hold replaces the old). After return, a claim whose hold has ended is charged off-session for the amount instead.
 
@@ -690,8 +717,8 @@ Who: an agent with the Supabase CLI and the secrets folder (never in the repo, n
    - "Events on Connected accounts": `account.updated`. Its signing secret is `STRIPE_CONNECT_WEBHOOK_SECRET` (optional: without it, `stripe-account-status` still refreshes a lender's account when they come back from onboarding).
 3. **Set the function secrets** from a temporary env file (deleted at once; never echo values): `supabase secrets set --env-file <tmp>` with `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` (and `STRIPE_CONNECT_WEBHOOK_SECRET`). `PAYMENTS_JOB_SECRET` is already set (copied from Vault `payments_job_secret` in C4). Never set `STRIPE_API_BASE` on the live project. The publishable key needs no app or website build setting: `stripe-pay` returns it with the client secret.
 4. **Check:** admin website > Integrations shows Payments **configured**; `supabase secrets list` shows the names.
-5. **Rehearse in test mode first** (test keys): onboard a test lender, pay with Stripe's test card, place and release a hold, refund. Then swap to live keys (steps 1-4 again).
-6. **Switch on:** admin website > Flags > `payments_enabled` (logged). From then on, accepting a rental waits for payment. The C5 screens (pay, payouts, deposit, claims) must ship before this is switched on for people.
+5. **Rehearse in test mode first** (test keys), with the checklist in `pranalika/stripe-rehearsal.md` (C5): onboarding, paying on Android and the website (3-D Secure, a decline), the payment deadline, the hold, a disputed claim, receipts, refunds, a card dispute. Then swap to live keys (steps 1-4 again).
+6. **Switch on:** admin website > Flags > `payments_enabled` (logged). From then on, accepting a rental waits for payment. The C5 screens (pay, payouts, deposit, claims, receipts) are built for Android and the website; the iPhone payment sheet is for the Mac session (iPhone Pay sends people to dzirent.com until then).
 7. **To switch off in an emergency:** Flags > `payments_enabled` off. Payment calls answer `DZ-E4030`; Stripe keeps retrying webhooks for 3 days, and queued payment steps retry and then wait as dead jobs (Background jobs > Retry) until it is on again.
 
 ---
@@ -703,16 +730,61 @@ Every business number and rule; never in code or env files. Each row: `key`, `va
 
 | Area | Keys (default) |
 | --- | --- |
-| Payments | `platform_fee_percent` (0, BO, terms), `claim_window_hours` (48, BO, terms), `cancellation_refund_cutoff_hours` (48, BO, terms), `late_cancellation_refund_percent` (0, BO, terms), `sales_tax_enabled` (false, attorney/tax adviser, terms), `deposit_hold_warning_hours` (24) |
+| Payments | `platform_fee_percent` (0, BO, terms), `claim_window_hours` (48, BO, terms), `cancellation_refund_cutoff_hours` (48, BO, terms), `late_cancellation_refund_percent` (0, BO, terms), `sales_tax_enabled` (false, attorney/tax adviser, terms), `deposit_hold_warning_hours` (24), `payment_deadline_hours` (24, 1-72 "hours after acceptance", BO, terms; C5) |
 | Rentals | `rental_request_hours` (48), `rental_autocancel_days` (2), `rental_overdue_reminder_days` (3), `rental_reminder_hour` (9), `rental_timezone` (America/Chicago) |
 | Rate limits | `rate_limit_message` (30/min), `rate_limit_new_chat`, `rate_limit_report`, `rate_limit_new_listing` (per day), `rate_limit_photo_scan` (per hour), `rate_limit_rental_request` (20/day), `data_export_interval_hours` (24) |
-| Retention | `report_retention_days` (730, attorney, terms), `condition_photo_retention_days` (365, attorney, terms), `declaration_retention_years` (7, attorney, terms), `draft_retention_days`, `orphan_photo_days`, `photo_check_retention_days`, `data_export_retention_days` (at least 8), `age_checks_keep` ("latest"), `suggestion_retention_days`, `device_token_stale_days` |
+| Retention | `email_log_retention_days` (30, attorney, terms; C5), `report_retention_days` (730, attorney, terms), `condition_photo_retention_days` (365, attorney, terms), `declaration_retention_years` (7, attorney, terms), `draft_retention_days`, `orphan_photo_days`, `photo_check_retention_days`, `data_export_retention_days` (at least 8), `age_checks_keep` ("latest"), `suggestion_retention_days`, `device_token_stale_days` |
 
 Not settings, on purpose (technical, not business): the outbox retry schedule, the 24-hour freshness of an admin's two-step code (a security rule), the 10-minute photo-check timeout, cron cadences, Stripe's 5-minute webhook tolerance and 7-day authorization fallback.
 
 - `admin_list_settings()` → `jsonb` array (`key`, `label`, `area`, `value`, `type`, `unit`, `min`, `max`, `choices`, `description`, `decided_by`, `affects_terms`, `updated_at`); logged `view_settings`.
 - `admin_set_setting(p_key text, p_value jsonb, p_reason text)` → `{ key, old_value, new_value, affects_terms, reminder_schedule_utc }`. Text is read as a number or true/false where the type says so; a number for a rate limit is its new maximum. Unknown key `DZ-E5071`. Changing `rental_reminder_hour` or `rental_timezone` reschedules `dzirent-rental-reminders`. Logged `set_setting` with the old and new value.
 - Website `/admin/settings`: grouped by area; Edit → the new value → a confirmation "From … to …" with a reason; settings marked "Legal pages" warn that the Terms or Privacy Policy may need updating.
+- **C5, for the screens:** `rental_settings()` → `jsonb` `{ payments_enabled, rental_request_hours, payment_deadline_hours, claim_window_hours, cancellation_refund_cutoff_hours, late_cancellation_refund_percent, platform_fee_percent }`, readable by guests and signed-in people (rules the Terms state; no secrets). The apps cache it per session; the website reads it with the chat, Settings and the listing editor.
 
 ### Integrations (`admin-integrations` Edge Function, `/admin/integrations`)
 `POST {}` with an admin's token → `{ ok, integrations: [{ key, name, configured, status }] }` for `payments` (`STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYMENTS_JOB_SECRET`), `id_checks` (`DIDIT_API_KEY`, `DIDIT_WEBHOOK_SECRET`), `notifications` (`FIREBASE_SERVICE_ACCOUNT_BASE64`, `SEND_PUSH_SECRET`), `email` (`EMAIL_API_KEY`), `photo_checks` (`VISION_URL`, `VISION_INVOKER_KEY_BASE64`, `SCAN_LISTING_SECRET`): "configured" when every named secret is set, else "not configured". Only those words: never a value or length; nothing is accepted or stored. The admin check and the log entry (`view_integrations`, booleans only) are `admin_record_integrations_check` as the caller; a non-admin gets 403 `DZ-E5008`.
+
+---
+
+## 9. Email (C5)
+
+Transactional emails, built and **inactive while the provider key is blank** (now): every email is queued, then marked skipped by `send-email`. Emails go only to the account's own email address and never carry messages, a claim's written reason, measurements or places.
+
+### Which emails
+| Template | To | When | Switch |
+| --- | --- | --- | --- |
+| `rental_request` | lender | a request (with the `rental_request` push) | Email me about rentals |
+| `request_accepted` | renter | accepted (with payments on: "Pay $X by <time>") | same |
+| `request_declined` | renter | declined | same |
+| `payment_receipt` | renter | `payment_status` becomes `paid` (trigger `rentals_receipt_email`) | same |
+| `pickup_reminder` | both | `pickup_tomorrow` | same |
+| `return_reminder` | both | `return_tomorrow`, `return_overdue` | same |
+| `claim_filed` | renter | `file_claim` | same |
+| `claim_decided` | lender when the renter accepts; both when Dzirent decides | with `claim_decided` | same |
+| `account_deleted` | the deleted account's address | `delete-account`, after the deletion | always |
+
+Rental emails are queued inside `queue_rental_push` after its blocked-pair check (so never between blocked people), with their own switch and without needing a phone; cancels, expiries, completion and hold renewals send none. `notification_settings.email_rentals` (default on; "Email me about rentals" in Settings > Notifications on the apps and website).
+
+### Data and the outbox
+- `app_private.email_messages` (closed): `id`, `template`, `recipient_id` (null only for `account_deleted`), `to_address` (only `account_deleted`; cleared when it finishes), `rental_id`, `details` (the push kind and an amount line the database wrote), `status` (`queued`, `sent`, `skipped`, `failed`), `skip_reason` (`not_configured`, `turned_off`, `no_address`, `rental_gone`), `provider_message_id`, `error`, `created_at`, `finished_at`. Never the email text. Finished rows are deleted after `email_log_retention_days` (30, attorney; by `run_async_jobs`). `export_my_data` lists yours (template, status, times).
+- Outbox kind `send_email`, payload `{ email_id }`, to Vault `send_email_url` with `x-email-secret` = Vault `email_job_secret` (function secret `EMAIL_JOB_SECRET`). New job status `skipped`: a 2xx answer for an email `send-email` skipped. Done and skipped jobs are kept 1 day. A dead job marks its email failed (address dropped). Admin Background jobs: the "Emails" kind, with "skipped (not set up)" in 24 hours; the dead list shows the template only.
+- Server-key functions: `email_prepare(p_email_id)` → `{ state: send, to, template, data }` or `{ state: skipped, reason }` / `finished` / `gone`; `data` holds only `role`, `name`, `other_name`, `listing_title`, `status`, dates, `days`, prices and amounts, `deposit_status`, `payment_status`, `payment_due_at`, `expires_at`, `payments_enabled`, `timezone`, `chat_path`, `kind`, `detail` and `claim` (`amount`, `status`, `decision_amount`). `email_finish(p_email_id, p_status, p_reason, p_provider_id)` (`sent`, `skipped`, `failed`; else `DZ-E9016`). `queue_account_deleted_email(p_email)` (delete-account).
+
+### `send-email` (Edge Function, `verify_jwt = false`)
+- Only the outbox (`x-email-secret`, else 401 `DZ-E9004`); body `{ email_id }` (else `DZ-E9010`-`E9016`).
+- **Key blank** (`EMAIL_API_KEY` or `EMAIL_FROM`): `email_finish(skipped, not_configured)` before anything is read; 200 `{ skipped: true }`.
+- Otherwise `email_prepare`, render the template (`_shared/email-templates.ts`: plain HTML and text, Dzirent's look), one HTTPS call to the provider (`_shared/email.ts`), then `sent` with the provider's id, or `failed` for a refusal the provider decides (4xx), or 503 for no answer / 429 / 5xx (the outbox retries; the email stays queued).
+- Secrets (names only): `EMAIL_PROVIDER` (`resend` default, or `postmark`), `EMAIL_API_KEY`, `EMAIL_FROM` (a verified sender, e.g. `Dzirent <rentals@dzirent.com>`), `EMAIL_JOB_SECRET`; `EMAIL_API_URL` for tests only. Admin > Integrations shows Email "configured" when `EMAIL_API_KEY` is set.
+
+### Sign-in emails (Supabase Auth)
+`supabase/templates/confirmation.html`, `recovery.html`, `email_change.html` (same look), referenced from `supabase/config.toml` (`[auth.email.template.confirmation|recovery|email_change]`) for the **local stack only**. The live project's Auth settings are unchanged: confirmations off, the built-in email (team addresses only, G4/compliance gap 19).
+
+### Runbook: switching on a custom email service
+Who: an agent with the CLI and the secrets folder, with the owner (who owns the provider account and the DNS). Never print or commit a key.
+1. **Provider account and domain:** the owner creates the account and verifies `dzirent.com` (the provider's SPF, DKIM and return-path DNS records; DMARC `p=none` to start). Pick the sender, e.g. `rentals@dzirent.com`.
+2. **Transactional emails:** save the API key in `H:\DziRent\secrets\providers.env` as `EMAIL_API_KEY`; set the function secrets from a temporary env file (deleted at once): `EMAIL_PROVIDER`, `EMAIL_API_KEY`, `EMAIL_FROM`. `EMAIL_JOB_SECRET` must equal Vault `email_job_secret` (set in C5). Never set `EMAIL_API_URL` on live.
+3. **Check:** Admin > Integrations: Email **configured**. Send one test email by having a test user request a rental from another test user (it goes to the lender's account email); Admin > Background jobs shows the Emails kind done, `email_messages` status `sent`.
+4. **Sign-in emails** (separate, in the dashboard or `supabase config push` reviewed line by line, never blind): Authentication > Emails > SMTP settings: the provider's SMTP host, port 587, user, password (the provider's SMTP key), sender `Dzirent <no-reply@dzirent.com>`. Templates: paste `supabase/templates/confirmation.html`, `recovery.html` and `email_change.html` with their subjects from `config.toml`. Set Site URL to `https://dzirent.com` and the redirect allow-list (compliance gap 19).
+5. **Then** (owner decision, P8C): turn on email confirmations. Test sign-up, password reset and change email with a test address first.
+6. **To switch off:** remove `EMAIL_API_KEY` (`supabase secrets unset EMAIL_API_KEY`): new emails are skipped again; nothing else changes.

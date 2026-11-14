@@ -135,6 +135,8 @@ kotlin {
                 implementation(libs.androidx.fragment)
                 // Open-source licenses screen
                 implementation(libs.aboutlibraries.compose.m3)
+                // C5: Stripe's payment sheet (ui/PaymentSheet.android.kt)
+                implementation(libs.stripe.paymentsheet)
             }
         }
         val iosMain by creating {

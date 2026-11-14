@@ -9,6 +9,7 @@ import {
 import { errorText, shown } from "./errors";
 import { validateListing, type ListingForm } from "./listing-form";
 import { slots } from "./workflows";
+import { parseDepositAmount } from "./rentals";
 type Body = Record<string, unknown>;
 function form(body: Body): ListingForm {
   const f = body.form as ListingForm;
@@ -83,6 +84,13 @@ export async function saveListing(body: Body) {
     listing_styles: f.listing_styles,
     status: "paused",
   };
+  // C5: the deposit amount only while payments are on (the field shows only then); else untouched.
+  if (typeof f.deposit_amount === "string") {
+    const settings = await client.rpc("rental_settings");
+    const deposit = parseDepositAmount(f.deposit_amount);
+    if (!settings.error && (settings.data as { payments_enabled?: boolean } | null)?.payments_enabled === true && deposit !== "DZ-E4051")
+      (details as Record<string, unknown>).deposit_amount = deposit;
+  }
   if (existing)
     must(
       await client

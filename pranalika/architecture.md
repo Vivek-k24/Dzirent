@@ -224,7 +224,8 @@ flowchart TB
 | `stripe-refund` (C4) | The outbox | Refunds and cancelling unpaid payments | Vault shared secret |
 | `stripe-webhook` (C4) | Stripe | Payment, refund, dispute and account events, once each | Stripe signature on the raw body |
 | `admin-integrations` (C4) | Admin website | Which outside services have their secrets set (yes/no only) | Admin with fresh two-step session |
-| `_shared` | (library) | Input validation and common helpers | - |
+| `send-email` (C5) | The outbox (`send_email`) | Renders a transactional email and sends it with one HTTPS call to the provider; skipped while `EMAIL_API_KEY` is blank | Vault shared secret `email_job_secret` |
+| `_shared` | (library) | Input validation and common helpers; C5: the email templates and the provider adapter | - |
 
 ### 5.6 Vision service (`services/vision`)
 
@@ -466,7 +467,7 @@ This is what writing the blueprint exposed. Ranked by impact.
 | G1 | **Price has no unit.** `listings.price_usd` does not say per day, per rental or for how many days; the website and apps only show "$price". | Payments, fees and deposits cannot be computed correctly without it. | Decision now, then P6B |
 | G2 | ~~**Rentals have no request or confirmation states.**~~ **Closed in C3 (2026-11-13):** the A.3 states, writes only through functions, `rental_events`, a price snapshot, no double booking, 48-hour expiry, reminders (`contract.md` section 6). Payment states exist but are unused until payments. | - | Done (C3) |
 | G3 | **One database for everything.** Preview site, debug apps, agent tests and production share `dzirent-server`. | Every test writes production data; every migration lands on production first; no rehearsal. Industry standard is a separate staging project. | Before P8 |
-| G4 | **Password reset and confirmation emails do not reach normal users.** No custom email service; built-in Supabase email is for team addresses. | A user who forgets their password is locked out. | Move from P6C to now |
+| G4 | **Password reset and confirmation emails do not reach normal users.** No custom email service; built-in Supabase email is for team addresses. **Narrowed in C5 (2026-11-13):** Dzirent's sign-in templates are in `supabase/templates` and the switch-over is a runbook (`contract.md` section 9); the live Auth settings are unchanged until the owner sets up the provider and DNS. | A user who forgets their password is locked out. | Owner: email provider and domain, then the runbook |
 | G5 | **Photos are not in the database backups.** | A storage loss deletes every listing photo permanently. | P5B |
 | G6 | **No monitoring.** No error tracking, uptime checks or alerts; logs only in provider consoles. | Failures are found by users. | P5B |
 | G7 | **One admin, one authenticator.** | Losing the phone locks everyone out of moderation. | P5B (second admin or factor, recovery runbook) |
@@ -494,13 +495,17 @@ This is what writing the blueprint exposed. Ranked by impact.
 | G29 | **Stray document** `iOS_Toolchain_and_Packages.md` at the repo root describes a different stack. | Confuses anyone reading the public repo. | Delete |
 | G30 | ~~**Accepted rentals never time out**~~ **Closed in C4:** cancelled automatically `rental_autocancel_days` (2) after the start date when not picked up. | - | Done (C4) |
 | G31 | ~~**No admin tool to end a rental**~~ **Closed in C4:** `admin_end_rental` (Users > Show rentals > End rental). | - | Done (C4) |
-| G32 | **Availability rules differ** (C3). **Server side closed in C4** (owner decision: no windows = always available; `request_rental` takes any future dates). The apps' and website's date pickers still offer no days for such a listing. | The piece can be requested through the API but not yet from the screens. | A one-line client change (C4 handoff, Requests) |
+| G32 | ~~**Availability rules differ**~~ **Closed in C5 (2026-11-13):** the server (C4) and now the apps' and website's date pickers treat no windows as every day from today. | - | Done (C5) |
 | G33 | **Rental reminders use one time zone** (C3). Since C4 it is the `rental_timezone` setting (America/Chicago) with the `rental_reminder_hour` (9), not code. | Wrong day boundaries for people outside that zone. | Per-person time zones when Dzirent leaves Austin |
 | G34 | **Privacy text changed without a version bump** (C3: condition photos, rental reminders; C4: payments and payouts, claims). | People aren't asked to accept the new text. | Owner and attorney: bump `PRIVACY_VERSION` with a `legal_documents` migration if needed |
-| G35 | **No payment screens** (C4). The backend is built and tested against stripe-mock; the apps and website have no pay, payout set-up, deposit or claim screens, and the terms don't yet describe fees, refunds, deposits or claims. | Payments can't be switched on for people. | C5 (screens), BO and attorney (terms) |
+| G35 | **No payment screens** (C4). **Narrowed in C5 (2026-11-13):** Android and the website have payouts set-up, Pay (Stripe's payment sheet / Payment Element), the deposit hold, claims, answers and receipts, hidden while payments are off. Still open: the iPhone payment sheet (G39), the Terms (fees, refunds, deposits, claims, saved-card consent), and the test-mode rehearsal (G38). | Payments can't be switched on for people yet. | Mac session (G39), BO and attorney (terms), the rehearsal |
 | G36 | **Payment records go with the rental** (C4). Rentals are deleted for both people when either account is deleted; their payment columns go too (Stripe keeps its own records, and `payment_operations` keeps the money steps without the rental link). | Dzirent's own payment history is incomplete after a deletion. | Attorney: what must be kept for accounting, then a retention design |
-| G37 | **No payment deadline** (C4). An accepted rental waits for payment until the automatic cancel (2 days after its start). | Unpaid rentals hold their dates. | BO decision: a payment deadline setting |
-| G38 | **Live Stripe never exercised** (C4). Tested only against stripe-mock and signed test events; stripe-mock keeps no state. | Real behavior (3-D Secure, declines, Connect onboarding) is unverified. | The runbook's test-mode rehearsal (contract.md section 7) |
+| G37 | ~~**No payment deadline**~~ **Closed in C5 (2026-11-13):** `payment_deadline_hours` (24, 1-72, BO); an unpaid rental is cancelled by the expiry job with an event and pushes to both. The value is a BO placeholder for the Terms. | - | Done (C5); BO confirms the value |
+| G38 | **Live Stripe never exercised** (C4). Tested only against stripe-mock and signed test events; stripe-mock keeps no state. C5 adds the client payment sheets, which can't run at all without Stripe test keys. | Real behavior (3-D Secure, declines, Connect onboarding, the sheets) is unverified. | The test-mode rehearsal: `pranalika/stripe-rehearsal.md` |
+| G39 | **No iPhone payment sheet** (C5). Common code calls `rememberPaymentSheetLauncher`; the iOS side is a stub that answers "Pay on dzirent.com" (`DZ-E4049`). | iPhone renters must pay on the website. | Mac session: the Stripe iOS SDK's PaymentSheet behind the same interface |
+| G40 | **Emails are built but not sent** (C5). The provider key is blank, so every email is skipped; no sender domain is verified. | People get no receipts or reminders by email. | Owner: provider account and DNS, then `contract.md` section 9 |
+| G41 | **The pay page allows Stripe's scripts and frames** (C5), with the site's `'unsafe-inline'` scripts (G16). | A wider policy on the one page that takes payment. | Nonces (G16) when the pages move to them |
+| G42 | **Email log and the deleted account's address** (C5). `email_messages` keeps template, account and outcome for 30 days; the account-deleted email holds the address until it is sent (minutes, or until its job dies). | Retention the privacy page must state; the attorney may want a shorter period. | Attorney (retention); `compliance.md` gap 35 |
 
 ---
 
@@ -524,7 +529,9 @@ This is what writing the blueprint exposed. Ranked by impact.
 
 ## Appendix A - Payments and deposits (design; backend built in C4)
 
-**Status (2026-11-13, C4):** built as designed and switched off: the data model (A.2, with `rental_claims`, `payment_events`, `payout_accounts`, `stripe_customers`, the rental payment columns, and `listings.deposit_amount`), the state machine (A.3), the flows (A.4: `stripe-onboard`, `stripe-account-status`, `stripe-pay`, `stripe-deposit`, `stripe-refund`, `stripe-webhook`), and the admin additions (A.5: the Payments page, refunds, claim decisions, ending a rental). Tested against stripe-mock and signed test events (`pranalika/testing.md`); never against Stripe. `price_unit` and `included_days` stay as C1 left them (per day). The client screens are C5. Contract: `contract.md` section 7, with the runbook for the real keys.
+**Status (2026-11-13, C4):** built as designed and switched off: the data model (A.2, with `rental_claims`, `payment_events`, `payout_accounts`, `stripe_customers`, the rental payment columns, and `listings.deposit_amount`), the state machine (A.3), the flows (A.4: `stripe-onboard`, `stripe-account-status`, `stripe-pay`, `stripe-deposit`, `stripe-refund`, `stripe-webhook`), and the admin additions (A.5: the Payments page, refunds, claim decisions, ending a rental). Tested against stripe-mock and signed test events (`pranalika/testing.md`); never against Stripe. `price_unit` and `included_days` stay as C1 left them (per day). Contract: `contract.md` section 7, with the runbook for the real keys.
+
+**Status (2026-11-13, C5):** the client screens are built for Android and the website (payouts, pay through Stripe's own payment sheet and Payment Element, the deposit hold, claims, receipts), hidden while `payments_enabled` is off; a payment deadline (`payment_deadline_hours`) cancels unpaid rentals. The iPhone payment sheet is for the Mac session (G39). The sheets need Stripe test keys to run end to end: `pranalika/stripe-rehearsal.md`.
 
 Sources: Stripe documentation on Connect charge types, application fees, and placing holds on payment methods. Nothing here is invented beyond choosing among Stripe's documented options.
 

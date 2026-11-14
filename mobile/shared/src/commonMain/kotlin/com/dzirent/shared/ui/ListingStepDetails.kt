@@ -41,6 +41,7 @@ import com.dzirent.shared.util.availabilityChipLabel
 import com.dzirent.shared.util.copiedMeasurements
 import com.dzirent.shared.util.firstOverlap
 import com.dzirent.shared.util.measurementLabelsFor
+import com.dzirent.shared.util.parseDepositAmount
 import com.dzirent.shared.util.readyList
 import com.dzirent.shared.util.sameAsCandidate
 import com.dzirent.shared.util.sameAsQuestion
@@ -151,7 +152,8 @@ fun SizePriceDatesStep(
 
     // ---- More options (collapsed) ----
     val retailError = accessoryValueError(state.isAccessory, state.retailValueText)
-    val noteRefused = state.textErrors["price_note"] != null || state.textErrors["deposit_note"] != null
+    val noteRefused = state.textErrors["price_note"] != null || state.textErrors["deposit_note"] != null ||
+        (state.paymentsEnabled && parseDepositAmount(state.depositAmountText).isFailure)
     var moreOpen by remember { mutableStateOf(retailError != null) }
     TextButton(onClick = { moreOpen = !moreOpen }, contentPadding = PaddingValues(horizontal = 4.dp)) {
         Text("More options")
@@ -175,7 +177,9 @@ fun SizePriceDatesStep(
             depositNote = state.depositNote,
             onDepositNoteChange = { state.depositNote = it; state.clearTextError("deposit_note") },
             retailError = retailError,
-            depositNoteError = state.textErrors["deposit_note"]
+            depositNoteError = state.textErrors["deposit_note"],
+            depositAmountText = if (state.paymentsEnabled) state.depositAmountText else null,
+            onDepositAmountChange = { state.depositAmountText = it }
         )
     }
     TextButton(onClick = onWhatCanIList, contentPadding = PaddingValues(horizontal = 4.dp)) { Text(DzirentPolicy.WHAT_CAN_I_LIST_TITLE) }

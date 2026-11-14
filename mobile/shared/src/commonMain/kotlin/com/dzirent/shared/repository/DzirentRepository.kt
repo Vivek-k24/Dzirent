@@ -72,6 +72,9 @@ class DzirentException(message: String, val field: String? = null, val code: Str
 /** What the chat shows when the two people are blocked (DZ-E3005). */
 val CANT_MESSAGE_USER: String = ErrorCatalog.shown("DZ-E3005").text
 
+/** C5: where Stripe's onboarding sends a lender back (the website's My studio; the app refreshes on return). */
+private const val PAYOUTS_RETURN_URL = "https://dzirent.com/app/settings/studio"
+
 /** Storage's own refusals for listing-photos (P5A: JPEG, PNG or WebP, at most 10 MB), as catalog codes. */
 internal fun storageRefusal(statusCode: Int?, raw: String): String? {
     val said = raw.lowercase()
@@ -751,6 +754,7 @@ class DzirentRepository(
                     put("messages", settings.messages)
                     put("show_message_text", settings.showMessageText)
                     put("rental_reminders", settings.rentalReminders)
+                    put("email_rentals", settings.emailRentals)
                 }
             )
         } catch (e: Exception) {
@@ -1026,6 +1030,8 @@ class DzirentRepository(
                     put("price_note", listing.priceNote)
                     put("retail_value", listing.retailValue)
                     put("deposit_note", listing.depositNote)
+                    // C5: the optional deposit held at pickup (the editor shows it only while payments are on).
+                    put("deposit_amount", listing.depositAmount)
                     put("listing_styles", JsonArray(listing.listingStyles.map { JsonPrimitive(it) }))
                     put("garment_type", listing.garmentType)
                     // Only ever set here; a trigger keeps owners from clearing it.
@@ -1407,6 +1413,121 @@ class DzirentRepository(
         postgrest.rpc(function, params).decodeAs<String>()
     } catch (e: Exception) {
         throw fail(doing, e)
+    }
+
+    // --- C5: payments (the screens; every step is decided on the server) ---
+
+    private var cachedRentalSettings: RentalSettings? = null
+
+    /** The rules the screens show (request answer time, payment deadline, payments on or off). */
+    suspend fun rentalSettings(refresh: Boolean = false): RentalSettings {
+        if (!refresh) cachedRentalSettings?.let { return it }
+        return try {
+            val element = postgrest.rpc("rental_settings").decodeAs<JsonElement>()
+            rentalJson.decodeFromJsonElement(RentalSettings.serializer(), element).also { cachedRentalSettings = it }
+        } catch (e: Exception) {
+            throw fail("load the rental rules", e)
+        }
+    }
+
+    /** My payout account as Dzirent last saw it (payout_accounts, owner read), or null. */
+    suspend fun myPayoutAccount(): PayoutAccount? {
+        val uid = requireUserId()
+        return try {
+            postgrest.from("payout_accounts")
+                .select(Columns.list("charges_enabled", "payouts_enabled", "details_submitted")) { filter { eq("user_id", uid) } }
+                .decodeSingleOrNull<PayoutAccount>()
+        } catch (e: Exception) {
+            throw fail("load your payouts", e)
+        }
+    }
+
+    /** A new Stripe onboarding link for my payouts (stripe-onboard). Opened in the browser. */
+    suspend fun payoutSetupLink(): String {
+        val response = try {
+            functions.invoke("stripe-onboard", buildJsonObject {
+                put("return_url", "$PAYOUTS_RETURN_URL?payouts=return")
+                put("refresh_url", "$PAYOUTS_RETURN_URL?payouts=refresh")
+            })
+        } catch (e: Exception) {
+            throw fail("open the payout set-up", e)
+        }
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E4036")
+        return (body["url"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.startsWith("https://") }
+            ?: throw DzirentException(ErrorCatalog.shown("DZ-E4036"))
+    }
+
+    /** Asks Stripe for my payout account now (stripe-account-status), e.g. back from onboarding. */
+    suspend fun refreshPayoutAccount(): PayoutAccount? {
+        val response = try {
+            functions.invoke("stripe-account-status", buildJsonObject {})
+        } catch (e: Exception) {
+            throw fail("check your payouts", e)
+        }
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E4036")
+        val account = body["account"] as? JsonObject ?: return null
+        return rentalJson.decodeFromJsonElement(PayoutAccount.serializer(), account)
+    }
+
+    /** The renter's payment: the client secret for Stripe's payment sheet (stripe-pay). */
+    suspend fun startPayment(rentalId: String): PaymentStart {
+        val response = try {
+            functions.invoke("stripe-pay", buildJsonObject { put("rental_id", rentalId) })
+        } catch (e: Exception) {
+            throw fail("start the payment", e)
+        }
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E4036")
+        val secret = (body["client_secret"] as? JsonPrimitive)?.contentOrNull
+        val key = (body["publishable_key"] as? JsonPrimitive)?.contentOrNull
+        if (secret.isNullOrBlank() || key.isNullOrBlank()) throw DzirentException(ErrorCatalog.shown("DZ-E4036"))
+        return PaymentStart(secret, key, (body["amount"] as? JsonPrimitive)?.doubleOrNull)
+    }
+
+    /**
+     * The lender places the deposit hold at pickup (stripe-deposit "place"): "picked_up" when the
+     * hold is in place (the rental is marked picked up too), "pending" while Stripe confirms it.
+     */
+    suspend fun placeDepositHold(rentalId: String): String {
+        val response = try {
+            functions.invoke("stripe-deposit", buildJsonObject {
+                put("action", "place")
+                put("rental_id", rentalId)
+            })
+        } catch (e: Exception) {
+            throw fail("place the deposit hold", e)
+        }
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E4035")
+        return (body["status"] as? JsonPrimitive)?.contentOrNull
+            ?: (body["deposit_status"] as? JsonPrimitive)?.contentOrNull ?: "pending"
+    }
+
+    /** The lender's claim against the deposit (file_claim). Returns the claim id. */
+    suspend fun fileClaim(rentalId: String, amount: Double, reason: String, photoPaths: List<String>): String = try {
+        postgrest.rpc("file_claim", buildJsonObject {
+            put("p_rental_id", rentalId)
+            put("p_amount", amount)
+            put("p_reason", reason.trim())
+            put("p_photo_paths", JsonArray(photoPaths.map { JsonPrimitive(it) }))
+        }).decodeAs<String>()
+    } catch (e: Exception) {
+        throw fail("file the claim", e)
+    }
+
+    /** The renter accepts or disputes a claim (respond_claim). */
+    suspend fun respondClaim(claimId: String, accept: Boolean, note: String? = null): String = rentalCall(
+        "respond_claim", "answer the claim",
+        buildJsonObject {
+            put("p_claim_id", claimId)
+            put("p_answer", if (accept) "accept" else "dispute")
+            note?.takeIf { it.isNotBlank() }?.let { put("p_note", it.trim()) }
+        }
+    )
+
+    /** An Edge Function's JSON body, or its coded refusal ({ code, message }) as a DzirentException. */
+    private fun edgeJson(text: String, ok: Boolean, fallback: String): JsonObject {
+        if (!ok) throw DzirentException(ErrorCatalog.fromBody(text) ?: ErrorCatalog.shown(fallback))
+        return runCatching { rentalJson.parseToJsonElement(text) as? JsonObject }.getOrNull()
+            ?: throw DzirentException(ErrorCatalog.shown(fallback))
     }
 
     /**

@@ -14,7 +14,7 @@ import {
   WorkflowError,
   uuid,
 } from "@/lib/workflow-server";
-import { chatMutation, accountMutation, dates, uploadRentalPhoto } from "@/lib/workflow-mutations";
+import { chatMutation, accountMutation, dates, uploadRentalPhoto, paymentMutation } from "@/lib/workflow-mutations";
 import {
   saveListing,
   finishListing,
@@ -117,6 +117,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
     if (path[0] === "chat")
       return reply(await chatMutation(path[1], path[2], body));
+    // C5: payments (Stripe's own forms take the card and bank details; never this site).
+    if (path[0] === "pay" || path[0] === "payouts")
+      return reply(await paymentMutation(path, body, request.nextUrl.origin));
     if (path[0] === "export") return await exportMyData();
     if (path[0] === "account") {
       if (path[1] === "delete") {
