@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import { readInput } from "../_shared/input.ts";
 import { errorBody, errorStatus } from "../_shared/errors.ts";
+import { deleteSession, deleteUser, diditConfig } from "../_shared/didit.ts";
 
 const BUCKET = "listing-photos";
 const PAGE_SIZE = 1000;
@@ -71,6 +72,30 @@ Deno.serve(async (req) => {
     }
     if (inProgress) {
       return refuse("DZ-E7010");
+    }
+
+    // 2b. C6: the ID verification. Didit's sessions (with their images and face data) and Didit's
+    // user record for this account go first, then Dzirent's rows. If Didit can't be reached the
+    // deletion stops here (DZ-E6013), so nothing is left behind; try again later. While the Didit keys
+    // are blank nothing can be asked of Didit: only Dzirent's rows are removed.
+    const { data: sessions, error: sessionsError } = await admin.rpc("didit_sessions_for", { p_user: userId });
+    if (sessionsError || !Array.isArray(sessions)) {
+      return refuse("DZ-E6013");
+    }
+    if (sessions.length > 0) {
+      const didit = diditConfig();
+      if (didit) {
+        for (const sessionId of sessions) {
+          if (typeof sessionId !== "string" || !(await deleteSession(didit, sessionId))) return refuse("DZ-E6013");
+        }
+        if (!(await deleteUser(didit, userId))) return refuse("DZ-E6013");
+      } else {
+        console.log(JSON.stringify({ fn: "delete-account", didit: "not configured", sessions: sessions.length }));
+      }
+    }
+    const { error: forgetError } = await admin.rpc("didit_forget", { p_user: userId });
+    if (forgetError) {
+      return refuse("DZ-E6013");
     }
 
     // 3. Delete the caller's listing photo folders through the Storage API first.

@@ -107,9 +107,9 @@ export default async function AdminOverviewPage() {
         <Link href="/admin/id-verification" className="admin-queue-card">
           <div className="queue-top">
             <span className="queue-label">ID reviews</span>
-            <span className="queue-count">0</span>
+            <span className="queue-count">{queues.id_verification_reviews ?? 0}</span>
           </div>
-          <p className="muted">Not active yet (P6A)</p>
+          <p className="muted">ID checks waiting for a decision</p>
         </Link>
       </div>
 

@@ -33,3 +33,10 @@ test("values read as words, grouped by area", () => {
   const groups = groupSettings([row("b", "retention", "Zeta"), row("a", "payments", "Fee"), row("c", "retention", "Alpha")]);
   assert.deepEqual(groups.map(([title, rows]) => [title, rows.map((r) => r.key)]), [["Payments", ["a"]], ["Retention", ["c", "b"]]]);
 });
+
+test("C6: an id setting takes an id only", () => {
+  const id = { type: "uuid" as const, min: null, max: null, unit: null, choices: null };
+  assert.deepEqual(parseSettingInput(id, " 7051BBE4-0793-49C0-A9A3-39483E7AF5DA "), { ok: true, value: "7051bbe4-0793-49c0-a9a3-39483e7af5da" });
+  assert.equal(parseSettingInput(id, "not-an-id").ok, false);
+  assert.deepEqual(groupSettings([{ key: "didit_workflow_id", label: "Verification workflow", area: "verification", value: "x", type: "uuid", unit: null, min: null, max: null, choices: null, description: "", decided_by: "owner", affects_terms: false, updated_at: "" }]).map(([title]) => title), ["ID verification"]);
+});

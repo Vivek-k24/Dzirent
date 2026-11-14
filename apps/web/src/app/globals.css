@@ -449,3 +449,15 @@ a.icon-button {
 .pay-form{display:grid;gap:12px;margin-top:12px}
 .payment-element{min-height:120px}
 .button.disabled{opacity:.5;pointer-events:none}
+/* C6: the "Verified" badge (theme tokens, so it reads in both themes) and Settings > Verification. */
+.verified-badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;line-height:1.2;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 7px 1px 5px;white-space:nowrap;vertical-align:middle}
+.verified-badge .icon{width:12px;height:12px;stroke-width:2.4}
+.piece-card .verified-badge{margin:2px 0 4px;font-size:10px}
+.studio-bio h1 .verified-badge,.chat-top h1 .verified-badge{margin-left:10px;font-size:12px;letter-spacing:0}
+.studio-byline strong .verified-badge{margin-left:8px}
+.verification-status{display:flex;align-items:center;gap:10px;margin:6px 0 4px;font-size:15px}
+.verification-keeps{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+.verification-keeps ul{margin:6px 0 0;padding-left:18px;font-size:13px;line-height:1.7}
+.verify-done{max-width:560px;padding-top:40px;padding-bottom:60px}
+.verify-done .spinner-line{display:flex;align-items:center;gap:10px;font-size:15px}
+@media(max-width:640px){.verification-keeps{grid-template-columns:1fr}}

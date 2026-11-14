@@ -175,6 +175,8 @@ private fun ListingEditorForm(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var publishState by remember { mutableStateOf<PublishState>(PublishState.Idle) }
     var showWhatCanIList by remember { mutableStateOf(false) }
+    // C6: a publish refused for the ID check asks to verify over this form, then publishes again.
+    val verificationGate = LocalVerificationGate.current
 
     // The database's flag: while it's on, a listing goes live only after an allowed photo check.
     var visionRequired by remember { mutableStateOf(false) }
@@ -523,7 +525,10 @@ private fun ListingEditorForm(
             } catch (e: PublishStepException) {
                 val refused = e.cause as? DzirentException
                 val column = refused?.field
-                if (refused != null && column in LISTING_TEXT_COLUMNS) {
+                if (refused != null && verificationGate.handle(refused) { publish() }) {
+                    // C6: the one-time ID check (only while verification_required is on): verify, then publish again.
+                    publishState = PublishState.Idle
+                } else if (refused != null && column in LISTING_TEXT_COLUMNS) {
                     // The text filter said no: back to the form, the message under that field, nothing lost.
                     state.textErrors = mapOf(column!! to (refused.message ?: "Please change this text."))
                     state.step = if (column == "title" || column == "description") STEP_DETAILS else STEP_PRICE

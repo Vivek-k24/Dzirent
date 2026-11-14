@@ -42,6 +42,7 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - `studio_handle` (text): studio handle.
   - `price_per_day` (numeric), `price_unit` (text, always `'per_day'` for now) (C1).
   - `days` (integer) and `total` (numeric): with both `p_start_date` and `p_end_date`, the days in the range counting both ends (Dec 30 - Jan 2 is 4) and `price_per_day × days`; null otherwise (C1).
+  - `is_verified` (boolean, C6): the lender verified their ID (the "Verified" badge). The same column is in `fit_listings`, `my_saved_listings` (false for an unavailable piece), `get_listing`, `get_studio` (the studio and each card in `listings`); `my_conversations` returns `other_is_verified` for the other person (chat headers). Nothing else about the check is ever returned.
 
 ### `get_listing`
 - **Who can call:** Guest and signed-in (`anon`, `authenticated`).
@@ -219,11 +220,11 @@ Admins are the accounts in `app_private.admin_users` (closed to every API role).
 - **Adding or removing an admin:** list the admin emails in `ADMIN_EMAILS` (comma-separated) in `H:\DziRent\secrets\providers.env`, then an agent runs `node supabase/seed/admins.mjs` from the repo root. It makes `admin_users` match the list exactly: listed accounts are added, unlisted admins removed, each change logged as `admin_added` / `admin_removed`. An empty list is refused. An email with no Dzirent account is skipped (sign up first, then run it again). The admin then enrolls a TOTP factor (Supabase MFA) and signs in with it.
 - `is_admin()` → `boolean`: true only for an admin at `aal2`. Any signed-in user may call it.
 - **Queues:**
-  - `admin_queues()`: counts `open_reports`, `scans_in_review` (latest scan `done` + `review`, no admin decision), `open_takedowns` (`received` or `countered`), `id_verification_reviews` (always 0 until P6A).
+  - `admin_queues()`: counts `open_reports`, `scans_in_review` (latest scan `done` + `review`, no admin decision), `open_takedowns` (`received` or `countered`), `id_verification_reviews` (C6: ID checks `in_review`; was always 0).
   - `admin_list_reports(p_status text default 'open', p_limit int default 30, p_offset int default 0)`: reports (`p_status` null = all) with reporter and target names and handles, outcome, and the evidence snapshot (`evidence`).
   - `admin_list_scan_reviews(p_limit, p_offset)`: scans waiting for a person, with the listing title, lender handle and each photo's storage path, slot, decision, warnings, `looks_like`, `nsfw` and `hooded`.
   - `admin_list_takedowns(p_status text default null, p_limit, p_offset)`: takedown requests; null = the open ones.
-  - `admin_list_id_reviews()`: `[]` until ID verification (P6A).
+  - `admin_list_id_reviews(p_status text default null, p_limit int default 30 (max 100), p_offset int default 0)`: C6, section 10 (was `[]`).
 - **Reports** (each closes an open report when given one; a closed report can't be closed again):
   - `admin_dismiss_report(p_report_id, p_reason)`: outcome `dismissed`.
   - `admin_warn_user(p_user_id, p_note, p_report_id default null)`: adds a `user_warnings` row (the user can read their own); outcome `warned`.
@@ -281,11 +282,12 @@ Reports (P2B changes):
 - `admin_find_user` (P2B) also returns `age_check` (`{ source, result, platform, checked_at }` of the latest row, or null) and `age_blocked` (boolean).
 
 - `age_blocked()` → `boolean` (P3A): Signed-in only. True while the caller is blocked by the age gate. The website shows its full blocked page then.
+- **C6, the ID's age:** an approved ID records a check with `source` `id_verification` and `platform` `server` (written only by the server, never by `record_age_check`, which still refuses that source with `DZ-E1031`). The latest ID result outranks every other check: an ID's `adult` lifts a store's `minor`, and an ID's `minor` blocks the account (its listings paused) whatever a store says later. The cleanup job `old_age_checks` keeps the latest ID result too.
 
 ### Download my data (P3A)
 - **Clients call the Edge Function `export-my-data`** (below). It returns the file; the database function behind it is `export_my_data()`.
 - `export_my_data()` → `jsonb`: Signed-in only. Everything Dzirent holds about the caller, built from `auth.uid()` only. Once per 24 hours: a second call is refused with `P0001` "You can download your data once a day. Try again after Nov 8, 2026, 6:51 PM UTC." Each successful call adds a row to `data_exports`.
-- **Parts:** `account` (email, created, last sign-in), `profile`, `private_profile`, `listings` (each with `measurements`, `availability`, `photos`, `photo_checks` with per-photo results), `saved_pieces`, `saved_studios`, `chats` (with `messages`), `rentals` (since C3 with `price_per_day`, `days`, `total`, `currency` and `events`: from, to, by you / other person / Dzirent, note, time), `condition_photos` (C3: the caller's own pickup and return photos, `rental_id`, `stage`, `storage_path`, `uploaded_at`; the Edge Function adds `link`, a signed link valid 7 days), `blocked_people`, `reports_filed`, `warnings`, `accessory_declarations`, `listing_declarations`, `legal_acceptances`, `age_checks`, `notification_settings`, `devices` (platform and dates, never tokens), `suggestion_choices`, `listing_activity`, `earlier_exports`.
+- **Parts:** `account` (email, created, last sign-in), `profile`, `private_profile`, `listings` (each with `measurements`, `availability`, `photos`, `photo_checks` with per-photo results), `saved_pieces`, `saved_studios`, `chats` (with `messages`), `rentals` (since C3 with `price_per_day`, `days`, `total`, `currency` and `events`: from, to, by you / other person / Dzirent, note, time), `condition_photos` (C3: the caller's own pickup and return photos, `rental_id`, `stage`, `storage_path`, `uploaded_at`; the Edge Function adds `link`, a signed link valid 7 days), `blocked_people`, `reports_filed`, `warnings`, `accessory_declarations`, `listing_declarations`, `legal_acceptances`, `age_checks`, `notification_settings`, `devices` (platform and dates, never tokens), `suggestion_choices`, `listing_activity`, `earlier_exports`, and (in the file since C6; the database had them since C4/C5) `claims`, `payments`, `emails`, plus `id_verification` (C6: status, the legal name from the ID, the 18+ result, attempts, dates; no images, birthdate or document details exist to include).
 - **Other people** appear only as `{ name, handle }` (studio name, else display name; studio handle). Messages say `from: "you"` or `"other person"`. Never another user's account id, email, location, measurements or private fields. Reports about the caller, report evidence, outcomes and admin notes are not included.
 
 ### Cleanup and retention jobs (P3B)
@@ -361,6 +363,9 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 | `stripe-deposit` (C4) | `action`, `rental_id` (people, both required); `operation_id` (the outbox) | 1 KB |
 | `stripe-refund` (C4) | `operation_id` (required) | 1 KB |
 | `stripe-webhook` (C4) | Stripe's event, read only after its signature is checked | 512 KB |
+| `didit-start` (C6) | `action` (`start` default, or `check`), `return_url` | 2 KB |
+| `didit-webhook` (C6) | Didit's event, read only after its signature is checked | 1 MB |
+| `didit-sync` (C6) | `session_id` (required) | 1 KB |
 
 ### `delete-listing`
 - **Who can call:** Signed-in listing owner (`POST /functions/v1/delete-listing`).
@@ -376,6 +381,7 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 - **Behavior:**
   1. Verifies caller authentication.
   2. Refuses with HTTP 409 `DZ-E7010` while the caller has a rental in progress as renter or lender: `accepted`, `awaiting_payment`, `paid`, `picked_up`, `returned`, `claimed` or `disputed` (C3; asked with `account_has_rental_in_progress(p_user)`, server key only). A request alone doesn't block.
+  2b. C6: the ID verification. With the Didit keys set, every Didit session of the person (`didit_sessions_for`) is deleted at Didit (`DELETE /v3/session/{id}/delete/`, its images and face data with it), then Didit's user record for our account id (`POST /v3/users/delete/` with `vendor_data_list`); a 404 counts as done. Any other failure stops the deletion with HTTP 503 `DZ-E6013` (try again later) so nothing is left behind. Then Dzirent's rows go (`didit_forget`). While the keys are blank only Dzirent's rows go.
   3. Finds all caller listings and deletes their folders from `listing-photos` via Storage API.
   4. Deletes auth user via admin client; foreign keys cascade profile, listings, and child rows.
 - **Returns:** HTTP 200 `{ "ok": true }`.
@@ -419,7 +425,8 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 
 | Table | Operations | RLS Rule |
 | --- | --- | --- |
-| `profiles` | SELECT, UPDATE | `id = auth.uid()`. `suspended_until` and `suspension_reason` (P2B) are readable by the owner and written only by admin functions. |
+| `profiles` | SELECT, UPDATE | `id = auth.uid()`. `suspended_until` and `suspension_reason` (P2B) are readable by the owner and written only by admin functions. `is_verified` (C6, the badge) is readable by the owner and kept by the server from `identity_verifications` (a trigger keeps it on any app update). |
+| `identity_verifications` | SELECT (`user_id`, `status`, `updated_at` only) | C6. `user_id = auth.uid()`. One row per person, written only by the server (section 10). The other columns (`provider_session_id`, `legal_name`, `is_adult`, `attempts`, `reason`, `verified_at`, `created_at`) aren't readable by people: `my_verification()` gives the status, tries and dates. In the `supabase_realtime` publication (status only). Removed with the account. |
 | `private_profiles` | ALL | `user_id = auth.uid()`. `measurements_consent_at` (P1B) is written only by `give_measurements_consent` / `withdraw_measurements_consent`; body measurements need it (see "Terms acceptance and measurements consent"). |
 | `listings` | SELECT, INSERT, UPDATE, DELETE | `lender_id = auth.uid()`. INSERT requires lender/both role. UPDATE restricted to safe columns. DELETE requires empty Storage folder. `auto_paused_reason` (Step 8B) is read-only for apps. `hold`, `hold_reason`, `hold_restores` (P2B) are server-only (see "Admin"). |
 | `listing_photos` | ALL | Owned listing only (`l.lender_id = auth.uid()`). |
@@ -503,7 +510,7 @@ Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.k
 ### Error and warning codes
 - **One source:** `contracts/error-codes.json`. `node contracts/generate.mjs` writes the Kotlin (`mobile/shared/.../util/ErrorCodes.kt`), website (`apps/web/src/lib/error-codes.generated.ts`) and Edge Function (`supabase/functions/_shared/error-codes.ts`) copies and the readable table `pranalika/error-codes.md`. The website build (`prebuild`) and the Android build (`generateErrorCodes`, skipped without Node) run it; `npm run lint` (`--check`) and `ErrorCodesFreshnessTest` fail when a committed copy is out of date. Codes are never reused or renumbered.
 - **Entry:** `code` (`DZ-E####` error, `DZ-W####` warning), `kind`, `area`, `message` (what people see), optional `field`, `status` (HTTP-like), optional `server_detail` (the server's sentence carries a date or reason; show it).
-- **Families:** 1xxx account, sign-in, terms, age; 2xxx listings, photos, photo checks; 3xxx chat, saving, blocking; 4xxx rentals, payments, deposits (reserved); 5xxx reports, moderation, admin; 6xxx ID verification (reserved); 7xxx data download, deletion; 9xxx system (rate limit `DZ-E9001`, unreachable `DZ-E9002`, unavailable `DZ-E9003`, request checks `DZ-E9010`-`E9016`, unexpected `DZ-E9999`).
+- **Families:** 1xxx account, sign-in, terms, age; 2xxx listings, photos, photo checks; 3xxx chat, saving, blocking; 4xxx rentals, payments, deposits (reserved); 5xxx reports, moderation, admin; 6xxx ID verification (C6: `DZ-E6001`-`E6015`); 7xxx data download, deletion; 9xxx system (rate limit `DZ-E9001`, unreachable `DZ-E9002`, unavailable `DZ-E9003`, request checks `DZ-E9010`-`E9016`, unexpected `DZ-E9999`).
 - **Database:** every refusal's message starts with its code, `"DZ-E2010: Add a photo first"`; the SQLSTATE (`P0001`, `42501`, `22023`, `P0002`, ...) is unchanged. The field is in the HINT: the text filter's column as before, and the catalog's field otherwise (`full_legal_name`, `dates`, `reason`, `days`, `platform`). `check_text` returns the refusal with its code. The suspension sentence is `DZ-E1040: Your account is suspended ...`. One wording change: "You cannot message this user" is now "You can't message this user." (`DZ-E3005`).
 - **Clients:** show the catalog message for the code (the server's words when `server_detail`), under the field when one is named, then the code in brackets: "Add a photo first (DZ-E2010)". A code the build doesn't know shows the server's words; anything without a code shows `DZ-E9999` "Something went wrong. Please try again.". Auth, network and Storage failures get their codes in the client (`DZ-E1004` wrong password, `DZ-E9002` no connection, `DZ-E2064`/`E2065` photo type and size, ...).
 - **Photo warnings:** the 8 scanner and phone warnings are `DZ-W2001`-`W2008`, matched by their words (the vision service still sends words); the apps and website show the code after the warning.
@@ -734,6 +741,7 @@ Every business number and rule; never in code or env files. Each row: `key`, `va
 | Rentals | `rental_request_hours` (48), `rental_autocancel_days` (2), `rental_overdue_reminder_days` (3), `rental_reminder_hour` (9), `rental_timezone` (America/Chicago) |
 | Rate limits | `rate_limit_message` (30/min), `rate_limit_new_chat`, `rate_limit_report`, `rate_limit_new_listing` (per day), `rate_limit_photo_scan` (per hour), `rate_limit_rental_request` (20/day), `data_export_interval_hours` (24) |
 | Retention | `email_log_retention_days` (30, attorney, terms; C5), `report_retention_days` (730, attorney, terms), `condition_photo_retention_days` (365, attorney, terms), `declaration_retention_years` (7, attorney, terms), `draft_retention_days`, `orphan_photo_days`, `photo_check_retention_days`, `data_export_retention_days` (at least 8), `age_checks_keep` ("latest"), `suggestion_retention_days`, `device_token_stale_days` |
+| Verification (C6) | `didit_workflow_id` (the Free KYC workflow, type `uuid`, owner), `didit_application_id` (type `uuid`, owner; webhooks for another application are refused), `id_verification_max_attempts` (3, 1-10 "checks per person", owner) |
 
 Not settings, on purpose (technical, not business): the outbox retry schedule, the 24-hour freshness of an admin's two-step code (a security rule), the 10-minute photo-check timeout, cron cadences, Stripe's 5-minute webhook tolerance and 7-day authorization fallback.
 
@@ -743,7 +751,7 @@ Not settings, on purpose (technical, not business): the outbox retry schedule, t
 - **C5, for the screens:** `rental_settings()` → `jsonb` `{ payments_enabled, rental_request_hours, payment_deadline_hours, claim_window_hours, cancellation_refund_cutoff_hours, late_cancellation_refund_percent, platform_fee_percent }`, readable by guests and signed-in people (rules the Terms state; no secrets). The apps cache it per session; the website reads it with the chat, Settings and the listing editor.
 
 ### Integrations (`admin-integrations` Edge Function, `/admin/integrations`)
-`POST {}` with an admin's token → `{ ok, integrations: [{ key, name, configured, status }] }` for `payments` (`STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYMENTS_JOB_SECRET`), `id_checks` (`DIDIT_API_KEY`, `DIDIT_WEBHOOK_SECRET`), `notifications` (`FIREBASE_SERVICE_ACCOUNT_BASE64`, `SEND_PUSH_SECRET`), `email` (`EMAIL_API_KEY`), `photo_checks` (`VISION_URL`, `VISION_INVOKER_KEY_BASE64`, `SCAN_LISTING_SECRET`): "configured" when every named secret is set, else "not configured". Only those words: never a value or length; nothing is accepted or stored. The admin check and the log entry (`view_integrations`, booleans only) are `admin_record_integrations_check` as the caller; a non-admin gets 403 `DZ-E5008`.
+`POST {}` with an admin's token → `{ ok, integrations: [{ key, name, configured, status }] }` for `payments` (`STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYMENTS_JOB_SECRET`), `id_checks` (named "ID verification" since C6: `DIDIT_API_KEY`, `DIDIT_WEBHOOK_SECRET`), `notifications` (`FIREBASE_SERVICE_ACCOUNT_BASE64`, `SEND_PUSH_SECRET`), `email` (`EMAIL_API_KEY`), `photo_checks` (`VISION_URL`, `VISION_INVOKER_KEY_BASE64`, `SCAN_LISTING_SECRET`): "configured" when every named secret is set, else "not configured". Only those words: never a value or length; nothing is accepted or stored. The admin check and the log entry (`view_integrations`, booleans only) are `admin_record_integrations_check` as the caller; a non-admin gets 403 `DZ-E5008`.
 
 ---
 
@@ -788,3 +796,86 @@ Who: an agent with the CLI and the secrets folder, with the owner (who owns the 
 4. **Sign-in emails** (separate, in the dashboard or `supabase config push` reviewed line by line, never blind): Authentication > Emails > SMTP settings: the provider's SMTP host, port 587, user, password (the provider's SMTP key), sender `Dzirent <no-reply@dzirent.com>`. Templates: paste `supabase/templates/confirmation.html`, `recovery.html` and `email_change.html` with their subjects from `config.toml`. Set Site URL to `https://dzirent.com` and the redirect allow-list (compliance gap 19).
 5. **Then** (owner decision, P8C): turn on email confirmations. Test sign-up, password reset and change email with a test address first.
 6. **To switch off:** remove `EMAIL_API_KEY` (`supabase secrets unset EMAIL_API_KEY`): new emails are skipped again; nothing else changes.
+
+---
+
+## 10. ID verification (C6)
+
+One-time ID verification with Didit ([docs.didit.me](https://docs.didit.me)), for renters and lenders. **Two separate switches:**
+- **Available** whenever the Edge Function secrets `DIDIT_API_KEY` and `DIDIT_WEBHOOK_SECRET` are set (Admin > Integrations: ID verification **configured**). Anyone can then verify from Settings. With either blank every Didit function answers **503 `DZ-E6002` "ID verification isn't available yet."** before anything else.
+- **Required** only while the `app_settings` flag `verification_required` is on (it is **off**). Then `start_conversation` (any call), a new chat (a `conversations` insert, `request_rental` included), a message (`messages` insert) and publishing a listing (status becoming `active`, insert or update; paused drafts are fine) refuse an unverified caller with `P0001` **`DZ-E6001` "Verify your ID once to continue."** (`app_private.require_verified`, after the terms check). Reading, saving and browsing never need it. Server jobs and admins acting on someone else's row aren't stopped.
+
+### Statuses
+`identity_verifications.status`: `not_started`, `in_progress`, `in_review`, `verified`, `declined`, `expired`. Didit's strings, compared **case-sensitively** (`app_private.didit_status_map`):
+
+| Didit | Dzirent |
+| --- | --- |
+| `Approved` | `verified` (badge on, an `adult` age check from the ID). With a duplicate-face warning (`DUPLICATED_FACE`, `POSSIBLE_DUPLICATED_FACE` in any `*[].warnings`): `in_review`, reason "Possible duplicate account". An ID showing under 18: `declined`, reason "Under 18 (from the ID)", a `minor` age check (the account is blocked, its listings paused) |
+| `Declined` | `declined`, reason "Declined by the verification provider (<risk codes>)"; no name or 18+ result kept |
+| `In Review` | `in_review` (Didit's own reviewers), reason "The verification provider is reviewing it" |
+| `Not Started`, `In Progress`, `Awaiting User`, `Resubmitted` | `in_progress` |
+| `Abandoned`, `Expired` | `expired` (the attempt counts) |
+| `Kyc Expired` | `expired`, the badge removed, reason "The verification expired" |
+| anything else | ignored (recorded as `unknown_status`) |
+
+A verified person is never moved back by a late event of the same session (except `Kyc Expired`); an event for an older session can only verify the person; an admin's decision on a session stands against later Didit decisions for it.
+
+### Data (all server-written)
+| Table | Who reads | Columns |
+| --- | --- | --- |
+| `identity_verifications` | the owner: `user_id`, `status`, `updated_at` only (column grants; Realtime sends only those) | `user_id`, `status`, `provider_session_id`, `legal_name` (private, at most 200), `is_adult`, `attempts`, `reason` (for admins, at most 300), `verified_at`, `created_at`, `updated_at`. **Never** an ID image, selfie, birthdate, document number, address, nationality or IP |
+| `profiles.is_verified` | the owner; everyone through the shop window (section 1) | true while the status is `verified` (trigger `identity_verifications_badge`) |
+| `app_private.didit_sessions` | nobody (closed) | `session_id` (Didit's), `user_id`, `status` (Didit's last), `event_created_at` (Didit's `created_at` of the last event applied: events are applied in that order), `checked_at` (the last decision check), `admin_decision`, times |
+| `app_private.didit_events` | nobody (closed) | `event_id` (primary key: each event processed once), `webhook_type`, `session_id`, `status`, `received_at`, `result`. Never the payload. Kept 30 days |
+
+### Database functions
+- `my_verification()` → `jsonb` (signed in): `{ status, attempts, max_attempts, attempts_left, can_start, required, verified_at, updated_at }`. `can_start` is false while verified, in review, or out of attempts.
+- Server key only (the Edge Functions): `didit_start_prepare(p_user)` (reserves an attempt; `DZ-E6004` verified, `DZ-E6005` in review, `DZ-E6003` "Contact support to verify." after `id_verification_max_attempts`), `didit_start_release(p_user)` (gives the attempt back when Didit didn't create the session), `didit_start_record(p_user, p_session_id)` (`in_progress`), `didit_webhook_received(p_event_id, p_type, p_application_id, p_session_id, p_vendor_data, p_status, p_created_at)` (`DZ-E6009` for another application; results `duplicate`, `unknown_session`, `wrong_person`, `ignored`, `unknown_status`, `older`, `queued`, or the status applied), `didit_apply_decision(p_session_id, p_status, p_legal_name, p_is_adult, p_duplicate, p_reason)`, `didit_sessions_for(p_user)`, `didit_forget(p_user)`.
+- Admins (two-step, fresh; every call logged): `admin_list_id_reviews(p_status default null ('in_review' | 'declined'), p_limit, p_offset)` → `jsonb` array (`user_id`, names and handle, `status`, `reason`, `attempts`, `max_attempts`, `session_id`, `is_adult`, dates; never the legal name or images; `view_id_reviews`); `admin_decide_id_verification(p_user_id, p_decision 'approve' | 'reject', p_reason)` (in review, or approve a declined one; `DZ-E6010` not found, `DZ-E6011` wrong state, `DZ-E6012` bad decision; an approved ID showing 18+ records the ID's `adult`; `decide_id_verification` with the status before and after); `admin_reset_id_attempts(p_user_id, p_reason)` (`reset_id_attempts`).
+- `admin_queues().id_verification_reviews` counts `in_review`.
+- Reconciliation: `app_private.didit_reconcile()`, pg_cron `dzirent-didit-reconcile` every 10 minutes: a decision check (outbox) for each session still `in_progress` more than 30 minutes after its last change, at most once per 30 minutes per session (Didit retries a webhook only twice); it also drops events older than 30 days.
+
+### Edge Functions (`verify_jwt = false`; each checks in code)
+| Function | Caller | Body | Does |
+| --- | --- | --- | --- |
+| `didit-start` | a signed-in person (token) | `{ action: "check" }` | `{ ok, available }`: whether the two keys are set |
+| | | `{ action?: "start", return_url? }` | `didit_start_prepare`, then `POST https://verification.didit.me/v3/session/` (`x-api-key`) with `workflow_id` = setting `didit_workflow_id`, `vendor_data` = our account id, `callback` = `return_url` if it is `https://dzirent.com/verify/done`, `https://www.dzirent.com/verify/done` or `https://dzirent.vercel.app/verify/done` (else the first); then `didit_start_record`. `{ ok, url, session_token, verification }`. Didit didn't answer: the attempt is given back, 502 `DZ-E6006` |
+| `didit-webhook` | Didit | the raw event | Below |
+| `didit-sync` | the outbox only (`x-didit-job-secret` = `DIDIT_JOB_SECRET`, Vault `didit_job_secret`; else 401 `DZ-E9004`) | `{ session_id }` | `GET /v3/session/{id}/decision/`, reduced in memory to the status, the legal name (`full_name`, else first + last), `is_adult` (from `date_of_birth` on today's date, then dropped), a duplicate-face flag and a reason of risk codes; then `didit_apply_decision`. 404 = expired (a verified person is never touched). No answer or 5xx: 502 `DZ-E6006`, the outbox retries (1, 5, 30, 120 minutes) |
+
+Outbox kind `didit_sync` (Vault `didit_sync_url`); a check for a session that no longer exists is skipped. `DIDIT_API_BASE` (tests only: a local Docker name or 127.0.0.1) is never set on live.
+
+### Webhook (`didit-webhook`), exactly as the owner's Didit console shows
+1. **Signature first:** `X-Signature` = hex HMAC-SHA256 of the **raw request body bytes** with `DIDIT_WEBHOOK_SECRET` (64 hex characters), compared in constant time, else 401 `DZ-E6007` and nothing is read or written. (`X-Signature-V2`, `X-Signature-Simple` and the `-Previous` headers are not used.)
+2. **Fresh:** the body's own `timestamp` (Unix seconds) within 300 seconds of now, else 400 `DZ-E6008`. The `X-Timestamp` header is never used (the body's timestamp is covered by the signature).
+3. **Ours:** `application_id` = setting `didit_application_id`, else 400 `DZ-E6009` (not recorded).
+4. **Once:** `event_id` inserted into `app_private.didit_events` (primary key); a repeat answers 200 `{ received: true, result: "duplicate" }`.
+5. **At once:** status-only steps apply in the same call; `Approved`, `Declined` and `In Review` queue a `didit_sync` job (the decision is read from Didit's API, never stored from the payload). The answer is 200 well within Didit's 5 seconds. A database failure answers 500 (Didit retries twice; reconciliation catches the rest).
+
+Subscribed events (Didit console, endpoint `https://pwfzkyjeivadbtkfkdxr.supabase.co/functions/v1/didit-webhook`, v3): `status.updated`, `data.updated`. Bodies over 1 MB: 413.
+
+### Screens
+- **Settings > ID verification** (website `/app/settings/verification`, Android Settings > Privacy & safety > ID verification): the status, one sentence, and **Verify ID** (or "Start again" / "Try again") whenever checks are available and `can_start`; out of attempts: "Contact support to verify.". Before starting, a short note: Dzirent keeps the result and the badge, the legal name (private) and an 18+ result; never ID photos, selfies, the birthdate or document details; the provider shows its own consent screen next (Dzirent shows no second consent).
+- **Website:** "Continue" goes to Didit's hosted `url` (a full page load); Didit returns to `/verify/done` on the same site, which shows "Checking…" (Realtime on the person's row, a read every 3 seconds, up to 3 minutes) and, once verified, continues to the page whose action was refused (kept in `sessionStorage`).
+- **Android:** Didit's native SDK (`me.didit:didit-sdk` 4.9.1 from Didit's Maven repository, initialized at app start) started with `session_token`; afterwards "Checking…" the same way. **iPhone:** opens Didit's hosted page in the browser until the Mac session adds Didit's iOS SDK.
+- **A refused action (`DZ-E6001`)**: the website shows "Verify ID" next to the message and comes back afterwards (`?resume=message` reopens Message; a chat's unsent text is kept); the apps open the verification over the screen and run the action again once verified.
+- **The badge** "Verified" on listing cards, listing pages, studio pages and chat headers (website and apps).
+- **Admin > ID verification** (`/admin/id-verification`): checks in review and declined (status, reason, attempts, the session id to look up in Didit's console, dates; never images or names), Approve / Reject with a reason and a confirmation, Reset attempts.
+
+### Runbook: rotating the Didit API key
+Who: an agent with the CLI and the secrets folder (never printed or committed).
+1. In Didit's console create a new API key with the same scopes (sessions write and delete, decisions read, users read/write, workflows read; no media). Save it in `H:\DziRent\secrets\providers.env` as `DIDIT_API_KEY`.
+2. `supabase secrets set --env-file <temporary file>` with `DIDIT_API_KEY` only (delete the file at once). Functions read secrets on each start, so no redeploy is needed.
+3. Check: Admin > Integrations still shows ID verification configured; one `didit-start { action: "check" }` answers `available: true`.
+4. Revoke the old key in Didit's console.
+
+### Runbook: rotating the webhook secret
+1. In Didit's console rotate the destination's signing secret; save the new one as `DIDIT_WEBHOOK_SECRET` in `providers.env`.
+2. Set it at once: `supabase secrets set --env-file <temporary file>` with `DIDIT_WEBHOOK_SECRET` (file deleted). Events signed with the new secret before the secret is set are refused (401) and Didit retries twice within about 5 minutes; anything still missed is picked up by `dzirent-didit-reconcile` within about 40 minutes.
+3. Check the function logs for `didit-webhook` results (no 401s after the change).
+
+### Runbook: switching `verification_required` on
+1. Make sure Admin > Integrations shows ID verification **configured** and a test account has verified end to end (status `verified`, the badge in the shop window).
+2. The legal pages: the privacy page says it "may later" be asked for; update the Terms and the privacy text to say it is required before messaging and publishing (attorney), and bump the versions if needed (G34).
+3. Admin website > Flags > `verification_required` on (logged). From then on unverified people can't start chats, send messages or publish; existing listings stay live.
+4. To switch off: the same flag off. Nothing else changes.

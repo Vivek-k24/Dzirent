@@ -11,6 +11,7 @@ import { refusalText } from "@/lib/refusals";
 import { safeDecode, studioPreview } from "@/lib/preview";
 import { studioLink, studioShareText } from "@/lib/share";
 import { ShareButton } from "@/components/share-button";
+import { VerifiedBadge } from "@/components/verified-badge";
 // P5C: preview tags for everyone, guests and link-preview bots included, from the guest shop
 // window only (studio name, handle, up to 4 listing photos in the opengraph-image). The page
 // itself still asks guests to sign up.
@@ -64,7 +65,10 @@ export default async function StudioPage({
         <div className="large-avatar">{s.studio_name.slice(0, 1)}</div>
         <div className="studio-bio">
           <span className="eyebrow">YOUR NEIGHBORHOOD, IN GOOD TASTE</span>
-          <h1>{s.studio_name}</h1>
+          <h1>
+            {s.studio_name}
+            <VerifiedBadge verified={s.is_verified} />
+          </h1>
           <p className="muted">
             @{s.studio_handle} <span>·</span> {cityLabel(s.city)}
           </p>

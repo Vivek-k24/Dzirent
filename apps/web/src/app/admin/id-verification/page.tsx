@@ -1,4 +1,6 @@
 import { Metadata } from "next";
+import { idReviewsAction, type IdReview } from "@/lib/admin-actions";
+import { IdVerificationView } from "@/components/admin/id-verification-view";
 
 export const metadata: Metadata = {
   title: "Admin: ID Verification",
@@ -10,33 +12,18 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-
-export default function AdminIdVerificationPage() {
-  return (
-    <div className="admin-id-verification-page">
-      <div style={{ marginBottom: "24px" }}>
-        <h2>Identity Verification Reviews</h2>
-        <p className="muted">Lender and renter identity check reviews</p>
-      </div>
-
-      <div
-        style={{
-          background: "var(--paper)",
-          border: "1px solid var(--line)",
-          borderRadius: "8px",
-          padding: "48px 24px",
-          textAlign: "center",
-          maxWidth: "600px",
-        }}
-      >
-        <div style={{ fontSize: "36px", marginBottom: "12px" }}>🪪</div>
-        <h3 style={{ margin: "0 0 8px 0" }}>Not active yet</h3>
-        <p className="muted" style={{ fontSize: "14px", lineHeight: "1.5", margin: 0 }}>
-          Identity verification reviews will arrive with P6A (Didit integration).
-          Until then, manual verification reviews are not required, and all users
-          can list and rent without an active ID review queue.
-        </p>
-      </div>
-    </div>
-  );
+/**
+ * C6: the ID verification queue: checks in review (a possible duplicate account, or the provider's
+ * own review) and declined ones, with approve, reject and reset attempts. Status, reason, attempts and
+ * dates only: never ID images, selfies or the legal name (admin_list_id_reviews, logged).
+ */
+export default async function AdminIdVerificationPage() {
+  let rows: IdReview[] | null = null;
+  try {
+    rows = await idReviewsAction();
+  } catch {
+    rows = null;
+  }
+  if (!rows) return <p className="muted">The ID verification queue couldn&apos;t be loaded.</p>;
+  return <IdVerificationView rows={rows} />;
 }

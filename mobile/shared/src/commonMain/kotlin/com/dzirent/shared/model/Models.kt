@@ -29,7 +29,9 @@ data class Profile(
     @SerialName("pickup_area") val pickupArea: String? = null,
     /** Set by Dzirent (admin suspension; "infinity" for a ban). Only on my own profile row. */
     @SerialName("suspended_until") val suspendedUntil: String? = null,
-    @SerialName("suspension_reason") val suspensionReason: String? = null
+    @SerialName("suspension_reason") val suspensionReason: String? = null,
+    /** C6: the "Verified" badge (ID verified once). Server-written; from the shop window for other people. */
+    @SerialName("is_verified") val isVerified: Boolean = false
 ) {
     val hasLocation: Boolean get() = approxLat != null && approxLng != null
     val studioTitle: String get() = studioName?.ifBlank { null } ?: displayName.ifBlank { "Studio" }
@@ -92,7 +94,9 @@ data class ListingCard(
     val category: String = "",
     @SerialName("cover_photo_path") val coverPhotoPath: String? = null,
     @SerialName("studio_name") val studioName: String? = null,
-    @SerialName("studio_handle") val studioHandle: String? = null
+    @SerialName("studio_handle") val studioHandle: String? = null,
+    /** C6: the lender verified their ID. */
+    @SerialName("is_verified") val isVerified: Boolean = false
 )
 
 @Serializable
@@ -139,7 +143,9 @@ data class ListingDetail(
     val availability: List<AvailabilityRange> = emptyList(),
     @SerialName("created_at") val createdAt: String? = null,
     /** Booked days (C3): accepted, paid or picked-up rentals, never who booked them. */
-    val booked: List<AvailabilityRange> = emptyList()
+    val booked: List<AvailabilityRange> = emptyList(),
+    /** C6: the lender verified their ID. */
+    @SerialName("is_verified") val isVerified: Boolean = false
 )
 
 /** Studio details returned by get_studio RPC. */
@@ -156,7 +162,9 @@ data class StudioDetail(
     @SerialName("is_saved") val isSaved: Boolean = false,
     val listings: List<ListingCard> = emptyList(),
     @SerialName("is_own") val isOwn: Boolean = false,
-    val since: String? = null
+    val since: String? = null,
+    /** C6: the studio's owner verified their ID. */
+    @SerialName("is_verified") val isVerified: Boolean = false
 )
 
 /** Item returned by my_blocked_users RPC. */
@@ -182,7 +190,9 @@ data class SavedListingItem(
     @SerialName("cover_photo_path") val coverPhotoPath: String? = null,
     @SerialName("studio_name") val studioName: String? = null,
     @SerialName("studio_handle") val studioHandle: String? = null,
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("created_at") val createdAt: String? = null,
+    /** C6: the lender verified their ID. */
+    @SerialName("is_verified") val isVerified: Boolean = false
 )
 
 /** Saved studio card returned by my_saved_studios RPC. */
@@ -210,10 +220,32 @@ data class ConversationCard(
     @SerialName("last_message_at") val lastMessageAt: String? = null,
     val unread: Boolean = false,
     @SerialName("requested_start") val requestedStart: String? = null,
-    @SerialName("requested_end") val requestedEnd: String? = null
+    @SerialName("requested_end") val requestedEnd: String? = null,
+    /** C6: the other person verified their ID (the chat header's badge). */
+    @SerialName("other_is_verified") val otherIsVerified: Boolean = false
 ) {
     val requestedDates: DateRange? get() = parseDateRange(requestedStart, requestedEnd)
 }
+
+/**
+ * C6: my own ID check (my_verification): never the legal name or a reason. Whether checks are
+ * available at all (the keys are set) comes from didit-start "check".
+ */
+@Serializable
+data class MyVerification(
+    val status: String = "not_started",
+    val attempts: Int = 0,
+    @SerialName("max_attempts") val maxAttempts: Int = 3,
+    @SerialName("attempts_left") val attemptsLeft: Int = 3,
+    @SerialName("can_start") val canStart: Boolean = true,
+    /** verification_required is on: chats, messages and publishing need a verified ID. */
+    val required: Boolean = false,
+    @SerialName("verified_at") val verifiedAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+/** C6: a started check: the provider's hosted address (website) and the token Didit's SDK takes (apps). */
+data class VerificationStart(val url: String, val sessionToken: String)
 
 /** Owner row of public.listings. */
 @Serializable

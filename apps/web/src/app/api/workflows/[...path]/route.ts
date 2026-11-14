@@ -7,6 +7,7 @@ import {
   readCloset,
   readSettings,
   readRentals,
+  readVerification,
   editorData,
   ownListing,
   must,
@@ -14,7 +15,7 @@ import {
   WorkflowError,
   uuid,
 } from "@/lib/workflow-server";
-import { chatMutation, accountMutation, dates, uploadRentalPhoto, paymentMutation } from "@/lib/workflow-mutations";
+import { chatMutation, accountMutation, dates, uploadRentalPhoto, paymentMutation, startVerification } from "@/lib/workflow-mutations";
 import {
   saveListing,
   finishListing,
@@ -85,6 +86,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
         return reply(await readSettings());
       case "rentals":
         return reply(await readRentals());
+      // C6: my ID check (status, tries; never the legal name) and whether checks are available.
+      case "verification":
+        return reply(await readVerification());
       case "editor":
         return reply(await editorData(path[1]));
       case "listing":
@@ -121,6 +125,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     if (path[0] === "pay" || path[0] === "payouts")
       return reply(await paymentMutation(path, body, request.nextUrl.origin));
     if (path[0] === "export") return await exportMyData();
+    // C6: the one-time ID check: the provider's hosted address to send the person to.
+    if (path[0] === "verification" && path[1] === "start")
+      return reply(await startVerification(request.nextUrl.origin));
     if (path[0] === "account") {
       if (path[1] === "delete") {
         if (String(body.confirm).trim() !== "DELETE")

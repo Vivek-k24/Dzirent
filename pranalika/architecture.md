@@ -32,7 +32,7 @@ A peer-to-peer clothing rental marketplace. Lenders list pieces they own; renter
 | R8 | Report and block; admin moderation with audit log | ✅ |
 | R9 | Legal: terms acceptance with versions, measurements consent, data download, account deletion, 18+ | ✅ |
 | R10 | Sharing with rich link previews and Android app links | ✅ (iPhone links 🟡) |
-| R11 | ID verification once per account (Didit) | 🟡 Appendix B |
+| R11 | ID verification once per account (Didit) | ⚠️ built in C6 (Appendix B): available from Settings, the gate (`verification_required`) off; Android native SDK, website hosted flow, iPhone in the browser until the Mac session |
 | R12 | Payments, platform fee and refundable deposits (Stripe Connect) | ⚠️ backend built and tested against stripe-mock (C4), switched off; screens in C5 (Appendix A) |
 | R13 | Rental reminders and email notifications | 🟡 needs the rental confirmation step (Appendix A) and an email service |
 
@@ -106,7 +106,7 @@ flowchart LR
 | Google Play Age Signals | Store to app | Age range for users in covered states | ✅ Android |
 | Apple Declared Age Range | Store to app | Same, iOS 26.2+ | ⚠️ code in place, needs paid Apple account |
 | Firebase Cloud Messaging | Platform to Google to phone | Device token, notification title, chat id, optional message text | ✅ Android, 🟡 iPhone |
-| Didit | Platform to Didit, webhook back | Session per user, verification result | 🟡 |
+| Didit | Platform to Didit, webhook back | Session per user (our account id as vendor data), the decision read by the server and reduced to status, legal name, 18+ result, duplicate flag | ✅ C6 (Android SDK, website hosted page; iPhone SDK 🟡) |
 | Stripe Connect | Platform to Stripe, webhooks back | Payments, holds, payouts, lender onboarding | 🟡 |
 | Email service (Resend, Postmark or SES) | Supabase Auth and functions to provider | Password reset, confirmation, receipts | ❌ not chosen |
 | WhatsApp, iMessage, RCS and other apps | Shared links | Public listing and studio previews | ✅ |
@@ -144,7 +144,7 @@ flowchart TB
     RT[Realtime]
     DB[(Postgres 17<br/>public + app_private)]
     Sto[(Storage<br/>listing-photos)]
-    EF[Edge Functions<br/>15 functions]
+    EF[Edge Functions<br/>18 functions]
     Cron[pg_cron jobs]
   end
   Vision[Vision service<br/>FastAPI + PyTorch CPU<br/>Cloud Run us-west1]
@@ -225,6 +225,9 @@ flowchart TB
 | `stripe-webhook` (C4) | Stripe | Payment, refund, dispute and account events, once each | Stripe signature on the raw body |
 | `admin-integrations` (C4) | Admin website | Which outside services have their secrets set (yes/no only) | Admin with fresh two-step session |
 | `send-email` (C5) | The outbox (`send_email`) | Renders a transactional email and sends it with one HTTPS call to the provider; skipped while `EMAIL_API_KEY` is blank | Vault shared secret `email_job_secret` |
+| `didit-start` (C6) | Apps and website | Whether ID checks are available; starts a person's Didit session (attempts, workflow from the settings, allow-listed return address) | User token verified in code |
+| `didit-webhook` (C6) | Didit | Status events, verified on the raw body (X-Signature, body timestamp, application id), once each; decisions queued to the outbox | Didit's HMAC signature |
+| `didit-sync` (C6) | The outbox (`didit_sync`: after a final webhook, and the 10-minute reconciliation) | Reads a session's decision from Didit and keeps only status, legal name, 18+ result, duplicate flag, reason | Vault shared secret `didit_job_secret` |
 | `_shared` | (library) | Input validation and common helpers; C5: the email templates and the provider adapter | - |
 
 ### 5.6 Vision service (`services/vision`)
@@ -310,7 +313,7 @@ Photos changed on an active listing are re-scanned automatically (`rescan_on_pho
 4. Every step writes `rental_events`; the chat's rental card reloads on Realtime changes to `rentals`. `dzirent-rental-reminders` sends pickup, return and overdue reminders at 9 AM Austin time.
 
 ### 6.9 Planned flows
-ID verification: Appendix B, section B.3. Payment, deposit hold and claim: Appendix A, section A.4; built in C4 (contract.md section 7), switched off, screens in C5.
+ID verification: Appendix B, section B.3; built in C6 (contract.md section 10), available from Settings, the gate off. Payment, deposit hold and claim: Appendix A, section A.4; built in C4 (contract.md section 7), switched off, screens in C5.
 
 ---
 
@@ -329,7 +332,7 @@ ID verification: Appendix B, section B.3. Payment, deposit hold and claim: Appen
 
 **Environments.** There is one database for everything. Preview and production websites, debug apps and agent tests all use `dzirent-server` (see gap G3).
 
-**Configuration names** (values never in the repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY(S)`, `SUPABASE_SECRET_KEYS`, `SEND_PUSH_SECRET`, `SCAN_LISTING_SECRET`, `CLEANUP_FILES_SECRET`, `FIREBASE_SERVICE_ACCOUNT_BASE64`, `VISION_URL`, `VISION_INVOKER_KEY_BASE64`, `VISION_ALLOWED_URL_PREFIXES`, `VISION_MODEL_DIR`, `VISION_SAFETY_DIR`, `VISION_TORCH_THREADS`, `GOOGLE_SERVICES_JSON`; Vault: `send_push_*`, `scan_listing_*`, `cleanup_files_*`; GitHub (release): keystore, passwords, alias, Play service account, `ANDROID_VERSION_CODE_OFFSET`. C4 (set, blank until the keys arrive): `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, optional `STRIPE_CONNECT_WEBHOOK_SECRET`, `PAYMENTS_JOB_SECRET` (Vault `payments_job_secret`, `stripe_deposit_url`, `stripe_refund_url`); `STRIPE_API_BASE` for tests only. Planned: `DIDIT_*`, `EMAIL_API_KEY`.
+**Configuration names** (values never in the repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY(S)`, `SUPABASE_SECRET_KEYS`, `SEND_PUSH_SECRET`, `SCAN_LISTING_SECRET`, `CLEANUP_FILES_SECRET`, `FIREBASE_SERVICE_ACCOUNT_BASE64`, `VISION_URL`, `VISION_INVOKER_KEY_BASE64`, `VISION_ALLOWED_URL_PREFIXES`, `VISION_MODEL_DIR`, `VISION_SAFETY_DIR`, `VISION_TORCH_THREADS`, `GOOGLE_SERVICES_JSON`; Vault: `send_push_*`, `scan_listing_*`, `cleanup_files_*`; GitHub (release): keystore, passwords, alias, Play service account, `ANDROID_VERSION_CODE_OFFSET`. C4 (set, blank until the keys arrive): `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, optional `STRIPE_CONNECT_WEBHOOK_SECRET`, `PAYMENTS_JOB_SECRET` (Vault `payments_job_secret`, `stripe_deposit_url`, `stripe_refund_url`); `STRIPE_API_BASE` for tests only. C6: `DIDIT_API_KEY`, `DIDIT_WEBHOOK_SECRET` (set on live), `DIDIT_JOB_SECRET` (Vault `didit_job_secret`, `didit_sync_url`); `DIDIT_API_BASE` for tests only. C5: `EMAIL_API_KEY` (blank).
 
 ---
 
@@ -369,7 +372,7 @@ Each row: how the concern is handled today, and the gap if any. Gap ids point to
 | GraphQL, gRPC | Not used | - |
 | Real time | Supabase Realtime (WebSocket) on `messages`, `rentals`, `listing_scans` | No reconnect/backoff policy documented per client (G21) |
 | Events and queues | Triggers + `pg_net` + Vault secrets; `pg_cron` | No retry or dead-letter for failed calls (push, scan) (G21) |
-| Webhooks | None today; Stripe and Didit inbound designed (Appendices A, B) | 🟡 |
+| Webhooks | Stripe (C4, switched off) and Didit (C6, live): signatures on the raw body, each event once, the work through the outbox | - |
 | Serialization | JSON everywhere; kotlinx.serialization; Pydantic | - |
 | Gateway and rate limits | Database-side rate limits (messages, chats, reports, listings, scans), Supabase Auth limits | No bot check on sign-up (G11) |
 | SDKs | supabase-kt 3.0.3, supabase-js 2.118, @supabase/ssr 0.12.7, Firebase Messaging (BOM 34.19.0), Play Age Signals 0.0.4, Coil 3.0.4, Ktor 3.0.3 | - |
@@ -472,7 +475,7 @@ This is what writing the blueprint exposed. Ranked by impact.
 | G6 | **No monitoring.** No error tracking, uptime checks or alerts; logs only in provider consoles. | Failures are found by users. | P5B |
 | G7 | **One admin, one authenticator.** | Losing the phone locks everyone out of moderation. | P5B (second admin or factor, recovery runbook) |
 | G8 | ~~**No disputes, claims or reviews model.**~~ **Claims closed in C4 (2026-11-13):** `rental_claims` (file, accept or dispute, admin decision) and card disputes on the admin Payments page. Reviews are still undecided. | Trust needs ratings. | Reviews undecided |
-| G9 | **Age is client-reported until ID checks exist.** | A determined user can fake adult via the API. | P6A |
+| G9 | **Age is client-reported until ID checks exist.** **Narrowed in C6 (2026-11-14):** an approved ID records the age from the ID on the server (`id_verification`), which outranks the store and self-declared checks. Still client-reported for people who never verify, while `verification_required` is off. | A determined user can fake adult via the API. | Owner: switch `verification_required` on (runbook, `contract.md` section 10) |
 | G10 | **iPhone gaps**: push, universal links, native data export, VoiceOver, unit tests, the new Keychain storage compile check. | iPhone users get a lesser app. | Mac session, P8B |
 | G11 | **No bot check on sign-up.** | Fake accounts at scale. | P8C |
 | G12 | **Release pipeline not switched.** Old Play app, debug-only app links, manual release workflow. | No production Android release path yet. | P8A |
@@ -505,6 +508,9 @@ This is what writing the blueprint exposed. Ranked by impact.
 | G39 | **No iPhone payment sheet** (C5). Common code calls `rememberPaymentSheetLauncher`; the iOS side is a stub that answers "Pay on dzirent.com" (`DZ-E4049`). | iPhone renters must pay on the website. | Mac session: the Stripe iOS SDK's PaymentSheet behind the same interface |
 | G40 | **Emails are built but not sent** (C5). The provider key is blank, so every email is skipped; no sender domain is verified. | People get no receipts or reminders by email. | Owner: provider account and DNS, then `contract.md` section 9 |
 | G41 | **The pay page allows Stripe's scripts and frames** (C5), with the site's `'unsafe-inline'` scripts (G16). | A wider policy on the one page that takes payment. | Nonces (G16) when the pages move to them |
+| G43 | **No face blocklist for banned people** (C6). Didit can refuse a face on a blocklist, but adding a banned person's face needs their images, which Dzirent doesn't keep. Duplicate faces (Didit's own match against approved checks) go to admin review. | A banned person can verify again with the same face under a new account unless Didit flags a duplicate. | Owner: decide whether to add banned faces in Didit's console by hand |
+| G44 | **No native ID verification on iPhone** (C6). The shared screen opens Didit's hosted page in the browser (`IdVerification.ios.kt` is a stub). | The iPhone flow leaves the app. | Mac session: Didit's iOS SDK behind `rememberIdVerificationLauncher` |
+| G45 | **Didit's Android SDK is large and adds permissions** (C6). The full bundle (`me.didit:didit-sdk`, as asked) brings MediaPipe (native code per CPU type), NFC chip reading and the WalletConnect add-on, and its manifest adds the microphone (`RECORD_AUDIO`), NFC and vibration permissions; the app never asks for the microphone itself. | A bigger APK; store disclosures must list what the SDK declares. | P8A: consider `didit-sdk-core` (+ `autodetection`), an App Bundle, and the Data safety answers |
 | G42 | **Email log and the deleted account's address** (C5). `email_messages` keeps template, account and outcome for 30 days; the account-deleted email holds the address until it is sent (minutes, or until its job dies). | Retention the privacy page must state; the attorney may want a shorter period. | Attorney (retention); `compliance.md` gap 35 |
 
 ---
@@ -587,9 +593,11 @@ Payments queue (claims, disputes, failed payouts), refund action, all logged in 
 
 ---
 
-## Appendix B - ID verification (design, not built)
+## Appendix B - ID verification (design; built in C6)
 
-Sources: Didit documentation and product pages reviewed on 2026-11-04 (sessions with a hosted verification URL, signed webhooks, free tier with per-session pricing after it, Face Search 1:N).
+**Status (2026-11-14, C6):** built as designed and live, with the gate switched off: the data model (B.2: `identity_verifications` with column grants, `profiles.is_verified`, the closed `didit_sessions` and `didit_events`), the flow (B.3: `didit-start`, `didit-webhook`, `didit-sync` through the outbox, a 10-minute reconciliation), enforcement (B.4: `start_conversation`, messages and publishing refuse `DZ-E6001` only while `verification_required` is on), the admin queue, the badge in the shop window, the age from the ID, Didit deletion at account deletion. Available to anyone from Settings while the Didit keys are set. Android uses Didit's native SDK 4.9.1; the website the hosted page; the iPhone the hosted page in the browser until the Mac session (G44). Not built: a face blocklist for banned people (G43). Contract: `contract.md` section 10, with the key-rotation and switch-on runbooks.
+
+Sources: Didit documentation and product pages reviewed on 2026-11-04 (sessions with a hosted verification URL, signed webhooks, free tier with per-session pricing after it, Face Search 1:N); re-checked on 2026-11-14 for C6 (`POST /v3/session/`, `GET /v3/session/{id}/decision/` with the V3 plural arrays, `DELETE /v3/session/{id}/delete/`, `POST /v3/users/delete/`, the webhook's `event_id`, `timestamp`, `application_id` and status strings, the duplicate-face risk codes, the Android SDK).
 
 ### B.1 Decisions (from the owner)
 - Ask once, at the first trust moment: first message and first listing. Browsing and saving never need it.

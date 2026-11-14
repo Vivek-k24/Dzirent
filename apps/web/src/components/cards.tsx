@@ -4,6 +4,7 @@ import { photoUrl } from "@/lib/supabase/config";
 import { Photo } from "./photo";
 import { Icon } from "./icon";
 import { Distance } from "./distance";
+import { VerifiedBadge } from "./verified-badge";
 import {
   GatedActionTrigger,
   GATED_ACTIONS,
@@ -26,6 +27,7 @@ export function PieceCard({
         />
       </div>
       <h3>{card.title}</h3>
+      <VerifiedBadge verified={card.is_verified} />
       <p>
         {perDay(card.price)} <span aria-hidden="true">·</span>{" "}
         <Distance miles={card.distance} />

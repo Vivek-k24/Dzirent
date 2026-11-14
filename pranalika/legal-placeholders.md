@@ -163,3 +163,15 @@ The transactional emails (built in C5; nothing is sent while the provider key is
 | `EMAIL_FOOTER_ADDRESS` | A postal address in the footer, if the attorney says transactional emails need one (they carry no marketing) | Owner + attorney | Emails | |
 | `EMAIL_PROVIDER` | The email delivery service (the privacy page says "an email delivery service") | Owner + attorney | Privacy | |
 | `email_log_retention_days` | How long Dzirent keeps the record of each email (which one, to which account, the outcome; never its text) | 30 days (7-365) | Attorney | Privacy | |
+## 12. ID verification (C6)
+
+ID verification is built and available from Settings; requiring it (`verification_required`) stays off. The verification provider shows its own consent screen before every check, so Dzirent shows no second consent. Before it is required, or before the public launch:
+
+| Key | What it is | Who fills | Used on | Value |
+| --- | --- | --- | --- | --- |
+| `ID_VERIFICATION_CONSENT_NAME` | The company name the provider's consent screen shows people ("<company> wants to verify your identity"). It is set in the provider's console and **must match the registered company name** (`COMPANY_LEGAL_NAME`), as on the store listings | Owner | The provider's consent screen | |
+| `ID_VERIFICATION_PROVIDER` | The provider's name, if the Terms or the privacy policy should name it (the privacy page says "a verification provider" on purpose) | Owner + attorney | Terms, Privacy | |
+| `ID_DATA_RETENTION` | Dzirent keeps the result, the legal name (private) and the 18+ result until the account is deleted; the provider deletes its data within 12 months of the last verification (its consent screen says so) and at once when the account is deleted. Confirm both periods | Attorney | Privacy | |
+| `BIOMETRIC_STATEMENT` | The selfie and face match are biometric processing by the provider (Texas CUBI, Illinois BIPA, Washington). Confirm that the provider's consent screen is the consent these laws need and that the privacy page's wording is enough | Attorney | Privacy | |
+| `id_verification_max_attempts` | How many checks a person can start before they must contact support (setting, 1-10; default 3) | Owner | Settings | |
+| `VERIFICATION_REQUIRED_WORDING` | When `verification_required` is switched on: the Terms and privacy wording that a one-time ID check is required before messaging and publishing (see the runbook, `contract.md` section 10) | Attorney | Terms, Privacy | |

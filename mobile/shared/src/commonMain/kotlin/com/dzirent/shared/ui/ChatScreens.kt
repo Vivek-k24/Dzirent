@@ -301,6 +301,7 @@ fun ChatScreen(
     var isSending by remember { mutableStateOf(false) }
     var sendError by remember { mutableStateOf<String?>(null) }
     var sendRefused by remember { mutableStateOf(false) }
+    val verificationGate = LocalVerificationGate.current
     val suspended = rememberSuspensionNotice(repository)
     var actionError by remember { mutableStateOf<String?>(null) }
     var isSavingRental by remember { mutableStateOf(false) }
@@ -421,9 +422,12 @@ fun ChatScreen(
                     }
                 }
             } catch (e: Exception) {
-                sendError = e.userMessage("Couldn't send your message. Please try again.")
-                // The text filter said no: sending the same text again can't work.
-                sendRefused = (e as? DzirentException)?.field != null
+                // C6: the one-time ID check (only while verification_required is on): verify, then send again.
+                if (!verificationGate.handle(e) { send(body) }) {
+                    sendError = e.userMessage("Couldn't send your message. Please try again.")
+                    // The text filter said no: sending the same text again can't work.
+                    sendRefused = (e as? DzirentException)?.field != null
+                }
             }
             isSending = false
         }
@@ -671,7 +675,11 @@ fun ChatScreen(
         TopAppBar(
             title = {
                 Column {
-                    Text(otherName, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(otherName, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                        // C6: the other person verified their ID.
+                        VerifiedBadge(conversation?.otherUser(currentUserId)?.isVerified, modifier = Modifier.padding(start = 6.dp))
+                    }
                     conversation?.listing?.title?.let {
                         Text(
                             text = it,

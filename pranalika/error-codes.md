@@ -187,9 +187,25 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E5085` | error | admin payments | 409 |  |  | This rental has no payment to refund. |
 | `DZ-E5086` | error | admin payments | 400 | `amount` | yes | Capture from $0 up to the deposit amount. |
 
-## 6xxx - ID verification (reserved)
+## 6xxx - ID verification (C6)
 
-Reserved: no codes yet.
+| Code | Kind | Area | Status | Field | Server words | Message |
+| --- | --- | --- | --- | --- | --- | --- |
+| `DZ-E6001` | error | id verification | 403 |  |  | Verify your ID once to continue. |
+| `DZ-E6002` | error | id verification | 503 |  |  | ID verification isn't available yet. |
+| `DZ-E6003` | error | id verification | 403 |  |  | Contact support to verify. |
+| `DZ-E6004` | error | id verification | 409 |  |  | Your ID is already verified. |
+| `DZ-E6005` | error | id verification | 409 |  |  | Someone at Dzirent is checking your ID. You'll see the result here. |
+| `DZ-E6006` | error | id verification | 502 |  |  | The verification service didn't answer. Please try again. |
+| `DZ-E6007` | error | id verification | 401 |  |  | This verification event isn't signed correctly. |
+| `DZ-E6008` | error | id verification | 400 |  |  | This verification event is too old. |
+| `DZ-E6009` | error | id verification | 400 |  |  | This verification event is for another application. |
+| `DZ-E6010` | error | admin id verification | 404 |  |  | Verification not found |
+| `DZ-E6011` | error | admin id verification | 409 |  |  | This verification can't be changed now. |
+| `DZ-E6012` | error | admin id verification | 400 |  |  | Decide approve or reject. |
+| `DZ-E6013` | error | deletion | 503 |  |  | Couldn't remove your ID verification. Please try again. |
+| `DZ-E6014` | error | id verification | 409 |  |  | The verification didn't finish. Please try again. |
+| `DZ-E6015` | error | id verification | 409 |  |  | Verifying in the app isn't available on this phone yet. Verify on dzirent.com. |
 
 ## 7xxx - Data download, account deletion
 
@@ -224,4 +240,4 @@ Reserved: no codes yet.
 | `DZ-E9020` | error | system | 500 |  |  | A setting is missing. Please try again later. |
 | `DZ-E9999` | error | system | 500 |  |  | Something went wrong. Please try again. |
 
-181 codes: 172 errors, 9 warnings.
+196 codes: 187 errors, 9 warnings.

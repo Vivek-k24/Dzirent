@@ -110,6 +110,8 @@ fun MainAppScaffold(
     }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     var showFilterSheet by remember { mutableStateOf(false) }
+    // C6: a chat, message or publish refused for the ID check asks to verify, then runs again.
+    val verificationGate = remember(profile?.id) { VerificationGate() }
     val onHome = backStackEntry?.destination?.route == TabHome.route
 
     // First run: the welcome checklist (which includes location) and the "Show me around" guide.
@@ -232,7 +234,9 @@ fun MainAppScaffold(
                 )
                 openChat(conversation.id, draft)
             } catch (e: Exception) {
-                device.toast(e.userMessage("Couldn't open the chat. Please try again."))
+                if (!verificationGate.handle(e) { startChat(listingId, lenderId, draft) }) {
+                    device.toast(e.userMessage("Couldn't open the chat. Please try again."))
+                }
             }
         }
     }
@@ -311,7 +315,11 @@ fun MainAppScaffold(
         )
     }
 
-    CompositionLocalProvider(LocalGuideTargets provides guideTargets) {
+    if (verificationGate.asking) {
+        VerificationGateDialog(verificationGate, repository)
+    }
+
+    CompositionLocalProvider(LocalGuideTargets provides guideTargets, LocalVerificationGate provides verificationGate) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Swipe to open only on Home, where the avatar opens the same drawer.
             ModalNavigationDrawer(
@@ -560,6 +568,7 @@ fun MainAppScaffold(
                                 onBack = { navController.popBackStack() },
                                 onSetLocation = { showLocationSetup = true },
                                 onOpenBlockedUsers = { navController.navigate("blocked") },
+                                onOpenVerification = { navController.navigate("verification") },
                                 onClearSearchHistory = { settingsStorage?.clearRecentSearches(me) },
                                 onAppTour = { startGuide() },
                                 onOpenAbout = { navController.navigate("about") },
@@ -592,6 +601,10 @@ fun MainAppScaffold(
                                     navController.popBackStack()
                                 }
                             )
+                        }
+                        // C6: Settings > ID verification.
+                        composable("verification") {
+                            VerificationScreen(repository = repository, onBack = { navController.popBackStack() })
                         }
                         composable("blocked") {
                             BlockedUsersScreen(

@@ -82,6 +82,8 @@ export type ConversationCard = {
   unread: boolean;
   requested_start: string | null;
   requested_end: string | null;
+  /** C6: the other person verified their ID (the chat header's badge). */
+  other_is_verified?: boolean | null;
 };
 export type Message = {
   id: string;
@@ -319,6 +321,8 @@ export class WorkflowClientError extends Error {
   constructor(
     message: string,
     public field?: string,
+    /** C1/C6: the catalog code, e.g. DZ-E6001 (verify your ID first). */
+    public code?: string,
   ) {
     super(message);
     this.name = "WorkflowClientError";
@@ -334,7 +338,7 @@ export async function workflow<T>(path: string, body?: unknown): Promise<T> {
   });
   const result = await response.json();
   if (!response.ok)
-    throw new WorkflowClientError(result.error || "Something went wrong. Please try again. (DZ-E9999)", result.field);
+    throw new WorkflowClientError(result.error || "Something went wrong. Please try again. (DZ-E9999)", result.field, result.code);
   return result as T;
 }
 

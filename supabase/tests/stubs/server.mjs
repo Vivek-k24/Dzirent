@@ -12,7 +12,14 @@
 //                  container "dzirent-stripe-mock") and records it: method, path, idempotency key
 //                  and form fields, never headers. A repeated POST with the same idempotency key
 //                  gets the first answer again, as Stripe does (stripe-mock itself keeps no state).
-//   GET  /log    - what was recorded: { push: [...], scan: [...], stripe: [...] }.  DELETE /log clears it.
+//   *    /didit/... - C6: stands in for Didit's API (never Didit itself). Needs x-api-key = the local
+//                  placeholder in supabase/functions/local.didit-stub.env. POST /v3/session/ makes a
+//                  session (id, token, url, "Not Started"); GET /v3/session/{id}/decision/ answers
+//                  what the test set with POST /didit/_control/session/{id} (status, name, birthdate,
+//                  duplicate warning, error risks) in Didit's V3 shape (plural arrays);
+//                  DELETE /v3/session/{id}/delete/ and POST /v3/users/delete/ remove them. Every call
+//                  is recorded as method, path and status only (never the key or the body).
+//   GET  /log    - what was recorded: { push: [...], scan: [...], stripe: [...], didit: [...] }.  DELETE /log clears it.
 //   GET  /health - "ok".
 // Environment: SUPABASE_URL (inside the network), SERVICE_ROLE_KEY, PUSH_SECRET, SCAN_SECRET,
 // STRIPE_MOCK_URL, PORT.
@@ -25,9 +32,100 @@ const PUSH_SECRET = process.env.PUSH_SECRET ?? "local-push-secret";
 const SCAN_SECRET = process.env.SCAN_SECRET ?? "local-scan-secret";
 const STRIPE_MOCK_URL = (process.env.STRIPE_MOCK_URL ?? "http://dzirent-stripe-mock:12111").replace(/\/$/, "");
 
-const log = { push: [], scan: [], stripe: [] };
+const log = { push: [], scan: [], stripe: [], didit: [] };
 /** Idempotency key -> the first answer (Stripe replays it for 24 hours). */
 const replays = new Map();
+
+// C6: the Didit stand-in. Sessions live in memory; the test decides each one's decision.
+const DIDIT_KEY = process.env.DIDIT_KEY ?? "didit-stub-key";
+/** session id -> { session_id, session_token, vendor_data, workflow_id, callback, status, ...decision fields } */
+const diditSessions = new Map();
+let diditUsersDeleted = [];
+
+function diditDecision(s) {
+  const warnings = [];
+  if (s.duplicate) {
+    warnings.push({ feature: "LIVENESS", risk: "POSSIBLE_DUPLICATED_FACE", additional_data: null, log_type: "warning",
+      short_description: "Possible duplicated face", long_description: "Local stub warning.", node_id: "liveness_primary" });
+  }
+  for (const risk of s.error_risks ?? []) {
+    warnings.push({ feature: "ID_VERIFICATION", risk, additional_data: null, log_type: "error",
+      short_description: "Local stub error", long_description: "Local stub error.", node_id: "id_verification_primary" });
+  }
+  const started = s.status !== "Not Started";
+  return {
+    session_id: s.session_id, session_kind: "user", session_number: s.number, status: s.status,
+    workflow_id: s.workflow_id, vendor_data: s.vendor_data, features: ["ID_VERIFICATION", "LIVENESS", "FACE_MATCH", "IP_ANALYSIS"],
+    created_at: s.created_at, expires_at: null,
+    id_verifications: started ? [{
+      node_id: "id_verification_primary", status: s.status, document_type: "Identity Card",
+      first_name: s.first_name ?? null, last_name: s.last_name ?? null, full_name: s.full_name ?? null,
+      date_of_birth: s.date_of_birth ?? null, age: null, document_number: "STUB-0000", address: "1 Stub Street",
+      nationality: "USA", warnings: warnings.filter((w) => w.feature === "ID_VERIFICATION"), barcodes: [],
+    }] : [],
+    liveness_checks: started ? [{ node_id: "liveness_primary", status: s.status, score: 99, warnings: warnings.filter((w) => w.feature === "LIVENESS") }] : [],
+    face_matches: started ? [{ node_id: "face_match_primary", status: s.status, score: 99, warnings: [] }] : [],
+    ip_analyses: started ? [{ node_id: "ip_primary", status: s.status, ip_address: "192.0.2.1", warnings: [] }] : [],
+  };
+}
+
+async function didit(req, res, url) {
+  const path = url.pathname.slice("/didit".length);
+  const entry = { method: req.method, path: path.replace(/\/[0-9a-f-]{36}\//, "/{id}/"), at: new Date().toISOString() };
+  const answer = (status, body) => {
+    log.didit.push({ ...entry, status });
+    return send(res, status, body);
+  };
+  // The test's controls (not part of Didit's API): set a session's decision, read a session.
+  const control = /^\/_control\/session\/([^/]+)$/.exec(path);
+  if (control) {
+    const s = diditSessions.get(control[1]);
+    if (!s) return send(res, 404, { detail: "Not found." });
+    if (req.method === "POST") {
+      const b = (await body(req)) ?? {};
+      for (const k of ["status", "first_name", "last_name", "full_name", "date_of_birth", "duplicate", "error_risks"]) {
+        if (k in b) s[k] = b[k];
+      }
+      return send(res, 200, { ok: true });
+    }
+    return send(res, 200, { session_id: s.session_id, vendor_data: s.vendor_data, workflow_id: s.workflow_id, callback: s.callback, status: s.status });
+  }
+  if (path === "/_control/users-deleted" && req.method === "GET") return send(res, 200, { vendor_data: diditUsersDeleted });
+  if (req.headers["x-api-key"] !== DIDIT_KEY) return answer(403, { detail: "You do not have permission to perform this action." });
+  if (req.method === "POST" && path === "/v3/session/") {
+    const b = await body(req);
+    if (!b || typeof b.workflow_id !== "string") return answer(400, { workflow_id: ["This field is required."] });
+    const id = crypto.randomUUID();
+    const token = crypto.randomUUID().replace(/-/g, "").slice(0, 20);
+    const s = {
+      session_id: id, number: diditSessions.size + 1, session_token: token, vendor_data: b.vendor_data ?? null,
+      workflow_id: b.workflow_id, callback: b.callback ?? null, status: "Not Started", created_at: Math.floor(Date.now() / 1000),
+    };
+    diditSessions.set(id, s);
+    return answer(201, {
+      session_id: id, session_number: s.number, session_token: token, url: `https://verify.didit.local/session/${token}`,
+      status: s.status, workflow_id: s.workflow_id, callback: s.callback, vendor_data: s.vendor_data, metadata: null,
+    });
+  }
+  const decision = /^\/v3\/session\/([^/]+)\/decision\/$/.exec(path);
+  if (req.method === "GET" && decision) {
+    const s = diditSessions.get(decision[1]);
+    return s ? answer(200, diditDecision(s)) : answer(404, { detail: "Not found." });
+  }
+  const remove = /^\/v3\/session\/([^/]+)\/delete\/$/.exec(path);
+  if (req.method === "DELETE" && remove) {
+    if (!diditSessions.has(remove[1])) return answer(404, { detail: "Not found." });
+    diditSessions.delete(remove[1]);
+    return answer(200, { session_id: remove[1], face_retention_outcome: "deleted" });
+  }
+  if (req.method === "POST" && path === "/v3/users/delete/") {
+    const b = (await body(req)) ?? {};
+    const list = Array.isArray(b.vendor_data_list) ? b.vendor_data_list : [];
+    diditUsersDeleted.push(...list);
+    return answer(200, { deleted: list.length });
+  }
+  return answer(404, { detail: "Not found." });
+}
 
 async function rawBody(req) {
   const chunks = [];
@@ -189,9 +287,11 @@ createServer(async (req, res) => {
       log.push.length = 0;
       log.scan.length = 0;
       log.stripe.length = 0;
+      log.didit.length = 0;
       return send(res, 200, { ok: true });
     }
     if (url.pathname.startsWith("/stripe/")) return await stripe(req, res, url);
+    if (url.pathname.startsWith("/didit/")) return await didit(req, res, url);
     if (req.method === "POST" && url.pathname === "/push") {
       if (req.headers["x-send-push-secret"] !== PUSH_SECRET) {
         return send(res, 401, { code: "DZ-E9004", message: "This request isn't allowed." });

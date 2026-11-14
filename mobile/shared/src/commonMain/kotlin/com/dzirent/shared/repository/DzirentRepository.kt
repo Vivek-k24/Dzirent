@@ -110,6 +110,9 @@ internal fun clientErrorCode(raw: String): String? {
 /** How often the editor asks for a scan's state when Realtime hasn't sent it. */
 private const val SCAN_POLL_MS = 4_000L
 
+/** C6: how often "Checking..." asks for the ID check's status when Realtime hasn't sent it. */
+private const val VERIFICATION_POLL_MS = 3_000L
+
 /** Live chat subscription handle. */
 @Serializable
 private data class ConversationIdRow(@SerialName("conversation_id") val conversationId: String)
@@ -1530,6 +1533,72 @@ class DzirentRepository(
             ?: throw DzirentException(ErrorCatalog.shown(fallback))
     }
 
+    // --- C6: ID verification (the database decides; Didit's SDK takes the session token) ---
+
+    /** My own ID check (my_verification): status, tries, whether it's required. Never the legal name. */
+    suspend fun myVerification(): MyVerification = try {
+        val element = postgrest.rpc("my_verification").decodeAs<JsonElement>()
+        rentalJson.decodeFromJsonElement(MyVerification.serializer(), element)
+    } catch (e: Exception) {
+        throw fail("load your ID check", e)
+    }
+
+    /** Whether ID checks are available at all (didit-start "check": the Didit keys are set on the server). */
+    suspend fun verificationAvailable(): Boolean = try {
+        val response = functions.invoke("didit-start", buildJsonObject { put("action", "check") })
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E6002")
+        (body["available"] as? JsonPrimitive)?.booleanOrNull == true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        false
+    }
+
+    /**
+     * Starts my one-time ID check (didit-start): the provider's session, with its token for Didit's
+     * SDK. Refusals: DZ-E6002 not available, DZ-E6003 no tries left, DZ-E6004 verified, DZ-E6005 in review.
+     */
+    suspend fun startVerification(): VerificationStart {
+        val response = try {
+            functions.invoke("didit-start", buildJsonObject { put("action", "start") })
+        } catch (e: Exception) {
+            throw fail("start the ID check", e)
+        }
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E6006")
+        val url = (body["url"] as? JsonPrimitive)?.contentOrNull
+        val token = (body["session_token"] as? JsonPrimitive)?.contentOrNull
+        if (url.isNullOrBlank() || token.isNullOrBlank()) throw DzirentException(ErrorCatalog.shown("DZ-E6006"))
+        return VerificationStart(url, token)
+    }
+
+    /**
+     * My check each time it changes, ending once it has an outcome ("Checking..."): live through
+     * Realtime (my own row, status only), with a read every few seconds as the fallback.
+     */
+    fun watchVerification(): Flow<MyVerification> = channelFlow {
+        val uid = requireUserId()
+        val channel = realtime.channel("verification_$uid")
+        try {
+            val live = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+                table = "identity_verifications"
+                filter("user_id", FilterOperator.EQ, uid)
+            }
+            launch {
+                live.collect { runCatching { myVerification() }.getOrNull()?.let { send(it) } }
+            }
+            runCatching { channel.subscribe() }
+            while (true) {
+                runCatching { myVerification() }.getOrNull()?.let { send(it) }
+                delay(VERIFICATION_POLL_MS)
+            }
+        } finally {
+            withContext(NonCancellable) { runCatching { realtime.removeChannel(channel) } }
+        }
+    }.distinctUntilChanged().transformWhile { verification ->
+        emit(verification)
+        !verificationSettled(verification.status)
+    }
+
     /**
      * Uploads one compressed condition photo at {rental_id}/{stage}/{random}.jpg (bucket
      * rental-photos, private). Storage refuses it outside the matching state (DZ-E4021).
@@ -1751,7 +1820,7 @@ class DzirentRepository(
     /** The listing and the other person, as far as the shop window shows them. */
     private fun Conversation.withCard(card: ConversationCard?, me: String): Conversation {
         if (card == null) return this
-        val other = Profile(id = otherUserId(me), displayName = card.otherName, studioHandle = card.otherHandle)
+        val other = Profile(id = otherUserId(me), displayName = card.otherName, studioHandle = card.otherHandle, isVerified = card.otherIsVerified)
         return copy(
             listing = cardListing(card, lenderId),
             renter = if (renterId == me) null else other,
@@ -1917,7 +1986,7 @@ class DzirentRepository(
         approxLat = 0.0,
         approxLng = 0.0,
         photos = listOfNotNull(coverPhotoPath?.let { ListingPhoto(id = "", listingId = id, storagePath = it, position = 0) }),
-        lender = Profile(id = studioHandle.orEmpty(), displayName = studioName.orEmpty(), city = city, studioName = studioName, studioHandle = studioHandle),
+        lender = Profile(id = studioHandle.orEmpty(), displayName = studioName.orEmpty(), city = city, studioName = studioName, studioHandle = studioHandle, isVerified = isVerified),
         distanceKm = distance?.let { it * KM_PER_MILE },
         distanceMiles = distance
     )
@@ -1945,7 +2014,7 @@ class DzirentRepository(
         },
         measurements = measurements.map { ListingMeasurement(listingId = id, label = it.label, value = it.value, unit = it.unit) },
         availability = availability.map { Availability(listingId = id, startDate = it.startDate, endDate = it.endDate) },
-        lender = Profile(id = studioHandle.orEmpty(), displayName = studioName.orEmpty(), city = city, studioName = studioName, studioHandle = studioHandle),
+        lender = Profile(id = studioHandle.orEmpty(), displayName = studioName.orEmpty(), city = city, studioName = studioName, studioHandle = studioHandle, isVerified = isVerified),
         distanceKm = distance?.let { it * KM_PER_MILE },
         distanceMiles = distance
     )
@@ -2027,7 +2096,8 @@ class DzirentRepository(
                 studioBio = studio.studioBio,
                 styleTags = studio.styleTags,
                 pickupArea = studio.pickupArea,
-                createdAt = studio.since
+                createdAt = studio.since,
+                isVerified = studio.isVerified
             ),
             pieces = studio.listings.map { it.toListing() },
             rentedCount = studio.rentalCount,
@@ -2079,7 +2149,8 @@ class DzirentRepository(
                         displayName = item.studioName.orEmpty(),
                         city = item.city ?: "",
                         studioName = item.studioName,
-                        studioHandle = item.studioHandle
+                        studioHandle = item.studioHandle,
+                        isVerified = item.isVerified
                     ),
                     distanceKm = item.distance?.let { it * KM_PER_MILE },
                     distanceMiles = item.distance

@@ -158,9 +158,9 @@ export type AdminUserData = {
   listings_held: number;
   /** The latest age check (P2C), or null if none was recorded. */
   age_check: {
-    source: "store_signal" | "self_declared";
+    source: "store_signal" | "self_declared" | "id_verification";
     result: "adult" | "minor" | "unknown";
-    platform: "web" | "android" | "ios";
+    platform: "web" | "android" | "ios" | "server";
     checked_at: string;
   } | null;
   /** Blocked by the age gate: only reading and deleting the account work. */
@@ -170,8 +170,10 @@ export type AdminUserData = {
 function ageCheckLabel(u: AdminUserData) {
   const c = u.age_check;
   if (!c) return "No check yet";
-  const source = c.source === "store_signal" ? "App store signal" : "Self-declared";
-  const platform = c.platform === "web" ? "website" : c.platform === "ios" ? "iPhone" : "Android";
+  // C6: an ID verification result outranks the other two.
+  const source = c.source === "store_signal" ? "App store signal" : c.source === "id_verification" ? "ID verification" : "Self-declared";
+  const platform =
+    c.platform === "web" ? "website" : c.platform === "ios" ? "iPhone" : c.platform === "server" ? "from the ID" : "Android";
   return `${source}: ${c.result} (${platform}, ${new Date(c.checked_at).toLocaleDateString()})`;
 }
 

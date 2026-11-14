@@ -137,6 +137,13 @@ kotlin {
                 implementation(libs.aboutlibraries.compose.m3)
                 // C5: Stripe's payment sheet (ui/PaymentSheet.android.kt)
                 implementation(libs.stripe.paymentsheet)
+                // C6: Didit's ID verification screens (ui/IdVerification.android.kt). Without Didit's
+                // optional WalletConnect add-on (crypto wallet signing, unused here; Didit documents it as
+                // optional, with a browser fallback): its libraries exist only on JitPack, which this build
+                // doesn't trust.
+                implementation("me.didit:didit-sdk:${libs.versions.diditSdk.get()}") {
+                    exclude(group = "me.didit", module = "didit-sdk-wallet")
+                }
             }
         }
         val iosMain by creating {

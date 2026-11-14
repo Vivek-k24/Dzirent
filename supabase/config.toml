@@ -57,6 +57,18 @@ verify_jwt = false
 [functions.send-email]
 verify_jwt = false
 
+# C6 ID verification: didit-start verifies the caller's token in code (auth.getUser); Didit sends no
+# Supabase token, so didit-webhook checks Didit's X-Signature on the raw body; didit-sync is called
+# only by the database's outbox with the shared secret (DIDIT_JOB_SECRET).
+[functions.didit-start]
+verify_jwt = false
+
+[functions.didit-webhook]
+verify_jwt = false
+
+[functions.didit-sync]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.

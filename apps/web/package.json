@@ -12,7 +12,7 @@
     "start": "next start",
     "prelint": "node ../../contracts/generate.mjs --check",
     "lint": "eslint .",
-    "test": "node --test --experimental-strip-types src/lib/errors.test.ts src/lib/rentals.test.ts src/lib/admin-settings.test.ts ../../supabase/functions/_shared/email-templates.test.ts"
+    "test": "node --test --experimental-strip-types src/lib/errors.test.ts src/lib/rentals.test.ts src/lib/admin-settings.test.ts src/lib/verification.test.ts ../../supabase/functions/_shared/email-templates.test.ts ../../supabase/functions/_shared/didit.test.ts"
   },
   "dependencies": {
     "@fontsource-variable/roboto": "5.3.0",

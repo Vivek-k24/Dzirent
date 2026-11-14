@@ -8,12 +8,15 @@ export function StartChat({
   listingId,
   start,
   end,
+  autoOpen = false,
 }: {
   listingId: string;
   start: string;
   end: string;
+  /** C6: open the dates step at once (back from verifying the ID). */
+  autoOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -73,7 +76,8 @@ export function StartChat({
                 />
               </label>
             </div>
-            <Notice message={error} error />
+            {/* C6: "Verify ID" comes back here with the message step open. */}
+            <Notice message={error} error verifyNext={"/listing/" + listingId + "?resume=message"} />
             <button className="button full" disabled={busy}>
               {busy ? "Starting conversation..." : "Message Lender"}
             </button>

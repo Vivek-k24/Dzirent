@@ -28,6 +28,10 @@ fragment = "1.8.5"
 # stdlib 2.1.10 and Compose 1.7.8, which this project's Kotlin 2.1.0 / Compose Multiplatform 1.7.3
 # read (the 23.x line needs Kotlin 2.3).
 stripePaymentSheet = "21.29.2"
+# C6: Didit's native ID verification SDK (Android). 4.9.1 was published 2026-10-06, the newest release
+# at least two weeks old on 2026-11-14 (4.11.0 came 2026-11-01). Built on Kotlin stdlib 1.9.22 and the
+# Compose BOM 2024.02.00, which this project's Kotlin 2.1.0 / Compose 1.7 read.
+diditSdk = "4.9.1"
 
 [libraries]
 # Supabase
@@ -79,6 +83,9 @@ androidx-fragment = { group = "androidx.fragment", name = "fragment", version.re
 
 # Payments (C5): Stripe's payment sheet; the card never touches Dzirent's code
 stripe-paymentsheet = { group = "com.stripe", name = "paymentsheet", version.ref = "stripePaymentSheet" }
+
+# ID verification (C6): Didit's own screens take the ID photo and the selfie; nothing reaches Dzirent
+didit-sdk = { group = "me.didit", name = "didit-sdk", version.ref = "diditSdk" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }

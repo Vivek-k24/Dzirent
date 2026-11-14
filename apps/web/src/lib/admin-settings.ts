@@ -2,11 +2,11 @@
 // checks the type and range again (admin_set_setting, DZ-E5070 / DZ-E5072); these only give
 // quick feedback and turn the form's text into the JSON value to send.
 
-export type SettingType = "integer" | "number" | "boolean" | "timezone" | "choice" | "rate_limit";
+export type SettingType = "integer" | "number" | "boolean" | "timezone" | "choice" | "rate_limit" | "uuid";
 export type AdminSetting = {
   key: string;
   label: string;
-  area: "payments" | "rentals" | "rate_limits" | "retention";
+  area: "payments" | "rentals" | "rate_limits" | "retention" | "verification";
   value: unknown;
   type: SettingType;
   unit: string | null;
@@ -24,6 +24,7 @@ export const areaTitles: [AdminSetting["area"], string][] = [
   ["rentals", "Rentals"],
   ["rate_limits", "Rate limits"],
   ["retention", "Retention"],
+  ["verification", "ID verification"],
 ];
 
 export const decidedByLabels: Record<AdminSetting["decided_by"], string> = {
@@ -77,6 +78,12 @@ export function parseSettingInput(s: Pick<AdminSetting, "type" | "min" | "max" |
     case "choice":
       if (!(s.choices ?? []).includes(text)) return { ok: false, problem: `Choose one of: ${(s.choices ?? []).join(", ")}.` };
       return { ok: true, value: text };
+    case "uuid":
+      // C6: an outside service's id (the verification workflow and application).
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text)) {
+        return { ok: false, problem: "Enter an id such as 123e4567-e89b-42d3-a456-426614174000." };
+      }
+      return { ok: true, value: text.toLowerCase() };
   }
 }
 

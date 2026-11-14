@@ -419,3 +419,49 @@ export async function retryJobAction(jobId: number) {
   revalidatePath("/admin/jobs");
   return data as { id: number; kind: string; status: string; attempts: number };
 }
+
+export type IdReview = {
+  user_id: string;
+  display_name: string;
+  studio_name: string | null;
+  studio_handle: string | null;
+  status: "in_review" | "declined";
+  reason: string | null;
+  attempts: number;
+  max_attempts: number;
+  /** The provider's session, to find it in the provider's console (never images here). */
+  session_id: string | null;
+  is_adult: boolean | null;
+  verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** C6: ID checks waiting for an admin (in review) and declined ones; never images or the legal name. Logged. */
+export async function idReviewsAction(status: "in_review" | "declined" | null = null): Promise<IdReview[]> {
+  const { client } = await requireAdminSession();
+  const { data, error } = await client.rpc("admin_list_id_reviews", { p_status: status });
+  if (error) throw new Error(errorText(describeError(error)));
+  return (data ?? []) as IdReview[];
+}
+
+/** C6: approve (verified) or reject (declined) an ID check in review, or approve a declined one; logged. */
+export async function decideIdVerificationAction(userId: string, decision: "approve" | "reject", reason: string) {
+  const { client } = await requireAdminSession();
+  const { error } = await client.rpc("admin_decide_id_verification", {
+    p_user_id: userId,
+    p_decision: decision,
+    p_reason: reason,
+  });
+  if (error) throw new Error(errorText(describeError(error)));
+  revalidatePath("/admin");
+  revalidatePath("/admin/id-verification");
+}
+
+/** C6: give a person their ID check attempts back (after they contacted support); logged. */
+export async function resetIdAttemptsAction(userId: string, reason: string) {
+  const { client } = await requireAdminSession();
+  const { error } = await client.rpc("admin_reset_id_attempts", { p_user_id: userId, p_reason: reason });
+  if (error) throw new Error(errorText(describeError(error)));
+  revalidatePath("/admin/id-verification");
+}

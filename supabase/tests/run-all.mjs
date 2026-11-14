@@ -44,6 +44,9 @@ export const SCRIPTS = [
   // C5: one paid rental from accept to a decided claim, with the pushes and emails the outbox
   // queued (the email provider key blank: every email skipped), and the payment deadline.
   ["node", "c5_payments_email.mjs", { local: true, functionsEnv: "local.stripe-mock.env" }],
+  // C6: ID verification, first with the Didit keys blank (local.env), then against the Didit stub.
+  ["node", "c6_id_verification.mjs", { args: ["off"], local: true }],
+  ["node", "c6_id_verification.mjs", { args: ["on"], local: true, functionsEnv: "local.didit-stub.env" }],
 ];
 
 const args = process.argv.slice(2);

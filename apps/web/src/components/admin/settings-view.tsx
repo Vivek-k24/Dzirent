@@ -92,7 +92,9 @@ export function SettingsView({ initial }: { initial: AdminSetting[] }) {
                           ? "On or off"
                           : s.type === "timezone"
                             ? "A time zone name"
-                            : (s.choices ?? []).join(", ")}
+                            : s.type === "uuid"
+                              ? "An id"
+                              : (s.choices ?? []).join(", ")}
                     </td>
                     <td>{decidedByLabels[s.decided_by]}</td>
                     <td>
@@ -146,7 +148,7 @@ export function SettingsView({ initial }: { initial: AdminSetting[] }) {
             ) : (
               <input
                 value={input}
-                inputMode={editing.type === "timezone" ? "text" : "decimal"}
+                inputMode={editing.type === "timezone" || editing.type === "uuid" ? "text" : "decimal"}
                 onChange={(e) => setInput(e.target.value)}
                 aria-describedby="setting-problem"
               />

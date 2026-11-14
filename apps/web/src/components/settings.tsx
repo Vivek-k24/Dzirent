@@ -15,6 +15,8 @@ import { Icon } from "./icon";
 import { Empty } from "./cards";
 import { UpdateLocation } from "./shell";
 import type { NotificationChoicesData } from "@/lib/workflows";
+import { Verification } from "./verification";
+import type { VerificationData } from "@/lib/verification";
 
 /**
  * Settings > Notifications (C3): the same three switches as the apps. Notifications go to the
@@ -67,9 +69,15 @@ function NotificationChoices({ initial }: { initial: NotificationChoicesData }) 
 export function Settings({
   initial,
   section = "profile",
+  verification = null,
+  verifyNext = null,
 }: {
   initial: SettingsData;
   section?: string;
+  /** C6: Settings > Verification's data (that section only). */
+  verification?: VerificationData | null;
+  /** C6: where to continue once verified (the action that was refused). */
+  verifyNext?: string | null;
 }) {
   const router = useRouter();
   const [data, setData] = useState(initial);
@@ -139,6 +147,7 @@ export function Settings({
       ? [["studio", "My studio", "hanger"]]
       : []),
     ["measurements", "My measurements", "sparkle"],
+    ["verification", "ID verification", "check"],
     ["preferences", "Settings", "filter"],
     ["blocked", "Blocked users", "user"],
   ];
@@ -232,6 +241,13 @@ export function Settings({
                   </span>
                   <Icon name="chevron" />
                 </Link>
+                <Link href="/app/settings/verification">
+                  <span>
+                    <strong>ID verification</strong>
+                    <small>Verify once for a Verified badge.</small>
+                  </span>
+                  <Icon name="chevron" />
+                </Link>
                 {data.profile.role !== "renter" && (
                   <Link href="/app/settings/studio">
                     <span>
@@ -288,6 +304,8 @@ export function Settings({
             </>
           ) : section === "measurements" ? (
             <MeasurementsEditor initial={data.privateProfile} />
+          ) : section === "verification" && verification ? (
+            <Verification initial={verification} next={verifyNext} />
           ) : section === "preferences" ? (
             <>
               <LocalPreferences />

@@ -10,7 +10,8 @@ import { bearer, corsHeaders, json, refuse, rpcAsCaller, server } from "../_shar
 /** The secret names each service needs (values are never read beyond "is it set"). */
 const SERVICES: { key: string; name: string; secrets: string[] }[] = [
   { key: "payments", name: "Payments", secrets: ["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "STRIPE_WEBHOOK_SECRET", "PAYMENTS_JOB_SECRET"] },
-  { key: "id_checks", name: "ID checks", secrets: ["DIDIT_API_KEY", "DIDIT_WEBHOOK_SECRET"] },
+  // C6: ID verification is available whenever both are set (verification_required is a separate switch).
+  { key: "id_checks", name: "ID verification", secrets: ["DIDIT_API_KEY", "DIDIT_WEBHOOK_SECRET"] },
   { key: "notifications", name: "Notifications", secrets: ["FIREBASE_SERVICE_ACCOUNT_BASE64", "SEND_PUSH_SECRET"] },
   { key: "email", name: "Email", secrets: ["EMAIL_API_KEY"] },
   { key: "photo_checks", name: "Photo checks", secrets: ["VISION_URL", "VISION_INVOKER_KEY_BASE64", "SCAN_LISTING_SECRET"] },

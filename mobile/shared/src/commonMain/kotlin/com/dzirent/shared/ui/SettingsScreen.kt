@@ -52,6 +52,8 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onSetLocation: () -> Unit,
     onOpenBlockedUsers: () -> Unit,
+    /** C6: Settings > ID verification. */
+    onOpenVerification: () -> Unit,
     onClearSearchHistory: () -> Unit,
     onAppTour: () -> Unit,
     onOpenAbout: () -> Unit,
@@ -160,6 +162,14 @@ fun SettingsScreen(
             )
 
             SettingsGroup("Privacy & safety")
+            if (profile != null) {
+                SettingsRow(
+                    "ID verification",
+                    if (profile.isVerified) "Verified" else "Verify once for a Verified badge",
+                    Icons.Default.VerifiedUser,
+                    onClick = onOpenVerification
+                )
+            }
             if (profile != null) SettingsRow("Blocked users", null, Icons.Default.Block, onClick = onOpenBlockedUsers)
             if (profile != null) MeasurementsConsentSetting(repository)
             if (profile != null) DataExportSetting(repository, profile.id)

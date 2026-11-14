@@ -25,6 +25,10 @@ import { RentalCard, RentalRequestForm } from "./rental-card";
 import { OPEN } from "@/lib/rentals";
 import { Photo } from "./photo";
 import { Icon } from "./icon";
+import { VerifiedBadge } from "./verified-badge";
+import { isVerificationGate, verifyHref } from "@/lib/verification";
+/** C6: a message refused for the ID check waits here while the person verifies. */
+const DRAFT_KEY = "dzirent-chat-draft-";
 export function Chat({
   initial,
   ctx,
@@ -140,6 +144,12 @@ export function Chat({
     const timer = setTimeout(() => {
       try {
         if (localStorage.getItem("dzirent-safety-" + id)) setSafety(false);
+        // C6: back from verifying the ID, the message that was refused is in the box again.
+        const kept = sessionStorage.getItem(DRAFT_KEY + id);
+        if (kept) {
+          setDraft(kept);
+          sessionStorage.removeItem(DRAFT_KEY + id);
+        }
       } catch {}
     }, 0);
     return () => clearTimeout(timer);
@@ -193,6 +203,11 @@ export function Chat({
       }
     } catch (e) {
       setSendError((e as Error).message);
+      if (isVerificationGate(e as WorkflowClientError)) {
+        try {
+          sessionStorage.setItem(DRAFT_KEY + id, message);
+        } catch {}
+      }
     } finally {
       setBusy(false);
     }
@@ -208,7 +223,10 @@ export function Chat({
           <span aria-hidden="true">←</span> Inbox
         </Link>
         <div>
-          <h1>{other}</h1>
+          <h1>
+            {other}
+            <VerifiedBadge verified={data.card?.other_is_verified} />
+          </h1>
           <span className="muted">Arrange the details together</span>
         </div>
         <details ref={menuRef} className="chat-menu">
@@ -443,6 +461,14 @@ export function Chat({
               }}
             >
               {sendError}
+              {isVerificationGate(sendError) && (
+                <>
+                  {" "}
+                  <a className="text-link accent" href={verifyHref("/app/messages/" + id)}>
+                    Verify ID
+                  </a>
+                </>
+              )}
             </p>
           )}
         </>

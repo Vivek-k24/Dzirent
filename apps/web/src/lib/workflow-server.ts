@@ -19,6 +19,7 @@ import type {
 } from "./workflows";
 import { IN_PROGRESS, type Range, type RentalSettings } from "./rentals";
 import type { PayoutAccount } from "./workflows";
+import type { MyVerification, VerificationData } from "./verification";
 export class WorkflowError extends Error {
   constructor(
     message: string,
@@ -200,6 +201,21 @@ export async function readChat(id: string): Promise<ChatData> {
     ),
     settings: settings.error ? null : ((settings.data as RentalSettings | null) ?? null),
   };
+}
+/**
+ * C6: Settings > Verification: my own check (my_verification: status, tries, whether it's required;
+ * never the legal name) and whether checks are available at all (didit-start "check": the keys are
+ * set on the server).
+ */
+export async function readVerification(): Promise<VerificationData> {
+  const { client } = await session();
+  const [mine, check] = await Promise.all([
+    client.rpc("my_verification"),
+    client.functions.invoke("didit-start", { body: { action: "check" } }),
+  ]);
+  const verification = must(mine) as MyVerification;
+  const available = !check.error && (check.data as { available?: unknown } | null)?.available === true;
+  return { ...verification, available };
 }
 /** C5: the rental and payment rules (rental_settings()), or null when unreadable. */
 export async function readRentalSettings(): Promise<RentalSettings | null> {

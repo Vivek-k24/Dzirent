@@ -234,6 +234,17 @@ export async function paymentMutation(path: string[], body: Body, origin: string
 }
 
 /**
+ * C6: start the one-time ID check. didit-start creates the session at the verification provider and
+ * answers its hosted address; the page sends the person there. They come back to /verify/done on
+ * the site they started from (dzirent.com or the preview site; anything else returns to dzirent.com).
+ */
+export async function startVerification(origin: string) {
+  const r = await edge<{ url?: string }>("didit-start", { action: "start", return_url: origin + "/verify/done" }, "DZ-E6006");
+  if (!r.url || !r.url.startsWith("https://")) throw codedError({ message: "DZ-E6006: no link" });
+  return { url: r.url };
+}
+
+/**
  * C3: one condition photo (multipart: photo, rentalId, stage), already compressed to JPEG in the
  * browser, saved as {rental_id}/{stage}/{random}.jpg in the private bucket rental-photos. Storage
  * refuses it outside the matching state (row-level security): DZ-E4021.

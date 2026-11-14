@@ -191,7 +191,10 @@ begin
     ('payments_job_secret', 'local-payments-secret'),
     -- C5: emails go to the locally served send-email (the provider key is blank: skipped).
     ('send_email_url', 'http://kong:8000/functions/v1/send-email'),
-    ('email_job_secret', 'local-email-secret')
+    ('email_job_secret', 'local-email-secret'),
+    -- C6: decision checks go to the locally served didit-sync (which talks to the Didit stub).
+    ('didit_sync_url', 'http://kong:8000/functions/v1/didit-sync'),
+    ('didit_job_secret', 'local-didit-secret')
   ) as t(name, value) loop
     select s.id into v_id from vault.secrets s where s.name = v.name;
     if v_id is null then

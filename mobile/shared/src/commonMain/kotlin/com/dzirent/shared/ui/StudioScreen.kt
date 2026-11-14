@@ -172,6 +172,8 @@ private fun StudioContent(
                 Avatar(name = lender.studioTitle, size = 72.dp)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(lender.studioTitle, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                // C6: the studio's owner verified their ID.
+                VerifiedBadge(lender.isVerified, modifier = Modifier.padding(top = 4.dp))
                 val place = listOfNotNull(lender.city.ifBlank { null }, page.since ?: sinceText(lender.createdAt)).joinToString(" · ")
                 if (place.isNotEmpty()) {
                     Text(place, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

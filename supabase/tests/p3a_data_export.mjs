@@ -37,6 +37,8 @@ const PARTS = [
   "rentals", "condition_photos", "blocked_people", "reports_filed", "warnings", "accessory_declarations",
   "listing_declarations", "legal_acceptances", "age_checks", "notification_settings", "devices",
   "suggestion_choices", "listing_activity", "earlier_exports",
+  // C4, C5 (these reached the database's export but not the file until C6) and C6.
+  "claims", "payments", "emails", "id_verification",
 ];
 
 /** Every "other person" in the file: an object with only name and handle. */
