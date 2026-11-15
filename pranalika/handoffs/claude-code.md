@@ -91,19 +91,26 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
 | Website | 40 (incl. verification rules and the Didit summary and signature tests) |
 | Contracts | 196 codes, fresh; code reference fresh |
 
-**Live test (the owner's own ID, once):** not done yet; it waits for the owner.
-- **Steps:**
-  1. Sign in on the preview site `https://dzirent.vercel.app` with the owner's own account.
-  2. Settings > ID verification (`/app/settings/verification`), Verify ID, read the note, Continue.
-  3. Finish Didit's flow (Didit's consent, ID photo, selfie) with the owner's own ID.
-  4. Back on `/verify/done`: "Checking…", then "You're verified".
-- **Then an agent confirms, read-only:**
-  - the row is `verified` with `is_adult` true;
-  - the badge shows through the shop window;
-  - the webhook event was recorded once;
-  - nothing beyond status, legal name, `is_adult` and reason was stored.
-  
-  Report statuses only, never the name.
+**Live test (the owner's own ID, 2026-11-15): passed.** Close-out session: clean tree, `Preview` up to date at `97f1348`. Docs only and read-only queries; no emulator, device or browser, nothing written on live.
+- **What happened** (as the owner and the coordinator reported it, matched against the Edge Function logs, read with the Supabase connector's `query_logs`):
+  - **Cause:** the first start failed with `DZ-E6006`. `didit-start` logged `provider_status` 403 because the Didit key's Sessions access was Read only. Didit's [API-keys page](https://docs.didit.me/console/api-keys): Sessions Write covers creating sessions, and a key without access gets 403. The logs hold three such starts (2026-11-14 20:54 UTC, 2026-11-15 14:32 and 14:33 UTC); each gave its attempt back.
+  - **Fix:** the owner set the key's Sessions access to Read + Write in Didit's console. It is the same key, so no secret changed: `secrets list` shows `DIDIT_API_KEY` and `DIDIT_WEBHOOK_SECRET` last set 2026-11-14 19:58 UTC (this step's deploy), and their SHA-256 digests equal `providers.env` (compared in memory, nothing printed).
+  - **Retry:** `didit-start` ok at 14:45 UTC; three signed `status.updated` webhooks (Not Started and In Progress `unchanged`, Approved `queued`); `didit-sync` `verified` at 14:47 UTC.
+  - **Account:** the sample-data test account Elena Rostova (6 listings; not an admin), verified with the owner's own ID.
+- **Read-only checks** (`supabase db query --linked`; statuses, counts and column names only, never the legal name):
+  - `identity_verifications`: **1 row**, `verified`, `is_adult` **true**, **attempts 1**, no reason. A legal name and Didit's session id are stored. Created 2026-11-14 20:54 UTC (the first start), verified 2026-11-15 14:47 UTC.
+  - **1 verified profile** (`profiles.is_verified`), the same account.
+  - **Shop window, as a guest:** `get_listing` shows the badge on all 6 of its listings; `browse_listings` (13 cards) shows it on 6 cards, all of them this account's.
+  - **1 age check from the ID:** `id_verification` / `adult` / `server`.
+  - **Didit events, once each:** 3 rows, 3 distinct event ids, no type and status repeated. 1 Didit session (`Approved`, decision checked, no admin decision). 1 `didit_sync` job, `done` on its first try, with only `session_id` in its payload.
+  - **`verification_required`: false.**
+  - **Nothing else stored:** `identity_verifications` has its 10 columns; `didit_events` and `didit_sessions` hold ids, statuses and times (no payload column); `age_checks` holds the source, result, platform and time; Storage has only `listing-photos` and `rental-photos`. No birthdate, document details, images or payloads.
+- **Re-run once after writing this:** the database query, the log query and the secrets comparison gave the same results.
+- **Docs:**
+  - `contract.md` section 10 has a runbook for `DZ-E6006`: "If didit-start logs provider_status 403, the Didit key is missing Sessions Write."
+  - The key-rotation runbook now lists the access per resource.
+  - The `didit-start` row says a refusal from Didit also gives `DZ-E6006`, not only no answer.
+  - `security-log.md` has the cause, the fix and this test.
 
 **APK** (built 2026-11-14 13:42 local; 96,005,087 bytes, up from 34,313,577 with Didit's SDK, G45):
 - Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
@@ -127,14 +134,19 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
   - A minor's approved ID is declined and blocks the account.
   - Kyc Expired removes the badge but doesn't reset attempts.
   - An admin's decision stands against later Didit decisions for that session.
-- **Not exercised against Didit itself** until the owner's live test: the stub reproduces the documented V3 shapes (session, decision with plural arrays, delete, users delete).
+- **Against Didit itself** (the live test): creating the session, the signed webhook (signature, body timestamp, application id), reading the decision, and the badge. **Still only against the stub** (the documented V3 shapes): declines, duplicate faces and admin review, Kyc Expired, reconciliation, and deleting at Didit (session delete, users delete).
 - **Android Lint** wasn't run (the build and unit tests were).
-- **Stale env value:** `DIDIT_WORKFLOW_ID` in `providers.env` (unused); the owner may remove or update it.
+- **Unused env value:** `DIDIT_WORKFLOW_ID` in `providers.env`. No code reads it (the setting `didit_workflow_id` is used; searched again 2026-11-15), so the owner can delete the line.
 - **Flaky locally:** `c1_codes_price_jobs` (the stale socket above), not a regression signal by itself; it passed in CI.
 - **Dependabot alert 83** (open on `main`, reported by the push): `opentelemetry-api` in `services/vision/requirements.txt`, medium (denial of service through traceparent parsing), fixed in 1.45.2. Opened 2026-11-14 06:13 UTC, not caused by C6, and `services/` is outside this step's folders.
 
 **Requests:**
-- **Owner:** the live test above.
+- **Owner:**
+  - Delete the `DIDIT_WORKFLOW_ID` line from `providers.env` (unused).
+  - **The live test used the test account Elena Rostova.**
+    - Deleting it later through Dzirent (Settings > Delete account, on the website or in the app; that's `delete-account`) also deletes its Didit session and Didit's user record first, then Dzirent's rows.
+    - Deleting it from the Supabase dashboard skips Didit.
+    - Before deleting, check in Didit's console that the key's People (users) access is Read + Write (Sessions is now). Without it, `delete-account` answers `DZ-E6013` and keeps the account; fix the key and delete again.
 - **Owner and attorney:** `legal-placeholders.md` section 12 (the consent screen's company name, biometric consent, retention, the Terms) before `verification_required` is switched on.
 - **Root `README.md`** (product features, outside this step's folders): describe ID verification and the Verified badge.
 - **Vision service:** bump `opentelemetry-api` to 1.45.2 or later (Dependabot alert 83) in a step that may change `services/`.

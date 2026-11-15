@@ -839,7 +839,7 @@ A verified person is never moved back by a late event of the same session (excep
 | Function | Caller | Body | Does |
 | --- | --- | --- | --- |
 | `didit-start` | a signed-in person (token) | `{ action: "check" }` | `{ ok, available }`: whether the two keys are set |
-| | | `{ action?: "start", return_url? }` | `didit_start_prepare`, then `POST https://verification.didit.me/v3/session/` (`x-api-key`) with `workflow_id` = setting `didit_workflow_id`, `vendor_data` = our account id, `callback` = `return_url` if it is `https://dzirent.com/verify/done`, `https://www.dzirent.com/verify/done` or `https://dzirent.vercel.app/verify/done` (else the first); then `didit_start_record`. `{ ok, url, session_token, verification }`. Didit didn't answer: the attempt is given back, 502 `DZ-E6006` |
+| | | `{ action?: "start", return_url? }` | `didit_start_prepare`, then `POST https://verification.didit.me/v3/session/` (`x-api-key`) with `workflow_id` = setting `didit_workflow_id`, `vendor_data` = our account id, `callback` = `return_url` if it is `https://dzirent.com/verify/done`, `https://www.dzirent.com/verify/done` or `https://dzirent.vercel.app/verify/done` (else the first); then `didit_start_record`. `{ ok, url, session_token, verification }`. Didit didn't create the session (no answer, or a refusal such as 403): the attempt is given back, 502 `DZ-E6006`, and the log line names Didit's `provider_status` (runbook below) |
 | `didit-webhook` | Didit | the raw event | Below |
 | `didit-sync` | the outbox only (`x-didit-job-secret` = `DIDIT_JOB_SECRET`, Vault `didit_job_secret`; else 401 `DZ-E9004`) | `{ session_id }` | `GET /v3/session/{id}/decision/`, reduced in memory to the status, the legal name (`full_name`, else first + last), `is_adult` (from `date_of_birth` on today's date, then dropped), a duplicate-face flag and a reason of risk codes; then `didit_apply_decision`. 404 = expired (a verified person is never touched). No answer or 5xx: 502 `DZ-E6006`, the outbox retries (1, 5, 30, 120 minutes) |
 
@@ -864,10 +864,17 @@ Subscribed events (Didit console, endpoint `https://pwfzkyjeivadbtkfkdxr.supabas
 
 ### Runbook: rotating the Didit API key
 Who: an agent with the CLI and the secrets folder (never printed or committed).
-1. In Didit's console create a new API key with the same scopes (sessions write and delete, decisions read, users read/write, workflows read; no media). Save it in `H:\DziRent\secrets\providers.env` as `DIDIT_API_KEY`.
+1. In Didit's console create a new API key with the same access (Didit sets None, Read or Write per resource): Sessions Read + Write (starting and deleting sessions), Decisions Read, People (users) Read + Write (deleting Didit's user record), Workflows Read, Media none. Save it in `H:\DziRent\secrets\providers.env` as `DIDIT_API_KEY`.
 2. `supabase secrets set --env-file <temporary file>` with `DIDIT_API_KEY` only (delete the file at once). Functions read secrets on each start, so no redeploy is needed.
 3. Check: Admin > Integrations still shows ID verification configured; one `didit-start { action: "check" }` answers `available: true`.
 4. Revoke the old key in Didit's console.
+
+### Runbook: `didit-start` answers `DZ-E6006`
+Each failed start gives the attempt back (`didit_start_release`) and writes one line to the `didit-start` Edge Function logs: `{"fn":"didit-start","ok":false,"provider_status":<Didit's HTTP status>}` (no names or ids).
+- **If didit-start logs provider_status 403, the Didit key is missing Sessions Write.** In Didit's console set the key's Sessions access to Read + Write. It is the same key, so no secret change and no redeploy; the person presses Verify ID again. (Seen in C6's live test, 2026-11-15.)
+- 401: the key is wrong, revoked or expired; rotate it (runbook above).
+- 0 or 5xx: Didit didn't answer properly; try again later.
+- Deleting an account uses the same key at Didit: Sessions Write for the sessions and People (users) Write for Didit's user record. Without them `delete-account` answers 503 `DZ-E6013` and keeps the account and its Dzirent rows (it logs no provider status); fix the key and delete again (a session already gone at Didit counts as done).
 
 ### Runbook: rotating the webhook secret
 1. In Didit's console rotate the destination's signing secret; save the new one as `DIDIT_WEBHOOK_SECRET` in `providers.env`.
