@@ -175,6 +175,7 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
 5. **Website** (Node 22.23.3): `npm run lint` passes (its first run stopped on the stale `code-reference.md`, which I regenerated), `npm test` **50 of 50**, `npm run build` passes (23 pages).
 6. **Android** (JDK 21, env loaded silently; no containers running): `:androidApp:assembleDebug :shared:testDebugUnitTest`: **BUILD SUCCESSFUL**, **81 tests, 0 failures, 1 skipped** (`SmokeTest` needs the test-user env). One is new: `PhotoScanTest.checkingGoesAsSoonAsTheResultIsIn`.
 7. **No emulator, device or app screenshots.** The only images I looked at were contact sheets and mask overlays of the sample and Commons test photos.
+8. **Push and CI:** pushed `4a145a2` ("V1a: color reader"). CI on the push, https://github.com/Vivek-k24/Dzirent/actions/runs/43761123988: **success, all 5 jobs** (android, contracts, vision, website, database). CI on the open `Preview` → `main` pull request, run 43761128802: success, all 5.
 
 **Timings, before and after** (local containers with Cloud Run's 2 CPUs and 4 GiB, the same 22 sample photos sent one by one after 3 warm-up scans, then the 12 listings; before = the S1 image, the deployed code; after = V1a):
 
