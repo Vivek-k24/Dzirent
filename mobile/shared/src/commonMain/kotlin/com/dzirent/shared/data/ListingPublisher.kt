@@ -7,7 +7,7 @@ import com.dzirent.shared.model.ListingPhoto
 import com.dzirent.shared.repository.DzirentException
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.platform.DeviceServices
-import com.dzirent.shared.util.isDraft
+import com.dzirent.shared.util.isUnfinished
 import kotlin.coroutines.cancellation.CancellationException
 
 /** A photo in the editor: one already saved, or a new one picked from the gallery or camera. */
@@ -66,8 +66,8 @@ class ListingPublisher(
     private val savedPositions = mutableMapOf<String, Pair<Int, String?>>() // photo id -> (position, slot) in DB
     private var declarationRecorded = false
 
-    /** A new listing, or a draft row from an earlier photo check: publishing makes it active. */
-    private val goesLive = original == null || original.isDraft
+    /** A new listing, or a draft row from an earlier photo check (F1: or any unfinished row): publishing makes it active. */
+    private val goesLive = original == null || original.isUnfinished
 
     init {
         original?.photos?.forEach { savedPositions[it.id] = it.position to it.slot }

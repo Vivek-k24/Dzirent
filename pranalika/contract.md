@@ -140,12 +140,12 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 ### `block_user` / `unblock_user`
 - **Who can call:** Signed-in only (`authenticated`).
 - **Inputs:** `p_handle` (text).
-- **Behavior:** Resolves studio handle to user ID internally and adds or removes the block relationship in `blocks`. Never returns account IDs.
+- **Behavior:** Resolves studio handle to user ID internally and adds or removes the block relationship in `blocks`. Never returns account IDs. Your own handle does nothing (no row). F1: a self-block written to `blocks` directly is refused, `DZ-E3021`.
 
 ### `report_user`
 - **Who can call:** Signed-in only (`authenticated`).
 - **Inputs:** `p_handle` (text), `p_reason` (text), `p_details` (text, default null).
-- **Behavior:** Resolves studio handle to target user ID internally and inserts audit row into `reports`. Never returns account IDs.
+- **Behavior:** Resolves studio handle to target user ID internally and inserts audit row into `reports`. Never returns account IDs. Your own handle does nothing (no row). F1: a report about yourself, your own listing or your own message written to `reports` directly is refused, `DZ-E5017`.
 
 ### `start_conversation`
 - **Who can call:** Signed-in only (`authenticated`).
@@ -440,8 +440,8 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `rental_outcomes` | SELECT, INSERT | `user_id = auth.uid()`. Old "did it happen?" answers; kept readable, no longer written by the apps (C3). |
 | `saved_listings` | ALL | `user_id = auth.uid()` |
 | `saved_studios` | ALL | `user_id = auth.uid()` |
-| `blocks` | ALL | `blocker_id = auth.uid()` |
-| `reports` | SELECT, INSERT | `reporter_id = auth.uid()`. Since P2B: server-set `target_user_id`, `status`, `outcome`, `outcome_note`, `closed_at`, `closed_by`; evidence in `app_private.report_evidence` (admins only); kept after either account is deleted. |
+| `blocks` | ALL | `blocker_id = auth.uid()`. F1: never yourself (trigger `blocks_not_self`, `DZ-E3021`). |
+| `reports` | SELECT, INSERT | `reporter_id = auth.uid()`. Since P2B: server-set `target_user_id`, `status`, `outcome`, `outcome_note`, `closed_at`, `closed_by`; evidence in `app_private.report_evidence` (admins only); kept after either account is deleted. F1: never about yourself (`target_user_id` = the reporter is refused in `report_prepare`, `DZ-E5017`). |
 | `user_warnings` | SELECT | `user_id = auth.uid()` (P2B). Written only by `admin_warn_user`. Columns `id`, `user_id`, `note`, `report_id`, `created_by`, `created_at`. Removed with the account. |
 | `listing_events` | SELECT, INSERT | `user_id = auth.uid()` |
 | `suggestion_events` | SELECT, INSERT | `user_id = auth.uid()` |
@@ -510,7 +510,7 @@ Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.k
 ### Error and warning codes
 - **One source:** `contracts/error-codes.json`. `node contracts/generate.mjs` writes the Kotlin (`mobile/shared/.../util/ErrorCodes.kt`), website (`apps/web/src/lib/error-codes.generated.ts`) and Edge Function (`supabase/functions/_shared/error-codes.ts`) copies and the readable table `pranalika/error-codes.md`. The website build (`prebuild`) and the Android build (`generateErrorCodes`, skipped without Node) run it; `npm run lint` (`--check`) and `ErrorCodesFreshnessTest` fail when a committed copy is out of date. Codes are never reused or renumbered.
 - **Entry:** `code` (`DZ-E####` error, `DZ-W####` warning), `kind`, `area`, `message` (what people see), optional `field`, `status` (HTTP-like), optional `server_detail` (the server's sentence carries a date or reason; show it).
-- **Families:** 1xxx account, sign-in, terms, age; 2xxx listings, photos, photo checks; 3xxx chat, saving, blocking; 4xxx rentals, payments, deposits (reserved); 5xxx reports, moderation, admin; 6xxx ID verification (C6: `DZ-E6001`-`E6015`); 7xxx data download, deletion; 9xxx system (rate limit `DZ-E9001`, unreachable `DZ-E9002`, unavailable `DZ-E9003`, request checks `DZ-E9010`-`E9016`, unexpected `DZ-E9999`).
+- **Families:** 1xxx account, sign-in, terms, age; 2xxx listings, photos, photo checks (F1: the listing form's fields `DZ-E2070`-`E2085`); 3xxx chat, saving, blocking; 4xxx rentals, payments, deposits (reserved); 5xxx reports, moderation, admin; 6xxx ID verification (C6: `DZ-E6001`-`E6015`); 7xxx data download, deletion; 9xxx system (rate limit `DZ-E9001`, unreachable `DZ-E9002`, unavailable `DZ-E9003`, request checks `DZ-E9010`-`E9016`, unexpected `DZ-E9999`).
 - **Database:** every refusal's message starts with its code, `"DZ-E2010: Add a photo first"`; the SQLSTATE (`P0001`, `42501`, `22023`, `P0002`, ...) is unchanged. The field is in the HINT: the text filter's column as before, and the catalog's field otherwise (`full_legal_name`, `dates`, `reason`, `days`, `platform`). `check_text` returns the refusal with its code. The suspension sentence is `DZ-E1040: Your account is suspended ...`. One wording change: "You cannot message this user" is now "You can't message this user." (`DZ-E3005`).
 - **Clients:** show the catalog message for the code (the server's words when `server_detail`), under the field when one is named, then the code in brackets: "Add a photo first (DZ-E2010)". A code the build doesn't know shows the server's words; anything without a code shows `DZ-E9999` "Something went wrong. Please try again.". Auth, network and Storage failures get their codes in the client (`DZ-E1004` wrong password, `DZ-E9002` no connection, `DZ-E2064`/`E2065` photo type and size, ...).
 - **Photo warnings:** the 8 scanner and phone warnings are `DZ-W2001`-`W2008`, matched by their words (the vision service still sends words); the apps and website show the code after the warning.
@@ -533,6 +533,17 @@ Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.k
 ### Read retries (clients)
 - Reads only: GET and HEAD, and the read-only database functions (`browse_listings`, `get_listing`, `get_studio`, `fit_listings`, `search_cities`, `my_*`, `needs_legal_acceptance`, `age_blocked`, `is_admin`, `check_text`; the website also the admin status reads). After a network failure, 408 or 5xx (not 501): 2 retries, after 0.5 s and then 2 s. Writes are never retried; their error shows its code.
 - Android/iPhone: Ktor `HttpRequestRetry` in `createDzirentSupabaseClient` (`util/ReadRetry.kt`). Website: `retryingFetch` (`lib/retry.ts`) in all three Supabase clients.
+
+### Time limits (F1)
+- Every call waits at most **30 seconds**, then gives up with `DZ-E9002`, and the form shows the message in place with its button back. No step spins forever.
+- Website: every page call to `/api/workflows` (`workflow()`, `workflowUpload()`, the data download) goes through `lib/requests.ts`: no answer, a dropped connection or the time limit is `DZ-E9002`; an answer that isn't the server's JSON (a host error page) is `DZ-E9003` for a 5xx, else `DZ-E9999`.
+- Android/iPhone: the Supabase client's `requestTimeout` is 30 s (`ReadRetry.REQUEST_TIMEOUT_MS`; the library's default was 10 s). Timeouts, refused or reset connections, an unknown host and similar are `DZ-E9002`.
+
+### Listing steps (F1)
+- **The steps:** 1 Photos, 2 Details (title, category, item type, description, styles), 3 Size, price and dates (garment kind, size, measurements, price, notes, retail value, deposit, the accessory tick, availability).
+- **Draft row:** Next on the photos step saves a new listing's row, paused, with whatever is filled in: the placeholder title `New listing (draft)` and category `Everyday` until the details step is done, and no size, price or description. The database accepts it (only `title` 3-80 and `category` are required columns). The website saves it through `POST /api/workflows/listings/save`, which never refuses a missing field (only text over its limit or unknown styles); the apps insert it directly (`draftListing`).
+- **Checks:** each step's fields are checked when the person continues past it, and every step's again at Publish (on the website in the page and again in `listings/finish`). Each gap is the catalog's field-level message, shown under the field and at the buttons: `DZ-E2070` title, `E2071` category, `E2072` item type, `E2073` description, `E2074` size, `E2075` garment kind, `E2076` price, `E2077` price details, `E2078` deposit note, `E2079` retail value, `E2080` an accessory over $300, `E2081` the accessory tick, `E2082` styles, `E2083` measurements, `E2084` no dates, `E2085` an end date before the start (and `DZ-E2010` no photo, `DZ-E2040` the accessory declaration, `DZ-E4051` the deposit).
+- **A draft reopened from My closet** (paused, the placeholder title) starts with a blank title and category and publishes like a new listing.
 
 ---
 

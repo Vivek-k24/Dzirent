@@ -117,12 +117,15 @@ fun SizePriceDatesStep(
     Spacer(modifier = Modifier.height(16.dp))
 
     // ---- Price ----
+    // F1: Publish without a price shows the catalog's message (DZ-E2076) here as well.
+    val priceError = state.textErrors["price_usd"]
     OutlinedTextField(
         value = state.priceText,
-        onValueChange = { input -> state.priceText = input.filter { it.isDigit() || it == '.' } },
+        onValueChange = { input -> state.priceText = input.filter { it.isDigit() || it == '.' }; state.clearTextError("price_usd") },
         label = { Text("Price per day (\$)") },
         prefix = { Text("\$") },
-        supportingText = { Text("Per rental. Required.") },
+        isError = priceError != null,
+        supportingText = { Text(priceError ?: "Per rental. Required.", modifier = if (priceError != null) Modifier.announced() else Modifier) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         singleLine = true,
         modifier = Modifier.fillMaxWidth()

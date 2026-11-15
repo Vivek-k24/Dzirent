@@ -63,6 +63,22 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E2065` | error | photos | 413 |  |  | This photo is too big. Choose one under 10 MB. |
 | `DZ-E2066` | error | photos | 503 |  |  | Couldn't remove the photos. Please retry. |
 | `DZ-E2067` | error | photos | 409 |  |  | Couldn't remove all photos. Please retry. |
+| `DZ-E2070` | error | listing form | 400 | `title` |  | Title must be 3 to 80 characters. |
+| `DZ-E2071` | error | listing form | 400 | `category` |  | Choose a category. |
+| `DZ-E2072` | error | listing form | 400 | `item_type` |  | Choose an item type for Accessories. |
+| `DZ-E2073` | error | listing form | 400 | `description` |  | Description can be up to 1000 characters. |
+| `DZ-E2074` | error | listing form | 400 | `size_label` |  | Choose a size. |
+| `DZ-E2075` | error | listing form | 400 | `garment_type` |  | Choose a garment kind. |
+| `DZ-E2076` | error | listing form | 400 | `price_usd` |  | Enter a price above $0, like 25 or 25.50. |
+| `DZ-E2077` | error | listing form | 400 | `price_note` |  | Price details can be up to 60 characters. |
+| `DZ-E2078` | error | listing form | 400 | `deposit_note` |  | Deposit note can be up to 120 characters. |
+| `DZ-E2079` | error | listing form | 400 | `retail_value` |  | Retail value must be a number above 0, or leave it empty. |
+| `DZ-E2080` | error | listing form | 400 | `retail_value` |  | Accessories worth more than $300 can't be listed on Dzirent. Lower the retail value if it's worth less. |
+| `DZ-E2081` | error | listing form | 400 | `accessory_confirmed` |  | Tick the box confirming this isn't fine jewelry and is worth under $300. |
+| `DZ-E2082` | error | listing form | 400 | `listing_styles` |  | Choose up to 3 styles. |
+| `DZ-E2083` | error | listing form | 400 | `measurements` |  | Fix the highlighted measurements, or remove those rows. |
+| `DZ-E2084` | error | listing form | 400 | `availability` |  | Add the dates this piece is available. |
+| `DZ-E2085` | error | listing form | 400 | `availability` |  | Choose an end date on or after your start date. |
 | `DZ-W2001` | warning | photos | 200 |  |  | Too blurry: hold steady and retake |
 | `DZ-W2002` | warning | photos | 200 |  |  | Too dark: try daylight |
 | `DZ-W2003` | warning | photos | 200 |  |  | Too bright: avoid direct sun and flash |
@@ -85,6 +101,7 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E3007` | error | chat | 403 |  |  | Only the renter can set dates for this chat |
 | `DZ-E3010` | error | saving | 403 |  |  | Cannot save blocked studio |
 | `DZ-E3020` | error | blocking | 403 |  |  | Not your block relationship |
+| `DZ-E3021` | error | blocking | 400 |  |  | You can't block yourself. |
 
 ## 4xxx - Rentals, condition photos (C3); payments, deposits, claims (C4, C5)
 
@@ -154,6 +171,7 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E5014` | error | admin | 400 |  |  | Pick a report |
 | `DZ-E5015` | error | reports | 403 |  |  | You can only report your own rentals. |
 | `DZ-E5016` | error | admin | 409 |  |  | A rental report has no content to remove. Warn, suspend or dismiss instead. |
+| `DZ-E5017` | error | reports | 400 |  |  | You can't report yourself, your own listings or your own messages. |
 | `DZ-E5020` | error | admin | 404 |  |  | User not found |
 | `DZ-E5021` | error | admin | 409 |  |  | Admins can't ban themselves |
 | `DZ-E5022` | error | admin | 409 |  |  | Admins can't suspend themselves |
@@ -240,4 +258,4 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E9020` | error | system | 500 |  |  | A setting is missing. Please try again later. |
 | `DZ-E9999` | error | system | 500 |  |  | Something went wrong. Please try again. |
 
-196 codes: 187 errors, 9 warnings.
+214 codes: 205 errors, 9 warnings.

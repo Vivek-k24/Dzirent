@@ -218,7 +218,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (C1, C2, S1, S1b, C3, C4, C5, C6) | |
+| Done by: Claude Code (C1, C2, S1, S1b, C3, C4, C5, C6, F1) | |
 | C1 Error and warning codes (one catalog, generated Kotlin/TypeScript, every database refusal and Edge Function error coded), price per day, background job outbox with retries and dead-letter list, client read retries, stray root doc removed | Done (Claude Code) |
 | C2 Test foundation: local backend in Docker (migrations from scratch + local seed, stubs for push and vision, functions served locally), pgTAP suite (9 files), integration scripts local by default with one runner, vision model tests marked, CI on every pull request (`.github/workflows/ci.yml`), `pranalika/testing.md` | Done (Claude Code) |
 | S1 Security updates: vision service on Pillow 13.0.0, torch 2.14.1 (CPU), transformers 5.20.2, FastAPI 0.162.0 / Starlette 1.7.0, open_clip 3.3.0 (no verdict changed on 92 photos and 12 listings in a local Linux image); website minimatch 11.0.3 through an npm override; 5 code scanning alerts dismissed ("used in tests"); `security-log.md` "GitHub security alerts (S1)" | Done (Claude Code); deployed in S1b |
@@ -245,6 +245,9 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Owner: delete the unused `DIDIT_WORKFLOW_ID` line in `providers.env`; before deleting the live-test account (Elena Rostova), check that the Didit key's People (users) access is Read + Write, see the C6 handoff | To do |
 | Mac: Didit's iOS SDK behind `rememberIdVerificationLauncher` (the iPhone opens Didit's hosted page until then) and a build check of the C6 common code, see the C6 handoff | To do |
 | Owner and attorney: the consent screen's company name, biometric consent, retention, and the Terms before `verification_required` is switched on (`legal-placeholders.md` section 12) | To do |
+| F1 Owner test fixes (Claude Code): listing drafts save unfinished (no size, price or details) on the website and apps, each step and Publish ask for their own fields with field-level codes `DZ-E2070`-`E2085`, an unfinished row goes live only through Publish (never the closet switch); every website call and app call gives up after 30 s with `DZ-E9002` and the form's button comes back; inactive step indicator steps have the normal cursor; your own studio shows Edit studio (no Save, Report, Block or Studio options), your own listing Edit only; database refuses a self-block or self-report written to the tables (`DZ-E3021`, `DZ-E5017`); dark-mode chips, pills, badges and the photo counter on theme tokens (every pair 5.2:1 or more); website measurements consent buttons fixed (sent as GET, answered "Page not found."); vision `opentelemetry-api` 1.45.2 (Dependabot alert 83; verdicts unchanged on 92 photos, not redeployed: the alert closes with the merge) | Done (Claude Code) |
+| Owner: phone and website test of F1 (see the F1 handoff) | To do |
+| Mac: build-check the F1 shared code on iPhone (see the F1 handoff) | To do |
 | C7 | To do |
 | C8 | To do |
 | Mac: build-check the C1 shared-code changes on iPhone (`ErrorCatalog.kt`, `ReadRetry.kt`, the Ktor `HttpRequestRetry` in `createDzirentSupabaseClient`, price per day), see the C1 handoff | To do |

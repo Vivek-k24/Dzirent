@@ -1,4 +1,5 @@
 import type { Range, RentalSettings, RentalStatus, RentalView } from "./rentals";
+import { workflowRequest, type RequestOptions } from "./requests.ts";
 export type { RentalView } from "./rentals";
 export type Profile = {
   id: string;
@@ -43,8 +44,9 @@ export type OwnListing = {
   category: string;
   item_type: string | null;
   garment_type: string;
-  size_label: string;
-  price_usd: number;
+  /** F1: empty (null) until an unfinished row's size step is done. */
+  size_label: string | null;
+  price_usd: number | null;
   price_note: string | null;
   retail_value: number | null;
   deposit_note: string | null;
@@ -317,29 +319,11 @@ export function activity(data: InboxData) {
   });
   return updates.sort((a, b) => b.time.localeCompare(a.time));
 }
-export class WorkflowClientError extends Error {
-  constructor(
-    message: string,
-    public field?: string,
-    /** C1/C6: the catalog code, e.g. DZ-E6001 (verify your ID first). */
-    public code?: string,
-  ) {
-    super(message);
-    this.name = "WorkflowClientError";
-  }
-}
-export async function workflow<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch("/api/workflows/" + path, {
-    method: body === undefined ? "GET" : "POST",
-    headers:
-      body === undefined ? undefined : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    cache: "no-store",
-  });
-  const result = await response.json();
-  if (!response.ok)
-    throw new WorkflowClientError(result.error || "Something went wrong. Please try again. (DZ-E9999)", result.field, result.code);
-  return result as T;
+// F1: every call gives up after 30 seconds (DZ-E9002) and only ever throws a WorkflowClientError
+// (requests.ts), so a form's catch always has a message to show and its button comes back.
+export { WorkflowClientError, workflowUpload } from "./requests.ts";
+export async function workflow<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
+  return workflowRequest<T>(path, body, options);
 }
 
 export function dateChip(start: string | null, end: string | null) {

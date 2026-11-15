@@ -26,14 +26,16 @@ import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.util.AccessoryDeclaration
 import com.dzirent.shared.util.CHECKING_PHOTOS
 import com.dzirent.shared.util.CheckPhase
-import com.dzirent.shared.util.DRAFT_CATEGORY
-import com.dzirent.shared.util.DRAFT_TITLE
 import com.dzirent.shared.util.DistanceUnit
+import com.dzirent.shared.util.Missing
 import com.dzirent.shared.util.PhotoSlot
+import com.dzirent.shared.util.SIGN_DECLARATION
 import com.dzirent.shared.util.SavedDraft
 import com.dzirent.shared.util.declarationNeeded
 import com.dzirent.shared.util.detailsMissing
+import com.dzirent.shared.util.draftListing
 import com.dzirent.shared.util.isDraft
+import com.dzirent.shared.util.isUnfinished
 import com.dzirent.shared.util.ErrorCatalog
 import com.dzirent.shared.util.parseDepositAmount
 import com.dzirent.shared.util.parsePrice
@@ -57,6 +59,9 @@ private const val DEPOSIT_NOTE_MAX = 120
 
 /** The listing columns the database's text filter checks; its refusal names one of them. */
 private val LISTING_TEXT_COLUMNS = setOf("title", "description", "price_note", "deposit_note")
+
+/** F1: the fields that show their own message under them (a step's gap or the server's refusal). */
+private val FIELD_MESSAGE_COLUMNS = LISTING_TEXT_COLUMNS + "price_usd"
 
 /** How long the editor follows a photo check (a cold start of the vision service takes about a minute). */
 private const val CHECK_TIMEOUT_MS = 180_000L
@@ -166,6 +171,8 @@ private fun ListingEditorForm(
     val today = remember { today() }
     val state = remember { ListingEditorState(original, settings.measureUnit.key, today) }
     val isNew = state.isNew
+    // F1: publishing a new or unfinished listing makes it live (the same rule as ListingPublisher).
+    val goesLive = isNew || original?.isUnfinished == true
     val publisher = remember { ListingPublisher(repository, device, original) }
     val analyzer = device.photoAnalyzer
     val photoStore = remember { device.photoStore(profile.id) }
@@ -230,18 +237,15 @@ private fun ListingEditorForm(
 
     // ---- The server's photo check ----
 
-    /** A new listing's row while only its photos are saved: paused, with placeholder details. */
+    /** A new listing's row while only its photos are saved: paused, with placeholder details (F1: no size or price yet). */
     fun draftRow(): Listing? {
         if (original != null) return original
-        return Listing(
+        return draftListing(
             id = state.listingId,
             lenderId = profile.id,
-            title = DRAFT_TITLE,
-            category = DRAFT_CATEGORY,
             city = profile.city,
             approxLat = profile.approxLat ?: return null,
-            approxLng = profile.approxLng ?: return null,
-            status = "paused"
+            approxLng = profile.approxLng ?: return null
         )
     }
 
@@ -397,6 +401,13 @@ private fun ListingEditorForm(
         )
     }
 
+    /** F1: a step's gap: the catalog's message at the top, and under its field when that field shows one. */
+    fun showMissing(missing: Missing) {
+        errorMessage = missing.message
+        val field = missing.field
+        if (field != null && field in FIELD_MESSAGE_COLUMNS) state.textErrors = mapOf(field to missing.message)
+    }
+
     // ---- Moving between the steps ----
     fun next() {
         when (state.step) {
@@ -408,14 +419,15 @@ private fun ListingEditorForm(
                 }
                 errorMessage = null
                 // Unchanged photos keep their check; an edit that didn't touch them needs none.
+                // F1: the draft row it saves has no size or price yet; nothing is asked here.
                 if (state.photosNeedCheck && (isNew || state.isDraft || state.photosChanged)) startPhotoCheck()
                 state.step = STEP_DETAILS
             }
             STEP_DETAILS -> {
                 val missing = detailsMissing(state.title.text, state.category, state.itemType, declarationPending)
                 if (missing != null) {
-                    errorMessage = missing.message
-                    if (missing.button == "Sign the declaration") showDeclaration = true
+                    showMissing(missing)
+                    if (missing.button == SIGN_DECLARATION) showDeclaration = true
                     return
                 }
                 errorMessage = null
@@ -441,7 +453,7 @@ private fun ListingEditorForm(
             return
         }
         detailsMissing(state.title.text, state.category, state.itemType, declarationPending)?.let {
-            errorMessage = it.message
+            showMissing(it)
             state.step = STEP_DETAILS
             if (declarationPending) showDeclaration = true
             return
@@ -451,7 +463,9 @@ private fun ListingEditorForm(
             return
         }
         step2Missing(state.step2Input(profile.hasLocation || !isNew))?.let {
-            errorMessage = it.message
+            showMissing(it)
+            // The description's length is the details step's field.
+            if (it.field == "description") state.step = STEP_DETAILS
             return
         }
         if (state.paymentsEnabled) {
@@ -516,10 +530,13 @@ private fun ListingEditorForm(
                     publishState = PublishState.Running(progress)
                 }
                 finished = true
-                repository.logSuggestionEvents(state.outcomeEvents(state.listingId))
-                drafts.clear()
+                // F1: published; tidying up on the phone never turns that into a failure.
+                runCatching { repository.logSuggestionEvents(state.outcomeEvents(state.listingId)) }
+                runCatching { drafts.clear() }
                 // An edit only removes its own copies: a new-listing draft may use the folder too.
-                if (isNew) photoStore.clear() else photoStore.delete(draft.photos.filterIsInstance<PhotoItem.New>().map { it.key })
+                runCatching {
+                    if (isNew) photoStore.clear() else photoStore.delete(draft.photos.filterIsInstance<PhotoItem.New>().map { it.key })
+                }
                 publishState = PublishState.Idle
                 onSaved()
             } catch (e: PublishStepException) {
@@ -537,6 +554,12 @@ private fun ListingEditorForm(
                 } else {
                     publishState = PublishState.Failed(e.step, e.message ?: "Please try again.")
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // F1: whatever else fails (the wait for the photo check, a local step), the spinner
+                // never stays: the Retry screen shows the message with its code.
+                publishState = PublishState.Failed("Publishing", e.userMessage(ErrorCatalog.message(ErrorCatalog.FALLBACK)))
             }
         }
     }
@@ -550,7 +573,7 @@ private fun ListingEditorForm(
             PublishFailedView(
                 step = ps.step,
                 message = ps.message,
-                goesLive = isNew || state.isDraft,
+                goesLive = goesLive,
                 onRetry = { publish() },
                 onBackToEdit = { publishState = PublishState.Idle }
             )
@@ -678,7 +701,7 @@ private fun ListingEditorForm(
                     Button(
                         onClick = { publish() },
                         modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
-                    ) { Text(missing?.button ?: if (isNew || state.isDraft) "Publish listing" else "Save changes") }
+                    ) { Text(missing?.button ?: if (goesLive) "Publish listing" else "Save changes") }
                     TextButton(onClick = { errorMessage = null; state.step = STEP_DETAILS }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                         Text("Back to details")
                     }

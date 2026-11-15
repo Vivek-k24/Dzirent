@@ -445,7 +445,9 @@ fun MainAppScaffold(
                                     startChat(piece.id, piece.lenderId, datesQuestion(session.dates))
                                 },
                                 // "From studios you saved" changes.
-                                onSavedChanged = { session.invalidate() }
+                                onSavedChanged = { session.invalidate() },
+                                // F1: your own studio's Edit studio opens My studio.
+                                onEditStudio = { navController.navigate("mystudio") }
                             )
                         }
                         composable("inbox") {

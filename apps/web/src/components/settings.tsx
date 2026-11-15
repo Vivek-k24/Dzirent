@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { workflow, type SettingsData } from "@/lib/workflows";
+import { failureText, readAnswer, timedRequest } from "@/lib/requests";
 import { cityLabel } from "@/lib/types";
 import { signOut } from "@/app/actions";
 import { StudioEditor } from "./studio-editor";
@@ -98,19 +99,25 @@ export function Settings({
     setExporting(true);
     setExportMessage({ text: "", error: false });
     try {
-      const response = await fetch("/api/workflows/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-        cache: "no-store",
-      });
-      if (!response.ok) {
-        const result = await response.json().catch(() => ({}));
-        throw new Error(result.error || "Couldn't prepare your data. Please try again.");
-      }
-      const blob = await response.blob();
+      // F1: within the 30-second limit (DZ-E9002); a refusal shows the server's words and code.
+      const { blob, disposition } = await timedRequest(
+        "/api/workflows/export",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+          cache: "no-store",
+        },
+        async (response) => {
+          if (!response.ok) await readAnswer(response);
+          return {
+            blob: await response.blob(),
+            disposition: response.headers.get("Content-Disposition") || "",
+          };
+        },
+      );
       const name =
-        /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") || "")?.[1] ||
+        /filename="([^"]+)"/.exec(disposition)?.[1] ||
         `dzirent-data-${new Date().toISOString().slice(0, 10)}.json`;
       const href = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -122,7 +129,7 @@ export function Settings({
       setTimeout(() => URL.revokeObjectURL(href), 1000);
       setExportMessage({ text: `Saved as ${name}.`, error: false });
     } catch (e) {
-      setExportMessage({ text: (e as Error).message, error: true });
+      setExportMessage({ text: failureText(e), error: true });
     } finally {
       setExporting(false);
     }
@@ -665,7 +672,8 @@ export function Settings({
                 setBusy(true);
                 setError("");
                 try {
-                  await workflow("account/withdraw_measurements_consent");
+                  // F1: a POST (with a body); without one this was a GET and answered "Page not found."
+                  await workflow("account/withdraw_measurements_consent", {});
                   setData((old) => ({
                     ...old,
                     privateProfile: old.privateProfile

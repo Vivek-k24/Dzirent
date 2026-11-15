@@ -28,6 +28,7 @@ import {
   type RentalView,
 } from "@/lib/rentals";
 import { dateRange, isoToday } from "@/lib/workflows";
+import { failureText, workflowUpload, WorkflowClientError } from "@/lib/requests";
 import { price } from "@/lib/types";
 
 export function rentalSummary(r: RentalView): string {
@@ -128,15 +129,14 @@ export function RentalCard({
         body.set("photo", blob, "photo.jpg");
         body.set("rentalId", rental.id);
         body.set("stage", stage);
-        const response = await fetch("/api/workflows/chat/" + conversationId + "/rental-photo", { method: "POST", body });
-        if (!response.ok) {
-          const result = await response.json().catch(() => ({}));
-          throw new Error(result.error || errorText(shown("DZ-E9999")));
-        }
+        // F1: gives up after 30 seconds (DZ-E9002); a refusal shows the server's words.
+        await workflowUpload("chat/" + conversationId + "/rental-photo", body);
       }
       await onUploaded();
     } catch (e) {
-      setUploadError((e as Error).message || errorText(describeError(e)));
+      setUploadError(
+        e instanceof WorkflowClientError ? failureText(e) : (e as Error).message || errorText(describeError(e)),
+      );
     } finally {
       setUploading(false);
     }

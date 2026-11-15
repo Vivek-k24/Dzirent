@@ -24,6 +24,13 @@ const val DRAFT_CATEGORY = "Everyday"
 /** A listing whose photos were uploaded for the check but whose details were never saved. */
 val Listing.isDraft: Boolean get() = status == "paused" && title == DRAFT_TITLE
 
+/**
+ * F1: a paused listing that was never finished: a draft, or a row saved from the website's
+ * details step with no size or price yet. It goes live only by publishing it in the editor
+ * (never the closet's switch), and publishing makes it active like a new listing.
+ */
+val Listing.isUnfinished: Boolean get() = isDraft || (status == "paused" && (sizeLabel.isBlank() || priceUsd == null))
+
 /** What the form fills in from an allowed photo check. [label] is the policy item it came from (for tracking). */
 data class ListingSuggestions(
     val label: String,

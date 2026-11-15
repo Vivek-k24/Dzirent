@@ -15,9 +15,20 @@ import {
   isoToday,
   declarationTexts,
   workflow,
+  workflowUpload,
   WorkflowClientError,
 } from "@/lib/workflows";
-import { type ListingForm, validateListing } from "@/lib/listing-form";
+import {
+  type ListingForm,
+  DRAFT_TITLE,
+  detailsProblem,
+  fieldStep,
+  isUnfinished,
+  publishProblem,
+  saveDraft,
+} from "@/lib/listing-form";
+import { runStep } from "@/lib/requests";
+import type { ShownError } from "@/lib/errors";
 import { compressPhoto, draftRead, draftWrite, draftClear } from "@/lib/drafts";
 import { photoUrl } from "@/lib/supabase/config";
 import { browserClient } from "@/lib/supabase/client";
@@ -86,18 +97,26 @@ type Props = {
   paymentsEnabled?: boolean;
 };
 
+/** F1: a row saved from the photos step whose details were never given (as the app's isDraft). */
+function isDraftRow(listing: OwnListing | null) {
+  return listing?.status === "paused" && listing.title === DRAFT_TITLE;
+}
+
 function initialForm(listing: OwnListing | null): ListingForm {
   const start = isoToday();
   const end = new Date(start + "T12:00:00");
   end.setDate(end.getDate() + 29);
+  const draft = isDraftRow(listing);
   return {
-    title: listing?.title || "",
-    category: listing?.category || "",
+    // A draft's placeholder title and category aren't the lender's: they start blank.
+    title: draft ? "" : listing?.title || "",
+    category: draft ? "" : listing?.category || "",
     description: listing?.description || "",
     item_type: listing?.item_type || "",
     garment_type: listing?.garment_type || "top",
     size_label: listing?.size_label || "",
-    price_usd: listing ? String(listing.price_usd) : "",
+    // A draft has no price yet (null), never the text "null".
+    price_usd: listing?.price_usd != null ? String(listing.price_usd) : "",
     price_note: listing?.price_note || "",
     retail_value: listing?.retail_value ? String(listing.retail_value) : "",
     deposit_note: listing?.deposit_note || "",
@@ -109,6 +128,15 @@ function initialForm(listing: OwnListing | null): ListingForm {
       : [{ start_date: start, end_date: end.toLocaleDateString("en-CA") }],
     accessory_confirmed: false,
   };
+}
+
+/** F1: a field's own message (the catalog's words and code), right under the field. */
+function FieldError({ message }: { message?: string }) {
+  return message ? (
+    <p role="alert" className="form-message error field-error">
+      {message}
+    </p>
+  ) : null;
 }
 
 function EditorPhotoPreview({ photo }: { photo: EditorPhoto }) {
@@ -276,14 +304,17 @@ export function ListingEditor({
   const [removed, setRemoved] = useState<string[]>([]);
   const [id, setId] = useState(() => listing?.id || crypto.randomUUID());
   const [created, setCreated] = useState(Boolean(listing));
+  // F1: an unfinished row reopened from My closet (a draft, or no size or price yet) publishes
+  // like a new listing: it goes live.
+  const editing = Boolean(listing) && !(listing && isUnfinished(listing));
   const [originalStatus, setOriginalStatus] = useState<"active" | "paused">(
-    listing?.status || "active",
+    !editing ? "active" : listing?.status || "active",
   );
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState("");
   const [error, setError] = useState("");
-  const [textErrors, setTextErrors] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [failed, setFailed] = useState(false);
   const [signed, setSigned] = useState(initialSigned);
   const [signing, setSigning] = useState(false);
@@ -546,7 +577,46 @@ export function ListingEditor({
     };
   }, [id, scanId, touchedFields]);
 
+  const ui = { setBusy, setError };
+
+  /** F1: the field's own message under it and at the buttons; back to its step if it's earlier. */
+  function showProblem(problem: ShownError) {
+    const text = errorText(problem);
+    setError(text);
+    if (problem.field) setFieldErrors({ [problem.field]: text });
+    const at = problem.field ? fieldStep[problem.field] : undefined;
+    if (at && at < step) setStep(at);
+  }
+
+  /** A server refusal about one field (the text filter, a check): shown under that field too. */
+  function showFieldOf(e: unknown) {
+    if (!(e instanceof WorkflowClientError) || !e.field) return;
+    setFieldErrors({ [e.field]: e.message });
+    const at = fieldStep[e.field];
+    if (at && at < step) setStep(at);
+  }
+
+  function clearFieldErrors(fields: string[]) {
+    if (!fields.some((f) => fieldErrors[f])) return;
+    setFieldErrors((old) => {
+      const next = { ...old };
+      for (const f of fields) delete next[f];
+      return next;
+    });
+  }
+
+  function changeRows(next: MeasurementRow[]) {
+    setRows(next);
+    clearFieldErrors(["measurements"]);
+  }
+
   function change(changes: Partial<ListingForm>) {
+    clearFieldErrors(
+      Object.keys(changes).concat(
+        changes.garment_type !== undefined ? ["size_label"] : [],
+        changes.category !== undefined ? ["item_type", "accessory_confirmed", "retail_value"] : [],
+      ),
+    );
     if (changes.garment_type && changes.garment_type !== form.garment_type)
       setRows(measurementRows(changes.garment_type, form.item_type));
     if (changes.item_type && changes.item_type !== form.item_type)
@@ -616,7 +686,7 @@ export function ListingEditor({
     setPhotos(next);
   }
 
-  // Upload all pending photos and remove deleted ones
+  // Upload all pending photos and remove deleted ones. F1: every call gives up after 30 seconds.
   async function syncPhotos(targetId: string, currentPhotos: EditorPhoto[], deleted: string[]) {
     for (const photoId of deleted) {
       await workflow("photo/" + targetId + "/delete", { id: photoId });
@@ -632,133 +702,91 @@ export function ListingEditor({
       body.set("photo", p.blob, "photo.jpg");
       body.set("slot", p.slot);
       body.set("token", p.token);
-      const response = await fetch("/api/workflows/photo/" + targetId + "/upload", {
-        method: "POST",
-        body,
-      });
-      const result = await response.json();
-      if (!response.ok)
-        throw new Error(result.error || "Could not upload this photo.");
-      const saved = result as OwnPhoto;
+      const saved = await workflowUpload<OwnPhoto>("photo/" + targetId + "/upload", body);
       nextPhotos[i] = {
         ...p,
         id: saved.id,
         storage_path: saved.storage_path,
       };
+      // Kept as each one finishes, so a retry doesn't upload it again.
+      setPhotos([...nextPhotos]);
     }
     setPhotos(nextPhotos);
     return nextPhotos;
   }
 
-  // Step 1 -> Step 2
+  // Step 1 -> Step 2. F1: the draft row saves with whatever is filled in (no size, price or
+  // details yet); any failure, a timeout included, shows its message here and Next comes back.
   async function advanceToDetails() {
     if (!photos.length) {
-      setError("Add at least one photo before continuing.");
+      setError(errorText(shown("DZ-E2010")));
       return;
     }
-    setBusy(true);
-    setError("");
+    setFieldErrors({});
     setPhase("Preparing your listing");
-    try {
-      // 1. If draft row doesn't exist yet on server, save paused draft
-      if (!created) {
-        await workflow("listings/save", {
-          id,
-          form: {
-            ...form,
-            title: form.title.trim() || "New listing (draft)",
-            category: form.category || "Everyday",
-            status: "paused",
-          },
-        });
-        setCreated(true);
-      }
-
-      // 2. Upload pending photos and delete removed ones
-      setPhase("Uploading photos");
-      await syncPhotos(id, photos, removed);
-
-      // 3. Request scan
-      setPhase("Checking photos");
-      setScanPhase("checking");
-      const scanResult = await workflow<{ scan_id: string }>("listings/scan", {
-        id,
-      });
-      setScanId(scanResult.scan_id);
-
-      // 4. Advance immediately to Step 2!
+    const done = await runStep(
+      ui,
+      async () => {
+        if (!created) {
+          await saveDraft(id, form);
+          setCreated(true);
+        }
+        setPhase("Uploading photos");
+        await syncPhotos(id, photos, removed);
+        setPhase("Checking photos");
+        setScanPhase("checking");
+        const scanResult = await workflow<{ scan_id: string }>("listings/scan", { id });
+        setScanId(scanResult.scan_id);
+        return true;
+      },
+      (e) => {
+        setScanPhase((prev) => (prev === "checking" ? "failed" : prev));
+        showFieldOf(e);
+      },
+    );
+    setPhase("");
+    if (done) {
       setStep(2);
       window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-      setPhase("");
     }
   }
 
-  // Step 2 -> Step 3
+  // Step 2 -> Step 3: the details step's own fields, then a draft save (the server's text check).
   async function advanceToStep3() {
-    if (form.title.trim().length < 3 || form.title.trim().length > 80) {
-      setError("Title must be 3 to 80 characters.");
-      return;
-    }
-    if (!categories.includes(form.category)) {
-      setError("Choose a category.");
-      return;
-    }
-    if (
-      form.category === "Accessories" &&
-      !itemTypes.includes(form.item_type)
-    ) {
-      setError("Choose an item type for Accessories.");
-      return;
-    }
-    if (form.description.length > 1000) {
-      setError("Description can be up to 1000 characters.");
+    const problem = detailsProblem(form);
+    if (problem) {
+      showProblem(problem);
       return;
     }
     if (form.category === "Accessories" && !signed) {
       setSigning(true);
       return;
     }
-    setBusy(true);
-    setError("");
-    setTextErrors({});
-    try {
-      // Save details to server (which also checks text-safety triggers)
-      await workflow("listings/save", { id, form });
+    setFieldErrors({});
+    setPhase("Saving details");
+    const done = await runStep(
+      ui,
+      async () => {
+        await workflow("listings/save", { id, form });
+        return true;
+      },
+      showFieldOf,
+    );
+    setPhase("");
+    if (done) {
       setStep(3);
       window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (e) {
-      const err = e instanceof WorkflowClientError ? e : (e as Error);
-      if (
-        e instanceof WorkflowClientError &&
-        e.field &&
-        ["title", "description"].includes(e.field)
-      ) {
-        setTextErrors({ [e.field]: e.message });
-      } else {
-        setError(err.message || "Could not save details.");
-      }
-    } finally {
-      setBusy(false);
     }
   }
 
   async function checkAgain() {
-    setBusy(true);
-    setError("");
-    try {
-      setScanPhase("checking");
-      const res = await workflow<{ scan_id: string }>("listings/scan", { id });
-      setScanId(res.scan_id);
-    } catch (e) {
-      setError((e as Error).message);
-      setScanPhase("failed");
-    } finally {
-      setBusy(false);
-    }
+    setScanPhase("checking");
+    const res = await runStep(
+      ui,
+      () => workflow<{ scan_id: string }>("listings/scan", { id }),
+      () => setScanPhase("failed"),
+    );
+    if (res) setScanId(res.scan_id);
   }
 
   async function publish() {
@@ -771,14 +799,15 @@ export function ListingEditor({
       return;
     }
     const nextForm = { ...form, measurements: usedMeasurements(rows) };
-    const validation = validateListing(nextForm);
-    if (validation) {
-      setError(validation);
+    // F1: every step's checks again, each with its field's message (and back to that step).
+    const problem = publishProblem(nextForm);
+    if (problem) {
+      showProblem(problem);
       return;
     }
     if (!photos.length) {
       setStep(1);
-      setError("Add at least one photo before publishing.");
+      setError(errorText(shown("DZ-E2010")));
       return;
     }
     if (form.category === "Accessories" && !signed) {
@@ -792,50 +821,38 @@ export function ListingEditor({
       setError("Set your location before publishing.");
       return;
     }
-    setBusy(true);
-    setError("");
     setFailed(false);
-    setTextErrors({});
-    try {
-      setPhase("Saving listing details");
-      await workflow("listings/save", { id, form: nextForm });
-      setCreated(true);
+    setFieldErrors({});
+    const done = await runStep(
+      ui,
+      async () => {
+        setPhase("Saving listing details");
+        await workflow("listings/save", { id, form: nextForm });
+        setCreated(true);
 
-      setPhase("Syncing photos");
-      const currentPhotos = await syncPhotos(id, photos, removed);
+        setPhase("Syncing photos");
+        const currentPhotos = await syncPhotos(id, photos, removed);
 
-      setPhase("Saving size, price and dates");
-      await workflow("listings/finish", {
-        id,
-        form: nextForm,
-        photos: currentPhotos.map((p) => ({ id: p.id, slot: p.slot })),
-        status: originalStatus,
-      });
-
-      finished.current = true;
-      await draftClear(key).catch(() => {});
-      router.push("/app/closet");
-      router.refresh();
-    } catch (e) {
-      const err = e instanceof WorkflowClientError ? e : (e as Error);
-      if (e instanceof WorkflowClientError && e.field) {
-        if (["title", "description"].includes(e.field)) {
-          setTextErrors({ [e.field]: e.message });
-          setStep(2);
-        } else if (["price_note", "deposit_note"].includes(e.field)) {
-          setTextErrors({ [e.field]: e.message });
-          setStep(3);
-        } else {
-          setError(err.message);
-        }
-      } else {
-        setError(err.message);
-      }
-      setFailed(true);
-      setPhase("");
-    } finally {
-      setBusy(false);
-    }
+        setPhase("Saving size, price and dates");
+        await workflow("listings/finish", {
+          id,
+          form: nextForm,
+          photos: currentPhotos.map((p) => ({ id: p.id, slot: p.slot })),
+          status: originalStatus,
+        });
+        return true;
+      },
+      (e) => {
+        showFieldOf(e);
+        setFailed(true);
+      },
+    );
+    setPhase("");
+    if (!done) return;
+    finished.current = true;
+    await draftClear(key).catch(() => {});
+    router.push("/app/closet");
+    router.refresh();
   }
 
   async function startOver() {
@@ -903,7 +920,7 @@ export function ListingEditor({
       <div className="workflow-heading">
         <div>
           <span className="eyebrow accent">YOUR NEIGHBORHOOD WARDROBE</span>
-          <h1>{listing ? "Edit listing" : "List a piece"}</h1>
+          <h1>{editing ? "Edit listing" : "List a piece"}</h1>
         </div>
         <Link href="/app/closet" className="text-link">
           My Closet <Icon name="chevron" />
@@ -924,15 +941,22 @@ export function ListingEditor({
           <strong>{listing.auto_paused_reason}</strong>
         </div>
       )}
+      {/* F1: steps not reached yet look inactive with the normal cursor; only earlier steps
+          (back) take a click and show the pointer. */}
       <div className="editor-progress" aria-label={"Step " + step + " of 3"}>
         {["Photos", "Details", "Size, price and dates"].map((title, i) => (
           <button
             type="button"
             key={title}
-            className={step === i + 1 ? "current" : ""}
+            className={
+              step === i + 1 ? "current" : i + 1 < step && !busy ? "reachable" : "unreached"
+            }
             aria-current={step === i + 1 ? "step" : undefined}
             disabled={busy || i + 1 > step}
-            onClick={() => setStep(i + 1)}
+            onClick={() => {
+              setStep(i + 1);
+              setError("");
+            }}
           >
             <span>{i + 1}</span>
             {title}
@@ -1131,11 +1155,10 @@ export function ListingEditor({
                       value={form.title}
                       maxLength={80}
                       placeholder="e.g. Navy linen blazer"
+                      aria-invalid={Boolean(fieldErrors.title)}
                       onChange={(e) => {
                         change({ title: e.target.value });
                         setTouchedFields((prev) => ({ ...prev, title: true }));
-                        if (textErrors.title)
-                          setTextErrors((prev) => ({ ...prev, title: "" }));
                       }}
                     />
                     {form.title && (
@@ -1160,19 +1183,7 @@ export function ListingEditor({
                     )}
                   </div>
                   <small>{form.title.length}/80</small>
-                  {textErrors.title && (
-                    <p
-                      role="alert"
-                      className="form-message error"
-                      style={{
-                        margin: "4px 0 0",
-                        fontSize: "13px",
-                        color: "var(--danger, #d32f2f)",
-                      }}
-                    >
-                      {textErrors.title}
-                    </p>
-                  )}
+                  <FieldError message={fieldErrors.title} />
                 </label>
                 <label className="field">
                   <span>Category</span>
@@ -1185,6 +1196,7 @@ export function ListingEditor({
                   >
                     <select
                       value={form.category}
+                      aria-invalid={Boolean(fieldErrors.category)}
                       onChange={(e) => {
                         change({ category: e.target.value });
                         setTouchedFields((prev) => ({
@@ -1219,6 +1231,7 @@ export function ListingEditor({
                       </button>
                     )}
                   </div>
+                  <FieldError message={fieldErrors.category} />
                 </label>
                 {form.category === "Accessories" && (
                   <>
@@ -1226,6 +1239,7 @@ export function ListingEditor({
                       <span>Item type</span>
                       <select
                         value={form.item_type}
+                        aria-invalid={Boolean(fieldErrors.item_type)}
                         onChange={(e) => {
                           change({ item_type: e.target.value });
                           setTouchedFields((prev) => ({
@@ -1239,6 +1253,7 @@ export function ListingEditor({
                           <option key={t}>{t}</option>
                         ))}
                       </select>
+                      <FieldError message={fieldErrors.item_type} />
                     </label>
                     <div className="policy-note">
                       <strong>Accessory declaration</strong>
@@ -1266,17 +1281,13 @@ export function ListingEditor({
                       maxLength={1000}
                       rows={4}
                       value={form.description}
+                      aria-invalid={Boolean(fieldErrors.description)}
                       onChange={(e) => {
                         change({ description: e.target.value });
                         setTouchedFields((prev) => ({
                           ...prev,
                           description: true,
                         }));
-                        if (textErrors.description)
-                          setTextErrors((prev) => ({
-                            ...prev,
-                            description: "",
-                          }));
                       }}
                     />
                     {form.description && (
@@ -1306,19 +1317,7 @@ export function ListingEditor({
                     )}
                   </div>
                   <small>{form.description.length}/1000</small>
-                  {textErrors.description && (
-                    <p
-                      role="alert"
-                      className="form-message error"
-                      style={{
-                        margin: "4px 0 0",
-                        fontSize: "13px",
-                        color: "var(--danger, #d32f2f)",
-                      }}
-                    >
-                      {textErrors.description}
-                    </p>
-                  )}
+                  <FieldError message={fieldErrors.description} />
                 </label>
                 <div className="section-title" style={{ marginTop: "16px" }}>
                   <h3>
@@ -1370,6 +1369,7 @@ export function ListingEditor({
                     </button>
                   ))}
                 </div>
+                <FieldError message={fieldErrors.listing_styles} />
               </section>
             </>
           )}
@@ -1385,13 +1385,14 @@ export function ListingEditor({
               <section className="editor-section">
                 <h2>Size</h2>
                 <SizeFields form={form} onChange={change} />
+                <FieldError message={fieldErrors.garment_type || fieldErrors.size_label} />
                 <MeasurementFields
                   rows={rows}
-                  onChange={setRows}
+                  onChange={changeRows}
                   other={other}
                   onCopy={() => {
                     if (other)
-                      setRows(
+                      changeRows(
                         other.listing_measurements.map((m) => ({
                           ...m,
                           value: String(m.value),
@@ -1399,6 +1400,7 @@ export function ListingEditor({
                       );
                   }}
                 />
+                <FieldError message={fieldErrors.measurements} />
               </section>
               <section className="editor-section">
                 <h2>Price and availability</h2>
@@ -1408,8 +1410,10 @@ export function ListingEditor({
                     inputMode="decimal"
                     value={form.price_usd}
                     placeholder="25 or 25.50"
+                    aria-invalid={Boolean(fieldErrors.price_usd)}
                     onChange={(e) => change({ price_usd: e.target.value })}
                   />
+                  <FieldError message={fieldErrors.price_usd} />
                 </label>
                 <div className="section-title">
                   <h3>Availability</h3>
@@ -1467,31 +1471,38 @@ export function ListingEditor({
                     />
                   </label>
                 </div>
+                <FieldError message={fieldErrors.availability} />
                 {form.availability.length > 1 && (
                   <p className="muted">
                     Your other saved availability dates will be kept.
                   </p>
                 )}
                 {form.category === "Accessories" && (
-                  <label className="checkbox-line">
-                    <input
-                      type="checkbox"
-                      checked={form.accessory_confirmed}
-                      onChange={(e) =>
-                        change({ accessory_confirmed: e.target.checked })
-                      }
-                    />
-                    <span>
-                      This item isn&apos;t fine jewelry or precious metal and is
-                      worth under $300.
-                    </span>
-                  </label>
+                  <>
+                    <label className="checkbox-line">
+                      <input
+                        type="checkbox"
+                        checked={form.accessory_confirmed}
+                        aria-invalid={Boolean(fieldErrors.accessory_confirmed)}
+                        onChange={(e) =>
+                          change({ accessory_confirmed: e.target.checked })
+                        }
+                      />
+                      <span>
+                        This item isn&apos;t fine jewelry or precious metal and is
+                        worth under $300.
+                      </span>
+                    </label>
+                    <FieldError message={fieldErrors.accessory_confirmed} />
+                  </>
                 )}
                 <details
                   className="more-options"
                   open={Boolean(
-                    textErrors.price_note ||
-                      textErrors.deposit_note ||
+                    fieldErrors.price_note ||
+                      fieldErrors.deposit_note ||
+                      fieldErrors.retail_value ||
+                      fieldErrors.deposit_amount ||
                       form.price_note ||
                       form.retail_value ||
                       form.deposit_note,
@@ -1504,36 +1515,20 @@ export function ListingEditor({
                       value={form.price_note}
                       maxLength={60}
                       placeholder="e.g. Dry cleaning included"
-                      onChange={(e) => {
-                        change({ price_note: e.target.value });
-                        if (textErrors.price_note)
-                          setTextErrors((prev) => ({
-                            ...prev,
-                            price_note: "",
-                          }));
-                      }}
+                      aria-invalid={Boolean(fieldErrors.price_note)}
+                      onChange={(e) => change({ price_note: e.target.value })}
                     />
-                    {textErrors.price_note && (
-                      <p
-                        role="alert"
-                        className="form-message error"
-                        style={{
-                          margin: "4px 0 0",
-                          fontSize: "13px",
-                          color: "var(--danger, #d32f2f)",
-                        }}
-                      >
-                        {textErrors.price_note}
-                      </p>
-                    )}
+                    <FieldError message={fieldErrors.price_note} />
                   </label>
                   <label className="field">
                     <span>Retail value (USD, optional)</span>
                     <input
                       inputMode="numeric"
                       value={form.retail_value}
+                      aria-invalid={Boolean(fieldErrors.retail_value)}
                       onChange={(e) => change({ retail_value: e.target.value })}
                     />
+                    <FieldError message={fieldErrors.retail_value} />
                   </label>
                   {Number(form.retail_value) >= 150 && (
                     <p className="policy-note">
@@ -1564,28 +1559,10 @@ export function ListingEditor({
                       value={form.deposit_note}
                       maxLength={120}
                       placeholder="e.g. $40 refundable deposit, cash at pickup"
-                      onChange={(e) => {
-                        change({ deposit_note: e.target.value });
-                        if (textErrors.deposit_note)
-                          setTextErrors((prev) => ({
-                            ...prev,
-                            deposit_note: "",
-                          }));
-                      }}
+                      aria-invalid={Boolean(fieldErrors.deposit_note)}
+                      onChange={(e) => change({ deposit_note: e.target.value })}
                     />
-                    {textErrors.deposit_note && (
-                      <p
-                        role="alert"
-                        className="form-message error"
-                        style={{
-                          margin: "4px 0 0",
-                          fontSize: "13px",
-                          color: "var(--danger, #d32f2f)",
-                        }}
-                      >
-                        {textErrors.deposit_note}
-                      </p>
-                    )}
+                    <FieldError message={fieldErrors.deposit_note} />
                   </label>
                 </details>
               </section>
@@ -1645,7 +1622,7 @@ export function ListingEditor({
                     ? "Next: Details"
                     : step === 2
                       ? "Next: Size & price"
-                      : listing
+                      : editing
                         ? "Save changes"
                         : "Publish listing"}
                 <Icon name="arrow" />

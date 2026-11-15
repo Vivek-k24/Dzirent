@@ -123,7 +123,8 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
 
     /**
      * The text filter's refusal at publish, by database column ("title", "description",
-     * "price_note", "deposit_note"); shown under that field until it's edited.
+     * "price_note", "deposit_note"); shown under that field until it's edited. F1: also a step's
+     * own gap for those fields and "price_usd" (the catalog's message with its code).
      */
     var textErrors by mutableStateOf<Map<String, String>>(emptyMap())
 

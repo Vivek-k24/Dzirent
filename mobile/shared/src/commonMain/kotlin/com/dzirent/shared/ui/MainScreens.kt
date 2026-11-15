@@ -56,7 +56,8 @@ import com.dzirent.shared.util.daysAndTotal
 import com.dzirent.shared.util.withVerifiedLabel
 import kotlinx.coroutines.launch
 import com.dzirent.shared.util.isBefore
-import com.dzirent.shared.util.isDraft
+import com.dzirent.shared.util.isUnfinished
+import com.dzirent.shared.util.listingActions
 import com.dzirent.shared.util.today
 
 sealed class UiState<out T> {
@@ -202,13 +203,15 @@ fun ListingDetailScreen(
                         Icon(Icons.Default.Share, contentDescription = "Share")
                     }
                 }
-                if (loaded != null && loaded.lenderId == currentUserId) {
+                // F1: your own listing offers Edit, never Save or Report listing.
+                val actions = loaded?.let { listingActions(isOwn = it.lenderId == currentUserId, isGuest = isGuest) }
+                if (loaded != null && actions?.edit == true) {
                     IconButton(onClick = { onEdit(loaded.id) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit listing")
                     }
                 } else if (loaded != null) {
                     val saved = isSaved
-                    if (saved != null) {
+                    if (saved != null && actions?.save == true) {
                         IconButton(onClick = { toggleSaved(loaded) }, enabled = !savingBookmark) {
                             Icon(
                                 imageVector = if (saved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
@@ -217,7 +220,7 @@ fun ListingDetailScreen(
                             )
                         }
                     }
-                    if (!isGuest) Box {
+                    if (actions?.report == true) Box {
                         IconButton(onClick = { menuOpen = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "More options")
                         }
@@ -725,7 +728,9 @@ private fun ClosetListingCard(
 ) {
     val isActive = listing.status == "active"
     // A draft row holds only uploaded photos (placeholder details): Edit carries on with it.
-    val isDraft = listing.isDraft
+    // F1: so does a row saved from the website's details step without a size or price yet:
+    // it goes live only through Publish in the editor, never the switch.
+    val isDraft = listing.isUnfinished
     Card(
         modifier = Modifier
             .fillMaxWidth()

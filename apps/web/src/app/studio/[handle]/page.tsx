@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { context, studio } from "@/lib/data";
+import Link from "next/link";
+import { context, myStudioHandle, studio } from "@/lib/data";
+import { EDIT_STUDIO_PATH, isOwnStudio, studioActions } from "@/lib/studio-view";
 import { currentUser } from "@/lib/supabase/server";
 import { cityLabel, Query, value } from "@/lib/types";
 import { Gate, PieceGrid } from "@/components/cards";
@@ -57,8 +59,10 @@ export default async function StudioPage({
     searchParams,
   ]);
   if (!user) return <Gate action="studio" next={"/studio/" + handle} />;
-  const s = await studio(handle, ctx);
+  const [s, mine] = await Promise.all([studio(handle, ctx), myStudioHandle()]);
   if (!s) notFound();
+  // F1: your own studio offers Edit studio, never Save, Report or Block.
+  const actions = studioActions(isOwnStudio(mine, s.studio_handle));
   return (
     <div className="page-width studio-page">
       <section className="studio-header">
@@ -79,18 +83,27 @@ export default async function StudioPage({
             ))}
           </div>
         </div>
-        <form action={studioAction}>
-          <input type="hidden" name="handle" value={handle} />
-          <input
-            type="hidden"
-            name="action"
-            value={s.is_saved ? "unsave" : "save"}
-          />
-          <button className="button secondary">
-            <Icon name="bookmark" />
-            {s.is_saved ? "Studio saved" : "Save studio"}
-          </button>
-        </form>
+        {actions.save && (
+          <form action={studioAction}>
+            <input type="hidden" name="handle" value={handle} />
+            <input
+              type="hidden"
+              name="action"
+              value={s.is_saved ? "unsave" : "save"}
+            />
+            <button className="button secondary">
+              <Icon name="bookmark" />
+              {s.is_saved ? "Studio saved" : "Save studio"}
+            </button>
+          </form>
+        )}
+        {actions.edit && (
+          <div className="studio-own-actions">
+            <Link href={EDIT_STUDIO_PATH} className="button secondary">
+              Edit studio
+            </Link>
+          </div>
+        )}
         <div className="studio-share">
           <ShareButton
             text={studioShareText(s.studio_name, s.studio_handle)}
@@ -144,6 +157,7 @@ export default async function StudioPage({
         <span className="muted">{s.listings?.length || 0} pieces</span>
       </div>
       <PieceGrid cards={s.listings || []} />
+      {(actions.report || actions.block) && (
       <details className="studio-safety">
         <summary>Studio options</summary>
         <div className="safety-options">
@@ -187,6 +201,7 @@ export default async function StudioPage({
           </form>
         </div>
       </details>
+      )}
     </div>
   );
 }

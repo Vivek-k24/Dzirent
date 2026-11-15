@@ -25,6 +25,8 @@ import {
   edgeDelete,
 } from "@/lib/listing-mutations";
 import { declarationTexts } from "@/lib/workflows";
+import { activationProblem } from "@/lib/listing-form";
+import { errorText } from "@/lib/errors";
 type Params = { params: Promise<{ path: string[] }> };
 const reply = (data: unknown) =>
   NextResponse.json(data, {
@@ -197,6 +199,10 @@ export async function POST(request: NextRequest, { params }: Params) {
               listing.title +
               '" on.',
           );
+        // F1: turning a listing on is publishing too: never without its title, size and price.
+        const unfinished = body.status === "active" ? activationProblem(listing) : null;
+        if (unfinished)
+          throw new WorkflowError(errorText(unfinished), 400, unfinished.field, unfinished.code);
         must(
           await client
             .from("listings")

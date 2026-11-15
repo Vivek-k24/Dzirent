@@ -59,6 +59,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * A message for the person, safe to show. [field] is the input a refusal is about (the database's
@@ -101,7 +102,10 @@ internal fun clientErrorCode(raw: String): String? {
         "already registered" in said || "already been registered" in said || "user_already_exists" in said -> "DZ-E1006"
         "password should" in said || "weak_password" in said -> "DZ-E1007"
         "rate limit" in said || "too many requests" in said -> "DZ-E1008"
-        "unable to resolve host" in said || "failed to connect" in said || "timeout" in said || "timed out" in said -> "DZ-E9002"
+        // F1: every way a call can fail without an answer (offline, a dropped connection, the time limit).
+        "unable to resolve host" in said || "failed to connect" in said || "timeout" in said || "timed out" in said ||
+            "connection reset" in said || "connection refused" in said || "connection abort" in said ||
+            "network is unreachable" in said || "unexpected end of stream" in said || "no address associated" in said -> "DZ-E9002"
         "row-level security" in said || "permission denied" in said || "jwt" in said -> "DZ-E1002"
         else -> null
     }
@@ -169,6 +173,9 @@ fun createDzirentSupabaseClient(
         supabaseUrl = url,
         supabaseKey = key
     ) {
+        // F1: one call gives up after 30 seconds (was the library's 10): long enough for a photo
+        // upload on a slow connection, and the step shows DZ-E9002 instead of waiting forever.
+        requestTimeout = ReadRetry.REQUEST_TIMEOUT_MS.milliseconds
         defaultSerializer = KotlinXSerializer(
             Json {
                 ignoreUnknownKeys = true

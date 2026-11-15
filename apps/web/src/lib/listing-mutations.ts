@@ -6,24 +6,30 @@ import {
   WorkflowError,
   uuid,
 } from "./workflow-server";
-import { errorText, shown } from "./errors";
-import { validateListing, type ListingForm } from "./listing-form";
+import { errorText, shown, type ShownError } from "./errors";
+import {
+  draftProblem,
+  draftRow,
+  formFromBody,
+  publishProblem,
+  type ListingForm,
+} from "./listing-form";
 import { slots } from "./workflows";
 import { parseDepositAmount } from "./rentals";
 type Body = Record<string, unknown>;
-function form(body: Body): ListingForm {
-  const f = body.form as ListingForm;
-  if (
-    !f ||
-    typeof f.title !== "string" ||
-    typeof f.category !== "string" ||
-    !Array.isArray(f.measurements) ||
-    !Array.isArray(f.availability) ||
-    !Array.isArray(f.listing_styles)
-  )
-    throw new WorkflowError("Check your listing details.");
-  const error = validateListing(f);
-  if (error) throw new WorkflowError(error);
+/** A field's refusal as the page shows it: the catalog's words and code, the field (F1). */
+function refused(problem: ShownError): WorkflowError {
+  return new WorkflowError(errorText(problem), 400, problem.field, problem.code);
+}
+/**
+ * The form in the request. F1: [publishing] checks every step; a draft save (Next on the photos
+ * or details step) only refuses what no step would accept, and saves the unfinished rest empty.
+ */
+function form(body: Body, publishing: boolean): ListingForm {
+  const f = formFromBody(body.form);
+  if (!f) throw new WorkflowError("Check your listing details.");
+  const problem = publishing ? publishProblem(f) : draftProblem(f);
+  if (problem) throw refused(problem);
   return f;
 }
 async function signedAccessory(f: ListingForm) {
@@ -44,7 +50,7 @@ async function signedAccessory(f: ListingForm) {
 }
 export async function saveListing(body: Body) {
   const { user, client } = await session();
-  const f = form(body);
+  const f = form(body, false);
   await signedAccessory(f);
   const profile = must(
     await client
@@ -70,20 +76,8 @@ export async function saveListing(body: Body) {
   );
   if (!existing && (profile.approx_lat == null || profile.approx_lng == null))
     throw new WorkflowError("Set your location before publishing.");
-  const details = {
-    title: f.title.trim(),
-    category: f.category,
-    description: f.description.trim() || null,
-    item_type: f.category === "Accessories" ? f.item_type : null,
-    garment_type: f.garment_type,
-    size_label: f.size_label.trim(),
-    price_usd: Number(f.price_usd),
-    price_note: f.price_note.trim() || null,
-    retail_value: f.retail_value ? Number(f.retail_value) : null,
-    deposit_note: f.deposit_note.trim() || null,
-    listing_styles: f.listing_styles,
-    status: "paused",
-  };
+  // F1: what is filled in; size, price and the rest stay empty until their step (draftRow).
+  const details = { ...draftRow(f), status: "paused" };
   // C5: the deposit amount only while payments are on (the field shows only then); else untouched.
   if (typeof f.deposit_amount === "string") {
     const settings = await client.rpc("rental_settings");
@@ -118,10 +112,9 @@ export async function finishListing(body: Body) {
   const { user, client } = await session();
   const id = String(body.id || "");
   const listing = await ownListing(id);
-  const f = form(body);
+  const f = form(body, true);
   await signedAccessory(f);
-  if (!listing.photos.length)
-    throw new WorkflowError("Add at least one photo before publishing.");
+  if (!listing.photos.length) throw refused(shown("DZ-E2010"));
   const order = body.photos as { id: string; slot: string }[];
   if (
     !Array.isArray(order) ||
