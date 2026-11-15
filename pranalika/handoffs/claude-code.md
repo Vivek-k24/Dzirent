@@ -2,7 +2,115 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
-## C6 - 2026-11-14 - ID verification live
+## F1 - 2026-11-15 - owner test fixes
+
+**Before starting:** clean tree, `Preview` up to date at `a8bff17`.
+
+**Fixes, each with its cause:**
+1. **Listing draft save.**
+   - **Cause:** the website's `listings/save` ran the full publish check (`validateListing`) on every save. Next on the Photos step sends an unfinished form, so it was refused with "Choose a size." (the owner's 400). Next on the Details step would have failed the same way (size and price are step 3). An empty price was also sent as `0`, which the database's `price_usd > 0` refuses.
+   - **Fix:** a draft save never asks for a missing field. It refuses only text over its limit or unknown styles, and saves the rest empty: the placeholder title and category until the details step, size and price `null` (`listing-form.ts` `draftProblem` / `draftRow`).
+   - **Checks per step:** each step checks its own fields when the person continues: `detailsProblem` for step 2, `sizePriceProblem` at Publish (`publishProblem` = both, again on the server in `listings/finish`). Each check gives a field-level catalog message, shown under the field and at the buttons, and jumps back to that field's step. New codes **`DZ-E2070`-`E2085`** (title, category, item type, description, size, garment kind, price, price details, deposit note, retail value, accessory over $300, the accessory tick, styles, measurements, no dates, end before start); `DZ-E2010` for no photo.
+   - **Unfinished rows:** a paused row with the placeholder title, or no size or price, is "unfinished" (`isUnfinished`, the same rule as the app's `Listing.isUnfinished`). My closet shows it as Draft without the Active/Paused switch, the status route refuses to turn it on with its field's code (`activationProblem`), and the editor publishes it like a new listing. A draft reopened from the closet starts with a blank title and category; a draft's price shows empty, never "null".
+   - **Database:** it already accepted an unfinished paused row (only `title` 3-80 and `category` are required). Nothing moved there; pgTAP `14_f1` now checks it.
+   - **Android:** the same problem didn't exist: the draft row (now `draftListing`) is inserted without a size or price, and the editor already checked size and price only at Publish. Fixed the same way:
+     - each gap (`detailsMissing`, `step2Missing`) is now the catalog's message with its code and field, and shows under the title, description, price and notes fields;
+     - an unfinished row (for example one saved on the website's details step) gets no closet switch and publishes as live (`ListingPublisher.goesLive`).
+2. **No silent hangs.**
+   - **Cause:** the website's `workflow()` and the photo uploads called `fetch` without a time limit, so a stalled request left "Saving..." / "Preparing your listing..." spinning. A network error or a host error page also surfaced as raw text ("Failed to fetch", a JSON parse error).
+   - **Fix (website):** `lib/requests.ts`:
+     - every call to `/api/workflows` (`workflow()`, `workflowUpload()` for listing and condition photos, the data download) gives up after **30 s** with `DZ-E9002`;
+     - a dropped connection is also `DZ-E9002`; a non-JSON 5xx page is `DZ-E9003`;
+     - only a `WorkflowClientError` ever comes out, so every form's catch has a message. `runStep` is busy on, then the error in place and busy off on any failure.
+     - The listing editor's four server steps use it (draft save, photo upload, photo check start, publish), plus Check again. I went through the other forms (settings, studio, measurements, rentals and their condition photos, verification, payouts, closet, chat): each already catches and re-enables, and now always gets a coded message within 30 s.
+   - **Fix (apps):** the Supabase client's `requestTimeout` is 30 s (it was supabase-kt's default 10 s). More network failures map to `DZ-E9002`: connection reset, refused or aborted, network unreachable, unexpected end of stream, no address. Publish now catches every failure, so the spinner can't stay on. Tidying up after a successful publish never turns it into a failure.
+   - **Found on the way:** the website's measurements consent calls (Agree, and both Withdraw buttons) had no body, so they went out as **GET** and answered "Page not found." They are POSTs again.
+3. **Step indicator.**
+   - **Cause:** the global `button:disabled { cursor: wait }` gave steps not reached yet the wait cursor. The bar also had 2 columns for 3 steps.
+   - **Fix:** steps not reached yet are dimmed with the normal cursor, only earlier steps (`reachable`) show the pointer, and the bar has 3 columns.
+4. **Own studio.**
+   - **Website:** your own studio page (`myStudioHandle()` = the studio's handle, ignoring case) hides Save studio, the Studio options disclosure, Report this studio and Block this studio, and shows **Edit studio** (`/app/settings/studio`). The rule is `lib/studio-view.ts`.
+   - **App:** the studio screen never had Report or Block (people report from a listing's menu or the chat). Your own studio now shows **Edit studio** (opens My studio) instead of Save and Message. Your own listing already showed only Edit; both rules are now in `util/OwnActions.kt` (`studioActions`, `listingActions`) and tested. The website has no other page where you'd act on yourself (a chat is always with someone else, and the listing page has no Report).
+   - **Database (a premise only half true):** `block_user()` and `report_user()` do skip your own handle and write nothing. But the apps write `blocks` and `reports` to the tables directly, and their policies only check the blocker or reporter, so a self-block or self-report could be written there. `20261115120000_f1_no_self_block_report.sql` adds a coded refusal:
+     - the trigger `blocks_not_self` (`DZ-E3021`);
+     - a check at the end of `app_private.report_prepare` (`DZ-E5017`: about yourself, your own listing or your own message). Before applying, I confirmed the live function is byte for byte P2B's body (MD5 of `prosrc`), so only the check is added.
+     - pgTAP `14_f1` covers both paths, and that someone else can still be blocked and reported.
+5. **Dark mode.**
+   - **Cause:** the dark theme turns `--ink` near-white, but chips and pills hard-coded light backgrounds. The listing tags were 1.01:1 and the photo counter 1.10:1; the draft tag and the current step number (white on the dark theme's light pink) 2.48:1; the dark notice 1.50:1.
+   - **Fix:** theme tokens `--chip`, `--chip-ink`, `--surface`, `--on-accent`, `--tint`, in both themes, for:
+     - the listing and studio tags, filter tags, status badges (and the active one), the photo counter;
+     - the draft tag, the current step number, avatars, the hero label, the share banner, how-it-works, the "or" divider, the fit symbol;
+     - the dark notice, the photo placeholder's text (4.73:1), the active admin tab badge (6.62:1).
+   - Measured with a WCAG script: every pair is **5.22:1 or more in both themes**.
+   - **App:** its chips use Material 3 roles (style tags `onSurfaceVariant` on `surfaceVariant`, 5.8:1 light and 5.7:1 dark), and it has no photo counter (page dots), so nothing changed.
+6. **Dependabot alert 83.**
+   - `opentelemetry-api` 1.45.1 → **1.45.2** (released 2026-10-29, 17 days ago). FastAPI requires only the API; its SDK and exporter are extras the service doesn't install, so there are no companion packages to move.
+   - `pip install --no-deps` into the repo `.venv`, then `pip check`: "No broken requirements found".
+   - **Not redeployed**, because the alert closes without it: it is computed from `requirements.txt` on `main`, so it closes when the owner merges `Preview`. The running revision is not exposed in practice: FastAPI parses `traceparent` only when an OpenTelemetry provider is configured, and the vision app configures none. The next `vision` deploy picks up 1.45.2.
+
+**What I ran:**
+1. **Local backend** on the default ports (free today; no WinNAT clash), from scratch (`stop --no-backup`, `start` without Studio and the log stack): every migration including `20261115120000`, then the seed.
+2. **pgTAP:** **14 files, 442 tests, PASS** (`14_f1` 14).
+3. **Integration** (`node supabase/tests/run-all.mjs`, Node 22): **22 of 22 passed**, C6 off and on included.
+4. **Website** (Node 22): `npm test` **50 of 50** (`listing-flow.test.ts` 10: the draft with an empty size, the size message at Publish, the other step-3 codes, unfinished rows, a forced network failure and a stalled save showing `DZ-E9002` with the button back, a refusal's field and code, a host error page `DZ-E9003`, own studio without Report or Block); `tsc --noEmit` clean; `eslint` clean; `npm run build` passed. `generate.mjs --check`: 214 codes, code reference fresh.
+5. **Android** (stack stopped, no containers): `:androidApp:assembleDebug :shared:testDebugUnitTest` **BUILD SUCCESSFUL**: **80 tests, 0 failures, 1 skipped** (`ListingStepsTest` 9).
+6. **Vision** (repo `.venv`):
+   - pytest **54 passed** with the model tests (`VISION_SAFETY_DIR` = S1's built safety model); the CI form **52 passed, 2 deselected**.
+   - **Same results:** the service's own code (`Model`, `analyze_photo`, `scan`; S1's script, on S1's built assets) on the same 92 photos and 12 listings before and after the update. Image embeddings and nudity scores are **bit-identical**, and 0 of 92 photos and 0 of 12 listings changed. All 22 sample photos and all 12 listings are still allowed; should-reject is 32 rejected, 10 review, 0 allowed; the highest nudity score is 0.148 (as in S1).
+7. **Contrast:** a WCAG ratio script over the new token pairs (above).
+8. **CI:** [run 43737167391](https://github.com/Vivek-k24/Dzirent/actions/runs/43737167391) on `5c0b185`: **all 5 jobs green**. Database: pgTAP `Files=14, Tests=442`, PASS; integration 22 of 22.
+9. **Live**, after CI:
+   - **Before** (read-only, `supabase db query --linked`): 0 self-blocks, 0 self-reports, 0 paused listings without a size or price, 0 active ones (13 listings). The live `app_private.report_prepare` was exactly P2B's body (MD5 of `prosrc`).
+   - `supabase db push --linked --dry-run` listed only `20261115120000_f1_no_self_block_report.sql`; `supabase db push --linked` applied it.
+   - **After** (read-only):
+     - the trigger `blocks_not_self` exists, and `authenticated` can't execute `refuse_self_block()`;
+     - `report_prepare` has the `DZ-E5017` check, and its body equals the migration's (MD5);
+     - still 0 self rows, 13 listings; the last migration is `20261115120000`.
+   - **Security Advisor** (Supabase MCP `get_advisors`, 2026-11-15 16:52 UTC): **no new findings**. RLS enabled with no policy 19, guest definer functions 5, signed-in definer functions 78: the same as after C6.
+   - No Edge Function or vision deploy; nothing written on live except the migration.
+
+**Test counts:**
+
+| Suite | Count |
+| --- | --- |
+| pgTAP | 442 (14 files; `14_f1` 14) |
+| Integration | 22 runs (20 scripts) |
+| Shared Kotlin | 80 (1 skipped; `ListingStepsTest` 9) |
+| Website | 50 (`listing-flow.test.ts` 10) |
+| Vision | 54 with the model tests; 52 in CI |
+| Contracts | 214 codes, fresh; code reference fresh |
+
+**APK** (built 2026-11-15 10:35 local; 97,046,754 bytes):
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, replacing the C6 copy. Same size and SHA-256.
+
+**Phone and website test (owner):**
+- **Website, List a piece:**
+  - Add photos, then Next: it goes on to Details with no size asked. Next again without a title: "Title must be 3 to 80 characters. (DZ-E2070)" under the title.
+  - On step 3, Publish without a size: "Choose a size. (DZ-E2074)" under the size.
+  - With the connection off, Next shows "Can't reach the server... (DZ-E9002)" and the button comes back (after at most 30 seconds when the line just stalls).
+  - Steps not reached yet show the normal cursor.
+- **Website, My closet:** a listing left after the details step shows Draft, with Edit and no Activate.
+- **Your own studio** (website and app): Edit studio, no Save, Report, Block or Studio options. Another studio still has them on the website.
+- **Dark mode** on a listing page: the size and style chips and "1 / 2" are readable.
+- **Website, Settings > Measurements:** saving with consent (Agree) and Withdraw work.
+- **App, Create listing:** Publish without a size shows "Choose a size. (DZ-E2074)"; without a price, the message under the price field too.
+
+**iPhone, for the Mac session:** build-check the F1 common code:
+- `ui/StudioScreen.kt` (`OutlinedButton` Edit studio, `onEditStudio`), `ui/MainAppScaffold.kt`, `ui/MainScreens.kt` (`listingActions`, `isUnfinished` in the closet card);
+- `ui/ListingEditor.kt` (`showMissing`, `goesLive`, the catch-all), `ui/ListingStepDetails.kt` (price field message), `ui/ListingEditorState.kt`;
+- `util/OwnActions.kt`, `util/ListingForm.kt` (`missingField`, `draftListing`), `util/PhotoGate.kt` (`Missing` with field and code), `util/PhotoScan.kt` (`isUnfinished`), `util/ReadRetry.kt`, `data/ListingPublisher.kt`;
+- `repository/DzirentRepository.kt` (`requestTimeout` 30 s: check that uploads and Realtime on iPhone behave as before).
+
+**Open issues:**
+- **The database doesn't require a size or price to go live.** Both apps and the website check before publishing, and neither closet offers the switch for an unfinished row, but a hand-made API call could still set `status = 'active'` on one. A trigger at activation would close it. It would change several older test fixtures that insert bare active listings, so it was left for a step that may move that check (`supabase/` was limited to a server check that must move).
+- **Edge Functions not redeployed:** their bundled `_shared/error-codes.ts` now has the 18 new codes, which none of them sends. They run the 196-code catalog until the next function deploy.
+- **`--danger` is used but never defined** on the website (studio editor, chat, closet and admin error text), so its fallback `#d32f2f` is 3.7:1 on the dark background. These are form messages, not chips, so they were left out of this step's contrast fix.
+- **Editing a live listing on the website pauses it** from the Details step's save until Save changes finishes (since step 2C: "Your listing stays paused while the save is incomplete"). Leaving the editor half-way leaves it paused. The app keeps the status until Publish.
+- **Android Lint** wasn't run (the build and unit tests were).
+
+**Requests:**
+- **Owner:** merge `Preview` into `main` so Dependabot alert 83 closes (it is computed on `main`).
 
 **Before starting:** clean tree, `Preview` up to date at `187b906`. `providers.env` has `DIDIT_API_KEY` and `DIDIT_WEBHOOK_SECRET` (values never printed). Its `DIDIT_WORKFLOW_ID` is stale: it isn't one of the application's 3 workflows (read-only `GET /v3/workflows/` with the key; it lists the task's `7051bbe4-…` as "Free KYC", the default). The setting `didit_workflow_id` holds the task's id, and no code reads that env value.
 
