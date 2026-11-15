@@ -252,6 +252,9 @@ private fun ListingEditorForm(
     fun orderedPhotos(): List<Pair<PhotoSlot, PhotoItem>> = PhotoSlot.entries.mapNotNull { slot -> state.slots[slot]?.let { slot to it } }
 
     var syncJob by remember { mutableStateOf<Job?>(null) }
+    // V1a: counts check requests, so the watcher below starts again even when the server hands
+    // back the same, already finished check (photos unchanged).
+    var scanRequests by remember { mutableStateOf(0) }
 
     /** Puts the photos on the listing as they are now and asks for their check, in the background. */
     fun startPhotoCheck() {
@@ -268,6 +271,7 @@ private fun ListingEditorForm(
                 publisher.syncPhotos(row, ordered.map { it.second }, ordered.map { it.first.key })
                 state.checkedPhotos = key
                 state.scanId = repository.requestScan(state.listingId)
+                scanRequests++
                 state.checkPhase = CheckPhase.CHECKING
             } catch (e: CancellationException) {
                 throw e
@@ -288,7 +292,7 @@ private fun ListingEditorForm(
             state.checkPhase = CheckPhase.CHECKING
             state.scan = null
             runCatching { repository.requestScan(state.listingId) }
-                .onSuccess { state.scanId = it }
+                .onSuccess { state.scanId = it; scanRequests++ }
                 .onFailure {
                     state.uploadError = it.userMessage("Couldn't check your photos. Please try again.")
                     state.checkPhase = CheckPhase.UPLOAD_FAILED
@@ -298,8 +302,9 @@ private fun ListingEditorForm(
 
     // Follows the current check to its end, then makes sure it is the check of the photos as
     // they are now (the server starts a newer one when they changed meanwhile).
-    LaunchedEffect(state.scanId) {
+    LaunchedEffect(state.scanId, scanRequests) {
         val id = state.scanId ?: return@LaunchedEffect
+        if (state.scan?.id != id) state.scan = null  // never another check's result while this one runs
         state.checkPhase = CheckPhase.CHECKING
         val last = withTimeoutOrNull(CHECK_TIMEOUT_MS) {
             repository.watchScan(id).onEach { state.scan = it }.lastOrNull()

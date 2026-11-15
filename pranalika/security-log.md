@@ -593,3 +593,10 @@ Run with the Supabase MCP `get_advisors` (security) right after `supabase db pus
   - **Exposure of the running revision:** none in practice. FastAPI parses `traceparent` (`propagate.extract`) only when an OpenTelemetry tracer, meter or logger provider is configured; the vision app configures none and has no SDK.
   - **Not redeployed:** the alert is computed from `requirements.txt` on `main`, so it closes when the owner merges `Preview`; the next deploy of `vision` picks up 1.45.2.
 - **Requests never wait forever:** the website's calls to `/api/workflows` and both apps' Supabase calls give up after 30 seconds with `DZ-E9002` (contract section 5). The apps' limit was the library's 10 seconds before.
+
+## Color reader (V1a, 2026-11-15)
+
+- **New dependency in `services/vision`:** `opencv-python-headless` **4.14.0.94** (released 2026-07-28, more than two weeks before; needs only numpy 2, already pinned). OpenCV is Apache 2.0, the wheel's packaging MIT. GitHub's advisory database lists 10 advisories for `opencv-python-headless` (21 counting `opencv-python`); every affected range ends below 4.8.1.78, so none affects 4.14.0.94 (checked with `gh api /advisories`). The wheel also bundles FFmpeg (LGPL 2.1) for video files; the service never opens video, it decodes photos with Pillow as before and hands OpenCV only pixel arrays (GrabCut).
+- **New data:** the xkcd color survey's 949 names (`services/vision/app/color_names.json`, CC0), copied once from `https://xkcd.com/color/rgb.txt` (SHA-256 of the download `450cca88…f890`). It is read at start-up only; nothing is fetched at run time.
+- **Unchanged:** no new secrets, keys, permissions, roles or network calls. The service still holds no keys and fetches photos only from the allowed prefix. The new `suggestions.color_confidence` is a number; the colors are still only the apps' 15 values. No database change.
+- **Not deployed:** gcloud's sign-in on this PC had expired ("Reauthentication failed. cannot prompt during non-interactive execution"), so Cloud Run still serves the S1b revision. The local image of the same Dockerfile is the stand-in (V1a handoff).

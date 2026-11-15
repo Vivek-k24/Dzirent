@@ -2,6 +2,216 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## V1a - 2026-11-15 - color reader
+
+**Before starting:** clean tree, `Preview` up to date at `8dcd49e`. I didn't touch `H:\DziRent\Dzirent_vision_data` (the other agent's folder). `H:\DziRent\vision-test\should-accept` and `should-reject` are still empty, so there were no owner photos to compare.
+
+**What changed:**
+- **Vision service: the color reader** (`services/vision/app/color_reader.py`, new). Per photo, in under a second (timings below):
+  1. **Garment mask:** OpenCV GrabCut (`opencv-python-headless` 4.14.0.94; no new model).
+     - Seeded with the framing check's own item region, or the middle 60% of the photo when the framing check found none (a busy background such as a rug). The border band is always background.
+     - Runs at 256 px on the long side, 3 iterations. On the 22 sample photos the masks hold the garment cleanly (hangers mostly out, small stand parts in).
+  2. **Light:** the background's median color in log-chromaticity.
+     - When it lies on the CIE daylight locus (within 0.10), the background is taken as a neutral surface under that light. The light, clamped to 3500-10000 K, is divided out (von Kries).
+     - A colored background (a red rug sits 2.9 off the locus) can't tell its color from the light's, so the hue is left alone.
+     - A dim photo is brightened up to 2.5x (by its brightest channel, so a saturated red cloth isn't taken for dim), never darkened.
+  3. **Measure:** the garment's pixels in CIELAB (6000 per photo), k-means with lightness counting half.
+     - Clusters that are one fabric lit and in shadow are joined: the same lightness-free chromaticity, or the same hue within 25°, up to 4x apart in luminance.
+     - Clusters under 6% are left out. Each cluster is named by its lit half.
+  4. **Name:** the nearest of the xkcd color survey's 949 names (`app/color_names.json`, CC0), by CIEDE2000 with the textile lightness factor 2.
+     - Each name maps to the apps' value with the closest typical shade, except 21 hand-set names and 16 tans (below).
+     - Then the app's old rules: the main color takes in its related shades, a second color needs 12%, and two colors within 0.75 are too close to call.
+     - **Only the 15 values are ever returned** (unit-tested on random pixels).
+  5. **Second opinion:** the model's text embeddings of "a photo of a <name> garment" and "<name> clothing" for all 949 names, built into the image with their own digest. The policy digest stays the policy's: `fab11ee739b2e4db`, unchanged.
+     - **Contenders:** the pixels' main color, plus a second color or related shade with at least half its share, plus any value whose nearest name is within 4 of the main color's own.
+     - **Model's share:** it is asked about the names near the contenders' colors only, and its share for a contender includes that contender's related shades.
+     - **The rule:**
+       - If the model mostly sees the contenders and picks the pixels' main color, the colors are kept: `color_confidence` 0.9, "agree".
+       - If it picks another contender with at least 0.75 of its share, that one becomes the main color and the second is left out: 0.7, "settled".
+       - Anything else keeps the pixel answer at 0.4 ("disagree"); colors that were too close to call stay without a color. Without the model the confidence is 0.6.
+     - The lender never sees a warning.
+  - **New key `suggestions.color_confidence`** (contract.md). Nothing reads it yet; the database stores the suggestions object as it is, so there is no database change.
+  - **The old color function is removed** now that the evaluation passes: `color_votes`, `name_colors`, `ColorVotes` and the center box. `colors.py` keeps the 15 values, their shades, the related pairs, the thresholds and the Lab math. `SERVICE_VERSION` is `v1a.1`.
+  - The build embeds 2,358 prompts (460 before). That took 232 s on this PC.
+- **"Checking your photos…" (website and apps).**
+  - **Cause, the same on both:** the check watcher restarted only when the check's id changed. Next on Photos again (or Check again) with unchanged photos gets the same, already finished check back, so nothing moved the banner off "Checking your photos…", while the earlier suggestions ("Filled from your photos") stayed.
+  - **Website** (`listing-editor.tsx`): every request bumps a counter that restarts the watcher (it reads the check at once). Events for other checks are ignored, and a late "running" event never undoes a result.
+  - **Apps** (`ListingEditor.kt`, `PhotoScan.kt`): the same counter restarts the watcher; the banner shows the result as soon as the finished check arrives (`checkBanner`: CHECKING with a finished scan is the result), and a check's watcher never shows another check's result.
+- **README** open-source section: OpenCV (Apache 2.0; the wheel's MIT packaging and its bundled FFmpeg, LGPL 2.1, never used) and the xkcd color names (CC0); the NOTICE note. **Docs:** `architecture.md` 5.6, `contract.md` (the colors and `color_confidence`), `security-log.md`, `services/vision/README.md`, `code-reference.md` (regenerated), `BOARD.md` (new "Vision data" section).
+
+**Old vs new colors, the 22 sample listing photos** (each photo scanned alone; old = the code before V1a, the deployed S1b code; new = V1a; same pinned model, same 92 photos, run with the service's own `Model`, `analyze_photo` and `scan` code). "Stored color" is the color word in the live listing's title or description; where the listing names none, "eye:" is my own reading of the photo. Rule: what the model's second opinion did, with its share for the value it picked.
+
+| Photo | Old colors | New colors | Stored color | Old right | New right | New rule (model) |
+| --- | --- | --- | --- | --- | --- | --- |
+| cashmere-belted-trench-coat/back | Brown | Beige | camel | yes | yes | agree (Beige 0.58) |
+| cashmere-belted-trench-coat/front | Brown | Beige | camel | yes | yes | agree (Beige 0.51) |
+| embroidered-silk-lehenga-set/back | Brown | Maroon | eye: maroon with gold | no | yes | settled (Maroon 0.92) |
+| embroidered-silk-lehenga-set/front | Maroon, Black | Maroon | eye: maroon with gold | yes | yes | settled (Maroon 0.95) |
+| emerald-velvet-cocktail-dress/back | Black | Emerald | emerald green | no | yes | agree (Emerald 1.0) |
+| emerald-velvet-cocktail-dress/front | Black | Emerald | emerald green | no | yes | agree (Emerald 1.0) |
+| linen-summer-sundress/front | Orange, Maroon | Orange, Maroon | terracotta | yes | yes | agree (Orange 0.89) |
+| minimalist-wool-day-coat/back | Grey | Grey | heather grey | yes | yes | agree (Grey 0.97) |
+| minimalist-wool-day-coat/front | Grey | Grey | heather grey | yes | yes | agree (Grey 0.98) |
+| modern-qipao-midi-dress/back | Emerald, Black | Emerald | eye: jade green | yes | yes | agree (Emerald 1.0) |
+| modern-qipao-midi-dress/front | Emerald, Black | Emerald | eye: jade green | yes | yes | agree (Emerald 1.0) |
+| pleated-wide-leg-trousers/back | White | White | eye: cream | yes | yes | agree (White 0.99) |
+| pleated-wide-leg-trousers/front | White | White | eye: cream | yes | yes | agree (White 0.99) |
+| satin-backless-maxi-dress/back | Brown | Beige | champagne | no | yes | agree (Beige 0.65) |
+| satin-backless-maxi-dress/front | Beige, Grey | Beige | champagne | yes | yes | agree (Beige 1.0) |
+| silk-halter-evening-gown/back | Navy, Grey | Navy, Grey | eye: navy | yes | yes | agree (Navy 0.63) |
+| silk-halter-evening-gown/front | Navy, Grey | Navy | eye: navy | yes | yes | agree (Navy 0.6) |
+| structured-silk-work-shirt/front | Beige | White | eye: white | no | yes | agree (White 1.0) |
+| tailored-charcoal-blazer/back | Black | Grey | charcoal | no | yes | agree (Grey 0.72) |
+| tailored-charcoal-blazer/front | Black | Grey | charcoal | no | yes | agree (Grey 0.75) |
+| vintage-denim-jumpsuit/back | Grey, Blue | Blue | denim | no | yes | agree (Blue 0.99) |
+| vintage-denim-jumpsuit/front | Grey, Blue | Blue | denim | no | yes | agree (Blue 1.0) |
+
+**The 12 sample listings** (all their photos together; the title is the new suggestion, unchanged apart from the color word):
+
+| Listing | Old colors | New colors | Stored color | Old right | New right | New rule (model) | New title |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cashmere-belted-trench-coat | Brown | Beige | camel | yes | yes | disagree (Brown 0.57) | Beige wool trench coat |
+| embroidered-silk-lehenga-set | Maroon | Maroon | eye: maroon with gold | yes | yes | settled (Maroon 0.95) | Maroon embroidered lehenga |
+| emerald-velvet-cocktail-dress | Black | Emerald | emerald green | no | yes | agree (Emerald 1.0) | Emerald velvet cocktail dress |
+| linen-summer-sundress | Orange, Maroon | Orange, Maroon | terracotta | yes | yes | agree (Orange 0.89) | Orange linen dress |
+| minimalist-wool-day-coat | Grey | Grey | heather grey | yes | yes | agree (Grey 0.97) | Grey wool coat |
+| modern-qipao-midi-dress | Emerald, Black | Emerald | eye: jade green | yes | yes | agree (Emerald 1.0) | Emerald silk qipao |
+| pleated-wide-leg-trousers | White | White | eye: cream | yes | yes | agree (White 0.99) | White trousers |
+| satin-backless-maxi-dress | Beige, Grey | Beige | champagne | yes | yes | agree (Beige 1.0) | Beige satin slip dress |
+| silk-halter-evening-gown | Navy, Grey | Navy | eye: navy | yes | yes | agree (Navy 0.62) | Navy satin gown |
+| structured-silk-work-shirt | Beige | White | eye: white | no | yes | agree (White 1.0) | White shirt |
+| tailored-charcoal-blazer | Black | Grey | charcoal | no | yes | agree (Grey 0.74) | Grey wool suit |
+| vintage-denim-jumpsuit | Grey, Blue | Blue | denim | no | yes | agree (Blue 1.0) | Blue denim jumpsuit |
+
+**Scores:**
+- **Sample photos:** old right on 13 of 22, new on **22 of 22**.
+- **Sample listings:** old 8 of 12, new **12 of 12**.
+- I counted the camel coat as right for Beige or Brown, terracotta for Orange or Brown, and green for Emerald or Green.
+
+**The other 70 test photos** (the earlier sessions' Commons accept and reject sets, hoodies, worn dresses and the safe example; `vision-test` was empty):
+- **Changed:** 19 of them get suggestions, and the colors changed on 11. By eye, new is right on 4 and old on 1:
+
+| Photo | Old | New (rule) | By eye | Old right | New right |
+| --- | --- | --- | --- | --- | --- |
+| should-accept/blazer/1 (a portrait; the item read is the white scarf) | Grey | White (settled) | white scarf | no | yes |
+| should-accept/saree/1 (far away) | Black | Brown (agree) | brown | no | yes |
+| should-accept/wristwatch/2 | Grey | Navy (agree) | navy strap | no | yes |
+| worn-dress/3 | - | Blue (agree) | bright blue | no | yes |
+| should-accept/kimono/2 | Black | Purple (disagree: Maroon) | black, under magenta stage light | yes | no |
+| should-accept/handbag/2 | Grey | - (model Grey, under 0.75) | brown and orange floral | no | no |
+| should-accept/necktie/1 (children; the tie is black) | - | White (agree) | black tie | no | no |
+| should-accept/sunglasses/1 (on red cloth) | Maroon, Black | Maroon (disagree: Red) | black frame | no | no |
+| should-accept/sunglasses/2 (on a white card) | Grey | White (disagree: Beige) | red, white and blue frame | no | no |
+| should-reject/shorts/3 (a shop mannequin) | Brown | Grey, Brown (agree) | white tee, print shirt | no | no |
+| hoodies/hoodie/4 (long print dress) | Black, Yellow | Grey, Yellow (agree) | multicolor print | no | no |
+
+- **Verdicts and everything else unchanged:** on all 92 photos and all 12 listings these are identical to before: verdict, reason, item, every photo's decision, labels, checks and warnings, the quality summary, and every suggestion field except the colors, with titles and descriptions compared with the color words taken out. **0 differences** (`compare.py` in my scratch folder).
+- **Robustness (unit test, CI):** each of the 22 sample photos is scanned again under a 4000 K (yellow) cast, a 9000 K (blue) cast, half the light and 1.6x the light (clipped). The main color stays the same or one of its related shades (the app's light, shadow and neighbor pairs): **22 of 22 photos, all four casts.**
+- **Owner's case:** the cream sherwani photo isn't in the repo or `vision-test`. A synthetic stand-in, a cream piece with folds flat on a red and gold patterned rug, is in the tests:
+  - GrabCut separates it (mask overlap 0.85 or more with the true shape);
+  - it is named **White**, never Grey or the rug's red.
+  - Before the lit-and-shadow merge it read **Grey**: the fold shadows formed a bigger cluster than the lit cream, which is the same failure the owner saw.
+
+**Licenses:**
+- **OpenCV** `opencv-python-headless` 4.14.0.94: OpenCV under Apache 2.0, the wheel's packaging under MIT. The wheel's metadata says it bundles FFmpeg (LGPL 2.1) and other libraries listed in its `LICENSE-3RD-PARTY.txt`. The service never opens video. No advisory affects this version.
+- **xkcd color survey names:** CC0 1.0 (the first line of the downloaded `rgb.txt`), copied unchanged into `color_names.json`.
+- **No new model.** GrabCut found the garment on all 22 sample photos and on the synthetic rug test, so the segmentation-model fallback wasn't needed. On 9 of the other 70 photos it found too little (under 2% of the photo), and the reader used the framing check's seed instead. Those are mostly photos that aren't a garment: a typed letter, a laptop, footprints in snow, a dog, a building, plus jeans/3, sandals/3, necktie/2 (a drawing) and sweatshirt/1.
+
+**Color names for the owner to decide on** (should the apps' 15-value list grow?):
+- **The owner's examples:**
+  - **ivory, cream:** map to White. Their closest typical shade is a Beige one (ΔE 14 and 16), so they are set by hand. Off white, eggshell and pale are too.
+  - **champagne:** not in the xkcd list. The champagne satin dress reads as Beige.
+  - **gold:** Yellow (3.2, maps well).
+  - **maroon:** Maroon, already a value (3.0).
+  - **teal:** Emerald (8.8); turquoise Emerald (9.7); aqua Emerald (13).
+- **Other fashion names:**
+  - **Map well:** burgundy → Maroon 3.5; mustard → Yellow 4.0; silver → Grey 3.9; taupe → Beige 2.9; terracotta → Orange 7.9; olive → Green 8.4; sage → Green 7.9.
+  - **Map loosely:** camel → Beige 10.5 (set by hand; its closest shade is a gold); khaki → Beige 11.6 (set by hand; its closest shade is a green); charcoal → Grey 7.8 (set by hand; its closest shade is a black); coral → Red 7.9; peach → Orange 9.6; rust → Orange 9.5; wine → Maroon 9.3; mauve → Pink 9.4; lavender → Purple 9.5; lilac → Purple 10.2; plum → Purple 11.2; blush → Pink 10.7; mint → Green 14.9.
+- **Hand-set (21), each because its closest shade is another family than the name:**
+  - off white, ivory, cream, eggshell, pale → White;
+  - charcoal, charcoal grey → Grey;
+  - camel, tan, sand, khaki, light beige → Beige;
+  - sandy brown, sand brown, golden brown, yellowish brown, yellowy brown, mustard brown → Brown;
+  - royal blue → Blue; emerald → Emerald; dark (the survey's blue-black, #1b2431) → Navy.
+- **Tan rule (16):** Yellow means a saturated yellow (chroma 52 or more). Weaker yellows that would land on the Yellow shades (which include golds) become Beige when light and Brown when dark: desert, greenish beige, dark cream, parchment, creme, light khaki, dark sand, sandy, buff, wheat, dark khaki, light tan and dark tan → Beige; hazel, muddy brown and "shit" (the survey's own name; it has several crude ones) → Brown.
+- **Every name that maps poorly**, by value, with its distance to the value's closest typical shade (CIEDE2000, textile weighting; more than 10 counts as poor; 362 of the 949). Most are bright greens and limes, cyans and teals, lilacs and pinks that no 15-value list matches:
+- **Black (1):** very dark brown 11
+- **White (15):** pale cyan 19, eggshell blue 17, duck egg blue 17, light sky blue 16, light light blue 16, cream 16, pale blue 15, ivory 14, really light blue 14, very light blue 14, ice 14, very pale blue 14, ice blue 13, eggshell 12, pale 11
+- **Grey (11):** robin egg blue 21, robin's egg blue 20, pale sky blue 16, light periwinkle 15, purpley grey 14, purple grey 14, purplish grey 12, pinkish grey 12, light grey blue 11, bluegrey 11, bluey grey 10
+- **Navy (8):** purplish blue 12, purply blue 11, primary blue 11, strong blue 11, blue/purple 11, purple blue 11, burple 11, blue violet 11
+- **Blue (23):** robin's egg 22, aqua blue 22, neon blue 18, turquoise blue 17, petrol 16, bright sky blue 16, powder blue 13, teal blue 13, periwinkle 13, periwinkle blue 12, pastel blue 12, ocean 12, lavender blue 12, light blue 12, baby blue 12, lightblue 11, sky 11, bluish purple 11, rich blue 11, light royal blue 10, dark blue grey 10, greyblue 10, purpley blue 10
+- **Green (99):** acid green 18, lime green 18, bright lime 18, fluro green 18, bright green 18, fluorescent green 18, neon green 18, bright lime green 18, highlighter green 17, poison green 17, hot green 17, electric green 17, pale lime green 17, radioactive green 17, bright light green 16, key lime 16, light lime 16, kiwi 16, light neon green 16, light bright green 16, very light green 16, very pale green 16, vivid green 16, pale green 16, light light green 16, light mint 16, lighter green 16, light yellowish green 16, celadon 16, sea green 15, light green blue 15, spring green 15, light grass green 15, wintergreen 15, celery 15, spearmint 15, light seafoam green 15, minty green 15, lightgreen 15, light bluish green 15, green brown 15, pistachio 15, turquoise green 15, mint 15, light mint green 15, tea green 15, kiwi green 15, pastel green 15, easter green 15, washed out green 15, dark olive 15, foam green 15, baby green 15, pale light green 15, mint green 15, light pastel green 15, light sea green 15, light sage 14, light green 14, greeny brown 14, vibrant green 14, slime green 14, toxic green 13, green apple 13, greenish brown 13, light grey green 13, weird green 13, greenish grey 13, racing green 12, apple green 12, tealish green 12, bright olive 12, lightish green 12, bottle green 12, dark lime green 12, dark olive green 12, fresh green 12, brown green 11, browny green 11, seaweed 11, booger green 11, puke green 11, grey/green 11, apple 11, dark lime 11, greeny grey 11, pea soup 11, barf green 11, greyish green 11, navy green 11, sick green 10, green grey 10, greenish tan 10, pale olive green 10, pale olive 10, baby poop green 10, sickly green 10, mud green 10, grey green 10
+- **Emerald (52):** bright light blue 21, cyan 20, bright cyan 20, light cyan 20, bright turquoise 19, deep teal 17, bright aqua 17, deep aqua 17, pale aqua 17, bright sea green 16, dark teal 15, dark cyan 15, light seafoam 15, seafoam green 15, seafoam 15, dark aqua 15, greenish cyan 14, greenish turquoise 14, light blue green 14, pale turquoise 14, light aqua 14, tiffany blue 14, deep turquoise 14, very dark green 14, bright teal 14, light aquamarine 14, hospital green 14, light greenish blue 13, dark green 13, forrest green 13, bluegreen 13, dark forest green 13, dark turquoise 13, light turquoise 13, aqua 13, dark aquamarine 13, hunter green 12, greenish blue 12, aqua green 12, light teal 12, darkgreen 12, greyish teal 12, aqua marine 12, topaz 12, forest green 12, sea 11, british racing green 11, pale teal 11, seafoam blue 10, dark blue green 10, dusty teal 10, aquamarine 10
+- **Red (8):** salmon 12, reddish brown 11, pink red 11, red pink 10, auburn 10, coral pink 10, melon 10, reddish pink 10
+- **Maroon (7):** dark plum 13, reddish purple 12, violet red 12, dark mauve 12, mulberry 12, red purple 11, lipstick 11
+- **Pink (24):** pale lavender 16, very light purple 14, pink/purple 14, violet pink 13, pale mauve 13, bright magenta 13, fuchsia 13, light magenta 13, cerise 13, purple pink 13, pale salmon 12, deep pink 12, salmon pink 12, light salmon 12, dark hot pink 12, peachy pink 12, light plum 11, magenta 11, blush 11, deep rose 11, hot magenta 11, brownish pink 10, purply pink 10, dark pink 10
+- **Purple (45):** pale lilac 16, light lilac 15, light lavender 15, dirty purple 14, light lavendar 14, bright purple 14, neon purple 14, hot purple 13, bright violet 13, electric purple 13, vivid purple 13, dark fuchsia 13, deep magenta 13, perrywinkle 13, dark magenta 13, eggplant 13, aubergine 13, dusky purple 12, light violet 12, purple/pink 12, heliotrope 12, dusty lavender 12, violet 12, pink purple 12, pale violet 12, grey purple 12, very dark purple 12, pinkish purple 11, greyish purple 11, plum 11, vibrant purple 11, midnight purple 11, bright lavender 11, bright lilac 11, dull purple 11, grape 10, pastel purple 10, lilac 10, dark purple 10, purpley 10, lighter purple 10, heather 10, bruise 10, lavender pink 10, pinky purple 10
+- **Yellow (30):** bright yellow green 18, electric lime 17, lime 17, lemon green 16, light lime green 16, pale lime 15, light pea green 15, lemon lime 15, yellowgreen 15, yellow green 14, chartreuse 14, green yellow 14, light yellow green 14, yellow/green 13, greeny yellow 13, neon yellow 13, yellowy green 13, greenish yellow 13, lime yellow 13, yellowish green 13, snot green 13, pear 12, gross green 12, ugly brown 12, pea 11, vomit 11, green/yellow 10, mustard green 10, orange yellow 10, puke 10
+- **Beige (17):** greenish beige 14, light khaki 14, buff 13, dark cream 13, sandy 12, parchment 12, wheat 12, creme 12, light beige 12, khaki 12, grey brown 12, dark tan 11, dark khaki 11, sand 11, camel 10, desert 10, brownish grey 10
+- **Brown (22):** yellowy brown 18, yellowish brown 16, sandy brown 16, hazel 16, olive brown 15, mustard brown 14, sand brown 14, reddish grey 13, mud 13, muddy brown 13, golden brown 13, shit 13, poop 12, pinkish tan 12, poop brown 12, rust brown 11, greyish brown 11, shit brown 11, poo brown 11, pinkish brown 10, caramel 10, chestnut 10
+
+**What I ran:**
+1. **Vision tests** (repo `.venv`, Python 3.12.10, `pip check` clean): `pytest -m "not model" tests`: **116 passed**, 2 deselected (the CI form); with `VISION_SAFETY_DIR` set, **118 passed**.
+   - 68 tests are new in `tests/test_color_reader.py`: CIEDE2000 against Sharma's reference pairs; the name mapping; the mask on the rug case; the light correction (casts removed on a neutral background, a red background left alone, exposure); clusters (shadows, black-and-white kept apart, tiny clusters dropped); the second-opinion rules with a stand-in bank; only the 15 values; the 22 cast-robustness cases; the time per photo.
+   - `tests/test_colors.py` was rewritten for what `colors.py` keeps.
+2. **Before and after** with the same pinned weights:
+   - HEAD's vision code (`git archive`) on S1's built assets, against V1a on assets I built locally from the same pinned model files (`build_assets.build`, no download; 2,358 prompts in 232 s).
+   - The results are the tables above.
+3. **Speed** (this PC):
+   - **The color reader alone** (`read_photo`, all 92 photos at the final setting): median 140 ms, max 408 ms. GrabCut is most of it; 256 px and 3 iterations instead of 320 px and 4 halved its time (max 810 to 390 ms), and the masks agree at a median 0.96 overlap.
+   - **The whole per-photo analysis:** median 475 ms, max 747 ms. Before V1a it was median 593 ms, max 1,195 ms (the old reader worked on the full 1,280 px image).
+4. **Local Linux image** (`docker build` of `services/vision`, the unchanged Dockerfile):
+   - `pip check` in the image: "No broken requirements found" (OpenCV 4.14.0.94 with numpy 2.2.5 on Linux).
+   - **Build time:** 2,358 prompts embedded in 243 s (model download included); the whole build took 7 min 46 s on this PC.
+   - **Run** with `--cpus 2 --memory 4g` and the live `VISION_ALLOWED_URL_PREFIXES`:
+     - it runs as uid 10001 `vision`;
+     - `/health` shows `service_version` `v1a.1`, policy digest `fab11ee739b2e4db` (unchanged), the same model revision, start-up 7.4 s;
+     - peak memory 909 MiB.
+   - **The 12 sample listings through the container's `/scan`:**
+     - all allowed, with the same colors and titles as the local run;
+     - one confidence differs: the trench coat gets 0.4 in the container and 0.9 on Windows. The model splits about evenly between Beige and Brown there, so the small numeric differences between the two builds tip it; the color is Beige either way.
+   - **Logs:** the only line with a URL is Uvicorn's own start line; there are no photo URLs.
+
+5. **Website** (Node 22.23.3): `npm run lint` passes (its first run stopped on the stale `code-reference.md`, which I regenerated), `npm test` **50 of 50**, `npm run build` passes (23 pages).
+6. **Android** (JDK 21, env loaded silently; no containers running): `:androidApp:assembleDebug :shared:testDebugUnitTest`: **BUILD SUCCESSFUL**, **81 tests, 0 failures, 1 skipped** (`SmokeTest` needs the test-user env). One is new: `PhotoScanTest.checkingGoesAsSoonAsTheResultIsIn`.
+7. **No emulator, device or app screenshots.** The only images I looked at were contact sheets and mask overlays of the sample and Commons test photos.
+
+**Timings, before and after** (local containers with Cloud Run's 2 CPUs and 4 GiB, the same 22 sample photos sent one by one after 3 warm-up scans, then the 12 listings; before = the S1 image, the deployed code; after = V1a):
+
+| | Before (`s1.1`) | After (`v1a.1`) |
+| --- | --- | --- |
+| Start-up, from `/health` | 13.2 s | 7.4 s (the first run reads the image from disk, so this mostly isn't the code) |
+| Warm single-photo scan, round trip | median 0.75 s, max 0.91 s | median 0.77 s, max 1.00 s |
+| The service's own analyze time per photo | median 732 ms, max 884 ms | median 760 ms, max 1,003 ms |
+| Sample listing (1 or 2 photos) | median 1.38 s, max 1.66 s | median 1.43 s, max 1.73 s |
+
+**Vision revision: not redeployed.**
+- `gcloud auth print-identity-token` and `print-access-token` both answer "Reauthentication failed. cannot prompt during non-interactive execution": the owner's gcloud sign-in on this PC has expired, and only the owner can renew it.
+- Cloud Run still serves **`vision-00006-sxv`** (`s1.1`, S1b). The new colors were at least as right as the old on every set, so the condition for deploying was met; only the sign-in was missing.
+- The before and after timings above come from local containers with Cloud Run's CPU and memory, not from Cloud Run.
+- **To deploy** (after `gcloud auth login`), from the repo root, the same settings as before:
+
+      gcloud run deploy vision --source services/vision --project dzirent --region us-west1 --no-allow-unauthenticated --service-account vision-runtime@dzirent.iam.gserviceaccount.com --min-instances 0 --max-instances 1 --cpu 2 --memory 4Gi --timeout 120 --concurrency 4 --set-env-vars VISION_ALLOWED_URL_PREFIXES=https://pwfzkyjeivadbtkfkdxr.supabase.co/storage/v1/object/public/listing-photos/
+
+  Then `/health` should show `v1a.1` and policy digest `fab11ee739b2e4db`, and `eval/run_eval.py` gives the deployed warm times.
+  - **Cloud Build time:** the build now embeds 2,358 prompts instead of 460, about 4 minutes on this PC.
+
+**Open issues:**
+- **Deploy** (above): the owner's `gcloud auth login`, then an agent deploys and confirms `/health` and the warm scan time on Cloud Run.
+- **Colored light with no neutral surface in view** isn't corrected. The black kimono under magenta stage light (kimono/2) reads Purple; the old reader said Black.
+- **See-through and busy pieces:** the sunglasses' lenses show the red cloth under them (Maroon); a portrait masks the face and scarf, not the dark jacket. Multicolor prints get the largest color.
+- **The fine names stay internal:** the response carries only the 15 values and `color_confidence`.
+- **Whether `color_confidence` should change anything** (for example, leaving the color out of the title under 0.5) is for the owner. Today it's only recorded.
+- **The owner's sherwani photo** wasn't available. Put it (and others) in `H:\DziRent\vision-test\should-accept` to have them in the next comparison.
+
+**Phone and website test** (owner):
+- **New listing:** add photos, Next, wait for "Your photos look good." Then Back to photos and Next again without changing them: "Checking your photos…" must go at once and must never sit next to "Filled from your photos". Also try Check again after a check finished.
+- **Colors** stay as they are until the deploy.
+
+**APK:** `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk` (97,047,399 bytes, SHA-256 `740A2F733F07D1B1…`), copied to `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk` (same size and hash; the original stays).
+
+**Mac (iPhone) check:** only common code changed: `util/PhotoScan.kt` (`checkBanner`) and `ui/ListingEditor.kt` (the request counter). Check that the framework builds and that "Checking your photos…" goes as on Android.
+
 ## F1 - 2026-11-15 - owner test fixes
 
 **Before starting:** clean tree, `Preview` up to date at `a8bff17`.

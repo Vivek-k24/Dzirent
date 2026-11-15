@@ -239,7 +239,8 @@ flowchart TB
 | `model.py`, `build_assets.py` | Loads Marqo-FashionSigLIP (baked into the image at build time) |
 | `safety.py` | Marqo NSFW detector (nudity: reject; uncertain: review) |
 | `verdict.py`, `policy.json`, `vocab.*` | Allowed / not allowed / review from the policy table (kept in sync with `policy_item_types` by a test) |
-| `quality.py`, `colors.py`, `text.py` | Blur, brightness, framing, worn probability; colors from pixels; title and description templates |
+| `quality.py`, `text.py` | Blur, brightness, framing, worn probability; title and description templates |
+| `color_reader.py`, `colors.py`, `color_names.json` | Colors (V1a): GrabCut garment mask (OpenCV), light correction on the daylight locus, CIELAB clusters named from the xkcd survey's 949 names (CC0) and mapped to the apps' 15 values (`colors.py`); the model's "a photo of a <name> garment" prompts as a second opinion (`color_confidence`) |
 | `tests/`, `eval/run_eval.py` | Unit tests; evaluation against sample and owner photos |
 
 Runs as `vision-runtime` (no project roles), invoked only by `vision-invoker`, min 0 / max 1 instance, CPU only, image pinned by digest (`python:3.12.10-slim-bookworm`), every Python package pinned.

@@ -25,6 +25,8 @@ VISUAL_WEIGHTS_FILE = "visual.safetensors"  # the vision tower only: all a scan 
 
 POLICY_FILE = APP_DIR / "policy.json"
 VOCAB_FILE = APP_DIR / "vocab.json"
+# V1a: the xkcd color survey's 949 names (CC0) the color reader names clusters with.
+COLOR_NAMES_FILE = APP_DIR / "color_names.json"
 
 # The image safety check (P2A): Marqo/nsfw-image-detection-384 (Apache 2.0), a small ViT
 # fine-tuned from timm/vit_tiny_patch16_384.augreg_in21k_ft_in1k. Pinned and built into the
@@ -36,7 +38,7 @@ SAFETY_MODEL_FILES = ["config.json", "model.safetensors"]
 SAFETY_SUBDIR = "safety"  # under MODEL_DIR
 SAFETY_IMAGE_SIZE = 384
 
-SERVICE_VERSION = "s1.1"
+SERVICE_VERSION = "v1a.1"  # V1a: the color reader (GrabCut mask, light correction, xkcd names, model second opinion)
 
 # The model card's zero-shot recipe: softmax(100 * cosine similarity).
 LOGIT_SCALE = 100.0

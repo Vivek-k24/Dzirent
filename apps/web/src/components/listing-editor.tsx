@@ -326,6 +326,12 @@ export function ListingEditor({
 
   // Scan & suggestions state
   const [scanId, setScanId] = useState<string | null>(null);
+  // V1a: bumped on every check request, so the watcher below looks again even when the server
+  // hands back the same, already finished check (photos unchanged).
+  const [scanRequest, setScanRequest] = useState(0);
+  // The check whose result has arrived: a late "running" event for it never brings back
+  // "Checking your photos…".
+  const scanResultFor = useRef<string | null>(null);
   const [scanPhase, setScanPhase] = useState<
     "none" | "uploading" | "checking" | "finished" | "failed"
   >("none");
@@ -502,12 +508,18 @@ export function ListingEditor({
     function handleScan(scan: Partial<ListingScan> | null | undefined) {
       if (!scan || !scan.id || !scan.status || cancelled) return;
       const validScan = scan as ListingScan;
+      // Only the check this editor asked for, once it asked for one.
+      if (scanId && validScan.id !== scanId) return;
+      const pending = validScan.status === "queued" || validScan.status === "running";
+      if (pending && scanResultFor.current === validScan.id) return;
       setLatestScan(validScan);
-      if (validScan.status === "queued" || validScan.status === "running") {
+      if (pending) {
         setScanPhase("checking");
       } else if (validScan.status === "failed") {
+        scanResultFor.current = validScan.id;
         setScanPhase("failed");
       } else if (validScan.status === "done") {
+        scanResultFor.current = validScan.id;
         setScanPhase("finished");
         void loadPhotoWarnings(validScan.id);
         const isAllowed =
@@ -575,7 +587,7 @@ export function ListingEditor({
       if (pollInterval) clearInterval(pollInterval);
       void client.removeChannel(channel);
     };
-  }, [id, scanId, touchedFields]);
+  }, [id, scanId, scanRequest, touchedFields]);
 
   const ui = { setBusy, setError };
 
@@ -737,6 +749,7 @@ export function ListingEditor({
         setScanPhase("checking");
         const scanResult = await workflow<{ scan_id: string }>("listings/scan", { id });
         setScanId(scanResult.scan_id);
+        setScanRequest((n) => n + 1);
         return true;
       },
       (e) => {
@@ -786,7 +799,10 @@ export function ListingEditor({
       () => workflow<{ scan_id: string }>("listings/scan", { id }),
       () => setScanPhase("failed"),
     );
-    if (res) setScanId(res.scan_id);
+    if (res) {
+      setScanId(res.scan_id);
+      setScanRequest((n) => n + 1);
+    }
   }
 
   async function publish() {

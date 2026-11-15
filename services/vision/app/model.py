@@ -13,6 +13,7 @@ import torch
 from PIL import Image
 
 from . import config
+from .color_reader import ColorBank, color_digest
 from .safety import SafetyModel
 from .scan import TextBank
 from .vocab import BANKS, Vocab, load as load_vocab
@@ -66,6 +67,9 @@ class Model:
         }
         if self.banks["items"].keys != [i.key for i in self.vocab.items]:
             raise RuntimeError("text embeddings don't match the policy items")
+        if "colors_digest" not in data.files or str(data["colors_digest"]) != color_digest():
+            raise RuntimeError("color name embeddings are missing or were built for another list; rebuild the image")
+        self.color_bank = ColorBank(keys=[str(k) for k in data["colors_keys"]], matrix=data["colors_matrix"])
         self.visual = create_vision_tower(model_dir)
         self.safety = SafetyModel(model_dir / config.SAFETY_SUBDIR)
         log.info("model ready: %d item labels, safety model %s", len(self.vocab.items), config.SAFETY_MODEL_ID)

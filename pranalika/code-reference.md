@@ -877,7 +877,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L312: `fun HelpAndLegalSection() {`
 - L313: `val open = rememberOpenLink()`
 
-### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/ListingEditor.kt` (822 lines)
+### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/ListingEditor.kt` (827 lines)
 
 - L80: `fun ListingEditorScreen(`
 - L88: `var loadState by remember(listingId) {`
@@ -912,19 +912,20 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L241: `fun draftRow(): Listing? {`
 - L252: `fun orderedPhotos(): List<Pair<PhotoSlot, PhotoItem>> = PhotoSlot.entries.mapNotNull { slot -> state.slots[slot]?.let { slot to it } }`
 - L254: `var syncJob by remember { mutableStateOf<Job?>(null) }`
-- L257: `fun startPhotoCheck() {`
-- L282: `fun checkAgain() {`
-- L330: `var draftOffer by remember { mutableStateOf<SavedDraft?>(null) }`
-- L331: `var draftChecked by remember { mutableStateOf(false) }`
-- L332: `var finished by remember { mutableStateOf(false) }`
-- L335: `suspend fun restoreDraft(saved: SavedDraft) {`
-- L354: `var sessionStarted by rememberSaveable { mutableStateOf(false) }`
-- L405: `fun showMissing(missing: Missing) {`
-- L412: `fun next() {`
-- L440: `suspend fun awaitCheck(onProgress: (String) -> Unit) {`
-- L449: `fun publish() {`
-- L765: `fun DepositFields(`
-- L806: `val retailValue = retailValueText.toDoubleOrNull()`
+- L257: `var scanRequests by remember { mutableStateOf(0) }`
+- L260: `fun startPhotoCheck() {`
+- L286: `fun checkAgain() {`
+- L335: `var draftOffer by remember { mutableStateOf<SavedDraft?>(null) }`
+- L336: `var draftChecked by remember { mutableStateOf(false) }`
+- L337: `var finished by remember { mutableStateOf(false) }`
+- L340: `suspend fun restoreDraft(saved: SavedDraft) {`
+- L359: `var sessionStarted by rememberSaveable { mutableStateOf(false) }`
+- L410: `fun showMissing(missing: Missing) {`
+- L417: `fun next() {`
+- L445: `suspend fun awaitCheck(onProgress: (String) -> Unit) {`
+- L454: `fun publish() {`
+- L770: `fun DepositFields(`
+- L811: `val retailValue = retailValueText.toDoubleOrNull()`
 
 ### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/ListingEditorSections.kt` (266 lines)
 
@@ -1924,7 +1925,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L352: `val stack = IntArray(mask.size)`
 - L353: `val region = IntArray(mask.size)`
 
-### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/util/PhotoScan.kt` (130 lines)
+### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/util/PhotoScan.kt` (135 lines)
 
 - L19: `const val DRAFT_TITLE = "New listing (draft)"`
 - L22: `const val DRAFT_CATEGORY = "Everyday"`
@@ -1954,10 +1955,10 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L92: `data class Rejected(val reason: String) : CheckBanner()`
 - L94: `data class Review(val reason: String?) : CheckBanner()`
 - L96: `object Failed : CheckBanner()`
-- L100: `fun checkBanner(phase: CheckPhase, scan: ListingScan?, uploadError: String? = null): CheckBanner? = when (phase) {`
-- L119: `const val COPIED_PHOTO = "This photo matches another listing."`
-- L122: `fun extraWarnings(phoneMessages: List<String>, server: List<String>): List<String> =`
-- L129: `fun photoSetKey(slots: Map<PhotoSlot, String>): String =`
+- L104: `fun checkBanner(phase: CheckPhase, scan: ListingScan?, uploadError: String? = null): CheckBanner? = when (phase) {`
+- L124: `const val COPIED_PHOTO = "This photo matches another listing."`
+- L127: `fun extraWarnings(phoneMessages: List<String>, server: List<String>): List<String> =`
+- L134: `fun photoSetKey(slots: Map<PhotoSlot, String>): String =`
 
 ### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/util/PhotoThresholds.kt` (63 lines)
 
@@ -2294,17 +2295,18 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L40: `fun testRolesAndCategories() {`
 - L48: `fun testDzirentException() {`
 
-### `mobile/shared/src/commonTest/kotlin/com/dzirent/shared/PhotoScanTest.kt` (131 lines)
+### `mobile/shared/src/commonTest/kotlin/com/dzirent/shared/PhotoScanTest.kt` (143 lines)
 
 - L28: `class PhotoScanTest {`
 - L40: `fun allowedSuggestionsKeepOnlyValuesTheFormAccepts() {`
 - L51: `fun onlyAnAllowedFinishedCheckSuggests() {`
 - L63: `fun suggestionsNeverOverwriteWhatTheLenderTyped() {`
 - L73: `fun bannerFollowsTheCheck() {`
-- L96: `fun suspensionNoticeMatchesTheDatabaseWording() {`
-- L111: `fun draftRowsAreRecognized() {`
-- L119: `fun photoSetKeyChangesOnlyWithThePhotos() {`
-- L127: `fun serverWarningsAreNotShownTwice() {`
+- L96: `fun checkingGoesAsSoonAsTheResultIsIn() {`
+- L108: `fun suspensionNoticeMatchesTheDatabaseWording() {`
+- L123: `fun draftRowsAreRecognized() {`
+- L131: `fun photoSetKeyChangesOnlyWithThePhotos() {`
+- L139: `fun serverWarningsAreNotShownTwice() {`
 
 ### `mobile/shared/src/commonTest/kotlin/com/dzirent/shared/PricePerDayTest.kt` (65 lines)
 
@@ -3176,7 +3178,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L44: `export interface LegalLayoutProps {`
 - L54: `export function LegalLayout({`
 
-### `apps/web/src/components/listing-editor.tsx` (1722 lines)
+### `apps/web/src/components/listing-editor.tsx` (1738 lines)
 
 - L277: `export function ListingEditor({`
 
@@ -3673,25 +3675,57 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 
 - (no top-level declarations)
 
-### `services/vision/app/build_assets.py` (79 lines)
+### `services/vision/app/build_assets.py` (89 lines)
 
-- L24: `def tokenizer_for(model_dir):`
-- L32: `def download(model_dir) -> None:`
-- L42: `def embed_prompts(model, tokenizer, prompts: list[str], batch: int = 64) -> np.ndarray:`
-- L49: `def build(model_dir=config.MODEL_DIR, fetch: bool = True) -> None:`
+- L25: `def tokenizer_for(model_dir):`
+- L33: `def download(model_dir) -> None:`
+- L43: `def embed_prompts(model, tokenizer, prompts: list[str], batch: int = 64) -> np.ndarray:`
+- L50: `def embed_entries(model, tokenizer, entries) -> tuple[np.ndarray, np.ndarray, int]:`
+- L63: `def build(model_dir=config.MODEL_DIR, fetch: bool = True) -> None:`
 
-### `services/vision/app/colors.py` (196 lines)
+### `services/vision/app/color_reader.py` (638 lines)
 
+- L85: `def delta_e2000(lab1: np.ndarray, lab2: np.ndarray, k_l: float = 1.0) -> np.ndarray:`
+- L118: `def _hex_rgb(value: str) -> tuple[int, int, int]:`
+- L153: `def color_prompts() -> list[tuple[str, tuple[str, ...]]]:`
+- L159: `def color_digest() -> str:`
+- L167: `class Palette:`
+- L177: `def _shade_labs() -> tuple[np.ndarray, np.ndarray]:`
+- L184: `def palette() -> Palette:`
+- L200: `def nearest_names(lab: np.ndarray, n: int = 1) -> tuple[np.ndarray, np.ndarray]:`
+- L217: `def daylight_rgb(kelvin: float) -> np.ndarray:`
+- L230: `def _log_chroma(rgb: np.ndarray) -> np.ndarray:`
+- L238: `def daylight_axis() -> tuple[np.ndarray, np.ndarray, float, float]:`
+- L248: `class Light:`
+- L256: `def correct_light(linear: np.ndarray, background: np.ndarray) -> tuple[np.ndarray, Light]:`
+- L287: `def small_image(rgb: np.ndarray) -> np.ndarray:`
+- L295: `def seed_mask(shape: tuple[int, int], region: np.ndarray | None) -> np.ndarray:`
+- L306: `def border_band(shape: tuple[int, int]) -> np.ndarray:`
+- L314: `def garment_mask(small: np.ndarray, seed: np.ndarray) -> tuple[np.ndarray, bool]:`
+- L346: `class PhotoColors:`
+- L354: `def read_photo(rgb: np.ndarray, region: np.ndarray | None) -> PhotoColors:`
+- L380: `class Cluster:`
+- L388: `def _kmeans(x: np.ndarray, k: int) -> np.ndarray:`
+- L409: `def _same_color(a: np.ndarray, b: np.ndarray) -> bool:`
+- L427: `def clusters(lab: np.ndarray) -> list[Cluster]:`
+- L466: `class PixelColors:`
+- L482: `def pixel_colors(found: list[Cluster]) -> PixelColors:`
+- L508: `def name_values(found: list[Cluster]) -> tuple[str | None, str | None]:`
+- L520: `class ColorBank:`
+- L531: `class ColorReading:`
+- L541: `def _candidates(colors: list[np.ndarray]) -> np.ndarray:`
+- L553: `def second_opinion(colors: list[np.ndarray], embedding: np.ndarray | None, bank: ColorBank | None) -> dict[str, float]:`
+- L570: `def _closest_by_value(lab: np.ndarray) -> dict[str, float]:`
+- L580: `def read_listing(photos: list[PhotoColors], embedding: np.ndarray | None = None,`
+
+### `services/vision/app/colors.py` (85 lines)
+
+- L55: `def srgb_to_linear(rgb: np.ndarray) -> np.ndarray:`
 - L60: `def rgb_to_lab(rgb: np.ndarray) -> np.ndarray:`
-- L79: `def nearest_color_indices(rgb: np.ndarray) -> np.ndarray:`
-- L91: `def nearest_color_name(r: int, g: int, b: int) -> str:`
-- L95: `def looks_like_skin(rgb: np.ndarray) -> np.ndarray:`
-- L105: `class ColorVotes:`
-- L124: `def center_box(width: int, height: int) -> tuple[int, int, int, int]:`
-- L131: `def color_votes(image: np.ndarray, region: np.ndarray | None, background: np.ndarray | None = None) -> ColorVotes:`
-- L168: `def name_colors(votes: ColorVotes) -> tuple[str | None, str | None]:`
+- L65: `def linear_to_lab(lin: np.ndarray) -> np.ndarray:`
+- L79: `def looks_like_skin(rgb: np.ndarray) -> np.ndarray:`
 
-### `services/vision/app/config.py` (57 lines)
+### `services/vision/app/config.py` (59 lines)
 
 - (no top-level declarations)
 
@@ -3713,13 +3747,13 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L113: `@app.post("/scan")`
 - L114: `async def scan_endpoint(body: ScanIn) -> dict:`
 
-### `services/vision/app/model.py` (78 lines)
+### `services/vision/app/model.py` (82 lines)
 
-- L23: `def _model_cfg(model_dir: Path) -> dict:`
-- L28: `def create_open_clip(model_dir: Path) -> torch.nn.Module:`
-- L38: `def create_vision_tower(model_dir: Path) -> torch.nn.Module:`
-- L49: `def preprocess(image: Image.Image) -> torch.Tensor:`
-- L56: `class Model:`
+- L24: `def _model_cfg(model_dir: Path) -> dict:`
+- L29: `def create_open_clip(model_dir: Path) -> torch.nn.Module:`
+- L39: `def create_vision_tower(model_dir: Path) -> torch.nn.Module:`
+- L50: `def preprocess(image: Image.Image) -> torch.Tensor:`
+- L57: `class Model:`
 
 ### `services/vision/app/quality.py` (239 lines)
 
@@ -3741,7 +3775,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L17: `def preprocess(image: Image.Image, size: int = config.SAFETY_IMAGE_SIZE) -> torch.Tensor:`
 - L30: `class SafetyModel:`
 
-### `services/vision/app/scan.py` (214 lines)
+### `services/vision/app/scan.py` (220 lines)
 
 - L29: `class TextBank:`
 - L35: `def softmax(logits: np.ndarray) -> np.ndarray:`
@@ -3753,8 +3787,8 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L74: `class PhotoResult:`
 - L120: `def analyze_photo(result: PhotoResult, embedding: np.ndarray, rgb: np.ndarray, banks: dict[str, TextBank],`
 - L133: `def _suggestions(combined: np.ndarray, whole: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
-- L178: `def _quality_summary(results: list[PhotoResult]) -> dict:`
-- L191: `def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab) -> dict:`
+- L181: `def _quality_summary(results: list[PhotoResult]) -> dict:`
+- L194: `def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
 
 ### `services/vision/app/text.py` (40 lines)
 
@@ -3795,19 +3829,57 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 
 - L8: `def pytest_configure(config):`
 
-### `services/vision/tests/test_colors.py` (67 lines)
+### `services/vision/tests/test_color_reader.py` (378 lines)
 
-- L6: `def solid(rgb, w=64, h=64):`
-- L10: `def votes(image):`
-- L14: `def test_typical_shades_get_their_names():`
-- L24: `def test_one_color_garment():`
-- L28: `def test_clear_second_color():`
-- L34: `def test_two_colors_too_close_to_call():`
-- L40: `def test_shadow_shades_are_not_a_second_color():`
-- L46: `def test_too_few_pixels_names_nothing():`
-- L50: `def test_dark_pixels_are_navy_only_when_blue():`
-- L55: `def test_center_box_leaves_out_the_background():`
-- L62: `def test_skin_is_left_out_unless_it_is_most_of_the_piece():`
+- L20: `def to_srgb(linear: np.ndarray) -> np.ndarray:`
+- L26: `def with_cast(rgb: np.ndarray, gains) -> np.ndarray:`
+- L31: `def light_cast(kelvin: float) -> np.ndarray:`
+- L40: `def main_color(rgb: np.ndarray) -> str | None:`
+- L57: `def test_ciede2000_matches_the_reference_pairs(lab1, lab2, expected):`
+- L61: `def test_textile_lightness_factor_counts_lightness_half():`
+- L66: `def test_every_name_maps_to_one_of_the_apps_values():`
+- L73: `def test_names_that_are_app_values_map_to_themselves():`
+- L83: `def test_fashion_names_map_where_a_lender_would_expect(name, value):`
+- L88: `def test_the_model_prompts_cover_every_name():`
+- L97: `def test_the_daylight_locus_runs_through_the_srgb_white():`
+- L104: `def test_a_cast_on_a_neutral_background_is_removed():`
+- L116: `def test_a_colored_background_is_not_mistaken_for_the_light():`
+- L127: `def test_a_dim_photo_is_brightened_but_never_darkened():`
+- L137: `def rug_and_garment(seed: int = 0) -> tuple[np.ndarray, np.ndarray]:`
+- L152: `def test_grabcut_separates_a_cream_garment_from_a_red_patterned_rug():`
+- L162: `def test_a_cream_garment_on_a_red_rug_is_named_white_not_grey():`
+- L170: `def test_mask_falls_back_to_the_seed_when_grabcut_finds_nothing():`
+- L178: `def test_a_photo_too_small_to_read_names_nothing():`
+- L185: `def lab_pixels(rgb, n) -> np.ndarray:`
+- L189: `def test_typical_shades_get_their_names():`
+- L199: `def test_skin_is_left_out_unless_it_is_most_of_the_piece():`
+- L208: `def test_one_color_garment():`
+- L213: `def test_clear_second_color_and_tiny_clusters_left_out():`
+- L221: `def test_black_and_white_are_never_one_fabric_in_shadow():`
+- L226: `def test_a_dark_green_and_its_near_black_shadows_are_one_fabric():`
+- L233: `def test_two_colors_too_close_to_call():`
+- L238: `def test_shadows_of_one_fabric_are_one_color():`
+- L246: `def test_returned_colors_are_only_the_apps_values():`
+- L256: `def stand_in_bank(prefer: str) -> tuple[cr.ColorBank, np.ndarray]:`
+- L265: `def photo(rgb, n=3000) -> cr.PhotoColors:`
+- L269: `def candidate_of(rgb, value: str) -> str:`
+- L276: `def test_the_model_agreeing_keeps_the_pixels_answer_with_high_confidence():`
+- L284: `def test_the_model_settles_a_near_tie():`
+- L303: `def test_a_strong_disagreement_keeps_the_pixels_answer_with_lower_confidence():`
+- L323: `def test_the_model_breaks_a_tie_the_pixels_cannot_call():`
+- L331: `def test_the_model_settles_a_close_call_between_two_colors():`
+- L339: `def test_a_clear_main_color_is_not_handed_to_the_model():`
+- L346: `def test_without_the_model_the_pixels_answer_stands():`
+- L358: `def test_light_casts_keep_the_color_family(path):`
+- L371: `def test_reading_a_photo_takes_under_a_second():`
+
+### `services/vision/tests/test_colors.py` (33 lines)
+
+- L8: `def test_the_apps_fifteen_values_in_their_order():`
+- L14: `def test_related_shades_go_both_ways():`
+- L20: `def test_lab_of_white_black_and_pure_red():`
+- L26: `def test_the_srgb_and_linear_paths_agree_exactly():`
+- L31: `def test_skin_tones():`
 
 ### `services/vision/tests/test_policy_sync.py` (20 lines)
 

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import config
-from .colors import ColorVotes, color_votes, name_colors
+from .color_reader import ColorBank, PhotoColors, read_listing, read_photo
 from .quality import Quality, check_photo
 from .text import suggest_text
 from .verdict import (
@@ -79,7 +79,7 @@ class PhotoResult:
     scores: Scores | None = None
     decision: Decision | None = None
     quality: Quality | None = None
-    votes: ColorVotes | None = None
+    colors: PhotoColors | None = None  # the garment's pixels after the light correction (color_reader)
     worn: float | None = None    # recorded only: being worn never changes the verdict or adds a warning
     hooded: float | None = None  # the hooded-garment check (verdict.HOODED_MIN)
     nsfw: float | None = None    # the safety model (verdict.NSFW_*)
@@ -123,7 +123,7 @@ def analyze_photo(result: PhotoResult, embedding: np.ndarray, rgb: np.ndarray, b
     result.scores = item_scores(embedding, banks)
     result.decision = decide_photo(result.scores, vocab)
     result.quality = check_photo(rgb)
-    result.votes = color_votes(rgb, result.quality.region, result.quality.background)
+    result.colors = read_photo(rgb, result.quality.region)
     result.worn = zero_shot(embedding, banks["worn"])["worn"]
     result.hooded = zero_shot(embedding, banks["hooded"])["hooded"]
     result.nsfw = nsfw
@@ -131,7 +131,7 @@ def analyze_photo(result: PhotoResult, embedding: np.ndarray, rgb: np.ndarray, b
 
 
 def _suggestions(combined: np.ndarray, whole: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,
-                 verdict: str) -> dict | None:
+                 verdict: str, color_bank: ColorBank | None = None) -> dict | None:
     if verdict == "rejected":
         return None
     scores = item_scores(combined, banks)
@@ -140,10 +140,10 @@ def _suggestions(combined: np.ndarray, whole: list[PhotoResult], banks: dict[str
         return None
     item = vocab.by_key[allowed[0][0]]
 
-    votes = ColorVotes.empty()
-    for r in whole:
-        votes = votes + r.votes
-    colors = name_colors(votes)
+    # V1a: the garment's pixels name the colors; the model gives a second opinion (color_reader).
+    reading = read_listing([r.colors for r in whole], combined, color_bank)
+    colors = reading.colors
+    jewelry = item.item_type == "Costume jewelry"
 
     patterns = zero_shot(combined, banks["patterns"])
     pattern, pattern_p = max(patterns.items(), key=lambda kv: kv[1])
@@ -164,7 +164,10 @@ def _suggestions(combined: np.ndarray, whole: list[PhotoResult], banks: dict[str
         "category": item.category,
         "item_type": item.item_type,
         "garment_type": item.garment_type,
-        "colors": [c for c in colors if c] if item.item_type != "Costume jewelry" else [],
+        "colors": [c for c in colors if c] if not jewelry else [],
+        # How sure the colors are: 0.9 the model agrees, 0.7 it settled a near tie, 0.6 pixels
+        # only, 0.4 it disagreed (the pixel answer stays). Null when there are no colors.
+        "color_confidence": reading.confidence if not jewelry and colors[0] else None,
         "pattern": pattern,
         "fabric": fabric if fabric_p >= FABRIC_MIN else None,
         "styles": styles[:STYLES_MAX],
@@ -188,8 +191,10 @@ def _quality_summary(results: list[PhotoResult]) -> dict:
     return {"summary": summary, "photos": len(results), "photos_with_warnings": len(flagged), "warnings": warnings}
 
 
-def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab) -> dict:
-    """[results] are already analyzed (or carry an error). Returns the /scan response body."""
+def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,
+         color_bank: ColorBank | None = None) -> dict:
+    """[results] are already analyzed (or carry an error). Returns the /scan response body.
+    [color_bank] is the model's color names (the colors' second opinion); without it, pixels only."""
     views = [PhotoView(r.slot, None if r.error else r.decision, nsfw=r.nsfw or 0.0, hooded=r.hooded or 0.0)
              for r in results]
     whole = [r for r in results if not r.error and r.slot not in SUPPORT_SLOTS and r.decision.decision != DETAIL]
@@ -197,7 +202,8 @@ def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank]
     combined = unit_mean([r.embedding for r in candidates])
     combined_decision = decide_photo(item_scores(combined, banks), vocab) if combined is not None else None
     verdict = decide_listing(views, combined_decision, vocab)
-    suggestions = _suggestions(combined, candidates, banks, vocab, verdict.verdict) if combined is not None else None
+    suggestions = _suggestions(combined, candidates, banks, vocab, verdict.verdict, color_bank) \
+        if combined is not None else None
     return {
         "listing_id": listing_id,
         "verdict": verdict.verdict,

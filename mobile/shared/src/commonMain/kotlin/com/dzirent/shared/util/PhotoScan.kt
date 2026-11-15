@@ -96,23 +96,28 @@ sealed class CheckBanner {
     object Failed : CheckBanner()
 }
 
-/** What to show for the check, or null before there is one. An admin's decision wins over the verdict. */
+/**
+ * What to show for the check, or null before there is one. An admin's decision wins over the
+ * verdict. V1a: "Checking your photos…" goes as soon as the check's result is in, even while the
+ * editor is still reading its warnings and filling the suggestions.
+ */
 fun checkBanner(phase: CheckPhase, scan: ListingScan?, uploadError: String? = null): CheckBanner? = when (phase) {
     CheckPhase.NONE -> null
     CheckPhase.UPLOADING -> CheckBanner.Uploading
     CheckPhase.UPLOAD_FAILED -> CheckBanner.UploadFailed(uploadError ?: "Couldn't upload your photos. Please try again.")
-    CheckPhase.CHECKING -> CheckBanner.Checking
+    CheckPhase.CHECKING -> if (scan?.finished == true) resultBanner(scan) else CheckBanner.Checking
     CheckPhase.TIMED_OUT -> CheckBanner.Failed
-    CheckPhase.FINISHED -> when {
-        scan == null -> null
-        scan.adminDecision == "approved" -> CheckBanner.Allowed
-        scan.adminDecision == "rejected" ->
-            CheckBanner.Rejected(scan.adminReason?.ifBlank { null } ?: scan.reason ?: "These photos can't be listed.")
-        scan.status == "failed" -> CheckBanner.Failed
-        scan.verdict == "allowed" -> CheckBanner.Allowed
-        scan.verdict == "rejected" -> CheckBanner.Rejected(scan.reason ?: "These photos can't be listed.")
-        else -> CheckBanner.Review(scan.reason?.trim()?.ifBlank { null })
-    }
+    CheckPhase.FINISHED -> scan?.let { resultBanner(it) }
+}
+
+private fun resultBanner(scan: ListingScan): CheckBanner = when {
+    scan.adminDecision == "approved" -> CheckBanner.Allowed
+    scan.adminDecision == "rejected" ->
+        CheckBanner.Rejected(scan.adminReason?.ifBlank { null } ?: scan.reason ?: "These photos can't be listed.")
+    scan.status == "failed" -> CheckBanner.Failed
+    scan.verdict == "allowed" -> CheckBanner.Allowed
+    scan.verdict == "rejected" -> CheckBanner.Rejected(scan.reason ?: "These photos can't be listed.")
+    else -> CheckBanner.Review(scan.reason?.trim()?.ifBlank { null })
 }
 
 /** The database's reason when a photo matches another lender's listing. */

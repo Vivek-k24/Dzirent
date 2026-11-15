@@ -253,3 +253,18 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Mac: build-check the C1 shared-code changes on iPhone (`ErrorCatalog.kt`, `ReadRetry.kt`, the Ktor `HttpRequestRetry` in `createDzirentSupabaseClient`, price per day), see the C1 handoff | To do |
 | Owner: phone test of C1 (see the C1 handoff) | To do |
 | Owner: make the CI checks required on `main` and `Preview` (branch rules), once a few runs are green | To do |
+
+## Vision data
+
+| Item | Status |
+| --- | --- |
+| D1 | In progress (Antigravity) |
+| D2 | To do |
+| D3 | To do |
+| D4 | To do |
+| V1a Color reader (Claude Code): GrabCut garment mask (OpenCV 4.14.0.94, no new model), light correction from a neutral background on the daylight locus, CIELAB clusters named from the xkcd survey's 949 names (CC0) and mapped to the apps' 15 values only, the model's "a photo of a <name> garment" prompts as a second opinion (`color_confidence`); "Checking your photos…" goes as soon as the result is in (website and apps). Sample listings: colors right 12 of 12 (old 8), sample photos 22 of 22 (old 13); verdicts, reasons, categories and non-color title words identical on all 92 photos and 12 listings. Not deployed: gcloud sign-in expired | Done (Claude Code); deploy waits for the owner's `gcloud auth login` |
+| Owner: `gcloud auth login` on this PC, then an agent redeploys `vision` with V1a (the S1 command in the V1a handoff) and confirms `/health` (`v1a.1`) and the warm scan time | To do |
+| Owner: decide whether the apps' color list should grow (ivory/cream, gold, teal, khaki and the other names in the V1a handoff) | To do |
+| Owner: phone and website test of the "Checking your photos…" fix (see the V1a handoff) | To do |
+| V1b | To do |
+| V2 | To do |
