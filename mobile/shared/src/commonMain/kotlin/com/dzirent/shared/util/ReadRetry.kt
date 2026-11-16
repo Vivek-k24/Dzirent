@@ -8,6 +8,12 @@ package com.dzirent.shared.util
  */
 object ReadRetry {
     const val MAX_RETRIES = 2
+
+    /**
+     * F1: how long one call waits for the server before it gives up (DZ-E9002), so no step
+     * ever spins forever. The website uses the same 30 seconds (apps/web/src/lib/requests.ts).
+     */
+    const val REQUEST_TIMEOUT_MS = 30_000L
     private val DELAYS_MS = longArrayOf(500L, 2_000L)
 
     /** Database functions that only read: sending them twice changes nothing. */

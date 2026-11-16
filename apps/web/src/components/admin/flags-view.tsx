@@ -20,12 +20,12 @@ const FLAG_EXPLANATIONS: Record<string, { title: string; enforcement: string }> 
   verification_required: {
     title: "Identity Verification Enforcement",
     enforcement:
-      "Enforces identity verification before users can publish listings or transact on the marketplace.",
+      "People must verify their ID once before they start a chat, send a message or publish a listing (\"Verify your ID once to continue.\"). Browsing, saving and reading stay open, and live listings stay live. Verifying from Settings works with this off. Turn it on only after the Integrations page shows ID verification as configured, a test account has verified, and the Terms and privacy text say it is required.",
   },
   payments_enabled: {
     title: "In-App Payments Enforcement",
     enforcement:
-      "Enforces integrated payment processing for rental transactions across Dzirent.",
+      "Accepting a rental then waits for the renter's payment, pickup needs the deposit hold, and returns open the claim window. Turn it on only after the Integrations page shows Payments as configured; until then every payment step answers \"Payments aren't available yet.\"",
   },
   preview_label: {
     title: "\"Preview only\" Label",

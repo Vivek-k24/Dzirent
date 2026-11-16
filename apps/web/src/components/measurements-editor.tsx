@@ -255,7 +255,8 @@ export function MeasurementsEditor({
                 setBusy(true);
                 setError("");
                 try {
-                  await workflow("account/give_measurements_consent");
+                  // F1: a POST (with a body); without one this was a GET and answered "Page not found."
+                  await workflow("account/give_measurements_consent", {});
                   setConsentAt(new Date().toISOString());
                   await performSave(pendingMeasurements);
                   setShowConsentModal(false);
@@ -303,7 +304,7 @@ export function MeasurementsEditor({
                 setBusy(true);
                 setError("");
                 try {
-                  await workflow("account/withdraw_measurements_consent");
+                  await workflow("account/withdraw_measurements_consent", {});
                   setConsentAt(null);
                   setValues(
                     Object.fromEntries(bodyFields.map((k) => [k, ""])),

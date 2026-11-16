@@ -130,6 +130,13 @@ android {
         compose = true
     }
 
+    // C6: Didit's SDK documents this exclusion (a duplicate manifest from a library inside it).
+    packaging {
+        resources {
+            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        }
+    }
+
     // P4B: Android Lint's accessibility checks fail the build. checkDependencies also runs them
     // on the shared module, where the screens are.
     lint {

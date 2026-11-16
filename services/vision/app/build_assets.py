@@ -16,6 +16,7 @@ import torch
 from safetensors.torch import save_file
 
 from . import config
+from .color_reader import color_digest, color_prompts
 from .model import create_open_clip
 from .safety import SafetyModel
 from .vocab import load as load_vocab
@@ -46,6 +47,19 @@ def embed_prompts(model, tokenizer, prompts: list[str], batch: int = 64) -> np.n
     return np.concatenate(out).astype(np.float32)
 
 
+def embed_entries(model, tokenizer, entries) -> tuple[np.ndarray, np.ndarray, int]:
+    """(keys, one unit row per key, prompts embedded). Prompt ensembling: the normalized mean of
+    the class's phrasings."""
+    flat = [p for _, prompts in entries for p in prompts]
+    embedded = embed_prompts(model, tokenizer, flat)
+    rows, at = [], 0
+    for _, prompts in entries:
+        centroid = embedded[at:at + len(prompts)].mean(axis=0)
+        rows.append(centroid / np.linalg.norm(centroid))
+        at += len(prompts)
+    return np.array([k for k, _ in entries]), np.stack(rows).astype(np.float32), len(flat)
+
+
 def build(model_dir=config.MODEL_DIR, fetch: bool = True) -> None:
     started = time.monotonic()
     if fetch:
@@ -57,17 +71,13 @@ def build(model_dir=config.MODEL_DIR, fetch: bool = True) -> None:
     arrays: dict[str, np.ndarray] = {"digest": np.array(vocab.digest)}
     total = 0
     for name, entries in vocab.prompt_sets().items():
-        flat = [p for _, prompts in entries for p in prompts]
-        embedded = embed_prompts(model, tokenizer, flat)
-        rows, at = [], 0
-        for _, prompts in entries:
-            # Prompt ensembling: the normalized mean of the class's phrasings.
-            centroid = embedded[at:at + len(prompts)].mean(axis=0)
-            rows.append(centroid / np.linalg.norm(centroid))
-            at += len(prompts)
-        arrays[f"{name}_keys"] = np.array([k for k, _ in entries])
-        arrays[f"{name}_matrix"] = np.stack(rows).astype(np.float32)
-        total += len(flat)
+        arrays[f"{name}_keys"], arrays[f"{name}_matrix"], n = embed_entries(model, tokenizer, entries)
+        total += n
+    # V1a: the color reader's second opinion, one row per xkcd color name, with its own digest
+    # (the policy digest stays the policy's).
+    arrays["colors_keys"], arrays["colors_matrix"], n = embed_entries(model, tokenizer, color_prompts())
+    arrays["colors_digest"] = np.array(color_digest())
+    total += n
     np.savez(model_dir / config.TEXT_EMBEDDINGS_FILE, **arrays)
     save_file({k: v.contiguous() for k, v in model.visual.state_dict().items()}, str(model_dir / config.VISUAL_WEIGHTS_FILE))
     # The safety model must load (strictly) now, not at the first cold start.

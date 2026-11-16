@@ -41,6 +41,7 @@ import com.dzirent.shared.util.availabilityChipLabel
 import com.dzirent.shared.util.copiedMeasurements
 import com.dzirent.shared.util.firstOverlap
 import com.dzirent.shared.util.measurementLabelsFor
+import com.dzirent.shared.util.parseDepositAmount
 import com.dzirent.shared.util.readyList
 import com.dzirent.shared.util.sameAsCandidate
 import com.dzirent.shared.util.sameAsQuestion
@@ -116,12 +117,15 @@ fun SizePriceDatesStep(
     Spacer(modifier = Modifier.height(16.dp))
 
     // ---- Price ----
+    // F1: Publish without a price shows the catalog's message (DZ-E2076) here as well.
+    val priceError = state.textErrors["price_usd"]
     OutlinedTextField(
         value = state.priceText,
-        onValueChange = { input -> state.priceText = input.filter { it.isDigit() || it == '.' } },
+        onValueChange = { input -> state.priceText = input.filter { it.isDigit() || it == '.' }; state.clearTextError("price_usd") },
         label = { Text("Price per day (\$)") },
         prefix = { Text("\$") },
-        supportingText = { Text("Per rental. Required.") },
+        isError = priceError != null,
+        supportingText = { Text(priceError ?: "Per rental. Required.", modifier = if (priceError != null) Modifier.announced() else Modifier) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         singleLine = true,
         modifier = Modifier.fillMaxWidth()
@@ -151,7 +155,8 @@ fun SizePriceDatesStep(
 
     // ---- More options (collapsed) ----
     val retailError = accessoryValueError(state.isAccessory, state.retailValueText)
-    val noteRefused = state.textErrors["price_note"] != null || state.textErrors["deposit_note"] != null
+    val noteRefused = state.textErrors["price_note"] != null || state.textErrors["deposit_note"] != null ||
+        (state.paymentsEnabled && parseDepositAmount(state.depositAmountText).isFailure)
     var moreOpen by remember { mutableStateOf(retailError != null) }
     TextButton(onClick = { moreOpen = !moreOpen }, contentPadding = PaddingValues(horizontal = 4.dp)) {
         Text("More options")
@@ -175,7 +180,9 @@ fun SizePriceDatesStep(
             depositNote = state.depositNote,
             onDepositNoteChange = { state.depositNote = it; state.clearTextError("deposit_note") },
             retailError = retailError,
-            depositNoteError = state.textErrors["deposit_note"]
+            depositNoteError = state.textErrors["deposit_note"],
+            depositAmountText = if (state.paymentsEnabled) state.depositAmountText else null,
+            onDepositAmountChange = { state.depositAmountText = it }
         )
     }
     TextButton(onClick = onWhatCanIList, contentPadding = PaddingValues(horizontal = 4.dp)) { Text(DzirentPolicy.WHAT_CAN_I_LIST_TITLE) }

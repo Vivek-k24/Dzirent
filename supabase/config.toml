@@ -28,6 +28,47 @@ verify_jwt = false
 [functions.cleanup-files]
 verify_jwt = false
 
+# C4 payments: each handler verifies the caller's token in code (auth.getUser), or the outbox's
+# shared secret (PAYMENTS_JOB_SECRET), or Stripe's webhook signature.
+[functions.stripe-onboard]
+verify_jwt = false
+
+[functions.stripe-account-status]
+verify_jwt = false
+
+[functions.stripe-pay]
+verify_jwt = false
+
+[functions.stripe-deposit]
+verify_jwt = false
+
+[functions.stripe-refund]
+verify_jwt = false
+
+# Stripe sends no Supabase token: the handler checks the Stripe-Signature on the raw body.
+[functions.stripe-webhook]
+verify_jwt = false
+
+# Admins only: the database checks is_admin with the caller's own token and logs the read.
+[functions.admin-integrations]
+verify_jwt = false
+
+# C5: called only by the database; the handler checks the shared secret (EMAIL_JOB_SECRET).
+[functions.send-email]
+verify_jwt = false
+
+# C6 ID verification: didit-start verifies the caller's token in code (auth.getUser); Didit sends no
+# Supabase token, so didit-webhook checks Didit's X-Signature on the raw body; didit-sync is called
+# only by the database's outbox with the shared secret (DIDIT_JOB_SECRET).
+[functions.didit-start]
+verify_jwt = false
+
+[functions.didit-webhook]
+verify_jwt = false
+
+[functions.didit-sync]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.
@@ -274,6 +315,22 @@ otp_expiry = 3600
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
+
+# C5: Dzirent's sign-in emails (same look as the transactional emails). Used by the local stack
+# only: the live project's Auth settings are never pushed from this file. Switching the live
+# project to a custom email service and these templates is a runbook step (pranalika/contract.md
+# section 9).
+[auth.email.template.confirmation]
+subject = "Confirm your Dzirent email"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Dzirent password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new Dzirent email"
+content_path = "./supabase/templates/email_change.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

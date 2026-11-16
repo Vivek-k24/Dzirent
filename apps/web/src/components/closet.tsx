@@ -10,6 +10,7 @@ import {
   type InboxData,
 } from "@/lib/workflows";
 import { perDay } from "@/lib/types";
+import { isUnfinished } from "@/lib/listing-form";
 import { photoUrl } from "@/lib/supabase/config";
 import { Photo } from "./photo";
 import { Empty } from "./cards";
@@ -150,7 +151,7 @@ export function Closet({ initial }: { initial: ClosetData }) {
                           : l.status)
                       }
                     >
-                      {l.status === "paused" && l.title === "New listing (draft)"
+                      {isUnfinished(l)
                         ? "Draft"
                         : l.status === "active"
                           ? "Active"
@@ -160,7 +161,8 @@ export function Closet({ initial }: { initial: ClosetData }) {
                   <div className="closet-card-body">
                     <h2>{l.title}</h2>
                     <p className="muted">
-                      {l.category} · {l.size_label}
+                      {/* F1: a draft has no size yet. */}
+                      {[l.category, l.size_label].filter(Boolean).join(" · ")}
                     </p>
                     {l.status === "paused" && l.auto_paused_reason && (
                       <p
@@ -182,7 +184,8 @@ export function Closet({ initial }: { initial: ClosetData }) {
                         r.lender_id === data.inbox.me,
                     ) && <p className="accent">Rented out</p>}
                     <div className="closet-actions">
-                      {!(l.status === "paused" && l.title === "New listing (draft)") && (
+                      {/* F1: an unfinished row goes live only through Publish in the editor. */}
+                      {!isUnfinished(l) && (
                         <button
                           className="text-button"
                           disabled={busy}

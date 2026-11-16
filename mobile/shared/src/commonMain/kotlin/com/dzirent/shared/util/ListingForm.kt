@@ -72,19 +72,48 @@ const val CHOOSE_CATEGORY = "Choose a category"
 const val DESCRIPTION_TIP = "Add the fabric, fit and any flaws."
 
 // ---- What each step still needs ---------------------------------------------------------------
+//
+// F1: a step asks only for its own fields, when the person continues past it, and publishing
+// asks again for everything; each gap is the catalog's field-level message (DZ-E2070-E2085, the
+// same codes as the website). Saving the photos step's draft row asks for nothing (draftListing).
+
+/** A listing field's gap: the catalog's words and code for it, and the field it is about. */
+fun missingField(button: String, code: String): Missing {
+    val shown = ErrorCatalog.shown(code)
+    return Missing(button, shown.text, shown.field, shown.code)
+}
+
+/**
+ * The row a new listing gets when its photos are first uploaded for the check: paused, the
+ * placeholder title and category, and nothing else yet (no size, price or description). The
+ * database accepts it as it is; the details are checked when the person continues and publishes.
+ */
+fun draftListing(id: String, lenderId: String, city: String, approxLat: Double, approxLng: Double): Listing = Listing(
+    id = id,
+    lenderId = lenderId,
+    title = DRAFT_TITLE,
+    category = DRAFT_CATEGORY,
+    city = city,
+    approxLat = approxLat,
+    approxLng = approxLng,
+    status = "paused"
+)
 
 /**
  * What the details step still needs, or null: a 3-80 character title, a category, an item type
  * for accessories, and the accessory declaration when it's needed and not signed yet. (The
- * photos step needs [photoGate] to pass.)
+ * photos step needs [photoGate] to pass.) The size and price belong to the next step.
  */
 fun detailsMissing(title: String, category: String?, itemType: String?, declarationPending: Boolean): Missing? = when {
-    title.trim().length !in 3..80 -> Missing("Add a title", "Title must be 3 to 80 characters.")
-    category == null -> Missing(CHOOSE_CATEGORY, "Choose a category.")
-    category == Categories.ACCESSORIES && itemType == null -> Missing("Choose an item type", "Choose an item type for Accessories.")
-    declarationPending -> Missing("Sign the declaration", "Sign the accessory declaration to list jewelry or accessories.")
+    title.trim().length !in 3..80 -> missingField("Add a title", "DZ-E2070")
+    category == null -> missingField(CHOOSE_CATEGORY, "DZ-E2071")
+    category == Categories.ACCESSORIES && itemType == null -> missingField("Choose an item type", "DZ-E2072")
+    declarationPending -> missingField(SIGN_DECLARATION, "DZ-E2040")
     else -> null
 }
+
+/** The details step's button while the accessory declaration is still to be signed. */
+const val SIGN_DECLARATION = "Sign the declaration"
 
 /** Everything the size, price and dates step checks, as typed. */
 data class Step2Input(
@@ -118,17 +147,16 @@ fun step2Missing(input: Step2Input): Missing? {
     val retail = input.retailValueText
     return when {
         !input.hasLocation -> Missing("Set your location", "Set your location before publishing.")
-        input.sizeLabel.isBlank() -> Missing("Choose a size", "Choose a size.")
-        !input.measurementsOk -> Missing("Fix the measurements", "Fix the highlighted measurements, or remove those rows.")
-        parsePrice(input.priceText) == null -> Missing("Add a price", "Enter a price above \$0, like 25 or 25.50.")
-        input.isAccessory && !input.listingDeclarationChecked ->
-            Missing("Tick the declaration", "Tick the box confirming this isn't fine jewelry and is worth under \$${ItemLabels.ACCESSORY_MAX_VALUE_USD}.")
-        retail.isNotBlank() && (retail.toDoubleOrNull() ?: 0.0) <= 0.0 ->
-            Missing("Fix the retail value", "Retail value must be a number above 0, or leave it empty.")
-        accessoryValueError(input.isAccessory, retail) != null -> Missing("Retail value over \$${ItemLabels.ACCESSORY_MAX_VALUE_USD}", ACCESSORY_VALUE_TOO_HIGH)
-        input.priceNote.trim().length > PRICE_NOTE_MAX -> Missing("Shorten price details", "Price details can be up to $PRICE_NOTE_MAX characters.")
-        input.description.trim().length > DESCRIPTION_MAX -> Missing("Shorten the description", "Description can be up to $DESCRIPTION_MAX characters.")
-        input.ranges.isEmpty() -> Missing("Add dates", "Add the dates this piece is available.")
+        input.sizeLabel.isBlank() -> missingField("Choose a size", "DZ-E2074")
+        !input.measurementsOk -> missingField("Fix the measurements", "DZ-E2083")
+        parsePrice(input.priceText) == null -> missingField("Add a price", "DZ-E2076")
+        input.isAccessory && !input.listingDeclarationChecked -> missingField("Tick the declaration", "DZ-E2081")
+        retail.isNotBlank() && (retail.toDoubleOrNull() ?: 0.0) <= 0.0 -> missingField("Fix the retail value", "DZ-E2079")
+        accessoryValueError(input.isAccessory, retail) != null ->
+            missingField("Retail value over \$${ItemLabels.ACCESSORY_MAX_VALUE_USD}", "DZ-E2080")
+        input.priceNote.trim().length > PRICE_NOTE_MAX -> missingField("Shorten price details", "DZ-E2077")
+        input.description.trim().length > DESCRIPTION_MAX -> missingField("Shorten the description", "DZ-E2073")
+        input.ranges.isEmpty() -> missingField("Add dates", "DZ-E2084")
         else -> null
     }
 }

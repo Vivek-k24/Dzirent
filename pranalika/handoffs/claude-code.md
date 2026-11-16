@@ -2,6 +2,661 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## V1a - 2026-11-15 - color reader
+
+**Before starting:** clean tree, `Preview` up to date at `8dcd49e`. I didn't touch `H:\DziRent\Dzirent_vision_data` (the other agent's folder). `H:\DziRent\vision-test\should-accept` and `should-reject` are still empty, so there were no owner photos to compare.
+
+**What changed:**
+- **Vision service: the color reader** (`services/vision/app/color_reader.py`, new). Per photo, in under a second (timings below):
+  1. **Garment mask:** OpenCV GrabCut (`opencv-python-headless` 4.14.0.94; no new model).
+     - Seeded with the framing check's own item region, or the middle 60% of the photo when the framing check found none (a busy background such as a rug). The border band is always background.
+     - Runs at 256 px on the long side, 3 iterations. On the 22 sample photos the masks hold the garment cleanly (hangers mostly out, small stand parts in).
+  2. **Light:** the background's median color in log-chromaticity.
+     - When it lies on the CIE daylight locus (within 0.10), the background is taken as a neutral surface under that light. The light, clamped to 3500-10000 K, is divided out (von Kries).
+     - A colored background (a red rug sits 2.9 off the locus) can't tell its color from the light's, so the hue is left alone.
+     - A dim photo is brightened up to 2.5x (by its brightest channel, so a saturated red cloth isn't taken for dim), never darkened.
+  3. **Measure:** the garment's pixels in CIELAB (6000 per photo), k-means with lightness counting half.
+     - Clusters that are one fabric lit and in shadow are joined: the same lightness-free chromaticity, or the same hue within 25°, up to 4x apart in luminance.
+     - Clusters under 6% are left out. Each cluster is named by its lit half.
+  4. **Name:** the nearest of the xkcd color survey's 949 names (`app/color_names.json`, CC0), by CIEDE2000 with the textile lightness factor 2.
+     - Each name maps to the apps' value with the closest typical shade, except 21 hand-set names and 16 tans (below).
+     - Then the app's old rules: the main color takes in its related shades, a second color needs 12%, and two colors within 0.75 are too close to call.
+     - **Only the 15 values are ever returned** (unit-tested on random pixels).
+  5. **Second opinion:** the model's text embeddings of "a photo of a <name> garment" and "<name> clothing" for all 949 names, built into the image with their own digest. The policy digest stays the policy's: `fab11ee739b2e4db`, unchanged.
+     - **Contenders:** the pixels' main color, plus a second color or related shade with at least half its share, plus any value whose nearest name is within 4 of the main color's own.
+     - **Model's share:** it is asked about the names near the contenders' colors only, and its share for a contender includes that contender's related shades.
+     - **The rule:**
+       - If the model mostly sees the contenders and picks the pixels' main color, the colors are kept: `color_confidence` 0.9, "agree".
+       - If it picks another contender with at least 0.75 of its share, that one becomes the main color and the second is left out: 0.7, "settled".
+       - Anything else keeps the pixel answer at 0.4 ("disagree"); colors that were too close to call stay without a color. Without the model the confidence is 0.6.
+     - The lender never sees a warning.
+  - **New key `suggestions.color_confidence`** (contract.md). Nothing reads it yet; the database stores the suggestions object as it is, so there is no database change.
+  - **The old color function is removed** now that the evaluation passes: `color_votes`, `name_colors`, `ColorVotes` and the center box. `colors.py` keeps the 15 values, their shades, the related pairs, the thresholds and the Lab math. `SERVICE_VERSION` is `v1a.1`.
+  - The build embeds 2,358 prompts (460 before). That took 232 s on this PC.
+- **"Checking your photos…" (website and apps).**
+  - **Cause, the same on both:** the check watcher restarted only when the check's id changed. Next on Photos again (or Check again) with unchanged photos gets the same, already finished check back, so nothing moved the banner off "Checking your photos…", while the earlier suggestions ("Filled from your photos") stayed.
+  - **Website** (`listing-editor.tsx`): every request bumps a counter that restarts the watcher (it reads the check at once). Events for other checks are ignored, and a late "running" event never undoes a result.
+  - **Apps** (`ListingEditor.kt`, `PhotoScan.kt`): the same counter restarts the watcher; the banner shows the result as soon as the finished check arrives (`checkBanner`: CHECKING with a finished scan is the result), and a check's watcher never shows another check's result.
+- **README** open-source section: OpenCV (Apache 2.0; the wheel's MIT packaging and its bundled FFmpeg, LGPL 2.1, never used) and the xkcd color names (CC0); the NOTICE note. **Docs:** `architecture.md` 5.6, `contract.md` (the colors and `color_confidence`), `security-log.md`, `services/vision/README.md`, `code-reference.md` (regenerated), `BOARD.md` (new "Vision data" section).
+
+**Old vs new colors, the 22 sample listing photos** (each photo scanned alone; old = the code before V1a, the deployed S1b code; new = V1a; same pinned model, same 92 photos, run with the service's own `Model`, `analyze_photo` and `scan` code). "Stored color" is the color word in the live listing's title or description; where the listing names none, "eye:" is my own reading of the photo. Rule: what the model's second opinion did, with its share for the value it picked.
+
+| Photo | Old colors | New colors | Stored color | Old right | New right | New rule (model) |
+| --- | --- | --- | --- | --- | --- | --- |
+| cashmere-belted-trench-coat/back | Brown | Beige | camel | yes | yes | agree (Beige 0.58) |
+| cashmere-belted-trench-coat/front | Brown | Beige | camel | yes | yes | agree (Beige 0.51) |
+| embroidered-silk-lehenga-set/back | Brown | Maroon | eye: maroon with gold | no | yes | settled (Maroon 0.92) |
+| embroidered-silk-lehenga-set/front | Maroon, Black | Maroon | eye: maroon with gold | yes | yes | settled (Maroon 0.95) |
+| emerald-velvet-cocktail-dress/back | Black | Emerald | emerald green | no | yes | agree (Emerald 1.0) |
+| emerald-velvet-cocktail-dress/front | Black | Emerald | emerald green | no | yes | agree (Emerald 1.0) |
+| linen-summer-sundress/front | Orange, Maroon | Orange, Maroon | terracotta | yes | yes | agree (Orange 0.89) |
+| minimalist-wool-day-coat/back | Grey | Grey | heather grey | yes | yes | agree (Grey 0.97) |
+| minimalist-wool-day-coat/front | Grey | Grey | heather grey | yes | yes | agree (Grey 0.98) |
+| modern-qipao-midi-dress/back | Emerald, Black | Emerald | eye: jade green | yes | yes | agree (Emerald 1.0) |
+| modern-qipao-midi-dress/front | Emerald, Black | Emerald | eye: jade green | yes | yes | agree (Emerald 1.0) |
+| pleated-wide-leg-trousers/back | White | White | eye: cream | yes | yes | agree (White 0.99) |
+| pleated-wide-leg-trousers/front | White | White | eye: cream | yes | yes | agree (White 0.99) |
+| satin-backless-maxi-dress/back | Brown | Beige | champagne | no | yes | agree (Beige 0.65) |
+| satin-backless-maxi-dress/front | Beige, Grey | Beige | champagne | yes | yes | agree (Beige 1.0) |
+| silk-halter-evening-gown/back | Navy, Grey | Navy, Grey | eye: navy | yes | yes | agree (Navy 0.63) |
+| silk-halter-evening-gown/front | Navy, Grey | Navy | eye: navy | yes | yes | agree (Navy 0.6) |
+| structured-silk-work-shirt/front | Beige | White | eye: white | no | yes | agree (White 1.0) |
+| tailored-charcoal-blazer/back | Black | Grey | charcoal | no | yes | agree (Grey 0.72) |
+| tailored-charcoal-blazer/front | Black | Grey | charcoal | no | yes | agree (Grey 0.75) |
+| vintage-denim-jumpsuit/back | Grey, Blue | Blue | denim | no | yes | agree (Blue 0.99) |
+| vintage-denim-jumpsuit/front | Grey, Blue | Blue | denim | no | yes | agree (Blue 1.0) |
+
+**The 12 sample listings** (all their photos together; the title is the new suggestion, unchanged apart from the color word):
+
+| Listing | Old colors | New colors | Stored color | Old right | New right | New rule (model) | New title |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cashmere-belted-trench-coat | Brown | Beige | camel | yes | yes | disagree (Brown 0.57) | Beige wool trench coat |
+| embroidered-silk-lehenga-set | Maroon | Maroon | eye: maroon with gold | yes | yes | settled (Maroon 0.95) | Maroon embroidered lehenga |
+| emerald-velvet-cocktail-dress | Black | Emerald | emerald green | no | yes | agree (Emerald 1.0) | Emerald velvet cocktail dress |
+| linen-summer-sundress | Orange, Maroon | Orange, Maroon | terracotta | yes | yes | agree (Orange 0.89) | Orange linen dress |
+| minimalist-wool-day-coat | Grey | Grey | heather grey | yes | yes | agree (Grey 0.97) | Grey wool coat |
+| modern-qipao-midi-dress | Emerald, Black | Emerald | eye: jade green | yes | yes | agree (Emerald 1.0) | Emerald silk qipao |
+| pleated-wide-leg-trousers | White | White | eye: cream | yes | yes | agree (White 0.99) | White trousers |
+| satin-backless-maxi-dress | Beige, Grey | Beige | champagne | yes | yes | agree (Beige 1.0) | Beige satin slip dress |
+| silk-halter-evening-gown | Navy, Grey | Navy | eye: navy | yes | yes | agree (Navy 0.62) | Navy satin gown |
+| structured-silk-work-shirt | Beige | White | eye: white | no | yes | agree (White 1.0) | White shirt |
+| tailored-charcoal-blazer | Black | Grey | charcoal | no | yes | agree (Grey 0.74) | Grey wool suit |
+| vintage-denim-jumpsuit | Grey, Blue | Blue | denim | no | yes | agree (Blue 1.0) | Blue denim jumpsuit |
+
+**Scores:**
+- **Sample photos:** old right on 13 of 22, new on **22 of 22**.
+- **Sample listings:** old 8 of 12, new **12 of 12**.
+- I counted the camel coat as right for Beige or Brown, terracotta for Orange or Brown, and green for Emerald or Green.
+
+**The other 70 test photos** (the earlier sessions' Commons accept and reject sets, hoodies, worn dresses and the safe example; `vision-test` was empty):
+- **Changed:** 19 of them get suggestions, and the colors changed on 11. By eye, new is right on 4 and old on 1:
+
+| Photo | Old | New (rule) | By eye | Old right | New right |
+| --- | --- | --- | --- | --- | --- |
+| should-accept/blazer/1 (a portrait; the item read is the white scarf) | Grey | White (settled) | white scarf | no | yes |
+| should-accept/saree/1 (far away) | Black | Brown (agree) | brown | no | yes |
+| should-accept/wristwatch/2 | Grey | Navy (agree) | navy strap | no | yes |
+| worn-dress/3 | - | Blue (agree) | bright blue | no | yes |
+| should-accept/kimono/2 | Black | Purple (disagree: Maroon) | black, under magenta stage light | yes | no |
+| should-accept/handbag/2 | Grey | - (model Grey, under 0.75) | brown and orange floral | no | no |
+| should-accept/necktie/1 (children; the tie is black) | - | White (agree) | black tie | no | no |
+| should-accept/sunglasses/1 (on red cloth) | Maroon, Black | Maroon (disagree: Red) | black frame | no | no |
+| should-accept/sunglasses/2 (on a white card) | Grey | White (disagree: Beige) | red, white and blue frame | no | no |
+| should-reject/shorts/3 (a shop mannequin) | Brown | Grey, Brown (agree) | white tee, print shirt | no | no |
+| hoodies/hoodie/4 (long print dress) | Black, Yellow | Grey, Yellow (agree) | multicolor print | no | no |
+
+- **Verdicts and everything else unchanged:** on all 92 photos and all 12 listings these are identical to before: verdict, reason, item, every photo's decision, labels, checks and warnings, the quality summary, and every suggestion field except the colors, with titles and descriptions compared with the color words taken out. **0 differences** (`compare.py` in my scratch folder).
+- **Robustness (unit test, CI):** each of the 22 sample photos is scanned again under a 4000 K (yellow) cast, a 9000 K (blue) cast, half the light and 1.6x the light (clipped). The main color stays the same or one of its related shades (the app's light, shadow and neighbor pairs): **22 of 22 photos, all four casts.**
+- **Owner's case:** the cream sherwani photo isn't in the repo or `vision-test`. A synthetic stand-in, a cream piece with folds flat on a red and gold patterned rug, is in the tests:
+  - GrabCut separates it (mask overlap 0.85 or more with the true shape);
+  - it is named **White**, never Grey or the rug's red.
+  - Before the lit-and-shadow merge it read **Grey**: the fold shadows formed a bigger cluster than the lit cream, which is the same failure the owner saw.
+
+**Licenses:**
+- **OpenCV** `opencv-python-headless` 4.14.0.94: OpenCV under Apache 2.0, the wheel's packaging under MIT. The wheel's metadata says it bundles FFmpeg (LGPL 2.1) and other libraries listed in its `LICENSE-3RD-PARTY.txt`. The service never opens video. No advisory affects this version.
+- **xkcd color survey names:** CC0 1.0 (the first line of the downloaded `rgb.txt`), copied unchanged into `color_names.json`.
+- **No new model.** GrabCut found the garment on all 22 sample photos and on the synthetic rug test, so the segmentation-model fallback wasn't needed. On 9 of the other 70 photos it found too little (under 2% of the photo), and the reader used the framing check's seed instead. Those are mostly photos that aren't a garment: a typed letter, a laptop, footprints in snow, a dog, a building, plus jeans/3, sandals/3, necktie/2 (a drawing) and sweatshirt/1.
+
+**Color names for the owner to decide on** (should the apps' 15-value list grow?):
+- **The owner's examples:**
+  - **ivory, cream:** map to White. Their closest typical shade is a Beige one (ΔE 14 and 16), so they are set by hand. Off white, eggshell and pale are too.
+  - **champagne:** not in the xkcd list. The champagne satin dress reads as Beige.
+  - **gold:** Yellow (3.2, maps well).
+  - **maroon:** Maroon, already a value (3.0).
+  - **teal:** Emerald (8.8); turquoise Emerald (9.7); aqua Emerald (13).
+- **Other fashion names:**
+  - **Map well:** burgundy → Maroon 3.5; mustard → Yellow 4.0; silver → Grey 3.9; taupe → Beige 2.9; terracotta → Orange 7.9; olive → Green 8.4; sage → Green 7.9.
+  - **Map loosely:** camel → Beige 10.5 (set by hand; its closest shade is a gold); khaki → Beige 11.6 (set by hand; its closest shade is a green); charcoal → Grey 7.8 (set by hand; its closest shade is a black); coral → Red 7.9; peach → Orange 9.6; rust → Orange 9.5; wine → Maroon 9.3; mauve → Pink 9.4; lavender → Purple 9.5; lilac → Purple 10.2; plum → Purple 11.2; blush → Pink 10.7; mint → Green 14.9.
+- **Hand-set (21), each because its closest shade is another family than the name:**
+  - off white, ivory, cream, eggshell, pale → White;
+  - charcoal, charcoal grey → Grey;
+  - camel, tan, sand, khaki, light beige → Beige;
+  - sandy brown, sand brown, golden brown, yellowish brown, yellowy brown, mustard brown → Brown;
+  - royal blue → Blue; emerald → Emerald; dark (the survey's blue-black, #1b2431) → Navy.
+- **Tan rule (16):** Yellow means a saturated yellow (chroma 52 or more). Weaker yellows that would land on the Yellow shades (which include golds) become Beige when light and Brown when dark: desert, greenish beige, dark cream, parchment, creme, light khaki, dark sand, sandy, buff, wheat, dark khaki, light tan and dark tan → Beige; hazel, muddy brown and "shit" (the survey's own name; it has several crude ones) → Brown.
+- **Every name that maps poorly**, by value, with its distance to the value's closest typical shade (CIEDE2000, textile weighting; more than 10 counts as poor; 362 of the 949). Most are bright greens and limes, cyans and teals, lilacs and pinks that no 15-value list matches:
+- **Black (1):** very dark brown 11
+- **White (15):** pale cyan 19, eggshell blue 17, duck egg blue 17, light sky blue 16, light light blue 16, cream 16, pale blue 15, ivory 14, really light blue 14, very light blue 14, ice 14, very pale blue 14, ice blue 13, eggshell 12, pale 11
+- **Grey (11):** robin egg blue 21, robin's egg blue 20, pale sky blue 16, light periwinkle 15, purpley grey 14, purple grey 14, purplish grey 12, pinkish grey 12, light grey blue 11, bluegrey 11, bluey grey 10
+- **Navy (8):** purplish blue 12, purply blue 11, primary blue 11, strong blue 11, blue/purple 11, purple blue 11, burple 11, blue violet 11
+- **Blue (23):** robin's egg 22, aqua blue 22, neon blue 18, turquoise blue 17, petrol 16, bright sky blue 16, powder blue 13, teal blue 13, periwinkle 13, periwinkle blue 12, pastel blue 12, ocean 12, lavender blue 12, light blue 12, baby blue 12, lightblue 11, sky 11, bluish purple 11, rich blue 11, light royal blue 10, dark blue grey 10, greyblue 10, purpley blue 10
+- **Green (99):** acid green 18, lime green 18, bright lime 18, fluro green 18, bright green 18, fluorescent green 18, neon green 18, bright lime green 18, highlighter green 17, poison green 17, hot green 17, electric green 17, pale lime green 17, radioactive green 17, bright light green 16, key lime 16, light lime 16, kiwi 16, light neon green 16, light bright green 16, very light green 16, very pale green 16, vivid green 16, pale green 16, light light green 16, light mint 16, lighter green 16, light yellowish green 16, celadon 16, sea green 15, light green blue 15, spring green 15, light grass green 15, wintergreen 15, celery 15, spearmint 15, light seafoam green 15, minty green 15, lightgreen 15, light bluish green 15, green brown 15, pistachio 15, turquoise green 15, mint 15, light mint green 15, tea green 15, kiwi green 15, pastel green 15, easter green 15, washed out green 15, dark olive 15, foam green 15, baby green 15, pale light green 15, mint green 15, light pastel green 15, light sea green 15, light sage 14, light green 14, greeny brown 14, vibrant green 14, slime green 14, toxic green 13, green apple 13, greenish brown 13, light grey green 13, weird green 13, greenish grey 13, racing green 12, apple green 12, tealish green 12, bright olive 12, lightish green 12, bottle green 12, dark lime green 12, dark olive green 12, fresh green 12, brown green 11, browny green 11, seaweed 11, booger green 11, puke green 11, grey/green 11, apple 11, dark lime 11, greeny grey 11, pea soup 11, barf green 11, greyish green 11, navy green 11, sick green 10, green grey 10, greenish tan 10, pale olive green 10, pale olive 10, baby poop green 10, sickly green 10, mud green 10, grey green 10
+- **Emerald (52):** bright light blue 21, cyan 20, bright cyan 20, light cyan 20, bright turquoise 19, deep teal 17, bright aqua 17, deep aqua 17, pale aqua 17, bright sea green 16, dark teal 15, dark cyan 15, light seafoam 15, seafoam green 15, seafoam 15, dark aqua 15, greenish cyan 14, greenish turquoise 14, light blue green 14, pale turquoise 14, light aqua 14, tiffany blue 14, deep turquoise 14, very dark green 14, bright teal 14, light aquamarine 14, hospital green 14, light greenish blue 13, dark green 13, forrest green 13, bluegreen 13, dark forest green 13, dark turquoise 13, light turquoise 13, aqua 13, dark aquamarine 13, hunter green 12, greenish blue 12, aqua green 12, light teal 12, darkgreen 12, greyish teal 12, aqua marine 12, topaz 12, forest green 12, sea 11, british racing green 11, pale teal 11, seafoam blue 10, dark blue green 10, dusty teal 10, aquamarine 10
+- **Red (8):** salmon 12, reddish brown 11, pink red 11, red pink 10, auburn 10, coral pink 10, melon 10, reddish pink 10
+- **Maroon (7):** dark plum 13, reddish purple 12, violet red 12, dark mauve 12, mulberry 12, red purple 11, lipstick 11
+- **Pink (24):** pale lavender 16, very light purple 14, pink/purple 14, violet pink 13, pale mauve 13, bright magenta 13, fuchsia 13, light magenta 13, cerise 13, purple pink 13, pale salmon 12, deep pink 12, salmon pink 12, light salmon 12, dark hot pink 12, peachy pink 12, light plum 11, magenta 11, blush 11, deep rose 11, hot magenta 11, brownish pink 10, purply pink 10, dark pink 10
+- **Purple (45):** pale lilac 16, light lilac 15, light lavender 15, dirty purple 14, light lavendar 14, bright purple 14, neon purple 14, hot purple 13, bright violet 13, electric purple 13, vivid purple 13, dark fuchsia 13, deep magenta 13, perrywinkle 13, dark magenta 13, eggplant 13, aubergine 13, dusky purple 12, light violet 12, purple/pink 12, heliotrope 12, dusty lavender 12, violet 12, pink purple 12, pale violet 12, grey purple 12, very dark purple 12, pinkish purple 11, greyish purple 11, plum 11, vibrant purple 11, midnight purple 11, bright lavender 11, bright lilac 11, dull purple 11, grape 10, pastel purple 10, lilac 10, dark purple 10, purpley 10, lighter purple 10, heather 10, bruise 10, lavender pink 10, pinky purple 10
+- **Yellow (30):** bright yellow green 18, electric lime 17, lime 17, lemon green 16, light lime green 16, pale lime 15, light pea green 15, lemon lime 15, yellowgreen 15, yellow green 14, chartreuse 14, green yellow 14, light yellow green 14, yellow/green 13, greeny yellow 13, neon yellow 13, yellowy green 13, greenish yellow 13, lime yellow 13, yellowish green 13, snot green 13, pear 12, gross green 12, ugly brown 12, pea 11, vomit 11, green/yellow 10, mustard green 10, orange yellow 10, puke 10
+- **Beige (17):** greenish beige 14, light khaki 14, buff 13, dark cream 13, sandy 12, parchment 12, wheat 12, creme 12, light beige 12, khaki 12, grey brown 12, dark tan 11, dark khaki 11, sand 11, camel 10, desert 10, brownish grey 10
+- **Brown (22):** yellowy brown 18, yellowish brown 16, sandy brown 16, hazel 16, olive brown 15, mustard brown 14, sand brown 14, reddish grey 13, mud 13, muddy brown 13, golden brown 13, shit 13, poop 12, pinkish tan 12, poop brown 12, rust brown 11, greyish brown 11, shit brown 11, poo brown 11, pinkish brown 10, caramel 10, chestnut 10
+
+**What I ran:**
+1. **Vision tests** (repo `.venv`, Python 3.12.10, `pip check` clean): `pytest -m "not model" tests`: **116 passed**, 2 deselected (the CI form); with `VISION_SAFETY_DIR` set, **118 passed**.
+   - 68 tests are new in `tests/test_color_reader.py`: CIEDE2000 against Sharma's reference pairs; the name mapping; the mask on the rug case; the light correction (casts removed on a neutral background, a red background left alone, exposure); clusters (shadows, black-and-white kept apart, tiny clusters dropped); the second-opinion rules with a stand-in bank; only the 15 values; the 22 cast-robustness cases; the time per photo.
+   - `tests/test_colors.py` was rewritten for what `colors.py` keeps.
+2. **Before and after** with the same pinned weights:
+   - HEAD's vision code (`git archive`) on S1's built assets, against V1a on assets I built locally from the same pinned model files (`build_assets.build`, no download; 2,358 prompts in 232 s).
+   - The results are the tables above.
+3. **Speed** (this PC):
+   - **The color reader alone** (`read_photo`, all 92 photos at the final setting): median 140 ms, max 408 ms. GrabCut is most of it; 256 px and 3 iterations instead of 320 px and 4 halved its time (max 810 to 390 ms), and the masks agree at a median 0.96 overlap.
+   - **The whole per-photo analysis:** median 475 ms, max 747 ms. Before V1a it was median 593 ms, max 1,195 ms (the old reader worked on the full 1,280 px image).
+4. **Local Linux image** (`docker build` of `services/vision`, the unchanged Dockerfile):
+   - `pip check` in the image: "No broken requirements found" (OpenCV 4.14.0.94 with numpy 2.2.5 on Linux).
+   - **Build time:** 2,358 prompts embedded in 243 s (model download included); the whole build took 7 min 46 s on this PC.
+   - **Run** with `--cpus 2 --memory 4g` and the live `VISION_ALLOWED_URL_PREFIXES`:
+     - it runs as uid 10001 `vision`;
+     - `/health` shows `service_version` `v1a.1`, policy digest `fab11ee739b2e4db` (unchanged), the same model revision, start-up 7.4 s;
+     - peak memory 909 MiB.
+   - **The 12 sample listings through the container's `/scan`:**
+     - all allowed, with the same colors and titles as the local run;
+     - one confidence differs: the trench coat gets 0.4 in the container and 0.9 on Windows. The model splits about evenly between Beige and Brown there, so the small numeric differences between the two builds tip it; the color is Beige either way.
+   - **Logs:** the only line with a URL is Uvicorn's own start line; there are no photo URLs.
+
+5. **Website** (Node 22.23.3): `npm run lint` passes (its first run stopped on the stale `code-reference.md`, which I regenerated), `npm test` **50 of 50**, `npm run build` passes (23 pages).
+6. **Android** (JDK 21, env loaded silently; no containers running): `:androidApp:assembleDebug :shared:testDebugUnitTest`: **BUILD SUCCESSFUL**, **81 tests, 0 failures, 1 skipped** (`SmokeTest` needs the test-user env). One is new: `PhotoScanTest.checkingGoesAsSoonAsTheResultIsIn`.
+7. **No emulator, device or app screenshots.** The only images I looked at were contact sheets and mask overlays of the sample and Commons test photos.
+8. **Push and CI:** pushed `4a145a2` ("V1a: color reader"). CI on the push, https://github.com/Vivek-k24/Dzirent/actions/runs/43761123988: **success, all 5 jobs** (android, contracts, vision, website, database). CI on the open `Preview` → `main` pull request, run 43761128802: success, all 5.
+
+**Timings, before and after** (local containers with Cloud Run's 2 CPUs and 4 GiB, the same 22 sample photos sent one by one after 3 warm-up scans, then the 12 listings; before = the S1 image, the deployed code; after = V1a):
+
+| | Before (`s1.1`) | After (`v1a.1`) |
+| --- | --- | --- |
+| Start-up, from `/health` | 13.2 s | 7.4 s (the first run reads the image from disk, so this mostly isn't the code) |
+| Warm single-photo scan, round trip | median 0.75 s, max 0.91 s | median 0.77 s, max 1.00 s |
+| The service's own analyze time per photo | median 732 ms, max 884 ms | median 760 ms, max 1,003 ms |
+| Sample listing (1 or 2 photos) | median 1.38 s, max 1.66 s | median 1.43 s, max 1.73 s |
+
+**Vision revision: not redeployed.**
+- `gcloud auth print-identity-token` and `print-access-token` both answer "Reauthentication failed. cannot prompt during non-interactive execution": the owner's gcloud sign-in on this PC has expired, and only the owner can renew it.
+- Cloud Run still serves **`vision-00006-sxv`** (`s1.1`, S1b). The new colors were at least as right as the old on every set, so the condition for deploying was met; only the sign-in was missing.
+- The before and after timings above come from local containers with Cloud Run's CPU and memory, not from Cloud Run.
+- **To deploy** (after `gcloud auth login`), from the repo root, the same settings as before:
+
+      gcloud run deploy vision --source services/vision --project dzirent --region us-west1 --no-allow-unauthenticated --service-account vision-runtime@dzirent.iam.gserviceaccount.com --min-instances 0 --max-instances 1 --cpu 2 --memory 4Gi --timeout 120 --concurrency 4 --set-env-vars VISION_ALLOWED_URL_PREFIXES=https://pwfzkyjeivadbtkfkdxr.supabase.co/storage/v1/object/public/listing-photos/
+
+  Then `/health` should show `v1a.1` and policy digest `fab11ee739b2e4db`, and `eval/run_eval.py` gives the deployed warm times.
+  - **Cloud Build time:** the build now embeds 2,358 prompts instead of 460, about 4 minutes on this PC.
+
+**Open issues:**
+- **Deploy** (above): the owner's `gcloud auth login`, then an agent deploys and confirms `/health` and the warm scan time on Cloud Run.
+- **Colored light with no neutral surface in view** isn't corrected. The black kimono under magenta stage light (kimono/2) reads Purple; the old reader said Black.
+- **See-through and busy pieces:** the sunglasses' lenses show the red cloth under them (Maroon); a portrait masks the face and scarf, not the dark jacket. Multicolor prints get the largest color.
+- **The fine names stay internal:** the response carries only the 15 values and `color_confidence`.
+- **Whether `color_confidence` should change anything** (for example, leaving the color out of the title under 0.5) is for the owner. Today it's only recorded.
+- **The owner's sherwani photo** wasn't available. Put it (and others) in `H:\DziRent\vision-test\should-accept` to have them in the next comparison.
+
+**Phone and website test** (owner):
+- **New listing:** add photos, Next, wait for "Your photos look good." Then Back to photos and Next again without changing them: "Checking your photos…" must go at once and must never sit next to "Filled from your photos". Also try Check again after a check finished.
+- **Colors** stay as they are until the deploy.
+
+**APK:** `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk` (97,047,399 bytes, SHA-256 `740A2F733F07D1B1…`), copied to `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk` (same size and hash; the original stays).
+
+**Mac (iPhone) check:** only common code changed: `util/PhotoScan.kt` (`checkBanner`) and `ui/ListingEditor.kt` (the request counter). Check that the framework builds and that "Checking your photos…" goes as on Android.
+
+## F1 - 2026-11-15 - owner test fixes
+
+**Before starting:** clean tree, `Preview` up to date at `a8bff17`.
+
+**Fixes, each with its cause:**
+1. **Listing draft save.**
+   - **Cause:** the website's `listings/save` ran the full publish check (`validateListing`) on every save. Next on the Photos step sends an unfinished form, so it was refused with "Choose a size." (the owner's 400). Next on the Details step would have failed the same way (size and price are step 3). An empty price was also sent as `0`, which the database's `price_usd > 0` refuses.
+   - **Fix:** a draft save never asks for a missing field. It refuses only text over its limit or unknown styles, and saves the rest empty: the placeholder title and category until the details step, size and price `null` (`listing-form.ts` `draftProblem` / `draftRow`).
+   - **Checks per step:** each step checks its own fields when the person continues: `detailsProblem` for step 2, `sizePriceProblem` at Publish (`publishProblem` = both, again on the server in `listings/finish`). Each check gives a field-level catalog message, shown under the field and at the buttons, and jumps back to that field's step. New codes **`DZ-E2070`-`E2085`** (title, category, item type, description, size, garment kind, price, price details, deposit note, retail value, accessory over $300, the accessory tick, styles, measurements, no dates, end before start); `DZ-E2010` for no photo.
+   - **Unfinished rows:** a paused row with the placeholder title, or no size or price, is "unfinished" (`isUnfinished`, the same rule as the app's `Listing.isUnfinished`). My closet shows it as Draft without the Active/Paused switch, the status route refuses to turn it on with its field's code (`activationProblem`), and the editor publishes it like a new listing. A draft reopened from the closet starts with a blank title and category; a draft's price shows empty, never "null".
+   - **Database:** it already accepted an unfinished paused row (only `title` 3-80 and `category` are required). Nothing moved there; pgTAP `14_f1` now checks it.
+   - **Android:** the same problem didn't exist: the draft row (now `draftListing`) is inserted without a size or price, and the editor already checked size and price only at Publish. Fixed the same way:
+     - each gap (`detailsMissing`, `step2Missing`) is now the catalog's message with its code and field, and shows under the title, description, price and notes fields;
+     - an unfinished row (for example one saved on the website's details step) gets no closet switch and publishes as live (`ListingPublisher.goesLive`).
+2. **No silent hangs.**
+   - **Cause:** the website's `workflow()` and the photo uploads called `fetch` without a time limit, so a stalled request left "Saving..." / "Preparing your listing..." spinning. A network error or a host error page also surfaced as raw text ("Failed to fetch", a JSON parse error).
+   - **Fix (website):** `lib/requests.ts`:
+     - every call to `/api/workflows` (`workflow()`, `workflowUpload()` for listing and condition photos, the data download) gives up after **30 s** with `DZ-E9002`;
+     - a dropped connection is also `DZ-E9002`; a non-JSON 5xx page is `DZ-E9003`;
+     - only a `WorkflowClientError` ever comes out, so every form's catch has a message. `runStep` is busy on, then the error in place and busy off on any failure.
+     - The listing editor's four server steps use it (draft save, photo upload, photo check start, publish), plus Check again. I went through the other forms (settings, studio, measurements, rentals and their condition photos, verification, payouts, closet, chat): each already catches and re-enables, and now always gets a coded message within 30 s.
+   - **Fix (apps):** the Supabase client's `requestTimeout` is 30 s (it was supabase-kt's default 10 s). More network failures map to `DZ-E9002`: connection reset, refused or aborted, network unreachable, unexpected end of stream, no address. Publish now catches every failure, so the spinner can't stay on. Tidying up after a successful publish never turns it into a failure.
+   - **Found on the way:** the website's measurements consent calls (Agree, and both Withdraw buttons) had no body, so they went out as **GET** and answered "Page not found." They are POSTs again.
+3. **Step indicator.**
+   - **Cause:** the global `button:disabled { cursor: wait }` gave steps not reached yet the wait cursor. The bar also had 2 columns for 3 steps.
+   - **Fix:** steps not reached yet are dimmed with the normal cursor, only earlier steps (`reachable`) show the pointer, and the bar has 3 columns.
+4. **Own studio.**
+   - **Website:** your own studio page (`myStudioHandle()` = the studio's handle, ignoring case) hides Save studio, the Studio options disclosure, Report this studio and Block this studio, and shows **Edit studio** (`/app/settings/studio`). The rule is `lib/studio-view.ts`.
+   - **App:** the studio screen never had Report or Block (people report from a listing's menu or the chat). Your own studio now shows **Edit studio** (opens My studio) instead of Save and Message. Your own listing already showed only Edit; both rules are now in `util/OwnActions.kt` (`studioActions`, `listingActions`) and tested. The website has no other page where you'd act on yourself (a chat is always with someone else, and the listing page has no Report).
+   - **Database (a premise only half true):** `block_user()` and `report_user()` do skip your own handle and write nothing. But the apps write `blocks` and `reports` to the tables directly, and their policies only check the blocker or reporter, so a self-block or self-report could be written there. `20261115120000_f1_no_self_block_report.sql` adds a coded refusal:
+     - the trigger `blocks_not_self` (`DZ-E3021`);
+     - a check at the end of `app_private.report_prepare` (`DZ-E5017`: about yourself, your own listing or your own message). Before applying, I confirmed the live function is byte for byte P2B's body (MD5 of `prosrc`), so only the check is added.
+     - pgTAP `14_f1` covers both paths, and that someone else can still be blocked and reported.
+5. **Dark mode.**
+   - **Cause:** the dark theme turns `--ink` near-white, but chips and pills hard-coded light backgrounds. The listing tags were 1.01:1 and the photo counter 1.10:1; the draft tag and the current step number (white on the dark theme's light pink) 2.48:1; the dark notice 1.50:1.
+   - **Fix:** theme tokens `--chip`, `--chip-ink`, `--surface`, `--on-accent`, `--tint`, in both themes, for:
+     - the listing and studio tags, filter tags, status badges (and the active one), the photo counter;
+     - the draft tag, the current step number, avatars, the hero label, the share banner, how-it-works, the "or" divider, the fit symbol;
+     - the dark notice, the photo placeholder's text (4.73:1), the active admin tab badge (6.62:1).
+   - Measured with a WCAG script: every pair is **5.22:1 or more in both themes**.
+   - **App:** its chips use Material 3 roles (style tags `onSurfaceVariant` on `surfaceVariant`, 5.8:1 light and 5.7:1 dark), and it has no photo counter (page dots), so nothing changed.
+6. **Dependabot alert 83.**
+   - `opentelemetry-api` 1.45.1 → **1.45.2** (released 2026-10-29, 17 days ago). FastAPI requires only the API; its SDK and exporter are extras the service doesn't install, so there are no companion packages to move.
+   - `pip install --no-deps` into the repo `.venv`, then `pip check`: "No broken requirements found".
+   - **Not redeployed**, because the alert closes without it: it is computed from `requirements.txt` on `main`, so it closes when the owner merges `Preview`. The running revision is not exposed in practice: FastAPI parses `traceparent` only when an OpenTelemetry provider is configured, and the vision app configures none. The next `vision` deploy picks up 1.45.2.
+
+**What I ran:**
+1. **Local backend** on the default ports (free today; no WinNAT clash), from scratch (`stop --no-backup`, `start` without Studio and the log stack): every migration including `20261115120000`, then the seed.
+2. **pgTAP:** **14 files, 442 tests, PASS** (`14_f1` 14).
+3. **Integration** (`node supabase/tests/run-all.mjs`, Node 22): **22 of 22 passed**, C6 off and on included.
+4. **Website** (Node 22): `npm test` **50 of 50** (`listing-flow.test.ts` 10: the draft with an empty size, the size message at Publish, the other step-3 codes, unfinished rows, a forced network failure and a stalled save showing `DZ-E9002` with the button back, a refusal's field and code, a host error page `DZ-E9003`, own studio without Report or Block); `tsc --noEmit` clean; `eslint` clean; `npm run build` passed. `generate.mjs --check`: 214 codes, code reference fresh.
+5. **Android** (stack stopped, no containers): `:androidApp:assembleDebug :shared:testDebugUnitTest` **BUILD SUCCESSFUL**: **80 tests, 0 failures, 1 skipped** (`ListingStepsTest` 9).
+6. **Vision** (repo `.venv`):
+   - pytest **54 passed** with the model tests (`VISION_SAFETY_DIR` = S1's built safety model); the CI form **52 passed, 2 deselected**.
+   - **Same results:** the service's own code (`Model`, `analyze_photo`, `scan`; S1's script, on S1's built assets) on the same 92 photos and 12 listings before and after the update. Image embeddings and nudity scores are **bit-identical**, and 0 of 92 photos and 0 of 12 listings changed. All 22 sample photos and all 12 listings are still allowed; should-reject is 32 rejected, 10 review, 0 allowed; the highest nudity score is 0.148 (as in S1).
+7. **Contrast:** a WCAG ratio script over the new token pairs (above).
+8. **CI:** [run 43737167391](https://github.com/Vivek-k24/Dzirent/actions/runs/43737167391) on `5c0b185`: **all 5 jobs green**. Database: pgTAP `Files=14, Tests=442`, PASS; integration 22 of 22.
+9. **Live**, after CI:
+   - **Before** (read-only, `supabase db query --linked`): 0 self-blocks, 0 self-reports, 0 paused listings without a size or price, 0 active ones (13 listings). The live `app_private.report_prepare` was exactly P2B's body (MD5 of `prosrc`).
+   - `supabase db push --linked --dry-run` listed only `20261115120000_f1_no_self_block_report.sql`; `supabase db push --linked` applied it.
+   - **After** (read-only):
+     - the trigger `blocks_not_self` exists, and `authenticated` can't execute `refuse_self_block()`;
+     - `report_prepare` has the `DZ-E5017` check, and its body equals the migration's (MD5);
+     - still 0 self rows, 13 listings; the last migration is `20261115120000`.
+   - **Security Advisor** (Supabase MCP `get_advisors`, 2026-11-15 16:52 UTC): **no new findings**. RLS enabled with no policy 19, guest definer functions 5, signed-in definer functions 78: the same as after C6.
+   - No Edge Function or vision deploy; nothing written on live except the migration.
+
+**Test counts:**
+
+| Suite | Count |
+| --- | --- |
+| pgTAP | 442 (14 files; `14_f1` 14) |
+| Integration | 22 runs (20 scripts) |
+| Shared Kotlin | 80 (1 skipped; `ListingStepsTest` 9) |
+| Website | 50 (`listing-flow.test.ts` 10) |
+| Vision | 54 with the model tests; 52 in CI |
+| Contracts | 214 codes, fresh; code reference fresh |
+
+**APK** (built 2026-11-15 10:35 local; 97,046,754 bytes):
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, replacing the C6 copy. Same size and SHA-256.
+
+**Phone and website test (owner):**
+- **Website, List a piece:**
+  - Add photos, then Next: it goes on to Details with no size asked. Next again without a title: "Title must be 3 to 80 characters. (DZ-E2070)" under the title.
+  - On step 3, Publish without a size: "Choose a size. (DZ-E2074)" under the size.
+  - With the connection off, Next shows "Can't reach the server... (DZ-E9002)" and the button comes back (after at most 30 seconds when the line just stalls).
+  - Steps not reached yet show the normal cursor.
+- **Website, My closet:** a listing left after the details step shows Draft, with Edit and no Activate.
+- **Your own studio** (website and app): Edit studio, no Save, Report, Block or Studio options. Another studio still has them on the website.
+- **Dark mode** on a listing page: the size and style chips and "1 / 2" are readable.
+- **Website, Settings > Measurements:** saving with consent (Agree) and Withdraw work.
+- **App, Create listing:** Publish without a size shows "Choose a size. (DZ-E2074)"; without a price, the message under the price field too.
+
+**iPhone, for the Mac session:** build-check the F1 common code:
+- `ui/StudioScreen.kt` (`OutlinedButton` Edit studio, `onEditStudio`), `ui/MainAppScaffold.kt`, `ui/MainScreens.kt` (`listingActions`, `isUnfinished` in the closet card);
+- `ui/ListingEditor.kt` (`showMissing`, `goesLive`, the catch-all), `ui/ListingStepDetails.kt` (price field message), `ui/ListingEditorState.kt`;
+- `util/OwnActions.kt`, `util/ListingForm.kt` (`missingField`, `draftListing`), `util/PhotoGate.kt` (`Missing` with field and code), `util/PhotoScan.kt` (`isUnfinished`), `util/ReadRetry.kt`, `data/ListingPublisher.kt`;
+- `repository/DzirentRepository.kt` (`requestTimeout` 30 s: check that uploads and Realtime on iPhone behave as before).
+
+**Open issues:**
+- **The database doesn't require a size or price to go live.** Both apps and the website check before publishing, and neither closet offers the switch for an unfinished row, but a hand-made API call could still set `status = 'active'` on one. A trigger at activation would close it. It would change several older test fixtures that insert bare active listings, so it was left for a step that may move that check (`supabase/` was limited to a server check that must move).
+- **Edge Functions not redeployed:** their bundled `_shared/error-codes.ts` now has the 18 new codes, which none of them sends. They run the 196-code catalog until the next function deploy.
+- **`--danger` is used but never defined** on the website (studio editor, chat, closet and admin error text), so its fallback `#d32f2f` is 3.7:1 on the dark background. These are form messages, not chips, so they were left out of this step's contrast fix.
+- **Editing a live listing on the website pauses it** from the Details step's save until Save changes finishes (since step 2C: "Your listing stays paused while the save is incomplete"). Leaving the editor half-way leaves it paused. The app keeps the status until Publish.
+- **Android Lint** wasn't run (the build and unit tests were).
+
+**Requests:**
+- **Owner:** merge `Preview` into `main` so Dependabot alert 83 closes (it is computed on `main`).
+
+**Before starting:** clean tree, `Preview` up to date at `187b906`. `providers.env` has `DIDIT_API_KEY` and `DIDIT_WEBHOOK_SECRET` (values never printed). Its `DIDIT_WORKFLOW_ID` is stale: it isn't one of the application's 3 workflows (read-only `GET /v3/workflows/` with the key; it lists the task's `7051bbe4-…` as "Free KYC", the default). The setting `didit_workflow_id` holds the task's id, and no code reads that env value.
+
+**Done:**
+- **Database** (`supabase/migrations/20261114100000_c6_id_verification.sql`; the 14 changed functions were built from their current bodies, with each edit asserted to apply exactly once. Follow-up `20261114110000_c6_closed_tables_rls.sql`):
+  - **Settings:** `didit_workflow_id` and `didit_application_id` (new value type `uuid`, new area `verification`, decided by the owner) and `id_verification_max_attempts` (3, 1-10), all editable on admin Settings.
+  - **Data:** `public.identity_verifications` (one row per person: status, the provider's session id, legal name, `is_adult`, attempts, reason, dates). The owner reads only `user_id`, `status`, `updated_at`, and the row is on Realtime. Closed `app_private.didit_sessions` (each session Dzirent started) and `app_private.didit_events` (event id primary key, kept 30 days, never the payload).
+  - **Badge:** `profiles.is_verified`, set from the status by a trigger and kept by a trigger against app updates. It shows through the shop window: `browse_listings`, `get_listing`, `fit_listings`, `my_saved_listings`, `get_studio` (and its listings), and `my_conversations` (`other_is_verified`).
+  - **Gate:** `app_private.require_verified` (`DZ-E6001`) on a new chat, a message and publishing, only while `verification_required` is on. It is off.
+  - **Age:** the ID's result (`age_checks` source `id_verification`) outranks the store and self-declared signals. An approved ID of someone under 18 is declined ("Under 18 (from the ID)") and blocks the account (listings paused).
+  - **Server steps** (service key only): `didit_start_prepare` / `didit_start_release` / `didit_start_record`, `didit_webhook_received`, `didit_apply_decision` (a duplicate face goes to `in_review`; an admin's decision stands), `didit_sessions_for`, `didit_forget`. `my_verification()` is for signed-in people.
+  - **Background:** outbox kind `didit_sync` (Vault `didit_sync_url` and a generated `didit_job_secret`). Cron `dzirent-didit-reconcile` runs every 10 minutes and re-checks sessions still in progress after 30 minutes, because Didit retries a webhook only twice.
+  - **Admin:** `admin_list_id_reviews` (no legal name), `admin_decide_id_verification`, `admin_reset_id_attempts` (two-step, a reason, logged). `admin_queues` counts reviews. `export_my_data` adds `id_verification`.
+  - **Follow-up:** RLS on `didit_sessions`, `didit_events` and C3's `rental_reminders`, and a pgTAP check that every table in `public` and `app_private` has RLS (Open issues).
+- **Edge Functions** (shared `_shared/didit.ts`). With either key blank, every Didit function answers 503 `DZ-E6002`.
+  - `didit-start` (start or check): `vendor_data` is always the caller, the workflow comes from the settings, and the return address is allow-listed.
+  - `didit-webhook`: checks the signature on the raw body, the body's `timestamp` within 300 s, the application id, and the event id once. It answers at once; the decision goes through the outbox.
+  - `didit-sync` (outbox secret): reads the decision and keeps only the status, legal name, 18+ result, duplicate flag and reason codes.
+  - `delete-account` deletes the person's Didit sessions and Didit user first (`DZ-E6013` when Didit can't be reached with the keys set). `export-my-data` describes the new part, plus the claims, payments and emails parts its description was missing. `admin-integrations` names "ID verification".
+- **Error codes:** `DZ-E6001`-`E6015`; 196 codes, regenerated.
+- **Website:**
+  - **Settings > ID verification** (`/app/settings/verification`): status, attempts left, and the note on what Dzirent keeps and never keeps. Verify ID goes to Didit's hosted flow. Didit shows its own consent; there is no second checkbox.
+  - **`/verify/done`:** waits on Realtime plus a 3-second poll, up to 3 minutes, then goes back to where the person was.
+  - **Badge and gate:** the Verified badge on cards, the listing byline, the studio and the chat header. On `DZ-E6001` the gate shows a Verify ID link and keeps the chat draft.
+  - **Admin:** `/admin/id-verification` (queue; Approve, Reject and Reset attempts, each with a reason), the queue count, and the `uuid` type in the settings editor.
+  - **Privacy page:** new section 6 "ID Verification" (later sections renumbered).
+- **Android** (shared Kotlin):
+  - **Screens:** Settings > ID verification and `VerificationScreen` (explainer, Didit's native SDK, "Checking…" until the result).
+  - **Gate:** a full-screen dialog over the refused action (send, publish, a new chat, re-listing from the closet) that runs it again once the person is verified.
+  - **Badge** on cards, the listing, the studio and the chat.
+  - **SDK:** `IdVerification.android.kt` uses Didit SDK 4.9.1 (`me.didit:didit-sdk` without the `didit-sdk-wallet` add-on, from Didit's Maven repository for the `me.didit` group only). `IdVerification.ios.kt` is a stub that opens the hosted page.
+- **Docs:**
+  - `contract.md`: new section 10 (statuses, data, functions, webhook, screens, runbooks for rotating the key or webhook secret and switching the gate on), plus the shop window, admin, age gate, functions table, tables and settings.
+  - `decisions.md`: "ID verification (2026-11-14)".
+  - `architecture.md`: R11, functions, 5.5, configuration names, webhooks, G9 narrowed, new G43-G45, Appendix B.
+  - `compliance.md`: 1.3a, age, the provider row, children, the biometric row, gaps 37-40.
+  - `legal-placeholders.md` section 12; `security-log.md` "ID verification (C6)"; `testing.md`.
+  - Generated: `error-codes.md` and `code-reference.md`.
+
+**What I ran:**
+1. **Local backend** on the default ports (free today), without Studio and the log stack.
+2. **pgTAP:** 13 files, **427 tests, PASS** (`13_c6` 79). After the follow-up: **428, PASS** (`01_roles_rls` 23).
+3. **Integration** (`node supabase/tests/run-all.mjs`, Node 22):
+   - First run: 21 of 22. `c1_codes_price_jobs` failed with "fetch failed" in step 4 (a stale keep-alive socket after its multi-minute retry wait) and passed when re-run alone.
+   - Both C6 runs passed:
+     - **off:** every Didit function answers `DZ-E6002`.
+     - **on** (the Didit stub): start; the status readable without the legal name; a bad signature, a stale timestamp and another application refused and not recorded; Approved → verified through the outbox with the badge and an 18+ check; the same event processed once; Declined; a duplicate face → review → admin approval and attempts reset (logged); the gate only while the flag is on; reconciliation without a webhook; Kyc Expired removes the badge; delete-account removes the Didit session and user at the stub, then the rows.
+   - After the follow-up, one full run: **22 of 22 passed** (`c1_codes_price_jobs` passed too; `c3_rentals`, which uses `rental_reminders`, and both C6 runs included).
+4. **Website** (Node 22): `npm run lint` clean (its `prelint`: 196 codes, code reference fresh); `npm test` **40 of 40** (with `verification.test.ts` and `_shared/didit.test.ts`); `tsc --noEmit` clean; `npm run build` passed.
+5. **Android** (backend stopped, no containers): `:androidApp:assembleDebug :shared:testDebugUnitTest` **BUILD SUCCESSFUL**: **71 tests, 0 failures, 1 skipped** (`VerificationTest` 7). The first build failed on JitPack-only libraries of `didit-sdk-wallet`. Didit documents that add-on as optional, so the build excludes it instead of adding JitPack.
+6. **CI:**
+   - [Run 43633867583](https://github.com/Vivek-k24/Dzirent/actions/runs/43633867583) on `125b7cc`: **all 5 jobs green**.
+   - Follow-up: [run 43636775973](https://github.com/Vivek-k24/Dzirent/actions/runs/43636775973) on `6141765`: **all 5 jobs green**. Database: pgTAP `Files=13, Tests=428`, PASS; integration 22 of 22.
+7. **Live**, after CI:
+   - `supabase db push --linked --dry-run` listed only the C6 migration; `supabase db push --linked` applied it.
+   - Secrets: `DIDIT_API_KEY` and `DIDIT_WEBHOOK_SECRET` from `providers.env`, and `DIDIT_JOB_SECRET` from Vault `didit_job_secret`. All three went through a temporary file, deleted at once, and were never printed. `secrets list` names: the three, and no `DIDIT_API_BASE`.
+   - `supabase functions deploy <name> --no-verify-jwt --use-api` for the 6 changed functions (`didit-start`, `didit-webhook`, `didit-sync`, `delete-account`, `admin-integrations`, `export-my-data`). `functions list`: 18 **ACTIVE**; the three Didit functions at v1 with `verify_jwt` false.
+8. **Live read-only checks** (`supabase db query --linked`):
+   - `identity_verifications` has exactly its 10 columns (none for a birthdate, document, address, nationality, image or IP); the 2 closed tables exist. Owner read grant: `status`, `updated_at`, `user_id`. Write grants for `anon` and `authenticated`: 0. On Realtime: yes. `profiles.is_verified` exists.
+   - The three settings are as above; `verification_required` is **false**; cron `dzirent-didit-reconcile */10 * * * *`; Vault `didit_job_secret` and `didit_sync_url`; all 11 database functions present.
+   - `authenticated` can't execute `didit_start_prepare` and can execute `my_verification`; `anon` can't execute `my_verification`.
+   - **0 rows:** verifications 0, Didit sessions 0, events 0, verified profiles 0, ID age checks 0, `didit_sync` jobs 0.
+9. **Live HTTP checks** (nothing written):
+   - `didit-webhook` unsigned, and with a wrong signature: **401 `DZ-E6007`** (so the keys are set; blank keys would answer 503 `DZ-E6002`).
+   - `didit-sync` without the outbox secret: **401 `DZ-E9004`**.
+   - `didit-start` without sign-in: **401 `DZ-E1003`**.
+10. **Security Advisor** after the deploy: 3 new findings, all expected (`my_verification` and the two admin functions). It didn't report the RLS gap; a catalog query found it, and the follow-up fixed it. Logged in `security-log.md`.
+11. **Follow-up, live** (after its CI):
+    - `db push --dry-run` listed only `20261114110000_c6_closed_tables_rls.sql`; `db push` applied it. The catalog query now finds no table in `public` or `app_private` without RLS.
+    - The 12 functions C6 didn't change were redeployed (only their bundled `_shared/error-codes.ts` was new), so all 18 run the 196-code catalog. `functions list`: all 18 **ACTIVE**, `verify_jwt` false.
+    - An unauthenticated POST to each of the 12 got its usual refusal before any work:
+      - 401 `DZ-E1003`: `admin-actions`, `delete-listing`;
+      - 401 `DZ-E9004`: `cleanup-files`, `scan-listing`, `send-email`, `send-push`;
+      - 503 `DZ-E4030`: the six `stripe-*` functions (payments off).
+    - The four Didit checks in step 9 answered the same again.
+    - Security Advisor: "RLS enabled, no policy" 19 (the three tables), guest definer 5, signed-in definer 78.
+12. Didit was called only to read the workflow list. The claude.ai Didit connector needs authorization, so it wasn't used. I used no emulator, device or browser, and created no data on live. The `on` integration run creates one throwaway account on the local stack only, for the deletion test.
+
+**Test counts:**
+
+| Suite | Count |
+| --- | --- |
+| pgTAP | 428 (13 files; `13_c6` 79, `01_roles_rls` 23) |
+| Integration | 22 runs (20 scripts); C6 off and on (Didit stub) |
+| Shared Kotlin | 71 (1 skipped; `VerificationTest` 7) |
+| Website | 40 (incl. verification rules and the Didit summary and signature tests) |
+| Contracts | 196 codes, fresh; code reference fresh |
+
+**Live test (the owner's own ID, 2026-11-15): passed.** Close-out session: clean tree, `Preview` up to date at `97f1348`. Docs only and read-only queries; no emulator, device or browser, nothing written on live.
+- **What happened** (as the owner and the coordinator reported it, matched against the Edge Function logs, read with the Supabase connector's `query_logs`):
+  - **Cause:** the first start failed with `DZ-E6006`. `didit-start` logged `provider_status` 403 because the Didit key's Sessions access was Read only. Didit's [API-keys page](https://docs.didit.me/console/api-keys): Sessions Write covers creating sessions, and a key without access gets 403. The logs hold three such starts (2026-11-14 20:54 UTC, 2026-11-15 14:32 and 14:33 UTC); each gave its attempt back.
+  - **Fix:** the owner set the key's Sessions access to Read + Write in Didit's console. It is the same key, so no secret changed: `secrets list` shows `DIDIT_API_KEY` and `DIDIT_WEBHOOK_SECRET` last set 2026-11-14 19:58 UTC (this step's deploy), and their SHA-256 digests equal `providers.env` (compared in memory, nothing printed).
+  - **Retry:** `didit-start` ok at 14:45 UTC; three signed `status.updated` webhooks (Not Started and In Progress `unchanged`, Approved `queued`); `didit-sync` `verified` at 14:47 UTC.
+  - **Account:** the sample-data test account Elena Rostova (6 listings; not an admin), verified with the owner's own ID.
+- **Read-only checks** (`supabase db query --linked`; statuses, counts and column names only, never the legal name):
+  - `identity_verifications`: **1 row**, `verified`, `is_adult` **true**, **attempts 1**, no reason. A legal name and Didit's session id are stored. Created 2026-11-14 20:54 UTC (the first start), verified 2026-11-15 14:47 UTC.
+  - **1 verified profile** (`profiles.is_verified`), the same account.
+  - **Shop window, as a guest:** `get_listing` shows the badge on all 6 of its listings; `browse_listings` (13 cards) shows it on 6 cards, all of them this account's.
+  - **1 age check from the ID:** `id_verification` / `adult` / `server`.
+  - **Didit events, once each:** 3 rows, 3 distinct event ids, no type and status repeated. 1 Didit session (`Approved`, decision checked, no admin decision). 1 `didit_sync` job, `done` on its first try, with only `session_id` in its payload.
+  - **`verification_required`: false.**
+  - **Nothing else stored:** `identity_verifications` has its 10 columns; `didit_events` and `didit_sessions` hold ids, statuses and times (no payload column); `age_checks` holds the source, result, platform and time; Storage has only `listing-photos` and `rental-photos`. No birthdate, document details, images or payloads.
+- **Re-run once after writing this:** the database query, the log query and the secrets comparison gave the same results.
+- **Docs:**
+  - `contract.md` section 10 has a runbook for `DZ-E6006`: "If didit-start logs provider_status 403, the Didit key is missing Sessions Write."
+  - The key-rotation runbook now lists the access per resource.
+  - The `didit-start` row says a refusal from Didit also gives `DZ-E6006`, not only no answer.
+  - `security-log.md` has the cause, the fix and this test.
+
+**APK** (built 2026-11-14 13:42 local; 96,005,087 bytes, up from 34,313,577 with Didit's SDK, G45):
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, replacing the C5 copy. Same size and SHA-256 (checked again before this entry).
+
+**Phone test** (`verification_required` is off, so nothing is required):
+- Settings > ID verification shows the status and Verify ID, which opens the explainer, then Didit's own screens (consent, ID photo, selfie).
+- A verified person's cards, listing, studio and chat header show "Verified".
+
+**iPhone, for the Mac session:**
+- `ui/IdVerification.ios.kt` is a stub (`available = false`): the shared screen opens Didit's hosted page in the browser, and the result arrives through the same status watch. Add Didit's iOS SDK (Swift Package in `iosApp`) behind `rememberIdVerificationLauncher` with the session token, mapping finished / cancelled / failed as Android does. Add the camera (and, if NFC is used, NFC) usage strings to `Info.plist`.
+- Build-check the C6 common code: `ui/VerificationScreen.kt` (`Dialog` with `DialogProperties(usePlatformDefaultWidth = false)`), `ui/IdVerification.kt`, `MainAppScaffold.kt` (the gate provider and the `verification` route), `ChatScreens.kt`, `ListingEditor.kt`, `MainScreens.kt`, `StudioScreen.kt`, `SettingsScreen.kt`, `model/Models.kt`, the repository's verification calls and `util/Verification.kt`.
+
+**Open issues:**
+- **RLS gap (fixed in the follow-up):** the Advisor's "RLS disabled" check covers only the schemas the API exposes, not `app_private`. A catalog query after the deploy found three tables without RLS: the two new Didit tables and C3's `rental_reminders` (logged in C3 as "privileges revoked instead"). They were closed to every API role, so nothing was reachable. All three now have RLS with no policy, and pgTAP fails if any table is without it.
+- **G43:** no face blocklist for banned people (Dzirent keeps no faces); duplicates found by Didit go to admin review.
+- **G44:** iPhone uses the hosted page until the Mac session.
+- **G45:** Didit's full SDK makes the debug APK about 96 MB (MediaPipe for 4 CPU types). Its manifest adds `RECORD_AUDIO`, `NFC` and `VIBRATE`; the app itself never asks for the microphone. Store disclosures must list them (P8A: consider `didit-sdk-core`, an App Bundle).
+- **Choices made:**
+  - An attempt counts when a session starts, so an abandoned one uses one of the 3. After 3 the screen says to contact support, and an admin can reset them (logged).
+  - A minor's approved ID is declined and blocks the account.
+  - Kyc Expired removes the badge but doesn't reset attempts.
+  - An admin's decision stands against later Didit decisions for that session.
+- **Against Didit itself** (the live test): creating the session, the signed webhook (signature, body timestamp, application id), reading the decision, and the badge. **Still only against the stub** (the documented V3 shapes): declines, duplicate faces and admin review, Kyc Expired, reconciliation, and deleting at Didit (session delete, users delete).
+- **Android Lint** wasn't run (the build and unit tests were).
+- **Unused env value:** `DIDIT_WORKFLOW_ID` in `providers.env`. No code reads it (the setting `didit_workflow_id` is used; searched again 2026-11-15), so the owner can delete the line.
+- **Flaky locally:** `c1_codes_price_jobs` (the stale socket above), not a regression signal by itself; it passed in CI.
+- **Dependabot alert 83** (open on `main`, reported by the push): `opentelemetry-api` in `services/vision/requirements.txt`, medium (denial of service through traceparent parsing), fixed in 1.45.2. Opened 2026-11-14 06:13 UTC, not caused by C6, and `services/` is outside this step's folders.
+
+**Requests:**
+- **Owner:**
+  - Delete the `DIDIT_WORKFLOW_ID` line from `providers.env` (unused).
+  - **The live test used the test account Elena Rostova.**
+    - Deleting it later through Dzirent (Settings > Delete account, on the website or in the app; that's `delete-account`) also deletes its Didit session and Didit's user record first, then Dzirent's rows.
+    - Deleting it from the Supabase dashboard skips Didit.
+    - Before deleting, check in Didit's console that the key's People (users) access is Read + Write (Sessions is now). Without it, `delete-account` answers `DZ-E6013` and keeps the account; fix the key and delete again.
+- **Owner and attorney:** `legal-placeholders.md` section 12 (the consent screen's company name, biometric consent, retention, the Terms) before `verification_required` is switched on.
+- **Root `README.md`** (product features, outside this step's folders): describe ID verification and the Verified badge.
+- **Vision service:** bump `opentelemetry-api` to 1.45.2 or later (Dependabot alert 83) in a step that may change `services/`.
+
+## C5 - 2026-11-13 - payment screens and email
+
+**Before starting:** clean tree, `Preview` up to date at `ce2f252`. No Stripe or email keys exist (`providers.env` has the three Stripe names blank and no email names).
+
+**Done:**
+- **C4 follow-ups**
+  - **Date pickers:** no availability windows = every day from today (`util/Rentals.kt` `rentalDatesProblem`, `apps/web/src/lib/rentals.ts`); the website's request form has no last day then and says "Open: any day from today". Tests on both.
+  - **Request answer time:** `rentalStatusLabel(status, iAmLender, requestHours)` on both clients uses `rental_settings().rental_request_hours`; without it the label has no number. No "48 hours" is left in client code.
+  - **Payment deadline:** setting `payment_deadline_hours` (24, 1-72 "hours after acceptance", business owner, legal pages). `rentals.payment_due_at` is fixed by a trigger when a rental starts waiting for payment. `dzirent-rental-expiry` cancels an unpaid one past it (by Dzirent, note "Not paid within 24 hours after it was accepted"), cancels an unpaid PaymentIntent, and sends `rental_cancelled` "Not paid in time" to both. A payment recorded in time is never cancelled by it.
+  - **Code reference:** `tools/gen-code-reference.py` regenerates `pranalika/code-reference.md` in the original format (rules fitted to the old file: TypeScript exactly, SQL with 5 deliberate exclusions, lines cut at 170; generated error-code copies and the city data migration left out; files from git, sorted). 339 files. `--check` runs inside `node contracts/generate.mjs --check`, which CI already runs (the `contracts` job and the website's `prelint`), because `.github/` isn't in this step's folders (Requests).
+  - **Edge Functions:** all 15 redeployed (every one imports the error catalog), so each runs the 181-code catalog.
+  - **S1 request:** the 5 `supabase/` scripts that printed a test user's email on a failed sign-in print only the HTTP status and Auth's error code.
+- **Database** (`supabase/migrations/20261113230000_c5_payment_screens_email.sql`, built from the C1/C4 function bodies with each edit asserted once):
+  - `rental_settings()` for guests and signed-in people (request hours, payment deadline, claim window, cancellation rule, fee, payments on).
+  - `rental_json` adds fee, tax, captured deposit, hold end, payment deadline, each step's time and `lender_can_take_payment`.
+  - Emails: `notification_settings.email_rentals` (default on), closed `app_private.email_messages` (template, account, rental, outcome; never text), outbox kind `send_email` and job status `skipped`, Vault `send_email_url` + generated `email_job_secret`; rental emails queued inside `queue_rental_push` after its blocked-pair check; the payment receipt by a trigger on `payment_status` paid; `queue_account_deleted_email`, `email_prepare`, `email_finish` (server key). Setting `email_log_retention_days` (30, attorney, legal pages) instead of a number in code. `export_my_data` adds the switch and the emails list; admin Background jobs counts skipped emails and names the template of a dead one.
+- **Edge Function `send-email`** with `_shared/email.ts` (one HTTPS call; `EMAIL_PROVIDER` resend or postmark, `EMAIL_API_KEY`, `EMAIL_FROM`; `EMAIL_API_URL` tests only) and `_shared/email-templates.ts` (9 templates, plain HTML and text, Dzirent's burgundy look, values escaped, only a fixed list of fields). Key blank: the email is marked skipped before anything is read, 200, and the outbox marks the job skipped. `delete-account` queues the account-deleted email after the deletion.
+- **Auth email templates:** `supabase/templates/confirmation.html`, `recovery.html`, `email_change.html` in the same look, in `config.toml` for the local stack only. No live Auth setting changed; the runbook is `contract.md` section 9.
+- **Payment screens, Android** (shared Kotlin; hidden while payments are off):
+  - Rules in `util/Rentals.kt`: `PaymentFacts`, payment-aware `rentalActions` (Pay, Place deposit hold and mark picked up, File a claim, Accept / Dispute the claim, Receipt), labels for every payment state, `depositLine`, `claimLine`, claim limits (`claimAmountProblem` etc.), `parseDepositAmount`, `rentalReceipt`, `payoutState`.
+  - `ui/RentalViews.kt`: payment lines on the card (pay-by time, the lender's `DZ-W4001` notice, deposit "held, not charged", claim window end, claim, refund), Pay, Claim, Claim answer and Receipt dialogs. `ui/ChatScreens.kt` wires them: Pay → the pay dialog (saved-card consent) → `stripe-pay` → Stripe's PaymentSheet; Place hold → `stripe-deposit`.
+  - `ui/PaymentSheet.kt` (`expect`), `PaymentSheet.android.kt` (Stripe Android SDK `com.stripe:paymentsheet` 21.29.2, pinned in `libs.versions.toml`), `PaymentSheet.ios.kt` (a stub: "Pay on dzirent.com", `DZ-E4049`).
+  - My studio > Payouts (`PayoutsSection`): status from `payout_accounts`, "Set up payouts" opens Stripe's onboarding in the browser, refreshed with `stripe-account-status` when the app resumes.
+  - Listing editor: optional "Deposit ($)" while payments are on (`DZ-E4051`), saved with the listing and in drafts. Settings > Notifications: "Email me about rentals".
+- **Payment screens, website** (same rules in `lib/rentals.ts`): `components/rental-card.tsx` (payment lines and actions; claim form with return photo picks, claim answer, receipt), `components/payouts.tsx` on Settings > My studio (`/app/settings/payouts` opens it too, Stripe's default return), the deposit field in the listing editor, the email switch in Settings, and the pay page `app/app/pay/[id]` + `components/pay-form.tsx` (Stripe's Payment Element through `@stripe/stripe-js/pure` 9.17.0, `confirmPayment` with `redirect: "if_required"`; wallets off). The Pay button and the way back are plain links (full page loads). `next.config.ts` gives `/app/pay/:path*` its own CSP with Stripe's domains; every other page keeps the strict one (checked on the production server, below). New workflow routes: `chat/<id>/rental_hold`, `rental_claim`, `rental_claim_answer`, `pay`, `payouts/link`, `payouts/status`. Admin Background jobs shows the Emails kind and skipped counts. Privacy page: the emails, what they contain, the switch, what is kept (no company names).
+- **Error codes:** `DZ-E4049` (no payment sheet on this phone), `DZ-E4050` (payment didn't go through), `DZ-E4051` (deposit amount), `DZ-W4001` (set up payouts first); 181 codes, regenerated.
+- **Docs:** `contract.md` (sections 5-8 updated, section 7 "Screens (C5)", new section 9 Email with both runbooks), `decisions.md` ("Payments screens (2026-11-13)", "Email (2026-11-13)"), `architecture.md` (G4, G32, G35, G37, G38 updated; new G39-G42; 5.5; Appendix A status), `compliance.md` (1.11a emails, notification settings, the email service row, gap 34 progress, new gaps 35-36), `legal-placeholders.md` (payment deadline in section 10, new section 11 Emails), `security-log.md` ("Payments screens (C5)", "Email (C5)"), `testing.md`, `error-codes.md` (generated), `code-reference.md` (generated), and the rehearsal checklist `pranalika/stripe-rehearsal.md`.
+
+**What I ran:**
+1. **Local backend.** Windows again reserved 54243-54342, so the stack ran on 55xxx (`SUPABASE_*_PORT` in the same shell; no repo change), without Studio and the log stack.
+2. **pgTAP:** on the first stack, the 11 earlier files passed with the new migration (294), then `12_c5` (53). After renaming the migration to today's date and adding `email_log_retention_days`, a **fresh stack** (`supabase stop --no-backup`, `start`): **12 files, 348 tests, PASS** (`12_c5` 54).
+3. **Integration** (`node supabase/tests/run-all.mjs`, Node 22): on the first stack **20 of 20 passed** (19 scripts; the new `c5_payments_email.mjs` with 7 Stripe calls through stripe-mock, all accepted; 6 emails queued, all skipped `not_configured`, their jobs `skipped`). On the fresh stack 18 of 20: Docker restarted mid-run (I was running the website build and a production server at the same time; the containers I had left out came back up and the stubs, stripe-mock and functions containers were gone), so `c4_payments` failed on a socket error and `c5_payments_email` on a database connection. I stopped the extra containers and re-ran those two once: **2 of 2 passed**.
+4. **Fixes found locally:** a `waitFor` with `await` inside a non-async arrow (syntax), a PowerShell `Set-Content` BOM on the new pgTAP file (removed), the "unused eslint-disable" warnings, `Stripe` types imported from `@stripe/stripe-js` instead of `/pure`, and the pay page calling a client-module function on the server (moved into `PaySummary`). One Gradle run failed on DNS ("No such host is known" for the Maven repositories); the re-run worked.
+5. **Website** (Node 22): `npm run lint` clean (its `prelint` ran both freshness checks: 181 codes, code reference up to date); `npm test` **27 of 27** (13 in `rentals.test.ts`, 5 in the email template test); `tsc --noEmit` clean; `npm run build` passed (`/app/pay/[id]` listed). `next start` of that build: `/app/pay/<id>` sends a CSP with `js.stripe.com` in `script-src`, `hooks.stripe.com` in `frame-src` and `api.stripe.com` in `connect-src`; `/app/messages` and `/` have none of them.
+6. **Lockfile:** `npm install` rewrote about 4,200 lines of `package-lock.json` (this npm re-hoists the v1 lockfile), so I restored it and added only the `@stripe/stripe-js` 9.17.0 entry (5 lines, integrity from the registry); `npm ci` installed from it cleanly.
+7. **Android** (backend stopped, no containers; JDK 21, env loaded silently, `GOOGLE_SERVICES_JSON` set): `:androidApp:assembleDebug :shared:testDebugUnitTest` **BUILD SUCCESSFUL**. **64 tests, 0 failures, 1 skipped**, `RentalRulesTest` 14 (6 new). One warning: Stripe's `rememberPaymentSheet` is deprecated in favour of `PaymentSheet.Builder` (open issues).
+8. **CI:** [run 43554529600](https://github.com/Vivek-k24/Dzirent/actions/runs/43554529600) on `6ec9591`, **all 5 jobs green**: contracts (with the code-reference check), website, android, vision, database (pgTAP 348 PASS; integration 20 of 20, C4 18 and C5 7 Stripe calls through stripe-mock).
+9. **Live**, after CI:
+   - `supabase db push --linked --dry-run` listed only the C5 migration; `supabase db push --linked` applied it.
+   - `supabase functions deploy <name> --no-verify-jwt --use-api` for all 15 functions; `functions list`: all 15 **ACTIVE**, each updated in the same minute, `send-email` v1, `verify_jwt` false.
+   - `EMAIL_JOB_SECRET` set from Vault `email_job_secret` (64 characters) through a temporary file, deleted at once, never printed. `secrets list` names: no `EMAIL_API_KEY`, no `STRIPE_*`.
+10. **Live read-only checks** (`supabase db query --linked`, two HTTP calls that write nothing):
+    - Settings: 30; `payment_deadline_hours` 24 (1-72, "hours after acceptance", business owner, payments, legal pages); `email_log_retention_days` 30 (7-365, attorney, retention, legal pages). `payments_enabled` **false**.
+    - Cron: `dzirent-rental-expiry */10 * * * *` (it now runs the payment deadline too), `dzirent-async-jobs * * * * *`, `dzirent-deposit-holds 45 9 * * *`, `dzirent-rental-reminders 0 15 * * *`, the two cleanup jobs.
+    - **0 payment and email rows:** email messages 0, `send_email` jobs 0, rentals 0 (0 with a deadline), payout accounts 0, customers 0, claims 0, payment events 0, operations 0, card disputes 0, listings with a deposit 0.
+    - Present: the 8 new functions, the 2 triggers, `notification_settings.email_rentals` and `rentals.payment_due_at`, the outbox `send_email` kind and `skipped` status, Vault `send_email_url` and `email_job_secret`. `anon` can execute `rental_settings()`; `authenticated` can't execute `email_prepare`.
+    - `POST /functions/v1/send-email` without the secret: **401 `DZ-E9004`**. `rental_settings` as a guest: payments off, request 48 h, deadline 24 h, claim window 48 h.
+11. **Security Advisor:** two new findings, both expected (`email_messages` closed; `rental_settings()` public on purpose), logged in `security-log.md`.
+12. I used no emulator, device or browser, created no data on live, and called neither Stripe nor an email provider.
+
+**Test counts:**
+
+| Suite | Count |
+| --- | --- |
+| pgTAP | 348 (12 files; `12_c5` 54) |
+| Integration | 20 runs (19 scripts); C5 7 Stripe calls through stripe-mock |
+| Shared Kotlin | 64 (1 skipped) |
+| Website | 27 (incl. 5 email template tests) |
+| Contracts | 181 codes, fresh; code reference fresh |
+
+**APK** (built 2026-11-13 21:58 local; 34,313,577 bytes, up from 23,463,660 with the Stripe SDK):
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, replacing the C4 copy. Same size and SHA-256.
+
+**Stripe rehearsal checklist:** `pranalika/stripe-rehearsal.md` (payouts, pay on Android and the website with 3-D Secure and a decline, the payment deadline, the hold, a disputed claim, receipts, refunds, a card dispute, the CSP, switching off afterwards). The runbook in `contract.md` section 7 points to it.
+
+**Phone test** (payments are off, so almost nothing changes): a listing with no availability windows can now be requested for any day from today; a lender's request card says "answer within 48 hours" (from the server); Settings > Notifications has "Email me about rentals"; the app is larger (Stripe SDK). The payment screens appear only during the rehearsal, with payments switched on.
+
+**iPhone, for the Mac session:**
+- `ui/PaymentSheet.ios.kt` is a stub (`available = false`; Pay shows "Pay on dzirent.com (DZ-E4049)"). Add the Stripe iOS SDK (`StripePaymentSheet`, Swift Package in `iosApp`) and present `PaymentSheet` with the client secret and publishable key behind `rememberPaymentSheetLauncher`, mapping completed / canceled / failed as Android does.
+- Build-check the common code: `util/Rentals.kt`, `ui/RentalViews.kt` (new dialogs, `FilterChip` with a leading thumbnail), `ui/ChatScreens.kt`, `ui/MyStudioScreen.kt` (`LocalUriHandler`, `LifecycleResumeEffect` for the payouts refresh), the listing editor's deposit field, `model/Models.kt`, the repository's new calls.
+
+**Open issues:**
+- **Not exercised against Stripe:** the payment sheet and Payment Element need test keys (G38); the checklist covers them. stripe-mock showed only that the client secret and publishable key come back.
+- **Deprecation:** `rememberPaymentSheet` (21.29.2) still works but is deprecated for `PaymentSheet.Builder`; switch when the SDK is next upgraded (the 22.x/23.x lines need newer Kotlin and Compose, G27).
+- **Choices made:**
+  - The app's payout onboarding returns to the website's My studio (`https://dzirent.com/app/settings/studio?payouts=return`); the app refreshes when it resumes. `/app/settings/payouts` (Stripe's default in `stripe-onboard`) opens the same page.
+  - Rental emails follow the push rules for blocked pairs (no email between blocked people, claims included); the receipt and the account-deleted email don't depend on blocks. Cancels, expiries, completion and hold renewals send no email (not in the list).
+  - The account-deleted email is always sent (no account left to hold the switch); its address sits in `email_messages` until it finishes (G42, compliance gap 35).
+  - "Email me about rentals" shows now although nothing is sent while the key is blank: it is stored for when email is switched on.
+  - **Added:** the email record retention is a setting (`email_log_retention_days`, 30, attorney) rather than a number in code, as the decisions require for retention periods.
+  - Wallet buttons (Apple Pay / Google Pay) are off on both sheets, so `Permissions-Policy: payment=()` stays.
+- **`legal-placeholders.md`:** the file ended with two stray lines (`</content>`, `</invoke>`) from an earlier session's tool call; I removed them so the new rows sit in their tables.
+- **Docker on this PC:** with 16 GB, running the website build next to the full local stack restarted Docker. Run one heavy job at a time.
+
+**Requests:**
+- **CI (`.github/workflows/ci.yml`, outside this step's folders):** the code-reference check runs inside `node contracts/generate.mjs --check` (the `contracts` job and the website's `prelint`). A separate step (`python3 tools/gen-code-reference.py --check`) would make its failure easier to read.
+- **Root `README.md`** (product features, outside this step's folders): describe paying in the app, deposits, claims, receipts and rental emails once payments go live.
+## C4 - 2026-11-13 - payments backend
+
+**Before starting:** clean tree, `Preview` up to date at `4919df2`. The live project had 0 rentals and 18 settings, all within the new ranges.
+
+**Done:**
+- **Settings (Part 6)** (`supabase/migrations/20261113200000_c4_settings.sql`):
+  - `app_private.settings` now has `label`, `area`, `value_type`, `unit`, `min_value`, `max_value`, `choices`, `decided_by` (owner / business owner / attorney) and `affects_terms`; `note` is the plain description. A trigger refuses a wrong type (`DZ-E5072`) or an out-of-range value (`DZ-E5070`) for every writer, migrations included.
+  - 10 new settings (28 in all): the payment rules (`platform_fee_percent` 0, `claim_window_hours` 48, `cancellation_refund_cutoff_hours` 48, `late_cancellation_refund_percent` 0, `sales_tax_enabled` off, `deposit_hold_warning_hours` 24), `rental_autocancel_days` 2, `rental_reminder_hour` 9, `rental_timezone` America/Chicago, `data_export_interval_hours` 24.
+  - Moved out of code: Austin time (`rental_today`), the 9 AM cron (now scheduled from the hour and time zone, rescheduled after each run so daylight saving is right, and on every change), the "48 hours" expiry note, the once-a-day export window, and the hardcoded fallbacks (48, 3, 365). Typed readers `setting_int/num/bool/text` raise `DZ-E9020` when a setting is missing.
+  - `admin_list_settings()` and `admin_set_setting(key, value, reason)` (two-step, a reason, logged with old and new value).
+- **Payments and the C3 follow-ups** (`supabase/migrations/20261113210000_c4_payments.sql`):
+  - Data: `listings.deposit_amount`; `stripe_customers` (owner sees only that it exists); `payout_accounts` (owner reads); rental payment columns (`payment_intent_id`, `payment_status`, `fee_amount`, `tax_amount`, `refund_amount`, `deposit_amount` snapshot, `deposit_intent_id`, `deposit_status`, `deposit_capture_before`, `deposit_captured_amount`, `claim_window_ends_at`); `rental_claims`; closed `app_private.payment_events` (event id unique, payload hash only), `payment_operations` (each money step, key `dz-op-<id>`), `card_disputes`, `rental_payment_methods`. No card or bank data anywhere.
+  - State rules (only with `payments_enabled` on): accept -> `awaiting_payment`; succeeded webhook -> `paid`; pickup needs the hold when there is a deposit (`DZ-E4033`); return with a hold -> `returned` and the claim window; no claim by its end -> released, completed; accepted claim -> captured; disputed -> admin decides. Without a deposit the rental completes at return, as before.
+  - Follow-ups: automatic cancel 2 days after the start (with the refund rule), no-window listings requestable, `rental_cancelled` / `rental_expired` pushes (plus `claim_filed`, `claim_decided`, `deposit_hold_ending`), `admin_end_rental`.
+  - Claims: `file_claim`, `respond_claim`, `admin_decide_claim`; admin `admin_refund_rental`, `admin_payments_overview`, `admin_record_integrations_check`.
+  - Cancellation rule: full refund until 48 hours before the start (rental time zone), then 0% of the price; a lender cancellation refunds in full; a payment that arrives after the rental ended is refunded in full.
+  - The outbox gained `stripe_deposit` and `stripe_refund` (Vault `stripe_deposit_url`, `stripe_refund_url`, `payments_job_secret`); a dead payment job marks its step failed. `dzirent-deposit-holds` nightly at 09:45 UTC renews holds that end within a day while the piece is out.
+  - `export_my_data` adds claims, the payment states and the payout account status.
+- **Edge Functions:** `stripe-onboard`, `stripe-account-status`, `stripe-pay`, `stripe-deposit`, `stripe-refund`, `stripe-webhook`, `admin-integrations`; shared `_shared/stripe.ts` (fetch, form encoding, idempotency keys, signature check on the raw body, API version pinned `2024-06-20`) and `_shared/payments.ts`. Every one answers 503 `DZ-E4030` "Payments aren't available yet." while `payments_enabled` is off or any of the three keys is blank, before anything else. `send-push` accepts the 5 new kinds.
+- **Error codes:** `DZ-E4030`-`E4048`, `DZ-E5070`-`E5086`, `DZ-E9020`; 177 codes, regenerated.
+- **Website (admin and text only):** `/admin/payments` (claims with evidence photos and Decide, card disputes, failed payments, failed payment steps, payout problems, paid rentals with Refund; each with a reason and a confirmation), `/admin/settings` (grouped, Edit, "From ... to ..." confirmation, a legal-pages warning on fee, refunds, claim window and the retention periods the privacy page names), `/admin/integrations` ("configured" / "not configured" only), "End rental..." in Users > Show rentals, the payments flag's warning, the Background jobs page's new kinds. Privacy page: a payment processor handles payments and payouts; Dzirent never stores card or bank details (no company names).
+- **Apps:** no screen change was needed: the 4 payment states already had neutral labels and no payment actions (C3). New tests pin that on both clients. The generated error catalog changed, so the APK was rebuilt.
+- **Tests and CI:** pgTAP `11_payments` (113 tests); integration `c4_payments_off.mjs` (keys blank) and `c4_payments.mjs` (stripe-mock, signed events); the stub server passes `/stripe/...` to stripe-mock and records each call, replaying a repeated idempotency key like Stripe; `run.mjs` starts stripe-mock (pinned by digest); `run-all.mjs` serves the functions itself with a known env file per script; CI runs stripe-mock as a service container joined to the local network.
+- **Docs:** `contract.md` (section 6 follow-ups and pushes, new section 7 Payments with the keys runbook, section 8 Settings and integrations), `decisions.md` ("Rentals follow-ups", "Payments", "Settings", all 2026-11-13), `architecture.md` (R12, functions, configuration names, G8 and G30-G33 closed or narrowed, new G35-G38, Appendix A status), `compliance.md` (1.8a payments inventory, Stripe row, schema map, gaps 33-34), `legal-placeholders.md` (section 10, payment settings), `testing.md`, `security-log.md`, `error-codes.md` (generated).
+
+**What I ran:**
+1. **Local backend.** Windows had reserved ports 54243-54342 (WinNAT), so I started the stack on 55xxx with the CLI's `SUPABASE_*_PORT` overrides in the same shell (no repo change; noted in `testing.md`).
+2. **pgTAP:** all 11 files, **294 tests, PASS** on a fresh stack and again on the used database. The new `11_payments` has 113 tests; the 181 earlier ones were unchanged.
+3. **Integration** (`node supabase/tests/run-all.mjs`, Node 22): **19 of 19 passed** on a fresh stack (16 Stripe calls through stripe-mock, all accepted). I then added the deposit-renewal checks (3 pgTAP, and a step in `c4_payments.mjs`) and re-ran pgTAP (294, PASS) and the two C4 scripts (2 of 2 passed); CI ran everything again (item 7).
+4. **Fixes found locally before CI:**
+   - stripe-mock 0.206 doesn't accept `payment_method_types` on PaymentIntents. I switched to `automatic_payment_methods` with `allow_redirects: never`, which also lets the card be reused off-session.
+   - The lender's hold carried no `rental_id` metadata (`payment_deposit_prepare` didn't return it).
+   - `run-all.mjs`: on Windows, killing the CLI's shell left `functions serve` running with the previous env file. `c4_payments_off` caught that: keys blank, but onboarding answered 200. The runner now always serves the functions itself and removes the container at the end. Its readiness check no longer counts the gateway's own 503 ("name resolution failed").
+   - The stub server answers `Connection: close`; a reused keep-alive socket gave `UND_ERR_SOCKET` after long waits.
+   - Test fixes: overlapping fixture dates, ties on `created_at` inside one transaction, and a closed-table read under the signed-in role.
+5. **Android** (backend stopped; JDK 21, env loaded silently): `:androidApp:assembleDebug :shared:testDebugUnitTest`, **BUILD SUCCESSFUL**. **58 tests, 0 failures, 1 skipped**, including `RentalRulesTest` (8, 1 new).
+6. **Website** (Node 22): `npm test` **16 of 16** (3 new in `admin-settings.test.ts`, 1 in `rentals.test.ts`). `npm run lint` was clean after one alt-text fix; `tsc --noEmit` clean; `npm run build` passed.
+7. **CI:** [run 43536660928](https://github.com/Vivek-k24/Dzirent/actions/runs/43536660928) on `cd78cdc`, **all 5 jobs green**. stripe-mock ran as a service container joined to the local network. pgTAP 294, integration 19 of 19 (18 Stripe calls), website 16.
+8. **Live**, after CI:
+   - `supabase db push --linked` (dry run first): both C4 migrations applied.
+   - `supabase functions deploy` for `send-push`, `stripe-onboard`, `stripe-account-status`, `stripe-pay`, `stripe-deposit`, `stripe-refund`, `stripe-webhook` and `admin-integrations` (`--no-verify-jwt --use-api`): all 8 deployed.
+   - `PAYMENTS_JOB_SECRET` set from Vault `payments_job_secret` through a temporary file (deleted, never printed).
+9. **Live read-only checks** (`supabase db query --linked`, `functions list`, `secrets list`):
+   - 28 settings, all with metadata (payments 6, rentals 5, rate limits 7, retention 10), with the defaults above. `payments_enabled` is **false**.
+   - Cron: `dzirent-deposit-holds 45 9 * * *`, `dzirent-rental-expiry */10 * * * *`, `dzirent-rental-reminders 0 15 * * *` (9 AM Chicago in winter, computed).
+   - All 7 new tables exist, with **0 payment rows** (customers, payout accounts, claims, events, operations, disputes, card references, rentals with a Stripe id) and 0 listings with a deposit.
+   - The 3 Vault names are present. There is one read policy each on the new public tables and 0 write grants.
+   - The 14 new functions exist, and the outbox accepts `stripe_deposit` and `stripe_refund`.
+   - 14 Edge Functions are active. The only payment secret set is `PAYMENTS_JOB_SECRET`: no `STRIPE_*`.
+   - One POST to the live `stripe-webhook` answered **503 `DZ-E4030` "Payments aren't available yet."**, and nothing was written.
+10. **Security Advisor:** only expected findings, logged in `security-log.md`.
+11. I used no emulator, device or browser, created no test data on live, and called the real Stripe API never.
+
+**Test counts:**
+
+| Suite | Count |
+| --- | --- |
+| pgTAP | 294 (11 files; `11_payments` 113) |
+| Integration | 19 runs (18 scripts), 18 Stripe calls through stripe-mock |
+| Shared Kotlin | 58 (1 skipped) |
+| Website | 16 |
+| Contracts | 177 codes, fresh |
+
+**APK** (built 2026-11-13 18:45 local; the app changed only through the generated error catalog):
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, replacing the C3 copy. Both are 23,463,660 bytes with the same SHA-256.
+
+**Phone test:** nothing changes for people while payments are off. A cancel now sends "… cancelled the rental" to the other person, and an unanswered request sends "Rental request expired" to both. The website admin has new pages: Payments (empty), Settings (try a change and see the confirmation and the audit log) and Integrations (everything "not configured" except what the server has).
+
+**Placeholders for the business owner and the attorney** (`legal-placeholders.md` section 10; the Terms must state them before payments go live):
+- Fee 0%; claim window 48 hours; full refund until 48 hours before the start, then 0%; a lender cancel is always a full refund.
+- Automatic cancel 2 days after the start, counted as a late renter cancellation (the BO may want a different rule when the lender is at fault; an admin can refund by hand).
+- Sales tax off ($0 hook).
+- Hold renewal 24 hours before it ends.
+- Consent wording for charges to a saved card (deposit hold, a claim after the hold ends).
+- The processor's name for the Terms. The privacy page says "a payment processor".
+- Payment record retention after account deletion (`compliance.md` gap 33).
+- `PRIVACY_VERSION` bump (G34).
+
+**iPhone, for the Mac session:** only common code changed: the generated `ErrorCodes.kt` and one test in `RentalRulesTest.kt`. No iOS code changed.
+
+**Open issues:**
+- **Deviation: a fourth, optional key.** Stripe signs Connect events (`account.updated` for lenders' accounts) with a separate endpoint secret, so `stripe-webhook` also accepts `STRIPE_CONNECT_WEBHOOK_SECRET` when it is set. Without it, `stripe-account-status` refreshes a lender's account on return from onboarding. The Integrations page needs only the three keys (plus `PAYMENTS_JOB_SECRET`).
+- **Deviation: renewal only while picked up.** The nightly job renews a hold only while the rental is `picked_up`, as asked. If a hold ends after the return, during the claim window or a dispute, a capture falls back to an off-session charge on the saved card for the decided amount (never above the deposit).
+- **Choices made for the spec:**
+  - A rental without a deposit completes at return, even with payments on (no claim window: claims draw only on a deposit).
+  - Admins can decide an open claim too, not only a disputed one (for a renter who never answers); there is no answer deadline yet.
+  - An automatic cancel follows the late-cancellation rule.
+- **Not tested against real Stripe** (G38). stripe-mock keeps no state, so every Stripe status change in the tests came from signed events. 3-D Secure, declines and real Connect onboarding are unverified until the test-mode rehearsal in the runbook.
+- **No payment deadline** (G37): an `awaiting_payment` rental holds its days until the automatic cancel.
+- **The apps' text "answer within 48 hours"** is written in the clients and doesn't follow `rental_request_hours`.
+- **Left in code on purpose:** the outbox retry schedule, the admin two-step freshness (24 hours), the photo-check timeout, cron cadences, Stripe's 5-minute signature tolerance and the 7-day hold fallback. The `get_studio` reply-time window (90 days) and the `record_age_check` hour are not business rules either.
+- **Not regenerated:** `code-reference.md` (no generator in the repo).
+- **Edge Functions not redeployed:** the others use `_shared/error-codes.ts`, but their codes are unchanged, so they still run the older catalog copy until their next deploy.
+- **Request from S1** (email in sign-in errors in `supabase/` scripts): still open.
+
+**Requests:**
+- **No-window listings in the date pickers.** `rentalDatesProblem` in `mobile/shared/.../util/Rentals.kt` and `apps/web/src/lib/rentals.ts` still treats "no availability windows" as closed (`windows.isEmpty() ||` / `!windows.length ||`). The server now accepts any future dates for such a listing, so those checks should read "no windows = every day open". That's one line each, plus their tests. It was outside this step's client scope ("only what new rental states need to display safely").
+
 ## C3 - 2026-11-13 - rental lifecycle
 
 **Before starting:** clean tree, `Preview` up to date at `442ac3e`. The live project had 0 rental rows, so mapping old rows touched nothing there.

@@ -59,6 +59,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * A message for the person, safe to show. [field] is the input a refusal is about (the database's
@@ -71,6 +72,9 @@ class DzirentException(message: String, val field: String? = null, val code: Str
 
 /** What the chat shows when the two people are blocked (DZ-E3005). */
 val CANT_MESSAGE_USER: String = ErrorCatalog.shown("DZ-E3005").text
+
+/** C5: where Stripe's onboarding sends a lender back (the website's My studio; the app refreshes on return). */
+private const val PAYOUTS_RETURN_URL = "https://dzirent.com/app/settings/studio"
 
 /** Storage's own refusals for listing-photos (P5A: JPEG, PNG or WebP, at most 10 MB), as catalog codes. */
 internal fun storageRefusal(statusCode: Int?, raw: String): String? {
@@ -98,7 +102,10 @@ internal fun clientErrorCode(raw: String): String? {
         "already registered" in said || "already been registered" in said || "user_already_exists" in said -> "DZ-E1006"
         "password should" in said || "weak_password" in said -> "DZ-E1007"
         "rate limit" in said || "too many requests" in said -> "DZ-E1008"
-        "unable to resolve host" in said || "failed to connect" in said || "timeout" in said || "timed out" in said -> "DZ-E9002"
+        // F1: every way a call can fail without an answer (offline, a dropped connection, the time limit).
+        "unable to resolve host" in said || "failed to connect" in said || "timeout" in said || "timed out" in said ||
+            "connection reset" in said || "connection refused" in said || "connection abort" in said ||
+            "network is unreachable" in said || "unexpected end of stream" in said || "no address associated" in said -> "DZ-E9002"
         "row-level security" in said || "permission denied" in said || "jwt" in said -> "DZ-E1002"
         else -> null
     }
@@ -106,6 +113,9 @@ internal fun clientErrorCode(raw: String): String? {
 
 /** How often the editor asks for a scan's state when Realtime hasn't sent it. */
 private const val SCAN_POLL_MS = 4_000L
+
+/** C6: how often "Checking..." asks for the ID check's status when Realtime hasn't sent it. */
+private const val VERIFICATION_POLL_MS = 3_000L
 
 /** Live chat subscription handle. */
 @Serializable
@@ -163,6 +173,9 @@ fun createDzirentSupabaseClient(
         supabaseUrl = url,
         supabaseKey = key
     ) {
+        // F1: one call gives up after 30 seconds (was the library's 10): long enough for a photo
+        // upload on a slow connection, and the step shows DZ-E9002 instead of waiting forever.
+        requestTimeout = ReadRetry.REQUEST_TIMEOUT_MS.milliseconds
         defaultSerializer = KotlinXSerializer(
             Json {
                 ignoreUnknownKeys = true
@@ -751,6 +764,7 @@ class DzirentRepository(
                     put("messages", settings.messages)
                     put("show_message_text", settings.showMessageText)
                     put("rental_reminders", settings.rentalReminders)
+                    put("email_rentals", settings.emailRentals)
                 }
             )
         } catch (e: Exception) {
@@ -1026,6 +1040,8 @@ class DzirentRepository(
                     put("price_note", listing.priceNote)
                     put("retail_value", listing.retailValue)
                     put("deposit_note", listing.depositNote)
+                    // C5: the optional deposit held at pickup (the editor shows it only while payments are on).
+                    put("deposit_amount", listing.depositAmount)
                     put("listing_styles", JsonArray(listing.listingStyles.map { JsonPrimitive(it) }))
                     put("garment_type", listing.garmentType)
                     // Only ever set here; a trigger keeps owners from clearing it.
@@ -1409,6 +1425,187 @@ class DzirentRepository(
         throw fail(doing, e)
     }
 
+    // --- C5: payments (the screens; every step is decided on the server) ---
+
+    private var cachedRentalSettings: RentalSettings? = null
+
+    /** The rules the screens show (request answer time, payment deadline, payments on or off). */
+    suspend fun rentalSettings(refresh: Boolean = false): RentalSettings {
+        if (!refresh) cachedRentalSettings?.let { return it }
+        return try {
+            val element = postgrest.rpc("rental_settings").decodeAs<JsonElement>()
+            rentalJson.decodeFromJsonElement(RentalSettings.serializer(), element).also { cachedRentalSettings = it }
+        } catch (e: Exception) {
+            throw fail("load the rental rules", e)
+        }
+    }
+
+    /** My payout account as Dzirent last saw it (payout_accounts, owner read), or null. */
+    suspend fun myPayoutAccount(): PayoutAccount? {
+        val uid = requireUserId()
+        return try {
+            postgrest.from("payout_accounts")
+                .select(Columns.list("charges_enabled", "payouts_enabled", "details_submitted")) { filter { eq("user_id", uid) } }
+                .decodeSingleOrNull<PayoutAccount>()
+        } catch (e: Exception) {
+            throw fail("load your payouts", e)
+        }
+    }
+
+    /** A new Stripe onboarding link for my payouts (stripe-onboard). Opened in the browser. */
+    suspend fun payoutSetupLink(): String {
+        val response = try {
+            functions.invoke("stripe-onboard", buildJsonObject {
+                put("return_url", "$PAYOUTS_RETURN_URL?payouts=return")
+                put("refresh_url", "$PAYOUTS_RETURN_URL?payouts=refresh")
+            })
+        } catch (e: Exception) {
+            throw fail("open the payout set-up", e)
+        }
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E4036")
+        return (body["url"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.startsWith("https://") }
+            ?: throw DzirentException(ErrorCatalog.shown("DZ-E4036"))
+    }
+
+    /** Asks Stripe for my payout account now (stripe-account-status), e.g. back from onboarding. */
+    suspend fun refreshPayoutAccount(): PayoutAccount? {
+        val response = try {
+            functions.invoke("stripe-account-status", buildJsonObject {})
+        } catch (e: Exception) {
+            throw fail("check your payouts", e)
+        }
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E4036")
+        val account = body["account"] as? JsonObject ?: return null
+        return rentalJson.decodeFromJsonElement(PayoutAccount.serializer(), account)
+    }
+
+    /** The renter's payment: the client secret for Stripe's payment sheet (stripe-pay). */
+    suspend fun startPayment(rentalId: String): PaymentStart {
+        val response = try {
+            functions.invoke("stripe-pay", buildJsonObject { put("rental_id", rentalId) })
+        } catch (e: Exception) {
+            throw fail("start the payment", e)
+        }
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E4036")
+        val secret = (body["client_secret"] as? JsonPrimitive)?.contentOrNull
+        val key = (body["publishable_key"] as? JsonPrimitive)?.contentOrNull
+        if (secret.isNullOrBlank() || key.isNullOrBlank()) throw DzirentException(ErrorCatalog.shown("DZ-E4036"))
+        return PaymentStart(secret, key, (body["amount"] as? JsonPrimitive)?.doubleOrNull)
+    }
+
+    /**
+     * The lender places the deposit hold at pickup (stripe-deposit "place"): "picked_up" when the
+     * hold is in place (the rental is marked picked up too), "pending" while Stripe confirms it.
+     */
+    suspend fun placeDepositHold(rentalId: String): String {
+        val response = try {
+            functions.invoke("stripe-deposit", buildJsonObject {
+                put("action", "place")
+                put("rental_id", rentalId)
+            })
+        } catch (e: Exception) {
+            throw fail("place the deposit hold", e)
+        }
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E4035")
+        return (body["status"] as? JsonPrimitive)?.contentOrNull
+            ?: (body["deposit_status"] as? JsonPrimitive)?.contentOrNull ?: "pending"
+    }
+
+    /** The lender's claim against the deposit (file_claim). Returns the claim id. */
+    suspend fun fileClaim(rentalId: String, amount: Double, reason: String, photoPaths: List<String>): String = try {
+        postgrest.rpc("file_claim", buildJsonObject {
+            put("p_rental_id", rentalId)
+            put("p_amount", amount)
+            put("p_reason", reason.trim())
+            put("p_photo_paths", JsonArray(photoPaths.map { JsonPrimitive(it) }))
+        }).decodeAs<String>()
+    } catch (e: Exception) {
+        throw fail("file the claim", e)
+    }
+
+    /** The renter accepts or disputes a claim (respond_claim). */
+    suspend fun respondClaim(claimId: String, accept: Boolean, note: String? = null): String = rentalCall(
+        "respond_claim", "answer the claim",
+        buildJsonObject {
+            put("p_claim_id", claimId)
+            put("p_answer", if (accept) "accept" else "dispute")
+            note?.takeIf { it.isNotBlank() }?.let { put("p_note", it.trim()) }
+        }
+    )
+
+    /** An Edge Function's JSON body, or its coded refusal ({ code, message }) as a DzirentException. */
+    private fun edgeJson(text: String, ok: Boolean, fallback: String): JsonObject {
+        if (!ok) throw DzirentException(ErrorCatalog.fromBody(text) ?: ErrorCatalog.shown(fallback))
+        return runCatching { rentalJson.parseToJsonElement(text) as? JsonObject }.getOrNull()
+            ?: throw DzirentException(ErrorCatalog.shown(fallback))
+    }
+
+    // --- C6: ID verification (the database decides; Didit's SDK takes the session token) ---
+
+    /** My own ID check (my_verification): status, tries, whether it's required. Never the legal name. */
+    suspend fun myVerification(): MyVerification = try {
+        val element = postgrest.rpc("my_verification").decodeAs<JsonElement>()
+        rentalJson.decodeFromJsonElement(MyVerification.serializer(), element)
+    } catch (e: Exception) {
+        throw fail("load your ID check", e)
+    }
+
+    /** Whether ID checks are available at all (didit-start "check": the Didit keys are set on the server). */
+    suspend fun verificationAvailable(): Boolean = try {
+        val response = functions.invoke("didit-start", buildJsonObject { put("action", "check") })
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E6002")
+        (body["available"] as? JsonPrimitive)?.booleanOrNull == true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        false
+    }
+
+    /**
+     * Starts my one-time ID check (didit-start): the provider's session, with its token for Didit's
+     * SDK. Refusals: DZ-E6002 not available, DZ-E6003 no tries left, DZ-E6004 verified, DZ-E6005 in review.
+     */
+    suspend fun startVerification(): VerificationStart {
+        val response = try {
+            functions.invoke("didit-start", buildJsonObject { put("action", "start") })
+        } catch (e: Exception) {
+            throw fail("start the ID check", e)
+        }
+        val body = edgeJson(response.bodyAsText(), response.status.isSuccess(), "DZ-E6006")
+        val url = (body["url"] as? JsonPrimitive)?.contentOrNull
+        val token = (body["session_token"] as? JsonPrimitive)?.contentOrNull
+        if (url.isNullOrBlank() || token.isNullOrBlank()) throw DzirentException(ErrorCatalog.shown("DZ-E6006"))
+        return VerificationStart(url, token)
+    }
+
+    /**
+     * My check each time it changes, ending once it has an outcome ("Checking..."): live through
+     * Realtime (my own row, status only), with a read every few seconds as the fallback.
+     */
+    fun watchVerification(): Flow<MyVerification> = channelFlow {
+        val uid = requireUserId()
+        val channel = realtime.channel("verification_$uid")
+        try {
+            val live = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+                table = "identity_verifications"
+                filter("user_id", FilterOperator.EQ, uid)
+            }
+            launch {
+                live.collect { runCatching { myVerification() }.getOrNull()?.let { send(it) } }
+            }
+            runCatching { channel.subscribe() }
+            while (true) {
+                runCatching { myVerification() }.getOrNull()?.let { send(it) }
+                delay(VERIFICATION_POLL_MS)
+            }
+        } finally {
+            withContext(NonCancellable) { runCatching { realtime.removeChannel(channel) } }
+        }
+    }.distinctUntilChanged().transformWhile { verification ->
+        emit(verification)
+        !verificationSettled(verification.status)
+    }
+
     /**
      * Uploads one compressed condition photo at {rental_id}/{stage}/{random}.jpg (bucket
      * rental-photos, private). Storage refuses it outside the matching state (DZ-E4021).
@@ -1630,7 +1827,7 @@ class DzirentRepository(
     /** The listing and the other person, as far as the shop window shows them. */
     private fun Conversation.withCard(card: ConversationCard?, me: String): Conversation {
         if (card == null) return this
-        val other = Profile(id = otherUserId(me), displayName = card.otherName, studioHandle = card.otherHandle)
+        val other = Profile(id = otherUserId(me), displayName = card.otherName, studioHandle = card.otherHandle, isVerified = card.otherIsVerified)
         return copy(
             listing = cardListing(card, lenderId),
             renter = if (renterId == me) null else other,
@@ -1796,7 +1993,7 @@ class DzirentRepository(
         approxLat = 0.0,
         approxLng = 0.0,
         photos = listOfNotNull(coverPhotoPath?.let { ListingPhoto(id = "", listingId = id, storagePath = it, position = 0) }),
-        lender = Profile(id = studioHandle.orEmpty(), displayName = studioName.orEmpty(), city = city, studioName = studioName, studioHandle = studioHandle),
+        lender = Profile(id = studioHandle.orEmpty(), displayName = studioName.orEmpty(), city = city, studioName = studioName, studioHandle = studioHandle, isVerified = isVerified),
         distanceKm = distance?.let { it * KM_PER_MILE },
         distanceMiles = distance
     )
@@ -1824,7 +2021,7 @@ class DzirentRepository(
         },
         measurements = measurements.map { ListingMeasurement(listingId = id, label = it.label, value = it.value, unit = it.unit) },
         availability = availability.map { Availability(listingId = id, startDate = it.startDate, endDate = it.endDate) },
-        lender = Profile(id = studioHandle.orEmpty(), displayName = studioName.orEmpty(), city = city, studioName = studioName, studioHandle = studioHandle),
+        lender = Profile(id = studioHandle.orEmpty(), displayName = studioName.orEmpty(), city = city, studioName = studioName, studioHandle = studioHandle, isVerified = isVerified),
         distanceKm = distance?.let { it * KM_PER_MILE },
         distanceMiles = distance
     )
@@ -1906,7 +2103,8 @@ class DzirentRepository(
                 studioBio = studio.studioBio,
                 styleTags = studio.styleTags,
                 pickupArea = studio.pickupArea,
-                createdAt = studio.since
+                createdAt = studio.since,
+                isVerified = studio.isVerified
             ),
             pieces = studio.listings.map { it.toListing() },
             rentedCount = studio.rentalCount,
@@ -1958,7 +2156,8 @@ class DzirentRepository(
                         displayName = item.studioName.orEmpty(),
                         city = item.city ?: "",
                         studioName = item.studioName,
-                        studioHandle = item.studioHandle
+                        studioHandle = item.studioHandle,
+                        isVerified = item.isVerified
                     ),
                     distanceKm = item.distance?.let { it * KM_PER_MILE },
                     distanceMiles = item.distance

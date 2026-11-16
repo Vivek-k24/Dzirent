@@ -9,9 +9,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.dzirent.shared.model.PayoutAccount
 import com.dzirent.shared.model.Profile
+import com.dzirent.shared.util.PayoutState
+import com.dzirent.shared.util.payoutState
 import com.dzirent.shared.repository.DzirentException
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.util.HANDLE_MIN
@@ -24,6 +29,81 @@ import com.dzirent.shared.util.cleanHandleInput
 import com.dzirent.shared.util.isValidHandle
 import com.dzirent.shared.util.suggestHandle
 import kotlinx.coroutines.launch
+
+/**
+ * C5: My studio > Payouts. "Set up payouts" opens the payment processor's onboarding in the
+ * browser; back in the app the status is asked again (stripe-account-status) and shows "Payouts
+ * ready", "Finish setup" or "Not set up". Hidden while payments are off.
+ */
+@Composable
+fun PayoutsSection(repository: DzirentRepository) {
+    val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
+    var paymentsOn by remember { mutableStateOf(false) }
+    var account by remember { mutableStateOf<PayoutAccount?>(null) }
+    var loaded by remember { mutableStateOf(false) }
+    var busy by remember { mutableStateOf(false) }
+    var openedSetup by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        paymentsOn = runCatching { repository.rentalSettings(refresh = true).paymentsEnabled }.getOrDefault(false)
+        if (paymentsOn) account = runCatching { repository.myPayoutAccount() }.getOrNull()
+        loaded = true
+    }
+    // Back from the processor's pages (the app resumes): ask for the account's state again.
+    LifecycleResumeEffect(Unit) {
+        if (openedSetup) {
+            openedSetup = false
+            scope.launch {
+                busy = true
+                try {
+                    account = repository.refreshPayoutAccount() ?: account
+                } catch (e: Exception) {
+                    message = e.userMessage("Couldn't check your payouts. Please try again.")
+                }
+                busy = false
+            }
+        }
+        onPauseOrDispose { }
+    }
+    if (!loaded || !paymentsOn) return
+
+    val state = payoutState(account != null, account?.chargesEnabled == true, account?.payoutsEnabled == true)
+    Spacer(modifier = Modifier.height(16.dp))
+    Text("Payouts", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.asHeading())
+    Text(state.label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.announced())
+    Text(
+        text = when (state) {
+            PayoutState.READY -> "Renters can pay you in Dzirent. Payments reach your bank through our payment processor."
+            PayoutState.FINISH_SETUP -> "The payment processor needs a few more details before renters can pay you."
+            PayoutState.NOT_SET_UP -> "Set up payouts before you accept a rental: the renter pays in Dzirent and the money reaches your bank. Your bank and tax details go to our payment processor, never to Dzirent."
+        },
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    OutlinedButton(
+        onClick = {
+            scope.launch {
+                busy = true
+                message = null
+                try {
+                    val link = repository.payoutSetupLink()
+                    openedSetup = true
+                    uriHandler.openUri(link)
+                } catch (e: Exception) {
+                    message = e.userMessage("Couldn't open the payout set-up. Please try again.")
+                }
+                busy = false
+            }
+        },
+        enabled = !busy
+    ) { Text(if (busy) "Checking..." else state.button) }
+    message?.let {
+        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.announced())
+    }
+}
 
 /** Profile > My studio (lenders): what the studio page shows. Everything is optional. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -147,6 +227,9 @@ fun MyStudioScreen(
                     )
                 }
             }
+
+            // C5: payouts (only while payments are on).
+            PayoutsSection(repository)
 
             error?.let {
                 Spacer(modifier = Modifier.height(8.dp))

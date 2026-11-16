@@ -52,6 +52,8 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onSetLocation: () -> Unit,
     onOpenBlockedUsers: () -> Unit,
+    /** C6: Settings > ID verification. */
+    onOpenVerification: () -> Unit,
     onClearSearchHistory: () -> Unit,
     onAppTour: () -> Unit,
     onOpenAbout: () -> Unit,
@@ -160,6 +162,14 @@ fun SettingsScreen(
             )
 
             SettingsGroup("Privacy & safety")
+            if (profile != null) {
+                SettingsRow(
+                    "ID verification",
+                    if (profile.isVerified) "Verified" else "Verify once for a Verified badge",
+                    Icons.Default.VerifiedUser,
+                    onClick = onOpenVerification
+                )
+            }
             if (profile != null) SettingsRow("Blocked users", null, Icons.Default.Block, onClick = onOpenBlockedUsers)
             if (profile != null) MeasurementsConsentSetting(repository)
             if (profile != null) DataExportSetting(repository, profile.id)
@@ -360,6 +370,14 @@ private fun NotificationSettingsSection(repository: DzirentRepository) {
         checked = current?.rentalReminders == true,
         enabled = current != null,
         onCheckedChange = { on -> current?.let { save(it.copy(rentalReminders = on)) } }
+    )
+    // C5: rental emails to the account's own email (never message text).
+    SwitchSetting(
+        title = "Email me about rentals",
+        subtitle = "Requests, answers, receipts, pickup and return reminders, and claims, to your account's email",
+        checked = current?.emailRentals == true,
+        enabled = current != null,
+        onCheckedChange = { on -> current?.let { save(it.copy(emailRentals = on)) } }
     )
 }
 

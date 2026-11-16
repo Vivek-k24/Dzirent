@@ -7,6 +7,7 @@ import {
   readCloset,
   readSettings,
   readRentals,
+  readVerification,
   editorData,
   ownListing,
   must,
@@ -14,7 +15,7 @@ import {
   WorkflowError,
   uuid,
 } from "@/lib/workflow-server";
-import { chatMutation, accountMutation, dates, uploadRentalPhoto } from "@/lib/workflow-mutations";
+import { chatMutation, accountMutation, dates, uploadRentalPhoto, paymentMutation, startVerification } from "@/lib/workflow-mutations";
 import {
   saveListing,
   finishListing,
@@ -24,6 +25,8 @@ import {
   edgeDelete,
 } from "@/lib/listing-mutations";
 import { declarationTexts } from "@/lib/workflows";
+import { activationProblem } from "@/lib/listing-form";
+import { errorText } from "@/lib/errors";
 type Params = { params: Promise<{ path: string[] }> };
 const reply = (data: unknown) =>
   NextResponse.json(data, {
@@ -85,6 +88,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
         return reply(await readSettings());
       case "rentals":
         return reply(await readRentals());
+      // C6: my ID check (status, tries; never the legal name) and whether checks are available.
+      case "verification":
+        return reply(await readVerification());
       case "editor":
         return reply(await editorData(path[1]));
       case "listing":
@@ -117,7 +123,13 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
     if (path[0] === "chat")
       return reply(await chatMutation(path[1], path[2], body));
+    // C5: payments (Stripe's own forms take the card and bank details; never this site).
+    if (path[0] === "pay" || path[0] === "payouts")
+      return reply(await paymentMutation(path, body, request.nextUrl.origin));
     if (path[0] === "export") return await exportMyData();
+    // C6: the one-time ID check: the provider's hosted address to send the person to.
+    if (path[0] === "verification" && path[1] === "start")
+      return reply(await startVerification(request.nextUrl.origin));
     if (path[0] === "account") {
       if (path[1] === "delete") {
         if (String(body.confirm).trim() !== "DELETE")
@@ -187,6 +199,10 @@ export async function POST(request: NextRequest, { params }: Params) {
               listing.title +
               '" on.',
           );
+        // F1: turning a listing on is publishing too: never without its title, size and price.
+        const unfinished = body.status === "active" ? activationProblem(listing) : null;
+        if (unfinished)
+          throw new WorkflowError(errorText(unfinished), 400, unfinished.field, unfinished.code);
         must(
           await client
             .from("listings")

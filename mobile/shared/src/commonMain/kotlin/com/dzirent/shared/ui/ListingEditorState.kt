@@ -111,6 +111,9 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
     var priceNote by mutableStateOf(original?.priceNote.orEmpty())
     var retailValueText by mutableStateOf(original?.retailValue?.let { formatNumber(it) }.orEmpty())
     var depositNote by mutableStateOf(original?.depositNote.orEmpty())
+    /** C5: the deposit held at pickup, in dollars (empty = none). The field shows only while payments are on. */
+    var depositAmountText by mutableStateOf(priceInputText(original?.depositAmount))
+    var paymentsEnabled by mutableStateOf(false)
     var ranges by mutableStateOf(
         if (original == null || (isDraft && original.availability.isEmpty())) listOf(defaultAvailability(today))
         else original.availability.mapNotNull { parseDateRange(it.startDate, it.endDate) }
@@ -120,7 +123,8 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
 
     /**
      * The text filter's refusal at publish, by database column ("title", "description",
-     * "price_note", "deposit_note"); shown under that field until it's edited.
+     * "price_note", "deposit_note"); shown under that field until it's edited. F1: also a step's
+     * own gap for those fields and "price_usd" (the catalog's message with its code).
      */
     var textErrors by mutableStateOf<Map<String, String>>(emptyMap())
 
@@ -331,6 +335,7 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
         priceNote = priceNote,
         retailValueText = retailValueText,
         depositNote = depositNote,
+        depositAmountText = depositAmountText,
         ranges = ranges.map { DraftRange(it.start.toString(), it.end.toString()) },
         listingDeclarationChecked = listingDeclarationChecked,
         aiReviewNeeded = aiReviewNeeded
@@ -376,6 +381,7 @@ class ListingEditorState(val original: Listing?, defaultUnit: String, today: Loc
         priceNote = draft.priceNote
         retailValueText = draft.retailValueText
         depositNote = draft.depositNote
+        depositAmountText = draft.depositAmountText
         draft.dateRanges?.let { ranges = it }
         listingDeclarationChecked = draft.listingDeclarationChecked
         aiReviewNeeded = aiReviewNeeded || draft.aiReviewNeeded

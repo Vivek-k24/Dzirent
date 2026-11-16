@@ -22,7 +22,8 @@ Cloud Run accepts only signed-in Google callers with `roles/run.invoker` on the 
 
 The response has `verdict` (`allowed`, `rejected`, `review`), `reason` (plain words for the
 lender), `suggestions` (category, item type and garment type from the database's own values,
-colors, pattern, fabric, styles, title, description; none when rejected), `quality` (a summary)
+colors with their `color_confidence`, pattern, fabric, styles, title, description; none when
+rejected), `quality` (a summary)
 and, per photo: `blur_score` (0 sharp to 1 blurry), `brightness_score` (0 black to 1 white),
 `framing_score` (0 = the whole piece is in frame; higher = more of its outline runs along the
 edge), `worn_by_person` (probability, recorded only), `warnings`, `decision`, `labels` (the label
@@ -51,8 +52,17 @@ scores, with `hooded` and `safety.nsfw`) and `fingerprint` (768 numbers).
 - Photo quality (`app/quality.py`, a port of the app's `PhotoQuality.kt`) never changes the
   verdict; it only adds warnings worded as on the phone. A piece being worn never changes the
   verdict and never adds a warning.
-- Colors come from the garment's pixels, not the model (`app/colors.py`, a port of the app's
-  `ItemColor.kt`). Titles follow the app's template: "Emerald velvet cocktail dress".
+- Colors (V1a, `app/color_reader.py`) come from the garment's own pixels, with the model as a
+  second opinion. Per photo: OpenCV GrabCut separates the garment from its background (seeded
+  with the framing check's item, or the middle of the photo on a busy background); the light's
+  cast is read from a neutral background (a point on the daylight locus, 3500-10000 K) and
+  removed, and a dim photo is brightened. The garment's pixels are clustered in CIELAB
+  (lightness counts half; a fold's shadow joins its fabric) and each cluster takes the nearest of
+  the xkcd survey's 949 color names (`app/color_names.json`, CC0), mapped to one of the apps' 15
+  values (`app/colors.py`). The model then compares "a photo of a <name> garment" prompts for the
+  names near the colors the pixels found: it can settle a close call, and when it disagrees the
+  pixel answer stays with a lower `color_confidence` (0.4; 0.9 when they agree). Only the 15
+  values are ever returned. Titles follow the app's template: "Emerald velvet cocktail dress".
 
 Thresholds were chosen on the 12 sample listings plus a small set of openly licensed photos;
 see the Step 8A handoff for the numbers.
@@ -60,7 +70,7 @@ see the Step 8A handoff for the numbers.
 ## Develop
 
     python -m venv .venv && .venv/Scripts/pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt pytest
-    .venv/Scripts/python -m pytest tests          # pure logic, no model needed
+    .venv/Scripts/python -m pytest tests          # pure logic and the sample photos, no model needed
     # with VISION_SAFETY_DIR set to a folder holding the safety model, its load test runs too
 
 Deploy (from the repo root):

@@ -172,3 +172,60 @@ Agents do not reopen these. Raise disagreements under **Requests** in your hando
 - Rental reminders: the day before a pickup or return and once a day for up to 3 days when a return is overdue, at 9 AM Austin time, to both people. A "Rental reminders" switch (on by default) turns them off; requests, answers and completion follow the Messages switch. This replaces "Rental reminders wait for a decision on a 'confirm rental' step" in "Notifications (2026-11-03)": accepting a request is that step.
 - Account deletion waits while a rental is in progress (from accepted until completed or cancelled); a request alone doesn't block it.
 - A studio's rental count counts completed rentals.
+## Rentals follow-ups (2026-11-13)
+
+- A rental that is accepted (or paid) but not marked picked up within 2 days after its start date is cancelled automatically, with a timeline event, the cancellation refund rule (counted as a late cancellation by the renter) and a "rental cancelled" push to both people. The number of days is a setting.
+- A listing with no availability windows is always available: any dates from today can be requested, and date searches include it. Windows the lender adds still limit the dates. This replaces "a listing with no availability windows can't be rented" in "Rentals (2026-11-13)".
+- New pushes: "rental cancelled" to the other person (to both when Dzirent cancels) and "request expired" to both. This replaces "Cancelling, declining-by-expiry and pickup send no push" from C3 for cancelling and expiry; pickup still sends none.
+- Admins can end a stuck rental (for example when the lender is banned) as cancelled, or as completed once it was picked up, with a reason, two-step sign-in and a log entry. With a payment, the admin chooses the refund and what happens to a deposit hold.
+
+## Payments (2026-11-13)
+
+- Payments use Stripe Connect as designed in `architecture.md` Appendix A: lenders get Express accounts; each rental is one destination charge to the lender's account with Dzirent's fee as `application_fee_amount`; the deposit is a separate manual-capture hold on the same card, placed at pickup. Dzirent never stores card numbers or bank details.
+- Payments stay switched off (`payments_enabled`) until the real keys are set and the C5 screens ship. While it is off, or any of the three keys is blank, every payment function answers "Payments aren't available yet." and rentals work as before.
+- With payments on: accepting waits for payment; a succeeded payment makes the rental paid; pickup needs the deposit hold when the listing has a deposit; a return opens the claim window; with no claim by its end the hold is released and the rental completes; an accepted claim captures up to the claimed amount; a disputed claim waits for an admin's decision. A rental without a deposit completes at return.
+- A claim is the lender's, during the window, for up to the deposit, with a reason and at least one return photo. The renter accepts or disputes; admins decide disputed (or unanswered) claims for 0 up to the claimed amount.
+- Cancellation refunds: a renter cancelling at least 48 hours before the start date gets a full refund; after that the lender keeps the rental price; a lender cancellation always refunds in full. The cut-off and the late refund share are settings.
+- The pilot fee is 0%, the claim window 48 hours, sales tax off (a hook that adds $0 until the tax adviser decides). Each is a setting marked for the business owner or the attorney in `legal-placeholders.md`.
+- Card holds last about 7 days: a hold that would end while the piece is still out is replaced by a new one, and both people are told. A claim after a hold has ended is charged to the saved card instead, never above the deposit.
+- Every money step runs on the server through the outbox, with an idempotency key; Stripe's webhooks are verified on the raw body and processed once.
+
+## Settings (2026-11-13)
+
+- Every business number and rule lives in the closed settings table, never in code or env files: fee, claim window, refund cut-off, automatic cancel, request expiry, rate limits, retention periods, reminder hour and time zone. Each has a type, unit, range, plain description and who decides it (owner, business owner or attorney); a value outside its range is refused.
+- Admins change settings on the admin website with a reason; every change is logged. Settings the legal pages state are marked, and the website warns that the pages may need updating. Changing the reminder hour reschedules the reminders.
+- The admin website shows, for each outside service, only "configured" or "not configured". It never shows, accepts or stores a secret.
+- Technical constants stay in code: the outbox retry schedule, the 24-hour freshness of an admin's two-step code, the photo-check timeout and job cadences.
+
+## Payments screens (2026-11-13)
+
+- The apps and the website show the payment steps only while payments are on (the rental's `payments_enabled`; `rental_settings()` for My studio and the listing editor). With payments off the screens stay as in C3.
+- Paying uses the payment processor's own form: the Stripe Android SDK's payment sheet in the Android app and Stripe's Payment Element on the website. Dzirent's code never sees a card number. Before the form opens, the renter is told the card is kept with the processor for the deposit hold and for a claim Dzirent decides, never above the deposit.
+- Stripe.js loads only on the website's pay page (`/app/pay/<rental>`), and only that page's Content-Security-Policy allows Stripe's domains. The Pay button is a full page load. Wallet buttons are off for now.
+- Library versions are pinned and at least two weeks old: Stripe Android SDK `paymentsheet` 21.29.2 (it matches the project's Kotlin 2.1 and Compose 1.7), `@stripe/stripe-js` 9.17.0.
+- A lender sets up payouts from My studio; the processor's onboarding opens in the browser, and the status ("Payouts ready", "Finish setup", "Not set up") is asked again on return. A lender whose payouts aren't ready sees a notice on an incoming request while payments are on.
+- An accepted rental waiting for payment must be paid within `payment_deadline_hours` (24 hours, 1-72, business owner) of the acceptance, or it is cancelled automatically with a timeline event and a push to both people. The deadline is fixed when the rental starts waiting.
+- No availability windows means every day from today in the date pickers too (the C4 server rule). The request answer time shown comes from the server setting, never a number in code.
+- The listing editor has an optional deposit amount in dollars, shown only while payments are on. The deposit note stays.
+- Claims, answers and receipts are shown on the rental card: the lender files a claim up to the deposit with a reason and return photos; the renter accepts or disputes; both see the outcome. A paid rental that ended has a simple receipt.
+
+## Email (2026-11-13)
+
+- Dzirent sends transactional emails only to the account's own email address: a rental request received, the answer to a request, a payment receipt, pickup and return reminders, a claim filed, a claim decided, and the account-deleted confirmation. Emails never include messages, a claim's written reason, body measurements or any address or location.
+- Emails go through the outbox (`send_email`) to the `send-email` Edge Function, which makes one HTTPS call to an email provider chosen by function secrets. While the provider key is blank, every email and its job are marked skipped, not failed.
+- Rental emails follow the push rules for blocked pairs and have their own switch, "Email me about rentals" (on by default). The account-deleted email is always sent.
+- Dzirent keeps which email went to which account, when, and the outcome for 30 days, never the text. The account-deleted email's address is kept only until that email is sent.
+- Sign-in emails use Dzirent's templates in the repo. Switching the live project to a custom email service is a runbook step (`contract.md` section 9); no live Auth setting changes until then.
+## ID verification (2026-11-14)
+
+- ID verification uses Didit (the "Free KYC" workflow: ID document, passive liveness, face match, device and IP analysis), as designed in `architecture.md` Appendix B. Verify once; renters and lenders alike.
+- Two separate switches. Verification is **available** to anyone from Settings whenever the Didit API key and webhook secret are set as Edge Function secrets; it is **required** only while `verification_required` is on (off). When required, it applies when starting a chat, sending a message and publishing a listing; reading, saving and browsing never need it.
+- Public: only a "Verified" badge (listing cards, listing pages, studio pages, chat headers). The display name stays.
+- Dzirent keeps only the status, the legal name from the ID (private: never shown to anyone, readable only by the server and in the person's own data download), an 18+ result, the attempts and a reason for admins. Dzirent stores no ID image, selfie, birthdate, document number, address, nationality or IP data: the Edge Functions read Didit's decision in memory and pass on only those fields.
+- Didit shows its own biometric consent screen (what is collected, why, who holds it, deletion within 12 months). Dzirent shows no second consent checkbox, only a short note of what Dzirent keeps and never keeps.
+- 3 attempts (setting `id_verification_max_attempts`, 1-10, owner); an attempt is a started check, whatever its outcome (abandoned and expired ones count). After that: "Contact support to verify."; admins can reset the attempts (logged).
+- The age from the ID outranks the store signals and the self-declared check: an approved ID records `adult` or `minor` (source `id_verification`); a minor is blocked like the existing age gate, and their check is declined ("Under 18"). This extends "Age gate (2026-11-07)": an ID's `adult` also lifts a store's `minor`, and a later store `adult` doesn't lift an ID's `minor`.
+- A duplicate face flagged by Didit sends the check to admin review ("Possible duplicate account"); admins approve or reject with a reason, logged. A face blocklist for banned people is not built (it needs images Dzirent doesn't keep).
+- Webhooks are checked exactly as the owner's Didit console shows: HMAC-SHA256 of the raw body with the webhook secret against `X-Signature`, the body's timestamp within 300 seconds (never the `X-Timestamp` header), our `application_id`, each `event_id` once; the answer comes at once and the decision is read through the outbox. A 10-minute reconciliation job checks sessions still in progress after 30 minutes, because Didit retries a webhook only twice.
+- Account deletion deletes the person's Didit sessions and Didit user record first, then Dzirent's rows; if Didit can't be reached the deletion waits (`DZ-E6013`).
+- Android uses Didit's native SDK (`me.didit:didit-sdk` 4.9.1, Didit's Maven repository, limited to the `me.didit` group); the website sends people to Didit's hosted page and back to `/verify/done`; the iPhone opens the hosted page until the Mac session adds Didit's iOS SDK.

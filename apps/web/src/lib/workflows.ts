@@ -1,4 +1,5 @@
-import type { Range, RentalStatus, RentalView } from "./rentals";
+import type { Range, RentalSettings, RentalStatus, RentalView } from "./rentals";
+import { workflowRequest, type RequestOptions } from "./requests.ts";
 export type { RentalView } from "./rentals";
 export type Profile = {
   id: string;
@@ -43,11 +44,14 @@ export type OwnListing = {
   category: string;
   item_type: string | null;
   garment_type: string;
-  size_label: string;
-  price_usd: number;
+  /** F1: empty (null) until an unfinished row's size step is done. */
+  size_label: string | null;
+  price_usd: number | null;
   price_note: string | null;
   retail_value: number | null;
   deposit_note: string | null;
+  /** C4/C5: the deposit held at pickup while payments are on (null = none). */
+  deposit_amount?: number | null;
   listing_styles: string[];
   status: "active" | "paused";
   auto_paused_reason?: string | null;
@@ -80,6 +84,8 @@ export type ConversationCard = {
   unread: boolean;
   requested_start: string | null;
   requested_end: string | null;
+  /** C6: the other person verified their ID (the chat header's badge). */
+  other_is_verified?: boolean | null;
 };
 export type Message = {
   id: string;
@@ -130,13 +136,18 @@ export type ChatData = {
   rentable: { price: number | null; availability: Range[]; booked: Range[] } | null;
   blocked: boolean;
   mySuspension?: string | null;
+  /** C5: the rules the card shows (request answer time, payments on or off); null if unreadable. */
+  settings: RentalSettings | null;
 };
-/** notification_settings; no row means these defaults (C3 adds rental_reminders). */
+/** notification_settings; no row means these defaults (C3 adds rental_reminders, C5 email_rentals). */
 export type NotificationChoicesData = {
   messages: boolean;
   show_message_text: boolean;
   rental_reminders: boolean;
+  email_rentals: boolean;
 };
+/** C5: the lender's payout account (payout_accounts, owner read). */
+export type PayoutAccount = { charges_enabled: boolean; payouts_enabled: boolean; details_submitted: boolean };
 export type SettingsData = {
   profile: Profile;
   privateProfile: PrivateProfile | null;
@@ -145,6 +156,9 @@ export type SettingsData = {
   activeRentals: number;
   activeListings: number;
   notifications: NotificationChoicesData;
+  /** C5: payments on (the payouts block and the deposit field show only then) and my payout account. */
+  paymentsEnabled: boolean;
+  payoutAccount: PayoutAccount | null;
 };
 export const itemTypes = [
   "Sunglasses",
@@ -305,27 +319,11 @@ export function activity(data: InboxData) {
   });
   return updates.sort((a, b) => b.time.localeCompare(a.time));
 }
-export class WorkflowClientError extends Error {
-  constructor(
-    message: string,
-    public field?: string,
-  ) {
-    super(message);
-    this.name = "WorkflowClientError";
-  }
-}
-export async function workflow<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch("/api/workflows/" + path, {
-    method: body === undefined ? "GET" : "POST",
-    headers:
-      body === undefined ? undefined : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    cache: "no-store",
-  });
-  const result = await response.json();
-  if (!response.ok)
-    throw new WorkflowClientError(result.error || "Something went wrong. Please try again. (DZ-E9999)", result.field);
-  return result as T;
+// F1: every call gives up after 30 seconds (DZ-E9002) and only ever throws a WorkflowClientError
+// (requests.ts), so a form's catch always has a message to show and its button comes back.
+export { WorkflowClientError, workflowUpload } from "./requests.ts";
+export async function workflow<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
+  return workflowRequest<T>(path, body, options);
 }
 
 export function dateChip(start: string | null, end: string | null) {

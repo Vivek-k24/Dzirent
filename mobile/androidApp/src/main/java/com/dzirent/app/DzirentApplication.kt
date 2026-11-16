@@ -1,6 +1,7 @@
 package com.dzirent.app
 
 import android.app.Application
+import com.dzirent.shared.platform.AndroidIdVerification
 import com.dzirent.shared.platform.AndroidSecureStorage
 
 /**
@@ -11,5 +12,7 @@ class DzirentApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         AndroidSecureStorage.init(this)
+        // C6: Didit's SDK, as Didit documents (no network call and nothing about the person here).
+        AndroidIdVerification.init(this)
     }
 }

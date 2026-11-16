@@ -3,9 +3,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { workflow, type SettingsData } from "@/lib/workflows";
+import { failureText, readAnswer, timedRequest } from "@/lib/requests";
 import { cityLabel } from "@/lib/types";
 import { signOut } from "@/app/actions";
 import { StudioEditor } from "./studio-editor";
+import { Payouts } from "./payouts";
 import { MeasurementsEditor } from "./measurements-editor";
 import { LocalPreferences } from "./local-preferences";
 import { FinishSetupCard } from "./onboarding";
@@ -14,6 +16,8 @@ import { Icon } from "./icon";
 import { Empty } from "./cards";
 import { UpdateLocation } from "./shell";
 import type { NotificationChoicesData } from "@/lib/workflows";
+import { Verification } from "./verification";
+import type { VerificationData } from "@/lib/verification";
 
 /**
  * Settings > Notifications (C3): the same three switches as the apps. Notifications go to the
@@ -38,11 +42,12 @@ function NotificationChoices({ initial }: { initial: NotificationChoicesData }) 
     ["messages", "Messages", "New messages, new chats, date changes and rental requests and answers"],
     ["show_message_text", "Show message text", "Show what they wrote in notifications, also on the lock screen"],
     ["rental_reminders", "Rental reminders", "The day before a pickup or return, and when a return is overdue"],
+    ["email_rentals", "Email me about rentals", "Requests, answers, receipts, pickup and return reminders, and claims, to your account's email"],
   ];
   return (
     <div className="account-section">
       <h3>Notifications</h3>
-      <p className="muted">Notifications go to the Dzirent app on your phone.</p>
+      <p className="muted">Notifications go to the Dzirent app on your phone. Rental emails go to your account&apos;s email and never include message text.</p>
       {rows.map(([key, label, hint]) => (
         <div key={key} className="toggle-row">
           <input
@@ -65,9 +70,15 @@ function NotificationChoices({ initial }: { initial: NotificationChoicesData }) 
 export function Settings({
   initial,
   section = "profile",
+  verification = null,
+  verifyNext = null,
 }: {
   initial: SettingsData;
   section?: string;
+  /** C6: Settings > Verification's data (that section only). */
+  verification?: VerificationData | null;
+  /** C6: where to continue once verified (the action that was refused). */
+  verifyNext?: string | null;
 }) {
   const router = useRouter();
   const [data, setData] = useState(initial);
@@ -88,19 +99,25 @@ export function Settings({
     setExporting(true);
     setExportMessage({ text: "", error: false });
     try {
-      const response = await fetch("/api/workflows/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-        cache: "no-store",
-      });
-      if (!response.ok) {
-        const result = await response.json().catch(() => ({}));
-        throw new Error(result.error || "Couldn't prepare your data. Please try again.");
-      }
-      const blob = await response.blob();
+      // F1: within the 30-second limit (DZ-E9002); a refusal shows the server's words and code.
+      const { blob, disposition } = await timedRequest(
+        "/api/workflows/export",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+          cache: "no-store",
+        },
+        async (response) => {
+          if (!response.ok) await readAnswer(response);
+          return {
+            blob: await response.blob(),
+            disposition: response.headers.get("Content-Disposition") || "",
+          };
+        },
+      );
       const name =
-        /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") || "")?.[1] ||
+        /filename="([^"]+)"/.exec(disposition)?.[1] ||
         `dzirent-data-${new Date().toISOString().slice(0, 10)}.json`;
       const href = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -112,7 +129,7 @@ export function Settings({
       setTimeout(() => URL.revokeObjectURL(href), 1000);
       setExportMessage({ text: `Saved as ${name}.`, error: false });
     } catch (e) {
-      setExportMessage({ text: (e as Error).message, error: true });
+      setExportMessage({ text: failureText(e), error: true });
     } finally {
       setExporting(false);
     }
@@ -137,6 +154,7 @@ export function Settings({
       ? [["studio", "My studio", "hanger"]]
       : []),
     ["measurements", "My measurements", "sparkle"],
+    ["verification", "ID verification", "check"],
     ["preferences", "Settings", "filter"],
     ["blocked", "Blocked users", "user"],
   ];
@@ -230,6 +248,13 @@ export function Settings({
                   </span>
                   <Icon name="chevron" />
                 </Link>
+                <Link href="/app/settings/verification">
+                  <span>
+                    <strong>ID verification</strong>
+                    <small>Verify once for a Verified badge.</small>
+                  </span>
+                  <Icon name="chevron" />
+                </Link>
                 {data.profile.role !== "renter" && (
                   <Link href="/app/settings/studio">
                     <span>
@@ -279,9 +304,15 @@ export function Settings({
               </div>
             </>
           ) : section === "studio" ? (
-            <StudioEditor profile={data.profile} />
+            <>
+              <StudioEditor profile={data.profile} />
+              {/* C5: payouts, only while payments are on. */}
+              {data.paymentsEnabled && data.profile.role !== "renter" && <Payouts initial={data.payoutAccount} />}
+            </>
           ) : section === "measurements" ? (
             <MeasurementsEditor initial={data.privateProfile} />
+          ) : section === "verification" && verification ? (
+            <Verification initial={verification} next={verifyNext} />
           ) : section === "preferences" ? (
             <>
               <LocalPreferences />
@@ -641,7 +672,8 @@ export function Settings({
                 setBusy(true);
                 setError("");
                 try {
-                  await workflow("account/withdraw_measurements_consent");
+                  // F1: a POST (with a body); without one this was a GET and answered "Page not found."
+                  await workflow("account/withdraw_measurements_consent", {});
                   setData((old) => ({
                     ...old,
                     privateProfile: old.privateProfile

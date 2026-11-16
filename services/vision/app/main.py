@@ -107,7 +107,7 @@ def _run(listing_id: str, photos: list[PhotoIn], payloads: list) -> dict:
     nsfw = model.safety.nsfw([images[i] for i in ok]) if ok else []
     for i, embedding, p in zip(ok, embeddings, nsfw):
         analyze_photo(results[i], embedding, working_image(images[i]), model.banks, model.vocab, nsfw=p)
-    return scan(listing_id, results, model.banks, model.vocab)
+    return scan(listing_id, results, model.banks, model.vocab, model.color_bank)
 
 
 @app.post("/scan")

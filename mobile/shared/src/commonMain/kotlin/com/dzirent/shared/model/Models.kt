@@ -29,7 +29,9 @@ data class Profile(
     @SerialName("pickup_area") val pickupArea: String? = null,
     /** Set by Dzirent (admin suspension; "infinity" for a ban). Only on my own profile row. */
     @SerialName("suspended_until") val suspendedUntil: String? = null,
-    @SerialName("suspension_reason") val suspensionReason: String? = null
+    @SerialName("suspension_reason") val suspensionReason: String? = null,
+    /** C6: the "Verified" badge (ID verified once). Server-written; from the shop window for other people. */
+    @SerialName("is_verified") val isVerified: Boolean = false
 ) {
     val hasLocation: Boolean get() = approxLat != null && approxLng != null
     val studioTitle: String get() = studioName?.ifBlank { null } ?: displayName.ifBlank { "Studio" }
@@ -92,7 +94,9 @@ data class ListingCard(
     val category: String = "",
     @SerialName("cover_photo_path") val coverPhotoPath: String? = null,
     @SerialName("studio_name") val studioName: String? = null,
-    @SerialName("studio_handle") val studioHandle: String? = null
+    @SerialName("studio_handle") val studioHandle: String? = null,
+    /** C6: the lender verified their ID. */
+    @SerialName("is_verified") val isVerified: Boolean = false
 )
 
 @Serializable
@@ -139,7 +143,9 @@ data class ListingDetail(
     val availability: List<AvailabilityRange> = emptyList(),
     @SerialName("created_at") val createdAt: String? = null,
     /** Booked days (C3): accepted, paid or picked-up rentals, never who booked them. */
-    val booked: List<AvailabilityRange> = emptyList()
+    val booked: List<AvailabilityRange> = emptyList(),
+    /** C6: the lender verified their ID. */
+    @SerialName("is_verified") val isVerified: Boolean = false
 )
 
 /** Studio details returned by get_studio RPC. */
@@ -156,7 +162,9 @@ data class StudioDetail(
     @SerialName("is_saved") val isSaved: Boolean = false,
     val listings: List<ListingCard> = emptyList(),
     @SerialName("is_own") val isOwn: Boolean = false,
-    val since: String? = null
+    val since: String? = null,
+    /** C6: the studio's owner verified their ID. */
+    @SerialName("is_verified") val isVerified: Boolean = false
 )
 
 /** Item returned by my_blocked_users RPC. */
@@ -182,7 +190,9 @@ data class SavedListingItem(
     @SerialName("cover_photo_path") val coverPhotoPath: String? = null,
     @SerialName("studio_name") val studioName: String? = null,
     @SerialName("studio_handle") val studioHandle: String? = null,
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("created_at") val createdAt: String? = null,
+    /** C6: the lender verified their ID. */
+    @SerialName("is_verified") val isVerified: Boolean = false
 )
 
 /** Saved studio card returned by my_saved_studios RPC. */
@@ -210,10 +220,32 @@ data class ConversationCard(
     @SerialName("last_message_at") val lastMessageAt: String? = null,
     val unread: Boolean = false,
     @SerialName("requested_start") val requestedStart: String? = null,
-    @SerialName("requested_end") val requestedEnd: String? = null
+    @SerialName("requested_end") val requestedEnd: String? = null,
+    /** C6: the other person verified their ID (the chat header's badge). */
+    @SerialName("other_is_verified") val otherIsVerified: Boolean = false
 ) {
     val requestedDates: DateRange? get() = parseDateRange(requestedStart, requestedEnd)
 }
+
+/**
+ * C6: my own ID check (my_verification): never the legal name or a reason. Whether checks are
+ * available at all (the keys are set) comes from didit-start "check".
+ */
+@Serializable
+data class MyVerification(
+    val status: String = "not_started",
+    val attempts: Int = 0,
+    @SerialName("max_attempts") val maxAttempts: Int = 3,
+    @SerialName("attempts_left") val attemptsLeft: Int = 3,
+    @SerialName("can_start") val canStart: Boolean = true,
+    /** verification_required is on: chats, messages and publishing need a verified ID. */
+    val required: Boolean = false,
+    @SerialName("verified_at") val verifiedAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+/** C6: a started check: the provider's hosted address (website) and the token Didit's SDK takes (apps). */
+data class VerificationStart(val url: String, val sessionToken: String)
 
 /** Owner row of public.listings. */
 @Serializable
@@ -234,6 +266,8 @@ data class Listing(
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("retail_value") val retailValue: Double? = null,
     @SerialName("deposit_note") val depositNote: String? = null,
+    /** C4/C5: the refundable deposit held at pickup while payments are on (null = none). */
+    @SerialName("deposit_amount") val depositAmount: Double? = null,
     @SerialName("listing_styles") val listingStyles: List<String> = emptyList(),
     @SerialName("garment_type") val garmentType: String? = null,
     @SerialName("ai_review_needed") val aiReviewNeeded: Boolean = false,
@@ -408,11 +442,64 @@ data class RentalView(
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("payments_enabled") val paymentsEnabled: Boolean = false,
     val events: List<RentalEvent> = emptyList(),
-    val photos: List<RentalPhoto> = emptyList()
+    val photos: List<RentalPhoto> = emptyList(),
+    // C4/C5: the payment side (shown by the C5 screens).
+    @SerialName("deposit_amount") val depositAmount: Double? = null,
+    @SerialName("payment_status") val paymentStatus: String = "none",
+    @SerialName("deposit_status") val depositStatus: String = "none",
+    @SerialName("refund_amount") val refundAmount: Double? = null,
+    @SerialName("claim_window_ends_at") val claimWindowEndsAt: String? = null,
+    @SerialName("fee_amount") val feeAmount: Double? = null,
+    @SerialName("tax_amount") val taxAmount: Double? = null,
+    @SerialName("deposit_captured_amount") val depositCapturedAmount: Double? = null,
+    @SerialName("deposit_capture_before") val depositCaptureBefore: String? = null,
+    @SerialName("payment_due_at") val paymentDueAt: String? = null,
+    @SerialName("completed_at") val completedAt: String? = null,
+    @SerialName("cancelled_at") val cancelledAt: String? = null,
+    @SerialName("lender_can_take_payment") val lenderCanTakePayment: Boolean = false,
+    val claim: RentalClaimView? = null
 ) {
     val iAmLender: Boolean get() = yourRole == "lender"
     val dates: DateRange? get() = parseDateRange(startDate, endDate)
 }
+
+/** C4/C5: the lender's claim against the deposit, as get_rental returns it (both people see it). */
+@Serializable
+data class RentalClaimView(
+    val id: String,
+    val status: String,
+    val amount: Double,
+    val reason: String? = null,
+    @SerialName("evidence_paths") val evidencePaths: List<String> = emptyList(),
+    @SerialName("renter_note") val renterNote: String? = null,
+    @SerialName("decision_amount") val decisionAmount: Double? = null,
+    val decision: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("decided_at") val decidedAt: String? = null
+)
+
+/** C5: the rental and payment rules the screens show (rental_settings(); readable by everyone). */
+@Serializable
+data class RentalSettings(
+    @SerialName("payments_enabled") val paymentsEnabled: Boolean = false,
+    @SerialName("rental_request_hours") val rentalRequestHours: Int? = null,
+    @SerialName("payment_deadline_hours") val paymentDeadlineHours: Int? = null,
+    @SerialName("claim_window_hours") val claimWindowHours: Int? = null,
+    @SerialName("cancellation_refund_cutoff_hours") val cancellationRefundCutoffHours: Int? = null,
+    @SerialName("late_cancellation_refund_percent") val lateCancellationRefundPercent: Double? = null,
+    @SerialName("platform_fee_percent") val platformFeePercent: Double? = null
+)
+
+/** C5: the lender's own payout account (payout_accounts, owner read; bank details stay at Stripe). */
+@Serializable
+data class PayoutAccount(
+    @SerialName("charges_enabled") val chargesEnabled: Boolean = false,
+    @SerialName("payouts_enabled") val payoutsEnabled: Boolean = false,
+    @SerialName("details_submitted") val detailsSubmitted: Boolean = false
+)
+
+/** C5: what stripe-pay returns for Stripe's payment sheet. Never stored. */
+data class PaymentStart(val clientSecret: String, val publishableKey: String, val amount: Double?)
 
 @Serializable
 data class ConversationRead(
@@ -442,7 +529,9 @@ data class NotificationSettings(
     val messages: Boolean = true,
     @SerialName("show_message_text") val showMessageText: Boolean = false,
     /** Pickup, return and overdue reminders (C3), on by default. */
-    @SerialName("rental_reminders") val rentalReminders: Boolean = true
+    @SerialName("rental_reminders") val rentalReminders: Boolean = true,
+    /** C5: "Email me about rentals" (to the account's email), on by default. */
+    @SerialName("email_rentals") val emailRentals: Boolean = true
 )
 
 @Serializable

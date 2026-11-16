@@ -63,6 +63,22 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E2065` | error | photos | 413 |  |  | This photo is too big. Choose one under 10 MB. |
 | `DZ-E2066` | error | photos | 503 |  |  | Couldn't remove the photos. Please retry. |
 | `DZ-E2067` | error | photos | 409 |  |  | Couldn't remove all photos. Please retry. |
+| `DZ-E2070` | error | listing form | 400 | `title` |  | Title must be 3 to 80 characters. |
+| `DZ-E2071` | error | listing form | 400 | `category` |  | Choose a category. |
+| `DZ-E2072` | error | listing form | 400 | `item_type` |  | Choose an item type for Accessories. |
+| `DZ-E2073` | error | listing form | 400 | `description` |  | Description can be up to 1000 characters. |
+| `DZ-E2074` | error | listing form | 400 | `size_label` |  | Choose a size. |
+| `DZ-E2075` | error | listing form | 400 | `garment_type` |  | Choose a garment kind. |
+| `DZ-E2076` | error | listing form | 400 | `price_usd` |  | Enter a price above $0, like 25 or 25.50. |
+| `DZ-E2077` | error | listing form | 400 | `price_note` |  | Price details can be up to 60 characters. |
+| `DZ-E2078` | error | listing form | 400 | `deposit_note` |  | Deposit note can be up to 120 characters. |
+| `DZ-E2079` | error | listing form | 400 | `retail_value` |  | Retail value must be a number above 0, or leave it empty. |
+| `DZ-E2080` | error | listing form | 400 | `retail_value` |  | Accessories worth more than $300 can't be listed on Dzirent. Lower the retail value if it's worth less. |
+| `DZ-E2081` | error | listing form | 400 | `accessory_confirmed` |  | Tick the box confirming this isn't fine jewelry and is worth under $300. |
+| `DZ-E2082` | error | listing form | 400 | `listing_styles` |  | Choose up to 3 styles. |
+| `DZ-E2083` | error | listing form | 400 | `measurements` |  | Fix the highlighted measurements, or remove those rows. |
+| `DZ-E2084` | error | listing form | 400 | `availability` |  | Add the dates this piece is available. |
+| `DZ-E2085` | error | listing form | 400 | `availability` |  | Choose an end date on or after your start date. |
 | `DZ-W2001` | warning | photos | 200 |  |  | Too blurry: hold steady and retake |
 | `DZ-W2002` | warning | photos | 200 |  |  | Too dark: try daylight |
 | `DZ-W2003` | warning | photos | 200 |  |  | Too bright: avoid direct sun and flash |
@@ -85,8 +101,9 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E3007` | error | chat | 403 |  |  | Only the renter can set dates for this chat |
 | `DZ-E3010` | error | saving | 403 |  |  | Cannot save blocked studio |
 | `DZ-E3020` | error | blocking | 403 |  |  | Not your block relationship |
+| `DZ-E3021` | error | blocking | 400 |  |  | You can't block yourself. |
 
-## 4xxx - Rentals, condition photos (C3); payments, deposits (reserved)
+## 4xxx - Rentals, condition photos (C3); payments, deposits, claims (C4, C5)
 
 | Code | Kind | Area | Status | Field | Server words | Message |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -110,6 +127,29 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E4020` | error | condition photos | 409 | `photos` |  | Add at least 2 photos of the piece first. |
 | `DZ-E4021` | error | condition photos | 403 |  |  | Photos for this step can't be added now. |
 | `DZ-E4022` | error | condition photos | 503 |  |  | Couldn't load the condition photos. Please try again. |
+| `DZ-E4030` | error | payments | 503 |  |  | Payments aren't available yet. |
+| `DZ-E4031` | error | payments | 409 |  |  | The lender hasn't finished setting up payouts yet. |
+| `DZ-E4032` | error | payments | 403 |  |  | Only the renter can do this. |
+| `DZ-E4033` | error | payments | 409 |  |  | Place the deposit hold before marking the piece picked up. |
+| `DZ-E4034` | error | payments | 409 |  |  | There's no saved card for this rental. |
+| `DZ-E4035` | error | payments | 402 |  |  | The deposit hold couldn't be placed. Ask the renter to check their card. |
+| `DZ-E4036` | error | payments | 502 |  |  | The payment service didn't answer. Please try again. |
+| `DZ-E4037` | error | payments | 403 |  |  | Only lenders can set up payouts. |
+| `DZ-E4038` | error | payments | 400 |  |  | This payment event isn't signed correctly. |
+| `DZ-E4039` | error | payments | 409 |  |  | This rental has no deposit hold to change. |
+| `DZ-E4040` | error | claims | 409 |  |  | Claims can be filed only after the return, until the claim window ends. |
+| `DZ-E4041` | error | claims | 400 | `amount` | yes | Claim an amount above $0 and up to the deposit. |
+| `DZ-E4042` | error | claims | 400 | `reason` |  | Give a reason for the claim (3 to 500 characters). |
+| `DZ-E4043` | error | claims | 400 | `photos` |  | Add at least one return photo of this rental as evidence. |
+| `DZ-E4044` | error | claims | 404 |  |  | Claim not found |
+| `DZ-E4045` | error | claims | 409 |  |  | This claim can't be changed now. |
+| `DZ-E4046` | error | claims | 400 |  |  | Answer accept or dispute. |
+| `DZ-E4047` | error | claims | 409 |  |  | This rental has no deposit to claim from. |
+| `DZ-E4048` | error | claims | 409 |  |  | A claim was already filed for this rental. |
+| `DZ-E4049` | error | payments | 409 |  |  | Paying in the app isn't available on this phone yet. Pay on dzirent.com. |
+| `DZ-E4050` | error | payments | 402 |  |  | The payment didn't go through. Try again, or use another card. |
+| `DZ-E4051` | error | payments | 400 | `deposit_amount` |  | Enter the deposit in dollars, up to $99,999.99, or leave it empty. |
+| `DZ-W4001` | warning | payments | 200 |  |  | Set up payouts in My studio first: the renter can't pay until your payouts are ready. |
 
 ## 5xxx - Reports, moderation, admin
 
@@ -131,6 +171,7 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E5014` | error | admin | 400 |  |  | Pick a report |
 | `DZ-E5015` | error | reports | 403 |  |  | You can only report your own rentals. |
 | `DZ-E5016` | error | admin | 409 |  |  | A rental report has no content to remove. Warn, suspend or dismiss instead. |
+| `DZ-E5017` | error | reports | 400 |  |  | You can't report yourself, your own listings or your own messages. |
 | `DZ-E5020` | error | admin | 404 |  |  | User not found |
 | `DZ-E5021` | error | admin | 409 |  |  | Admins can't ban themselves |
 | `DZ-E5022` | error | admin | 409 |  |  | Admins can't suspend themselves |
@@ -153,10 +194,36 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E5052` | error | admin | 400 |  |  | Search for an email, handle or account id |
 | `DZ-E5060` | error | admin | 404 |  |  | Background job not found |
 | `DZ-E5061` | error | admin | 409 |  |  | Only a dead background job can be retried |
+| `DZ-E5070` | error | admin settings | 400 | `value` | yes | This value is outside the setting's allowed range. |
+| `DZ-E5071` | error | admin settings | 404 |  |  | Setting not found |
+| `DZ-E5072` | error | admin settings | 400 | `value` | yes | This value isn't the right kind for this setting. |
+| `DZ-E5080` | error | admin rentals | 400 |  |  | Choose cancelled or completed. |
+| `DZ-E5081` | error | admin rentals | 409 |  |  | This rental has already ended. |
+| `DZ-E5082` | error | admin rentals | 409 |  |  | Only a rental that was picked up can be ended as completed. |
+| `DZ-E5083` | error | admin rentals | 400 |  |  | Choose what happens to the deposit hold: release or capture. |
+| `DZ-E5084` | error | admin payments | 400 | `amount` | yes | Refund an amount above $0 and up to what is still paid. |
+| `DZ-E5085` | error | admin payments | 409 |  |  | This rental has no payment to refund. |
+| `DZ-E5086` | error | admin payments | 400 | `amount` | yes | Capture from $0 up to the deposit amount. |
 
-## 6xxx - ID verification (reserved)
+## 6xxx - ID verification (C6)
 
-Reserved: no codes yet.
+| Code | Kind | Area | Status | Field | Server words | Message |
+| --- | --- | --- | --- | --- | --- | --- |
+| `DZ-E6001` | error | id verification | 403 |  |  | Verify your ID once to continue. |
+| `DZ-E6002` | error | id verification | 503 |  |  | ID verification isn't available yet. |
+| `DZ-E6003` | error | id verification | 403 |  |  | Contact support to verify. |
+| `DZ-E6004` | error | id verification | 409 |  |  | Your ID is already verified. |
+| `DZ-E6005` | error | id verification | 409 |  |  | Someone at Dzirent is checking your ID. You'll see the result here. |
+| `DZ-E6006` | error | id verification | 502 |  |  | The verification service didn't answer. Please try again. |
+| `DZ-E6007` | error | id verification | 401 |  |  | This verification event isn't signed correctly. |
+| `DZ-E6008` | error | id verification | 400 |  |  | This verification event is too old. |
+| `DZ-E6009` | error | id verification | 400 |  |  | This verification event is for another application. |
+| `DZ-E6010` | error | admin id verification | 404 |  |  | Verification not found |
+| `DZ-E6011` | error | admin id verification | 409 |  |  | This verification can't be changed now. |
+| `DZ-E6012` | error | admin id verification | 400 |  |  | Decide approve or reject. |
+| `DZ-E6013` | error | deletion | 503 |  |  | Couldn't remove your ID verification. Please try again. |
+| `DZ-E6014` | error | id verification | 409 |  |  | The verification didn't finish. Please try again. |
+| `DZ-E6015` | error | id verification | 409 |  |  | Verifying in the app isn't available on this phone yet. Verify on dzirent.com. |
 
 ## 7xxx - Data download, account deletion
 
@@ -188,6 +255,7 @@ Reserved: no codes yet.
 | `DZ-E9014` | error | system | 400 |  |  | This request couldn't be read. |
 | `DZ-E9015` | error | system | 400 |  |  | Unknown file job |
 | `DZ-E9016` | error | system | 400 |  |  | This request isn't valid. |
+| `DZ-E9020` | error | system | 500 |  |  | A setting is missing. Please try again later. |
 | `DZ-E9999` | error | system | 500 |  |  | Something went wrong. Please try again. |
 
-147 codes: 139 errors, 8 warnings.
+214 codes: 205 errors, 9 warnings.

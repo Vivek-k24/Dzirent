@@ -134,5 +134,44 @@ Filled when the phase arrives; listed now so the config has room for them.
 | `STORE_DEVELOPER_NAME` | The developer name on Google Play and Apple. Must equal `COMPANY_LEGAL_NAME` | Owner | P8A, P8B |
 | `PRIVACY_POLICY_URL`, `TERMS_URL`, `SUPPORT_URL` | The page addresses the store forms ask for | Engineering | P8A, P8B |
 | `ACCESSIBILITY_CONTACT` | Where people report an accessibility problem | Owner | P4A |
-</content>
-</invoke>
+
+## 10. Payment settings (C4)
+
+The payments backend (built in C4, switched off) reads these from the closed settings table; admins change them on the admin website's Settings page (each change needs a reason and is logged). The values below are the pilot defaults the owner gave; each still needs the person named here to confirm it, and the Terms of Use must describe it before payments are switched on. "Owner" here is the business owner, as everywhere in this file.
+
+| Setting | What it is, in plain words | Default | Who decides | Used on | Value |
+| --- | --- | --- | --- | --- | --- |
+| `platform_fee_percent` | Dzirent's fee, as a percent of the rental price, taken from each rental payment | 0 | Owner | Terms (`FEES`) | |
+| `claim_window_hours` | How long after a return the lender can claim part of the deposit for damage | 48 hours | Owner (attorney checks the wording) | Terms (`DEPOSIT_RULES`) | |
+| `cancellation_refund_cutoff_hours` | Until how long before the start date a renter who cancels gets a full refund | 48 hours | Owner (attorney checks the wording) | Terms (`CANCELLATION_POLICY`, `REFUND_POLICY`) | |
+| `late_cancellation_refund_percent` | How much of the rental price a renter gets back when cancelling after that cutoff (also for the automatic cancel when a piece isn't picked up) | 0% (the lender keeps the rental price) | Owner (attorney checks the wording) | Terms (`CANCELLATION_POLICY`) | |
+| Lender cancellation | A lender who cancels always refunds the renter in full (a fixed rule, not a setting) | Full refund | Owner confirms | Terms (`CANCELLATION_POLICY`) | |
+| `sales_tax_enabled` | Whether Dzirent adds sales tax to rentals. Only a hook today: it adds $0 even when on, until the tax adviser says how it is computed | Off | Attorney (tax adviser) | Terms (`SALES_TAX_STATEMENT`) | |
+| `rental_autocancel_days` | A rental not picked up this many days after its start date is cancelled automatically | 2 days | Owner | Terms | |
+| `deposit_hold_warning_hours` | A card hold lasts about a week; this long before it ends, while the piece is still out, Dzirent places a new hold and tells both people | 24 hours | Owner | Terms (`DEPOSIT_RULES`) | |
+| Charges to a saved card | The renter's card is saved at payment so the deposit hold and a decided claim can be charged without them present | Always | Attorney (consent wording) | Terms, pay screen (C5) | |
+| `PAYMENT_PROVIDER` | The payment processor's name for the Terms (the website's privacy page says "a payment processor" on purpose) | - | Owner + attorney | Terms, Privacy | |
+| `payment_deadline_hours` (C5) | How long after the lender accepts the renter has to pay; an unpaid rental is then cancelled automatically and both people are told | 24 hours (1-72) | Owner | Terms (`CANCELLATION_POLICY`) | |
+
+## 11. Emails (C5)
+
+The transactional emails (built in C5; nothing is sent while the provider key is blank) and the sign-in emails share one look. Before they go live:
+
+| Key | What it is | Who fills | Used on | Value |
+| --- | --- | --- | --- | --- |
+| `EMAIL_SENDER_NAME`, `EMAIL_FROM_ADDRESS` | The sender people see, e.g. "Dzirent" and `rentals@dzirent.com` (the function secret `EMAIL_FROM`); the domain needs the provider's DNS records | Owner | Emails | |
+| `EMAIL_FOOTER_ADDRESS` | A postal address in the footer, if the attorney says transactional emails need one (they carry no marketing) | Owner + attorney | Emails | |
+| `EMAIL_PROVIDER` | The email delivery service (the privacy page says "an email delivery service") | Owner + attorney | Privacy | |
+| `email_log_retention_days` | How long Dzirent keeps the record of each email (which one, to which account, the outcome; never its text) | 30 days (7-365) | Attorney | Privacy | |
+## 12. ID verification (C6)
+
+ID verification is built and available from Settings; requiring it (`verification_required`) stays off. The verification provider shows its own consent screen before every check, so Dzirent shows no second consent. Before it is required, or before the public launch:
+
+| Key | What it is | Who fills | Used on | Value |
+| --- | --- | --- | --- | --- |
+| `ID_VERIFICATION_CONSENT_NAME` | The company name the provider's consent screen shows people ("<company> wants to verify your identity"). It is set in the provider's console and **must match the registered company name** (`COMPANY_LEGAL_NAME`), as on the store listings | Owner | The provider's consent screen | |
+| `ID_VERIFICATION_PROVIDER` | The provider's name, if the Terms or the privacy policy should name it (the privacy page says "a verification provider" on purpose) | Owner + attorney | Terms, Privacy | |
+| `ID_DATA_RETENTION` | Dzirent keeps the result, the legal name (private) and the 18+ result until the account is deleted; the provider deletes its data within 12 months of the last verification (its consent screen says so) and at once when the account is deleted. Confirm both periods | Attorney | Privacy | |
+| `BIOMETRIC_STATEMENT` | The selfie and face match are biometric processing by the provider (Texas CUBI, Illinois BIPA, Washington). Confirm that the provider's consent screen is the consent these laws need and that the privacy page's wording is enough | Attorney | Privacy | |
+| `id_verification_max_attempts` | How many checks a person can start before they must contact support (setting, 1-10; default 3) | Owner | Settings | |
+| `VERIFICATION_REQUIRED_WORDING` | When `verification_required` is switched on: the Terms and privacy wording that a one-time ID check is required before messaging and publishing (see the runbook, `contract.md` section 10) | Attorney | Terms, Privacy | |

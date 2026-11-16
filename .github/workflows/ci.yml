@@ -117,6 +117,13 @@ jobs:
     name: database (local backend, pgTAP, integration)
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # C4: the official Stripe API mock, pinned by digest (stripe-mock 0.206.0). No Stripe key is used
+    # anywhere: the payment tests send stripe-mock's placeholder values (supabase/functions/local.stripe-mock.env).
+    services:
+      stripe-mock:
+        image: stripe/stripe-mock@sha256:aeb96b83e87a893d2ac005e363ac01ffa6e59a5ad85b49c155dfc9129de02e78
+    env:
+      DZIRENT_STRIPE_MOCK: external
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -133,6 +140,8 @@ jobs:
         run: supabase start -x studio,imgproxy,vector,logflare,postgres-meta,supavisor
       - name: Reset the database (every migration from scratch, then supabase/seed.sql)
         run: supabase db reset
+      - name: Join stripe-mock to the local backend's network (as dzirent-stripe-mock)
+        run: docker network connect --alias dzirent-stripe-mock supabase_network_Dzirent_dev ${{ job.services.stripe-mock.id }}
       - name: Database tests (pgTAP)
         run: supabase test db supabase/tests/database
       - name: Integration tests (stubs, functions serve, every supabase/tests script)

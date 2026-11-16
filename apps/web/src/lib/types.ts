@@ -14,6 +14,8 @@ export type Card = {
   cover_photo_path: string | null;
   studio_name: string | null;
   studio_handle: string | null;
+  /** C6: the lender verified their ID (the "Verified" badge). */
+  is_verified?: boolean | null;
 };
 export type Listing = Card & {
   description: string | null;
@@ -40,6 +42,8 @@ export type Studio = {
   reply_minutes: number | null;
   is_saved: boolean;
   listings: Card[];
+  /** C6: the studio's owner verified their ID. */
+  is_verified?: boolean | null;
 };
 export type StudioCardData = {
   studio_name: string;

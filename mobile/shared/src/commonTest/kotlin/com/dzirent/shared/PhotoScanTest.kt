@@ -93,6 +93,18 @@ class PhotoScanTest {
     }
 
     @Test
+    fun checkingGoesAsSoonAsTheResultIsIn() {
+        // V1a: the editor is still reading warnings and filling suggestions, but the result shows.
+        assertEquals(CheckBanner.Allowed, checkBanner(CheckPhase.CHECKING, scan()))
+        assertEquals(CheckBanner.Rejected("This looks like a hoodie."),
+            checkBanner(CheckPhase.CHECKING, scan(verdict = "rejected", reason = "This looks like a hoodie.")))
+        assertEquals(CheckBanner.Failed, checkBanner(CheckPhase.CHECKING, scan(status = "failed", verdict = "review")))
+        // Still queued or running, or nothing in yet: checking.
+        assertEquals(CheckBanner.Checking, checkBanner(CheckPhase.CHECKING, scan(status = "queued", verdict = null)))
+        assertEquals(CheckBanner.Checking, checkBanner(CheckPhase.CHECKING, null))
+    }
+
+    @Test
     fun suspensionNoticeMatchesTheDatabaseWording() {
         val now = kotlinx.datetime.Instant.parse("2026-11-07T12:00:00Z")
         assertEquals(

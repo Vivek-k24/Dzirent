@@ -202,7 +202,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Owner: phone test of P5C (see the P5C handoff), after the website with `/.well-known/assetlinks.json` is live on dzirent.com (it is served from `main`) | To do |
 | P8A: add the release package and Play signing fingerprint to `assetlinks.json` | To do |
 | P5B Logs and monitoring: error tracking, uptime checks, alerts, backup restore drill, incident plan | To do |
-| P6A ID verification (Didit) on all three platforms; flag off, keys blank | To do |
+| P6A ID verification (Didit) on all three platforms; flag off, keys blank | Done in C6 (Claude Code): Android (native SDK) and website live with the keys set and the flag off; iPhone opens Didit's hosted page until the Mac session |
 | P6B Payments backend: Stripe Connect test mode, deposits, "confirm rental" step, sales tax hook off | To do |
 | P6C Payment screens on all three, rental reminders, email templates; email service key blank | To do |
 | P7A Automated tests on every PR in GitHub Actions; one Mac session for all iPhone checks | To do |
@@ -218,23 +218,53 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| Done by: Claude Code (C1, C2, S1, S1b, C3) | |
+| Done by: Claude Code (C1, C2, S1, S1b, C3, C4, C5, C6, F1) | |
 | C1 Error and warning codes (one catalog, generated Kotlin/TypeScript, every database refusal and Edge Function error coded), price per day, background job outbox with retries and dead-letter list, client read retries, stray root doc removed | Done (Claude Code) |
 | C2 Test foundation: local backend in Docker (migrations from scratch + local seed, stubs for push and vision, functions served locally), pgTAP suite (9 files), integration scripts local by default with one runner, vision model tests marked, CI on every pull request (`.github/workflows/ci.yml`), `pranalika/testing.md` | Done (Claude Code) |
 | S1 Security updates: vision service on Pillow 13.0.0, torch 2.14.1 (CPU), transformers 5.20.2, FastAPI 0.162.0 / Starlette 1.7.0, open_clip 3.3.0 (no verdict changed on 92 photos and 12 listings in a local Linux image); website minimatch 11.0.3 through an npm override; 5 code scanning alerts dismissed ("used in tests"); `security-log.md` "GitHub security alerts (S1)" | Done (Claude Code); deployed in S1b |
 | Owner: `gcloud auth login` on this PC, then an agent redeploys `vision` with the S1 packages and runs the eval | Done: owner signed in; S1b deployed `vision-00006-sxv` (`s1.1`), eval unchanged on 92 photos and 12 listings |
 | S1b: Pygments 2.21.0 and the CI vision job's separate pin dropped; `.venv/` kept out of Cloud Build and Docker uploads; `contracts/generate.mjs` escapes backslashes and control characters for Kotlin and Markdown (CodeQL #9 fixed on PR #103, generated files unchanged) | Done (Claude Code) |
 | Owner: merge `Preview` into `main` (PR #103): the 82 Dependabot alerts are on `main` and close with the merge | To do |
-| Request from S1: seed and test scripts stop putting the email in sign-in errors (`supabase/`) | To do |
+| Request from S1: seed and test scripts stop putting the email in sign-in errors (`supabase/`) | Done in C5 (Claude Code) |
 | C3 Rental lifecycle: request, accept or decline (48-hour expiry), pickup and return with private condition photos (at least 2 by the lender), completed; writes only through database functions with `rental_events`; price snapshot; no double booking (exclusion constraint, back-to-back allowed); rental pushes and daily reminders with a Rental reminders switch; rental reports; condition photo retention (count-only cleanup); payment states present but unused (`payments_enabled` off). Apps and website: Request to rent, rental card, My rentals, Settings > Notifications; admin user lookup and report detail show the timeline and photos. Live: migration applied, 4 Edge Functions redeployed | Done (Claude Code) |
 | Owner: phone test of C3 (see the C3 handoff) | To do |
 | Mac: build-check the C3 shared code on iPhone (`RentalViews.kt`, `Rentals.kt`, `rememberPhotoSources` for condition photos), see the C3 handoff | To do |
 | Owner and attorney: condition photo retention (placeholder 365 days after the rental ends); whether the privacy text change needs a version bump (gap G34) | To do |
-| C4 | To do |
-| C5 | To do |
-| C6 | To do |
+| C4 Payments backend (Stripe Connect, switched off, keys blank): Express onboarding, destination charges with a fee setting, deposit holds (place, release, capture, renew), claims with admin decisions, refunds by the cancellation rule, a signed and idempotent webhook, money steps through the outbox with idempotency keys; tested against stripe-mock (pinned) in CI. C3 follow-ups: automatic cancel 2 days after the start, no-window listings always available, `rental_cancelled` / `rental_expired` pushes, `admin_end_rental`. Settings: every business number typed, ranged and logged; admin Payments, Settings and Integrations pages. Live: 2 migrations applied, 8 Edge Functions deployed, `payments_enabled` off | Done (Claude Code) |
+| Business owner and attorney: confirm the payment settings in `legal-placeholders.md` section 10 (fee, claim window, refund cutoff and late refund, sales tax, charges to a saved card) and write them into the Terms before payments go live | To do |
+| Request from C4: the apps' and website's date pickers treat "no availability windows" as always open (one line each in `Rentals.kt` and `rentals.ts`), see the C4 handoff | Done in C5 (Claude Code) |
+| Owner: the day real Stripe keys arrive, follow the runbook in `contract.md` section 7 (test mode first) | To do |
+| C5 Payment screens on Android and the website (hidden while `payments_enabled` is off): My studio payouts (Stripe onboarding in the browser, status on return), the listing deposit amount, the rental card's payment states and actions (Pay through Stripe's own payment sheet / Payment Element on a pay page with its own CSP, the deposit hold at pickup, claims, accept or dispute, receipts), the lender's payout notice; pinned Stripe Android SDK 21.29.2 and `@stripe/stripe-js` 9.17.0. Payment deadline setting (24 h) with the automatic cancel. Transactional emails through the outbox and `send-email` (provider-neutral, key blank: every email skipped), templates, Auth email templates (local only), `Email me about rentals`. C4 follow-ups: no-window date pickers, the request answer time from the server, `tools/gen-code-reference.py` with a freshness check, every Edge Function redeployed, the S1 request. Live: migration applied, 15 Edge Functions deployed, `payments_enabled` off | Done (Claude Code) |
+| Mac: the iPhone payment sheet (Stripe iOS SDK PaymentSheet behind `rememberPaymentSheetLauncher`, `ui/PaymentSheet.ios.kt`) and a build check of the C5 common code, see the C5 handoff | To do |
+| Owner: phone test of C5 with payments off (nothing changes; Settings > Notifications has `Email me about rentals`), see the C5 handoff | To do |
+| Owner and agent: the Stripe test-mode rehearsal (`pranalika/stripe-rehearsal.md`) once test keys exist | To do |
+| Owner: an email provider account and the `dzirent.com` DNS records, then the email runbook (`contract.md` section 9) | To do |
+| Business owner and attorney: confirm `payment_deadline_hours` (24 h), the email record retention (30 days) and the email sender (`legal-placeholders.md` sections 10-11) | To do |
+| C6 ID verification with Didit, live: available to anyone from Settings while the Didit keys are set, `verification_required` (the gate on chats, messages and publishing, `DZ-E6001`) off. `identity_verifications` (owner reads the status only; legal name private; no images, birthdate or document data), the Verified badge in the shop window (cards, listing and studio pages, chat headers), attempts (3, a setting), the ID's 18+ result outranking store signals (a minor is declined and blocked), duplicate faces to admin review, `didit-start` / `didit-webhook` (X-Signature on the raw body, body timestamp, application id, event id once) / `didit-sync` through the outbox, 10-minute reconciliation, Didit deletion at account deletion, admin ID verification queue (approve, reject, reset attempts; logged), Settings > ID verification with the keeps/never-keeps note, website `/verify/done`, Android Didit SDK 4.9.1, privacy page. Live: both C6 migrations applied (the follow-up turns on RLS for the two closed Didit tables and C3's `rental_reminders`; pgTAP now checks every table), all 18 Edge Functions deployed on the 196-code catalog, the Didit key, webhook secret and job secret set. Live test passed 2026-11-15 (the owner's ID on a test account: verified, 18+, attempts 1, the badge in the shop window; the first starts got `DZ-E6006` until the key's Sessions access was set to Read + Write) | Done (Claude Code) |
+| Owner: the one live verification on the preview site (steps in the C6 handoff), then an agent confirms it read-only | Done 2026-11-15: verified once the Didit key's Sessions access was Read + Write; confirmed read-only by Claude Code, see the C6 handoff |
+| Owner: delete the unused `DIDIT_WORKFLOW_ID` line in `providers.env`; before deleting the live-test account (Elena Rostova), check that the Didit key's People (users) access is Read + Write, see the C6 handoff | To do |
+| Mac: Didit's iOS SDK behind `rememberIdVerificationLauncher` (the iPhone opens Didit's hosted page until then) and a build check of the C6 common code, see the C6 handoff | To do |
+| Owner and attorney: the consent screen's company name, biometric consent, retention, and the Terms before `verification_required` is switched on (`legal-placeholders.md` section 12) | To do |
+| F1 Owner test fixes (Claude Code): listing drafts save unfinished (no size, price or details) on the website and apps, each step and Publish ask for their own fields with field-level codes `DZ-E2070`-`E2085`, an unfinished row goes live only through Publish (never the closet switch); every website call and app call gives up after 30 s with `DZ-E9002` and the form's button comes back; inactive step indicator steps have the normal cursor; your own studio shows Edit studio (no Save, Report, Block or Studio options), your own listing Edit only; database refuses a self-block or self-report written to the tables (`DZ-E3021`, `DZ-E5017`); dark-mode chips, pills, badges and the photo counter on theme tokens (every pair 5.2:1 or more); website measurements consent buttons fixed (sent as GET, answered "Page not found."); vision `opentelemetry-api` 1.45.2 (Dependabot alert 83; verdicts unchanged on 92 photos, not redeployed: the alert closes with the merge). Live: the F1 migration applied after CI (run 43737167391), Security Advisor unchanged | Done (Claude Code) |
+| Owner: phone and website test of F1 (see the F1 handoff) | To do |
+| Mac: build-check the F1 shared code on iPhone (see the F1 handoff) | To do |
 | C7 | To do |
 | C8 | To do |
 | Mac: build-check the C1 shared-code changes on iPhone (`ErrorCatalog.kt`, `ReadRetry.kt`, the Ktor `HttpRequestRetry` in `createDzirentSupabaseClient`, price per day), see the C1 handoff | To do |
 | Owner: phone test of C1 (see the C1 handoff) | To do |
 | Owner: make the CI checks required on `main` and `Preview` (branch rules), once a few runs are green | To do |
+
+## Vision data
+
+| Item | Status |
+| --- | --- |
+| D1 | In progress (Antigravity) |
+| D2 | To do |
+| D3 | To do |
+| D4 | To do |
+| V1a Color reader (Claude Code): GrabCut garment mask (OpenCV 4.14.0.94, no new model), light correction from a neutral background on the daylight locus, CIELAB clusters named from the xkcd survey's 949 names (CC0) and mapped to the apps' 15 values only, the model's "a photo of a <name> garment" prompts as a second opinion (`color_confidence`); "Checking your photos…" goes as soon as the result is in (website and apps). Sample listings: colors right 12 of 12 (old 8), sample photos 22 of 22 (old 13); verdicts, reasons, categories and non-color title words identical on all 92 photos and 12 listings. Not deployed: gcloud sign-in expired | Done (Claude Code); deploy waits for the owner's `gcloud auth login` |
+| Owner: `gcloud auth login` on this PC, then an agent redeploys `vision` with V1a (the S1 command in the V1a handoff) and confirms `/health` (`v1a.1`) and the warm scan time | To do |
+| Owner: decide whether the apps' color list should grow (ivory/cream, gold, teal, khaki and the other names in the V1a handoff) | To do |
+| Owner: phone and website test of the "Checking your photos…" fix (see the V1a handoff) | To do |
+| V1b | To do |
+| V2 | To do |

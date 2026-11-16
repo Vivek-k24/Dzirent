@@ -24,6 +24,13 @@ const val DRAFT_CATEGORY = "Everyday"
 /** A listing whose photos were uploaded for the check but whose details were never saved. */
 val Listing.isDraft: Boolean get() = status == "paused" && title == DRAFT_TITLE
 
+/**
+ * F1: a paused listing that was never finished: a draft, or a row saved from the website's
+ * details step with no size or price yet. It goes live only by publishing it in the editor
+ * (never the closet's switch), and publishing makes it active like a new listing.
+ */
+val Listing.isUnfinished: Boolean get() = isDraft || (status == "paused" && (sizeLabel.isBlank() || priceUsd == null))
+
 /** What the form fills in from an allowed photo check. [label] is the policy item it came from (for tracking). */
 data class ListingSuggestions(
     val label: String,
@@ -89,23 +96,28 @@ sealed class CheckBanner {
     object Failed : CheckBanner()
 }
 
-/** What to show for the check, or null before there is one. An admin's decision wins over the verdict. */
+/**
+ * What to show for the check, or null before there is one. An admin's decision wins over the
+ * verdict. V1a: "Checking your photos…" goes as soon as the check's result is in, even while the
+ * editor is still reading its warnings and filling the suggestions.
+ */
 fun checkBanner(phase: CheckPhase, scan: ListingScan?, uploadError: String? = null): CheckBanner? = when (phase) {
     CheckPhase.NONE -> null
     CheckPhase.UPLOADING -> CheckBanner.Uploading
     CheckPhase.UPLOAD_FAILED -> CheckBanner.UploadFailed(uploadError ?: "Couldn't upload your photos. Please try again.")
-    CheckPhase.CHECKING -> CheckBanner.Checking
+    CheckPhase.CHECKING -> if (scan?.finished == true) resultBanner(scan) else CheckBanner.Checking
     CheckPhase.TIMED_OUT -> CheckBanner.Failed
-    CheckPhase.FINISHED -> when {
-        scan == null -> null
-        scan.adminDecision == "approved" -> CheckBanner.Allowed
-        scan.adminDecision == "rejected" ->
-            CheckBanner.Rejected(scan.adminReason?.ifBlank { null } ?: scan.reason ?: "These photos can't be listed.")
-        scan.status == "failed" -> CheckBanner.Failed
-        scan.verdict == "allowed" -> CheckBanner.Allowed
-        scan.verdict == "rejected" -> CheckBanner.Rejected(scan.reason ?: "These photos can't be listed.")
-        else -> CheckBanner.Review(scan.reason?.trim()?.ifBlank { null })
-    }
+    CheckPhase.FINISHED -> scan?.let { resultBanner(it) }
+}
+
+private fun resultBanner(scan: ListingScan): CheckBanner = when {
+    scan.adminDecision == "approved" -> CheckBanner.Allowed
+    scan.adminDecision == "rejected" ->
+        CheckBanner.Rejected(scan.adminReason?.ifBlank { null } ?: scan.reason ?: "These photos can't be listed.")
+    scan.status == "failed" -> CheckBanner.Failed
+    scan.verdict == "allowed" -> CheckBanner.Allowed
+    scan.verdict == "rejected" -> CheckBanner.Rejected(scan.reason ?: "These photos can't be listed.")
+    else -> CheckBanner.Review(scan.reason?.trim()?.ifBlank { null })
 }
 
 /** The database's reason when a photo matches another lender's listing. */

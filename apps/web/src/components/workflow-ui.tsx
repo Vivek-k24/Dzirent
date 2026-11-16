@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Icon } from "./icon";
+import { isVerificationGate, verifyHref } from "@/lib/verification";
 export function WorkflowModal({
   title,
   onClose,
@@ -60,9 +61,12 @@ export function WorkflowModal({
 export function Notice({
   message,
   error = false,
+  verifyNext,
 }: {
   message: string;
   error?: boolean;
+  /** C6: where "Verify ID" comes back to (default: this page). */
+  verifyNext?: string;
 }) {
   return message ? (
     <p
@@ -70,6 +74,22 @@ export function Notice({
       role={error ? "alert" : "status"}
     >
       {message}
+      {/* C6: the one-time ID check (DZ-E6001, only while verification_required is on). */}
+      {error && isVerificationGate(message) && (
+        <>
+          {" "}
+          <a
+            className="text-link accent"
+            href={verifyHref(verifyNext)}
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.assign(verifyHref(verifyNext ?? window.location.pathname + window.location.search));
+            }}
+          >
+            Verify ID
+          </a>
+        </>
+      )}
     </p>
   ) : null;
 }

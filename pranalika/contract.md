@@ -42,6 +42,7 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
   - `studio_handle` (text): studio handle.
   - `price_per_day` (numeric), `price_unit` (text, always `'per_day'` for now) (C1).
   - `days` (integer) and `total` (numeric): with both `p_start_date` and `p_end_date`, the days in the range counting both ends (Dec 30 - Jan 2 is 4) and `price_per_day × days`; null otherwise (C1).
+  - `is_verified` (boolean, C6): the lender verified their ID (the "Verified" badge). The same column is in `fit_listings`, `my_saved_listings` (false for an unavailable piece), `get_listing`, `get_studio` (the studio and each card in `listings`); `my_conversations` returns `other_is_verified` for the other person (chat headers). Nothing else about the check is ever returned.
 
 ### `get_listing`
 - **Who can call:** Guest and signed-in (`anon`, `authenticated`).
@@ -139,12 +140,12 @@ All shop window functions have an empty search path (`search_path = ''`), qualif
 ### `block_user` / `unblock_user`
 - **Who can call:** Signed-in only (`authenticated`).
 - **Inputs:** `p_handle` (text).
-- **Behavior:** Resolves studio handle to user ID internally and adds or removes the block relationship in `blocks`. Never returns account IDs.
+- **Behavior:** Resolves studio handle to user ID internally and adds or removes the block relationship in `blocks`. Never returns account IDs. Your own handle does nothing (no row). F1: a self-block written to `blocks` directly is refused, `DZ-E3021`.
 
 ### `report_user`
 - **Who can call:** Signed-in only (`authenticated`).
 - **Inputs:** `p_handle` (text), `p_reason` (text), `p_details` (text, default null).
-- **Behavior:** Resolves studio handle to target user ID internally and inserts audit row into `reports`. Never returns account IDs.
+- **Behavior:** Resolves studio handle to target user ID internally and inserts audit row into `reports`. Never returns account IDs. Your own handle does nothing (no row). F1: a report about yourself, your own listing or your own message written to `reports` directly is refused, `DZ-E5017`.
 
 ### `start_conversation`
 - **Who can call:** Signed-in only (`authenticated`).
@@ -219,11 +220,11 @@ Admins are the accounts in `app_private.admin_users` (closed to every API role).
 - **Adding or removing an admin:** list the admin emails in `ADMIN_EMAILS` (comma-separated) in `H:\DziRent\secrets\providers.env`, then an agent runs `node supabase/seed/admins.mjs` from the repo root. It makes `admin_users` match the list exactly: listed accounts are added, unlisted admins removed, each change logged as `admin_added` / `admin_removed`. An empty list is refused. An email with no Dzirent account is skipped (sign up first, then run it again). The admin then enrolls a TOTP factor (Supabase MFA) and signs in with it.
 - `is_admin()` → `boolean`: true only for an admin at `aal2`. Any signed-in user may call it.
 - **Queues:**
-  - `admin_queues()`: counts `open_reports`, `scans_in_review` (latest scan `done` + `review`, no admin decision), `open_takedowns` (`received` or `countered`), `id_verification_reviews` (always 0 until P6A).
+  - `admin_queues()`: counts `open_reports`, `scans_in_review` (latest scan `done` + `review`, no admin decision), `open_takedowns` (`received` or `countered`), `id_verification_reviews` (C6: ID checks `in_review`; was always 0).
   - `admin_list_reports(p_status text default 'open', p_limit int default 30, p_offset int default 0)`: reports (`p_status` null = all) with reporter and target names and handles, outcome, and the evidence snapshot (`evidence`).
   - `admin_list_scan_reviews(p_limit, p_offset)`: scans waiting for a person, with the listing title, lender handle and each photo's storage path, slot, decision, warnings, `looks_like`, `nsfw` and `hooded`.
   - `admin_list_takedowns(p_status text default null, p_limit, p_offset)`: takedown requests; null = the open ones.
-  - `admin_list_id_reviews()`: `[]` until ID verification (P6A).
+  - `admin_list_id_reviews(p_status text default null, p_limit int default 30 (max 100), p_offset int default 0)`: C6, section 10 (was `[]`).
 - **Reports** (each closes an open report when given one; a closed report can't be closed again):
   - `admin_dismiss_report(p_report_id, p_reason)`: outcome `dismissed`.
   - `admin_warn_user(p_user_id, p_note, p_report_id default null)`: adds a `user_warnings` row (the user can read their own); outcome `warned`.
@@ -281,11 +282,12 @@ Reports (P2B changes):
 - `admin_find_user` (P2B) also returns `age_check` (`{ source, result, platform, checked_at }` of the latest row, or null) and `age_blocked` (boolean).
 
 - `age_blocked()` → `boolean` (P3A): Signed-in only. True while the caller is blocked by the age gate. The website shows its full blocked page then.
+- **C6, the ID's age:** an approved ID records a check with `source` `id_verification` and `platform` `server` (written only by the server, never by `record_age_check`, which still refuses that source with `DZ-E1031`). The latest ID result outranks every other check: an ID's `adult` lifts a store's `minor`, and an ID's `minor` blocks the account (its listings paused) whatever a store says later. The cleanup job `old_age_checks` keeps the latest ID result too.
 
 ### Download my data (P3A)
 - **Clients call the Edge Function `export-my-data`** (below). It returns the file; the database function behind it is `export_my_data()`.
 - `export_my_data()` → `jsonb`: Signed-in only. Everything Dzirent holds about the caller, built from `auth.uid()` only. Once per 24 hours: a second call is refused with `P0001` "You can download your data once a day. Try again after Nov 8, 2026, 6:51 PM UTC." Each successful call adds a row to `data_exports`.
-- **Parts:** `account` (email, created, last sign-in), `profile`, `private_profile`, `listings` (each with `measurements`, `availability`, `photos`, `photo_checks` with per-photo results), `saved_pieces`, `saved_studios`, `chats` (with `messages`), `rentals` (since C3 with `price_per_day`, `days`, `total`, `currency` and `events`: from, to, by you / other person / Dzirent, note, time), `condition_photos` (C3: the caller's own pickup and return photos, `rental_id`, `stage`, `storage_path`, `uploaded_at`; the Edge Function adds `link`, a signed link valid 7 days), `blocked_people`, `reports_filed`, `warnings`, `accessory_declarations`, `listing_declarations`, `legal_acceptances`, `age_checks`, `notification_settings`, `devices` (platform and dates, never tokens), `suggestion_choices`, `listing_activity`, `earlier_exports`.
+- **Parts:** `account` (email, created, last sign-in), `profile`, `private_profile`, `listings` (each with `measurements`, `availability`, `photos`, `photo_checks` with per-photo results), `saved_pieces`, `saved_studios`, `chats` (with `messages`), `rentals` (since C3 with `price_per_day`, `days`, `total`, `currency` and `events`: from, to, by you / other person / Dzirent, note, time), `condition_photos` (C3: the caller's own pickup and return photos, `rental_id`, `stage`, `storage_path`, `uploaded_at`; the Edge Function adds `link`, a signed link valid 7 days), `blocked_people`, `reports_filed`, `warnings`, `accessory_declarations`, `listing_declarations`, `legal_acceptances`, `age_checks`, `notification_settings`, `devices` (platform and dates, never tokens), `suggestion_choices`, `listing_activity`, `earlier_exports`, and (in the file since C6; the database had them since C4/C5) `claims`, `payments`, `emails`, plus `id_verification` (C6: status, the legal name from the ID, the 18+ result, attempts, dates; no images, birthdate or document details exist to include).
 - **Other people** appear only as `{ name, handle }` (studio name, else display name; studio handle). Messages say `from: "you"` or `"other person"`. Never another user's account id, email, location, measurements or private fields. Reports about the caller, report evidence, outcomes and admin notes are not included.
 
 ### Cleanup and retention jobs (P3B)
@@ -355,6 +357,15 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 | `admin-actions` | `action`, `reason` (required, at most 500 characters), `user_id`, `report_id`, `listing_id`, `photo_ids` (at most 20), `takedown_id` | 16 KB |
 | `send-push` | `kind`, `conversation_id`, `recipient_id`, `title` (required), `body` | 8 KB |
 | `scan-listing` | `scan_id` (required) | 1 KB |
+| `stripe-onboard` (C4) | `return_url`, `refresh_url` | 2 KB |
+| `stripe-account-status`, `admin-integrations` (C4) | none | 1 KB |
+| `stripe-pay` (C4) | `rental_id` (required) | 1 KB |
+| `stripe-deposit` (C4) | `action`, `rental_id` (people, both required); `operation_id` (the outbox) | 1 KB |
+| `stripe-refund` (C4) | `operation_id` (required) | 1 KB |
+| `stripe-webhook` (C4) | Stripe's event, read only after its signature is checked | 512 KB |
+| `didit-start` (C6) | `action` (`start` default, or `check`), `return_url` | 2 KB |
+| `didit-webhook` (C6) | Didit's event, read only after its signature is checked | 1 MB |
+| `didit-sync` (C6) | `session_id` (required) | 1 KB |
 
 ### `delete-listing`
 - **Who can call:** Signed-in listing owner (`POST /functions/v1/delete-listing`).
@@ -370,6 +381,7 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 - **Behavior:**
   1. Verifies caller authentication.
   2. Refuses with HTTP 409 `DZ-E7010` while the caller has a rental in progress as renter or lender: `accepted`, `awaiting_payment`, `paid`, `picked_up`, `returned`, `claimed` or `disputed` (C3; asked with `account_has_rental_in_progress(p_user)`, server key only). A request alone doesn't block.
+  2b. C6: the ID verification. With the Didit keys set, every Didit session of the person (`didit_sessions_for`) is deleted at Didit (`DELETE /v3/session/{id}/delete/`, its images and face data with it), then Didit's user record for our account id (`POST /v3/users/delete/` with `vendor_data_list`); a 404 counts as done. Any other failure stops the deletion with HTTP 503 `DZ-E6013` (try again later) so nothing is left behind. Then Dzirent's rows go (`didit_forget`). While the keys are blank only Dzirent's rows go.
   3. Finds all caller listings and deletes their folders from `listing-photos` via Storage API.
   4. Deletes auth user via admin client; foreign keys cascade profile, listings, and child rows.
 - **Returns:** HTTP 200 `{ "ok": true }`.
@@ -377,7 +389,7 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 ### `send-push`
 - **Who can call:** The database only (`app_private.queue_push`, through the `async_jobs` outbox and `pg_net`, C1). Never apps.
 - **Auth:** Header `x-send-push-secret` must equal the function secret `SEND_PUSH_SECRET` (the same value is in Vault as `send_push_secret`); compared in constant time. `verify_jwt = false`. Anything else gets HTTP 401.
-- **Payload:** `{ "kind": "message" | "new_chat" | "dates" | "rental_request" | "rental_accepted" | "rental_declined" | "pickup_tomorrow" | "return_tomorrow" | "return_overdue" | "rental_completed", "conversation_id": "<uuid>", "recipient_id": "<uuid>", "title": "<text>", "body": "<text>" | null }`, already checked and worded by the database (rental kinds since C3).
+- **Payload:** `{ "kind": "message" | "new_chat" | "dates" | "rental_request" | "rental_accepted" | "rental_declined" | "pickup_tomorrow" | "return_tomorrow" | "return_overdue" | "rental_completed" | "rental_cancelled" | "rental_expired" | "claim_filed" | "claim_decided" | "deposit_hold_ending", "conversation_id": "<uuid>", "recipient_id": "<uuid>", "title": "<text>", "body": "<text>" | null }`, already checked and worded by the database (rental kinds since C3, the last five since C4).
 - **Behavior:** Gets a Google access token with the Firebase server key (`FIREBASE_SERVICE_ACCOUNT_BASE64`), sends the data message above through the FCM HTTP v1 API to each of the recipient's Android tokens (TTL one day), then deletes the tokens Firebase reports as unregistered or invalid.
 - **Returns:** HTTP 200 `{ "sent", "failed", "removed", "errors" }`: counts and Firebase error codes only, never tokens or text. Since C1, when nothing was delivered and a phone failed for a reason other than a dead token, HTTP 503 `DZ-E9003` with the same counts, so the outbox tries again.
 
@@ -404,6 +416,7 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 ### Vision service (Cloud Run, server only)
 - Service `vision` in Google Cloud project `dzirent`, `us-west1`. Callable only by signed-in Google accounts with `roles/run.invoker` on it (`vision-invoker`, and the owner for the eval). Holds no keys and never calls Supabase. Fetches photos only from the public `listing-photos` bucket. Details: `services/vision/README.md`.
 - Since P2A it also runs the image safety model `Marqo/nsfw-image-detection-384` (Apache 2.0, pinned revision, built into the image). The scan response names it in `safety_model`; `/health` in `safety_model`, `safety_revision`, `safety_license`.
+- Colors (V1a, `service_version` `v1a.1`): `suggestions.colors` holds at most two of the apps' 15 values (Black, White, Grey, Navy, Blue, Green, Emerald, Red, Maroon, Pink, Purple, Orange, Yellow, Beige, Brown), never anything else; empty for costume jewelry. New key `suggestions.color_confidence`: 0.9 (the model agrees with the pixels), 0.7 (the model settled a close call), 0.6 (pixels only), 0.4 (the model disagreed; the pixel answer stays), or null with no colors. Nothing reads it yet; the lender sees no warning either way. Verdicts, reasons, categories and the rest of the suggestions are unchanged.
 
 ---
 
@@ -413,7 +426,8 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 
 | Table | Operations | RLS Rule |
 | --- | --- | --- |
-| `profiles` | SELECT, UPDATE | `id = auth.uid()`. `suspended_until` and `suspension_reason` (P2B) are readable by the owner and written only by admin functions. |
+| `profiles` | SELECT, UPDATE | `id = auth.uid()`. `suspended_until` and `suspension_reason` (P2B) are readable by the owner and written only by admin functions. `is_verified` (C6, the badge) is readable by the owner and kept by the server from `identity_verifications` (a trigger keeps it on any app update). |
+| `identity_verifications` | SELECT (`user_id`, `status`, `updated_at` only) | C6. `user_id = auth.uid()`. One row per person, written only by the server (section 10). The other columns (`provider_session_id`, `legal_name`, `is_adult`, `attempts`, `reason`, `verified_at`, `created_at`) aren't readable by people: `my_verification()` gives the status, tries and dates. In the `supabase_realtime` publication (status only). Removed with the account. |
 | `private_profiles` | ALL | `user_id = auth.uid()`. `measurements_consent_at` (P1B) is written only by `give_measurements_consent` / `withdraw_measurements_consent`; body measurements need it (see "Terms acceptance and measurements consent"). |
 | `listings` | SELECT, INSERT, UPDATE, DELETE | `lender_id = auth.uid()`. INSERT requires lender/both role. UPDATE restricted to safe columns. DELETE requires empty Storage folder. `auto_paused_reason` (Step 8B) is read-only for apps. `hold`, `hold_reason`, `hold_restores` (P2B) are server-only (see "Admin"). |
 | `listing_photos` | ALL | Owned listing only (`l.lender_id = auth.uid()`). |
@@ -427,8 +441,8 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `rental_outcomes` | SELECT, INSERT | `user_id = auth.uid()`. Old "did it happen?" answers; kept readable, no longer written by the apps (C3). |
 | `saved_listings` | ALL | `user_id = auth.uid()` |
 | `saved_studios` | ALL | `user_id = auth.uid()` |
-| `blocks` | ALL | `blocker_id = auth.uid()` |
-| `reports` | SELECT, INSERT | `reporter_id = auth.uid()`. Since P2B: server-set `target_user_id`, `status`, `outcome`, `outcome_note`, `closed_at`, `closed_by`; evidence in `app_private.report_evidence` (admins only); kept after either account is deleted. |
+| `blocks` | ALL | `blocker_id = auth.uid()`. F1: never yourself (trigger `blocks_not_self`, `DZ-E3021`). |
+| `reports` | SELECT, INSERT | `reporter_id = auth.uid()`. Since P2B: server-set `target_user_id`, `status`, `outcome`, `outcome_note`, `closed_at`, `closed_by`; evidence in `app_private.report_evidence` (admins only); kept after either account is deleted. F1: never about yourself (`target_user_id` = the reporter is refused in `report_prepare`, `DZ-E5017`). |
 | `user_warnings` | SELECT | `user_id = auth.uid()` (P2B). Written only by `admin_warn_user`. Columns `id`, `user_id`, `note`, `report_id`, `created_by`, `created_at`. Removed with the account. |
 | `listing_events` | SELECT, INSERT | `user_id = auth.uid()` |
 | `suggestion_events` | SELECT, INSERT | `user_id = auth.uid()` |
@@ -437,7 +451,7 @@ Guests have zero access to raw tables. Authenticated clients interact only with 
 | `device_tokens` | SELECT, DELETE | `user_id = auth.uid()`. Added only through `register_push_token`. Columns `token` (unique), `user_id`, `platform`, `created_at`, `last_seen_at`. Removed with the account. |
 | `notification_settings` | SELECT, INSERT, UPDATE | `user_id = auth.uid()`. Columns `messages` (default true), `show_message_text` (default false), `rental_reminders` (default true, C3), `updated_at`. Removed with the account. |
 | `us_cities` | None | Closed to all direct access; query via `search_cities`. |
-| `listing_scans` | SELECT | Owned listing only (`l.lender_id = auth.uid()`). Written only by `request_scan` and the server. Columns `id`, `listing_id`, `status` (`queued`, `running`, `done`, `failed`), `verdict` (`allowed`, `rejected`, `review`; set when done or failed), `reason` (plain words for the lender), `suggestions` (JSON: `item_key`, `item_label`, `category`, `item_type`, `garment_type`, `colors`, `pattern`, `fabric`, `styles`, `title`, `description`, `alternatives`, `confidence` when there is a confident allowed item, plus always `quality` `{ summary, photos, photos_with_warnings, warnings }`, `duplicate`, `model`), `photo_set_hash`, `admin_decision` (`approved`, `rejected` or null), `error` (short code), `created_at`, `started_at`, `finished_at`, `admin_decided_at`. Removed with the listing. In the `supabase_realtime` publication (Step 8B): owners receive changes to their own scans only (RLS applies). |
+| `listing_scans` | SELECT | Owned listing only (`l.lender_id = auth.uid()`). Written only by `request_scan` and the server. Columns `id`, `listing_id`, `status` (`queued`, `running`, `done`, `failed`), `verdict` (`allowed`, `rejected`, `review`; set when done or failed), `reason` (plain words for the lender), `suggestions` (JSON: `item_key`, `item_label`, `category`, `item_type`, `garment_type`, `colors` (V1a: at most two of the apps' 15 color values), `color_confidence` (V1a), `pattern`, `fabric`, `styles`, `title`, `description`, `alternatives`, `confidence` when there is a confident allowed item, plus always `quality` `{ summary, photos, photos_with_warnings, warnings }`, `duplicate`, `model`), `photo_set_hash`, `admin_decision` (`approved`, `rejected` or null), `error` (short code), `created_at`, `started_at`, `finished_at`, `admin_decided_at`. Removed with the listing. In the `supabase_realtime` publication (Step 8B): owners receive changes to their own scans only (RLS applies). |
 | `photo_scans` | SELECT | Owned listing only. Written only by the server. One row per scanned photo: `scan_id`, `listing_id`, `photo_id`, `storage_path`, `slot`, `blur_score` (0 sharp to 1 blurry), `brightness_score` (0 black to 1 white), `framing_score` (0 = whole piece in frame; higher = more of its outline on the edge), `worn_probability`, `fingerprint` (`vector(768)`), `labels` (JSON label scores), `warnings` (text[], worded as on the phone), `decision` (`allowed`, `not_allowed`, `not_clothing`, `detail`, `unsure`), `scanned_at`. Removed with the photo or listing. |
 | `policy_item_types` | SELECT | Everyone, guests included (`using (true)`); no writes through the API. Columns `key`, `label`, `kind` (`garment`, `accessory`, `other`), `allowed`, `category`, `item_type`, `garment_type`, `style`, `policy_group`, `noun`, `looks_like`, `reason`, `prompts`, `position`. |
 | `app_settings` | SELECT | Everyone, guests included; changed by admins through `set_flag` (P2B). Columns `key`, `enabled`, `description`, `updated_at`. |
@@ -497,7 +511,7 @@ Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.k
 ### Error and warning codes
 - **One source:** `contracts/error-codes.json`. `node contracts/generate.mjs` writes the Kotlin (`mobile/shared/.../util/ErrorCodes.kt`), website (`apps/web/src/lib/error-codes.generated.ts`) and Edge Function (`supabase/functions/_shared/error-codes.ts`) copies and the readable table `pranalika/error-codes.md`. The website build (`prebuild`) and the Android build (`generateErrorCodes`, skipped without Node) run it; `npm run lint` (`--check`) and `ErrorCodesFreshnessTest` fail when a committed copy is out of date. Codes are never reused or renumbered.
 - **Entry:** `code` (`DZ-E####` error, `DZ-W####` warning), `kind`, `area`, `message` (what people see), optional `field`, `status` (HTTP-like), optional `server_detail` (the server's sentence carries a date or reason; show it).
-- **Families:** 1xxx account, sign-in, terms, age; 2xxx listings, photos, photo checks; 3xxx chat, saving, blocking; 4xxx rentals, payments, deposits (reserved); 5xxx reports, moderation, admin; 6xxx ID verification (reserved); 7xxx data download, deletion; 9xxx system (rate limit `DZ-E9001`, unreachable `DZ-E9002`, unavailable `DZ-E9003`, request checks `DZ-E9010`-`E9016`, unexpected `DZ-E9999`).
+- **Families:** 1xxx account, sign-in, terms, age; 2xxx listings, photos, photo checks (F1: the listing form's fields `DZ-E2070`-`E2085`); 3xxx chat, saving, blocking; 4xxx rentals, payments, deposits (reserved); 5xxx reports, moderation, admin; 6xxx ID verification (C6: `DZ-E6001`-`E6015`); 7xxx data download, deletion; 9xxx system (rate limit `DZ-E9001`, unreachable `DZ-E9002`, unavailable `DZ-E9003`, request checks `DZ-E9010`-`E9016`, unexpected `DZ-E9999`).
 - **Database:** every refusal's message starts with its code, `"DZ-E2010: Add a photo first"`; the SQLSTATE (`P0001`, `42501`, `22023`, `P0002`, ...) is unchanged. The field is in the HINT: the text filter's column as before, and the catalog's field otherwise (`full_legal_name`, `dates`, `reason`, `days`, `platform`). `check_text` returns the refusal with its code. The suspension sentence is `DZ-E1040: Your account is suspended ...`. One wording change: "You cannot message this user" is now "You can't message this user." (`DZ-E3005`).
 - **Clients:** show the catalog message for the code (the server's words when `server_detail`), under the field when one is named, then the code in brackets: "Add a photo first (DZ-E2010)". A code the build doesn't know shows the server's words; anything without a code shows `DZ-E9999` "Something went wrong. Please try again.". Auth, network and Storage failures get their codes in the client (`DZ-E1004` wrong password, `DZ-E9002` no connection, `DZ-E2064`/`E2065` photo type and size, ...).
 - **Photo warnings:** the 8 scanner and phone warnings are `DZ-W2001`-`W2008`, matched by their words (the vision service still sends words); the apps and website show the code after the warning.
@@ -507,7 +521,7 @@ Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.k
 - `browse_listings` and `get_listing` return `price_per_day`, `price_unit`, and with dates `days` and `total` (above). Other functions' `price` (`my_conversations`, `my_saved_listings`, `get_studio` cards, `fit_listings`) is also per day.
 
 ### Background jobs (outbox)
-- `app_private.async_jobs` (closed to every API role): `id`, `kind` (`send_push`, `scan_listing`), `payload` (the Edge Function's body), `status` (`pending`, `running`, `done`, `dead`), `attempts`, `next_attempt_at`, `last_error`, `request_id` (pg_net), `dispatched_at`, `finished_at`, `created_at`, `updated_at`.
+- `app_private.async_jobs` (closed to every API role): `id`, `kind` (`send_push`, `scan_listing`; C4 `stripe_deposit`, `stripe_refund`; C5 `send_email`), `payload` (the Edge Function's body), `status` (`pending`, `running`, `done`, `dead`; C5 `skipped`: an email `send-email` skipped, section 9), `attempts`, `next_attempt_at`, `last_error`, `request_id` (pg_net), `dispatched_at`, `finished_at`, `created_at`, `updated_at`.
 - `queue_push` and `queue_scan` add a job with `app_private.enqueue_job`; its first attempt goes out when the transaction commits, as the direct call did.
 - pg_cron `dzirent-async-jobs` runs `app_private.run_async_jobs()` every minute: a 2xx answer marks the attempt's job `done`; any other answer, a timeout, or no answer 10 minutes later is a failure. After failure 1, 2, 3 and 4 the next attempt is 1, 5, 30 and 120 minutes later; failure 5 marks it `dead`. A dead `scan_listing` job ends its photo check like any failed check (`vision_fail_scan`: `failed`, verdict `review`). A `scan_listing` attempt whose check is no longer `queued` is marked done (skipped).
 - Kept: done jobs 1 day, dead jobs 30 days.
@@ -521,12 +535,28 @@ Website: `apps/web/src/lib/share.ts`. Apps: `mobile/shared/.../util/ShareLinks.k
 - Reads only: GET and HEAD, and the read-only database functions (`browse_listings`, `get_listing`, `get_studio`, `fit_listings`, `search_cities`, `my_*`, `needs_legal_acceptance`, `age_blocked`, `is_admin`, `check_text`; the website also the admin status reads). After a network failure, 408 or 5xx (not 501): 2 retries, after 0.5 s and then 2 s. Writes are never retried; their error shows its code.
 - Android/iPhone: Ktor `HttpRequestRetry` in `createDzirentSupabaseClient` (`util/ReadRetry.kt`). Website: `retryingFetch` (`lib/retry.ts`) in all three Supabase clients.
 
+### Time limits (F1)
+- Every call waits at most **30 seconds**, then gives up with `DZ-E9002`, and the form shows the message in place with its button back. No step spins forever.
+- Website: every page call to `/api/workflows` (`workflow()`, `workflowUpload()`, the data download) goes through `lib/requests.ts`: no answer, a dropped connection or the time limit is `DZ-E9002`; an answer that isn't the server's JSON (a host error page) is `DZ-E9003` for a 5xx, else `DZ-E9999`.
+- Android/iPhone: the Supabase client's `requestTimeout` is 30 s (`ReadRetry.REQUEST_TIMEOUT_MS`; the library's default was 10 s). Timeouts, refused or reset connections, an unknown host and similar are `DZ-E9002`.
+
+### Listing steps (F1)
+- **The steps:** 1 Photos, 2 Details (title, category, item type, description, styles), 3 Size, price and dates (garment kind, size, measurements, price, notes, retail value, deposit, the accessory tick, availability).
+- **Draft row:** Next on the photos step saves a new listing's row, paused, with whatever is filled in: the placeholder title `New listing (draft)` and category `Everyday` until the details step is done, and no size, price or description. The database accepts it (only `title` 3-80 and `category` are required columns). The website saves it through `POST /api/workflows/listings/save`, which never refuses a missing field (only text over its limit or unknown styles); the apps insert it directly (`draftListing`).
+- **Checks:** each step's fields are checked when the person continues past it, and every step's again at Publish (on the website in the page and again in `listings/finish`). Each gap is the catalog's field-level message, shown under the field and at the buttons: `DZ-E2070` title, `E2071` category, `E2072` item type, `E2073` description, `E2074` size, `E2075` garment kind, `E2076` price, `E2077` price details, `E2078` deposit note, `E2079` retail value, `E2080` an accessory over $300, `E2081` the accessory tick, `E2082` styles, `E2083` measurements, `E2084` no dates, `E2085` an end date before the start (and `DZ-E2010` no photo, `DZ-E2040` the accessory declaration, `DZ-E4051` the deposit).
+- **A draft reopened from My closet** (paused, the placeholder title) starts with a blank title and category and publishes like a new listing.
+
 ---
 
 ## 6. Rentals (C3)
 
 ### States
-`requested` → `accepted` (or `declined`, `expired`, `cancelled`) → `picked_up` → `returned` → `completed`; `cancelled` from `accepted` too. `awaiting_payment`, `paid`, `claimed` and `disputed` exist for payments (Appendix A.3 of `architecture.md`) and are used only while `payments_enabled` is on: then accept gives `awaiting_payment`, and return gives `returned` (completed later). While it is off (now), accept gives `accepted` and `mark_returned` completes the rental at once. Rows from before C3 were mapped: `active` → `picked_up`, `returned` → `completed`.
+`requested` → `accepted` (or `declined`, `expired`, `cancelled`) → `picked_up` → `returned` → `completed`; `cancelled` from `accepted` too. `awaiting_payment`, `paid`, `claimed` and `disputed` exist for payments (Appendix A.3 of `architecture.md`) and are used only while `payments_enabled` is on: then accept gives `awaiting_payment`, a succeeded payment `paid`, and a return with a deposit hold `returned` (the claim window, section 7). While it is off (now), accept gives `accepted` and `mark_returned` completes the rental at once. Rows from before C3 were mapped: `active` → `picked_up`, `returned` → `completed`.
+
+**C4 follow-ups (owner decisions, 2026-11-13):**
+- **Not picked up:** a rental `accepted`, `awaiting_payment` or `paid` and not marked picked up `rental_autocancel_days` (2) after its start date is cancelled by `dzirent-rental-expiry` (by the system, note "Not picked up within 2 days after the start date"), with the cancellation refund rule of section 7 (counted as a late renter cancellation) and a `rental_cancelled` push to both. Exactly 2 days after the start it is still open.
+- **No availability windows = always available:** `request_rental` takes any dates from today for such a listing; windows the lender adds limit the dates as before (`DZ-E4008`). `browse_listings` with dates already listed it. Since C5 the apps' and website's date pickers match: no windows means every day from today is open (booked days stay closed).
+- **Expiry note** uses the setting: "No answer in <rental_request_hours> hours". Since C5 the apps and website read the request answer time from `rental_settings()` ("answer within <n> hours"), never a number in code.
 
 ### Who may act
 Every function below is for signed-in callers and refuses (before anything else): not signed in `DZ-E1001`, age-blocked `DZ-E1030`, suspended `DZ-E1040`, current terms not accepted `DZ-E1010`, not one of the rental's two people `DZ-E4001`. Blocked pairs (either direction) are refused with `DZ-E4003` for `request_rental`, `respond_rental` and `mark_picked_up`; `cancel_rental`, `mark_returned` and `complete_rental` stay allowed so a block never leaves a rental stuck. A wrong state is `DZ-E4012`. Every change writes a `rental_events` row.
@@ -535,21 +565,21 @@ Every function below is for signed-in callers and refuses (before anything else)
 | --- | --- | --- |
 | `request_rental(p_listing_id uuid, p_start date default null, p_end date default null)` | The renter (not the lender: `DZ-E4004`). Dates default to the chat's requested dates (else `DZ-E4005`, hint `dates`). Refused: last day before first `DZ-E4007`; start before today in Austin `DZ-E4006`; outside the listing's availability windows (adjacent windows join; none means not rentable) `DZ-E4008`; over booked days `DZ-E4009`; listing not active, held or without a price `DZ-E4011`; an open rental already in this chat `DZ-E4010`; more than 20 requests a day `DZ-E9001` (`rate_limit_rental_request`). Starts the chat if there is none. Stores the price snapshot (`price_per_day`, `days` counted both ends, `total`, `currency` USD) and `expires_at` = now + 48 hours. | the rental id |
 | `respond_rental(p_rental_id uuid, p_answer text, p_note text default null)` | The lender (`DZ-E4002`), while `requested`. `p_answer` `accept` or `decline` (else `DZ-E4016`); an expired request `DZ-E4013`; accepting over days booked meanwhile `DZ-E4009`. | the new state |
-| `cancel_rental(p_rental_id uuid, p_reason text default null)` | A request: the renter only (the lender declines instead, `DZ-E4018`). `accepted`, `awaiting_payment`, `paid`: either. Never after pickup (`DZ-E4014`). The reason (at most 300 characters, `DZ-E4017`) is the event's note. | `cancelled` |
-| `mark_picked_up(p_rental_id uuid, p_note text default null)` | The lender, from `accepted` or `paid`, after uploading at least 2 pickup photos (`DZ-E4020`, hint `photos`). | `picked_up` |
-| `mark_returned(p_rental_id uuid, p_note text default null)` | The lender, from `picked_up`, after uploading at least 2 return photos (`DZ-E4020`). Payments off: also completes (a second event by the system). | `completed` (or `returned`) |
-| `complete_rental(p_rental_id uuid)` | The lender, or the server (service role, no user), from `returned`. | `completed` |
+| `cancel_rental(p_rental_id uuid, p_reason text default null)` | A request: the renter only (the lender declines instead, `DZ-E4018`). `accepted`, `awaiting_payment`, `paid`: either. Never after pickup (`DZ-E4014`). The reason (at most 300 characters, `DZ-E4017`) is the event's note. C4: a `rental_cancelled` push to the other person; a paid rental is refunded by the cancellation rule, an unpaid PaymentIntent is cancelled, a deposit hold released (section 7). | `cancelled` |
+| `mark_picked_up(p_rental_id uuid, p_note text default null)` | The lender, from `accepted` or `paid`, after uploading at least 2 pickup photos (`DZ-E4020`, hint `photos`). C4: a `paid` rental with a deposit needs the hold first (`DZ-E4033`; `stripe-deposit` "place" does both). | `picked_up` |
+| `mark_returned(p_rental_id uuid, p_note text default null)` | The lender, from `picked_up`, after uploading at least 2 return photos (`DZ-E4020`). C4: with a deposit hold the rental stays `returned` and the claim window opens (`claim_window_ends_at` = now + `claim_window_hours`); otherwise it completes at once (a second event by the system). | `completed` (or `returned`) |
+| `complete_rental(p_rental_id uuid)` | The lender (waiving a claim), or the server (service role, no user), from `returned`. C4: a deposit hold is released. | `completed` |
 | `get_rental(p_rental_id uuid default null, p_conversation_id uuid default null)` | One of the two people. By id, or the chat's latest rental. Null when there is none. | `jsonb` (below) |
 | `my_rentals(p_limit int default 30 (max 100), p_offset int default 0)` | Every rental the caller is in: requests to the caller as lender first, then requested, upcoming, in progress, past. | `jsonb` array (below, without `events` and `photos`) |
 
-The rental `jsonb`: `id`, `conversation_id`, `listing_id`, `listing_title`, `cover_photo_path`, `your_role` (`renter` or `lender`), `other_name`, `other_handle` (never the other person's id), `status`, `start_date`, `end_date`, `price_per_day`, `days`, `total`, `currency`, `expires_at`, `created_at`, `updated_at`, `payments_enabled`, and from `get_rental` also `events` (`from`, `to`, `by` = `you` / `other` / `dzirent`, `by_role`, `note`, `at`) and `photos` (`storage_path`, `stage`, `by` = `you` / `other`, `by_role`, `uploaded_at`).
+The rental `jsonb`: `id`, `conversation_id`, `listing_id`, `listing_title`, `cover_photo_path`, `your_role` (`renter` or `lender`), `other_name`, `other_handle` (never the other person's id), `status`, `start_date`, `end_date`, `price_per_day`, `days`, `total`, `currency`, `expires_at`, `created_at`, `updated_at`, `payments_enabled`, since C4 `deposit_amount`, `payment_status`, `deposit_status`, `refund_amount`, `claim_window_ends_at`, and from `get_rental` also `events` (`from`, `to`, `by` = `you` / `other` / `dzirent`, `by_role`, `note`, `at`), `photos` (`storage_path`, `stage`, `by` = `you` / `other`, `by_role`, `uploaded_at`) and (C4) `claim` (`id`, `status`, `amount`, `reason`, `evidence_paths`, `renter_note`, `decision_amount`, `decision`, `created_at`, `responded_at`, `decided_at`, or null). C5 adds `fee_amount`, `tax_amount`, `deposit_captured_amount`, `deposit_capture_before`, `payment_due_at`, `responded_at`, `picked_up_at`, `returned_at`, `completed_at`, `cancelled_at` and `lender_can_take_payment` (the lender's payout account takes charges; for the renter's Pay and the lender's set-up notice). The C5 screens show them (section 7, Screens); clients ignore unknown fields.
 
 ### No double booking
 Exclusion constraint `rentals_no_double_booking` (btree_gist): one listing can't have two rentals in `accepted`, `awaiting_payment`, `paid` or `picked_up` whose days overlap. Days are inclusive, so Nov 5 - 8 and Nov 9 - 12 are back-to-back and allowed; Nov 5 - 8 and Nov 8 - 10 are refused. Booked days show in `get_listing.booked` and are left out of `browse_listings` with dates. One open rental per chat (`rentals_one_open_per_chat`); a chat can have several rentals over time.
 
 ### Expiry and reminders (pg_cron, UTC)
-- `dzirent-rental-expiry`, every 10 minutes: `requested` with `expires_at` passed → `expired` (by the system, note "No answer in 48 hours"). Setting `rental_request_hours` (48).
-- `dzirent-rental-reminders`, daily 15:00 (9 AM in Austin): to both people, `pickup_tomorrow` (accepted or paid, starts tomorrow), `return_tomorrow` (picked up, ends tomorrow), `return_overdue` (picked up, ended 1 to 3 days ago; setting `rental_overdue_reminder_days` 3). At most one per rental, kind, person and day (`app_private.rental_reminders`).
+- `dzirent-rental-expiry`, every 10 minutes (`app_private.expire_rental_requests()`): `requested` with `expires_at` passed → `expired` (by the system, note "No answer in 48 hours", `rental_expired` push to both). Setting `rental_request_hours` (48). C4: also the automatic cancel of rentals not picked up (above) and the end of claim windows (section 7). C5: also the payment deadline (section 7): `awaiting_payment` with `payment_due_at` passed and no payment recorded → `cancelled`.
+- `dzirent-rental-reminders`, daily at `rental_reminder_hour` (9) in `rental_timezone` (America/Chicago), scheduled as UTC by `app_private.schedule_rental_reminders()` after each run and whenever an admin changes either setting (15:00 UTC in winter, 14:00 UTC in summer): to both people, `pickup_tomorrow` (accepted or paid, starts tomorrow), `return_tomorrow` (picked up, ends tomorrow), `return_overdue` (picked up, ended 1 to 3 days ago; setting `rental_overdue_reminder_days` 3). At most one per rental, kind, person and day (`app_private.rental_reminders`). "Today" for rentals is the `rental_timezone` day (`app_private.rental_today()`).
 
 ### Pushes
 Through `send-push` and the outbox, like chat pushes, to a person with a registered phone. Never between blocked people.
@@ -563,8 +593,19 @@ Through `send-push` and the outbox, like chat pushes, to a person with a registe
 | `pickup_tomorrow` | both | "Pickup tomorrow" | title · dates | Rental reminders |
 | `return_tomorrow` | both | "Return due tomorrow" | title · dates | Rental reminders |
 | `return_overdue` | both | "Return overdue" | "<title> was due back Nov 8." | Rental reminders |
+| `rental_cancelled` (C4) | the other person; both when Dzirent cancels (automatic cancel, payment deadline (C5), `admin_end_rental`) | "<name> cancelled the rental", or "Rental cancelled" | dates · title (· "Not picked up in time" / "Not paid in time" / "Ended by Dzirent") | Messages |
+| `rental_expired` (C4) | both | "Rental request expired" | title · dates | Messages |
+| `claim_filed` (C4) | renter | "<name> filed a claim" | title · "$30.00 from the deposit" | Messages |
+| `claim_decided` (C4) | lender when the renter accepts; both when Dzirent decides | "Claim decided" | title · "$20.00 from the deposit" or "No charge; the deposit hold is released" | Messages |
+| `deposit_hold_ending` (C4) | both | "Deposit hold renews" | title · "A new hold replaces the current one before it ends." | Messages |
 
-Cancelling, declining-by-expiry and pickup send no push; the rental card updates live (Realtime on `rentals`).
+Pickup sends no push; the rental card updates live (Realtime on `rentals`). Every push carries the rental's chat, so the apps show it like any chat push (they accept any `kind`).
+
+### Admin: ending a rental (C4)
+`admin_end_rental(p_rental_id uuid, p_outcome text, p_reason text, p_refund_amount numeric default null, p_deposit_action text default null, p_capture_amount numeric default null)` → `jsonb` `{ status, refund_amount, deposit_action, capture_amount, refund_operation, deposit_operation, payment_cancel_operation }`. Two-step admins only (`DZ-E5001`, `DZ-E5002`, stale `DZ-E5003`), a reason (`DZ-E5006`); logged as `end_rental` with the before and after.
+- Ends any open rental as `cancelled`, or as `completed` once it was picked up (`DZ-E5082`); not an ended one (`DZ-E5081`); `p_outcome` else `DZ-E5080`. The event is by the system: "Ended by Dzirent: <reason>". Both people get `rental_cancelled` or `rental_completed`.
+- With a payment: `p_refund_amount` up to what is still paid (`DZ-E5084`, `DZ-E5085` without a payment); a deposit hold needs `p_deposit_action` `release` or `capture` (`DZ-E5083`; `DZ-E4039` when there is no hold) and a capture up to the deposit (`DZ-E5086`). An open claim is marked decided. An unpaid PaymentIntent of a cancelled rental is cancelled. Each money step goes through the outbox (section 7).
+- Website: Users > find > Show rentals > "End rental...".
 
 ### Condition photos (bucket `rental-photos`, private)
 - Paths `{rental_id}/{stage}/{random}.jpg`, `stage` `pickup` or `return`, `{random}` 16 to 64 letters, digits, `_` or `-`. JPEG, PNG or WebP, at most 10 MB (Storage answers 415 / 413, shown as `DZ-E2064` / `DZ-E2065`).
@@ -577,4 +618,283 @@ Cancelling, declining-by-expiry and pickup send no push; the rental card updates
 - `admin_user_rentals(p_user_id uuid, p_limit int default 20 (max 50))` → `jsonb` array of rental snapshots (people with ids, names and handles, dates, price, every event with actor id and role, photo paths with stage and uploader role). Two-step admins only; logged as `view_user_rentals`. The website's user lookup shows it with signed photo links; report detail shows a rental report's frozen snapshot the same way.
 
 ### Errors
-`DZ-E4001`-`E4022` (`contracts/error-codes.json`, `pranalika/error-codes.md`), `DZ-E5015`, `DZ-E5016`; `DZ-E7010` reworded ("You have a rental in progress. Finish or cancel it in its chat (My rentals), then delete your account.").
+`DZ-E4001`-`E4022` (`contracts/error-codes.json`, `pranalika/error-codes.md`), `DZ-E5015`, `DZ-E5016`; `DZ-E7010` reworded ("You have a rental in progress. Finish or cancel it in its chat (My rentals), then delete your account."). C4: `DZ-E5080`-`E5086` (admin rentals and payments).
+
+---
+
+## 7. Payments (C4)
+
+Stripe Connect as designed in `architecture.md` Appendix A: Express accounts for lenders, destination charges with `application_fee_amount`, a separate manual-capture PaymentIntent for the deposit hold. **Switched off:** `payments_enabled` is off and the Stripe keys are blank, so every payment Edge Function answers **503 `DZ-E4030` "Payments aren't available yet."** (checked before anything else). Nothing changes for people while it is off. Dzirent never stores card numbers or bank details: Stripe holds them; Dzirent keeps Stripe ids, amounts and states.
+
+### States with payments on
+| Step | What happens | Who |
+| --- | --- | --- |
+| Accept | `respond_rental` → `awaiting_payment`; `payment_due_at` = now + `payment_deadline_hours` (24, C5; fixed when it starts waiting) | lender |
+| Pay | `stripe-pay` → the client confirms Stripe's payment sheet (C5) → webhook `payment_intent.succeeded` → `paid` (event by the system, "Payment received"), `payment_status` `paid`, the card kept for off-session use | renter, Stripe |
+| Payment deadline (C5) | unpaid when `payment_due_at` passes (`dzirent-rental-expiry`): `cancelled` by the system, note "Not paid within <n> hours after it was accepted", the cancellation steps (an unpaid PaymentIntent cancelled), `rental_cancelled` "Not paid in time" to both. A payment recorded in time is never cancelled; one that arrives after is refunded in full (below) | system |
+| Pickup | a paid rental with `deposit_amount` needs the hold first: `stripe-deposit` `place` places it and, once Stripe can capture it, marks picked up as the lender. `mark_picked_up` alone answers `DZ-E4033` | lender |
+| Return | `mark_returned` → `returned`, claim window `claim_window_hours` (48) | lender |
+| No claim | when the window ends (`dzirent-rental-expiry`): `completed`, the hold released, `rental_completed` to the renter | system |
+| Claim | `file_claim` → `claimed`; `respond_claim` accept → `completed` and the claimed amount captured; dispute → `disputed` | lender, renter |
+| Decide | `admin_decide_claim` → `completed`; capture 0 to the claim (0 releases the hold) | admin |
+| Cancel | `cancel_rental`, the automatic cancel, `admin_end_rental`: the refund rule below; an unpaid PaymentIntent cancelled; a hold released | either, system, admin |
+
+A rental with no deposit completes at return, as with payments off. A rental accepted while payments were off stays `accepted` (no payment) and picks up as before.
+
+**Cancellation refund rule** (settings): a renter (or the automatic cancel) gets the whole rental price back until `cancellation_refund_cutoff_hours` (48) before the start of the start date in `rental_timezone`; after that `late_cancellation_refund_percent` (0: the lender keeps the rental price). A lender cancellation always refunds in full. A payment that succeeds after the rental ended is refunded in full. Refunds use `reverse_transfer` (the lender's share comes back) and `refund_application_fee` (the fee in proportion).
+
+**Fee and tax:** `fee_amount` = rental total × `platform_fee_percent` (0) / 100, rounded to cents, as `application_fee_amount`. Sales tax: the hook `app_private.sales_tax_amount` returns $0 (`sales_tax_enabled` off; $0 also when on until the tax adviser decides).
+
+### Data (all server-written)
+| Table | Who reads | Columns |
+| --- | --- | --- |
+| `listings.deposit_amount` | as the listing | optional refundable deposit in USD (null = none; > 0, ≤ 99,999.99). Apps may write it (C5 editors); `deposit_note` stays free text |
+| `stripe_customers` | owner: `user_id`, `created_at` only (not the id) | `user_id`, `stripe_customer_id`, `created_at` |
+| `payout_accounts` | owner | `user_id`, `stripe_account_id`, `charges_enabled`, `payouts_enabled`, `details_submitted`, `created_at`, `updated_at` |
+| `rentals` (new columns) | the two people | `deposit_amount` (snapshot at request), `payment_intent_id`, `payment_status` (`none`, `pending`, `paid`, `failed`, `canceled`, `partially_refunded`, `refunded`), `fee_amount`, `tax_amount`, `refund_amount`, `deposit_intent_id`, `deposit_status` (`none`, `pending`, `held`, `released`, `captured`, `failed`), `deposit_capture_before`, `deposit_captured_amount`, `deposit_warned_at`, `claim_window_ends_at` |
+| `rental_claims` | the two people | `id`, `rental_id` (one claim per rental), `lender_id`, `renter_id`, `amount`, `reason`, `evidence_paths` (return photos), `status` (`open`, `accepted`, `disputed`, `decided`), `renter_note`, `decided_by`, `decision`, `decision_amount`, `created_at`, `responded_at`, `decided_at`, `updated_at` |
+| `app_private.payment_events` | nobody (closed) | `stripe_event_id` (unique), `type`, `payload_hash` (SHA-256 of the raw body; the payload isn't kept), `received_at`, `processed_at`, `result` |
+| `app_private.payment_operations` | admins (Payments page) | each server money step: `kind` (`deposit_place`, `deposit_release`, `deposit_capture`, `deposit_renew`, `refund`, `payment_cancel`), `amount`, `status` (`queued`, `running`, `done`, `failed`), `stripe_id`, `error`, `details`, `requested_by` (admin), `reason`, `attempts`, times. Idempotency key `dz-op-<id>` |
+| `app_private.card_disputes` | admins | from `charge.dispute.*`: id, rental, PaymentIntent, amount, reason, status, opened, closed |
+| `app_private.rental_payment_methods` | nobody (closed) | the Stripe payment method id a rental was paid with (for the hold; never card data) |
+
+### Database functions
+People (signed in; the C3 guards: `DZ-E1001`, `DZ-E1030`, `DZ-E1040`, `DZ-E1010`, a stranger `DZ-E4001`):
+- `file_claim(p_rental_id uuid, p_amount numeric, p_reason text, p_photo_paths text[])` → claim id. The lender (`DZ-E4002`), while `returned` inside the window (`DZ-E4040`), with a deposit hold (`DZ-E4047`), once (`DZ-E4048`), amount above $0 and up to the deposit (`DZ-E4041`, hint `amount`, the deposit in the sentence), reason 3-500 characters (`DZ-E4042`), 1 to 10 of this rental's return photos (`DZ-E4043`). → `claimed`, `claim_filed` to the renter. Allowed between blocked people (it ends the rental).
+- `respond_claim(p_claim_id uuid, p_answer text, p_note text default null)` → `accepted` / `disputed`. The renter (`DZ-E4032`; strangers `DZ-E4044`), while open (`DZ-E4045`), `accept` or `dispute` (`DZ-E4046`), note ≤ 300 (`DZ-E4017`). Accept: `completed`, capture queued, `claim_decided` to the lender.
+Admins (two-step, fresh, a reason; logged):
+- `admin_decide_claim(p_claim_id, p_amount, p_reason)` (`decide_claim`): an open or disputed claim, capture 0 up to the claim (`DZ-E5086`). `completed`; `claim_decided` to both.
+- `admin_refund_rental(p_rental_id, p_amount, p_reason)` (`refund_rental`): above $0 up to what is still paid (`DZ-E5084`; `DZ-E5085` without a payment).
+- `admin_end_rental(...)` (section 6).
+- `admin_payments_overview()` (`view_payments`): `payments_enabled`, `claims` (open and disputed), `card_disputes` (open, or closed within 30 days), `failed_payments` (payment or hold failed), `failed_operations` (last 50), `payout_problems` (details submitted but charges or payouts off), `refundable` (last 50 paid rentals).
+Server key only (the Edge Functions): `payments_available`, `payment_onboard_prepare`, `payment_save_account`, `payment_update_account`, `payment_account_for`, `payment_save_customer`, `payment_pay_prepare`, `payment_save_intent`, `payment_deposit_prepare`, `payment_deposit_result`, `payment_operation_start`, `payment_operation_finish`, `payment_handle_event`. Each prepare function refuses with `DZ-E4030` while `payments_enabled` is off and checks the person like the rental functions.
+
+### Edge Functions (`verify_jwt = false`; each checks in code)
+| Function | Caller | Body | Does |
+| --- | --- | --- | --- |
+| `stripe-onboard` | a lender (token; renters `DZ-E4037`) | `{ return_url?, refresh_url? }` (https on dzirent.com only) | Creates the Express account once (`type=express`, `country=US`, card payments and transfers; key `dz-acct-<user>`), returns `{ ok, url }`, a new Stripe onboarding link each time |
+| `stripe-account-status` | the lender | `{}` | Reads the account from Stripe into `payout_accounts`; `{ ok, account }` (null without one) |
+| `stripe-pay` | the renter (`DZ-E4032`), rental `awaiting_payment` (`DZ-E4012`), lender charges on (`DZ-E4031`) | `{ rental_id }` | One PaymentIntent per rental (key `dz-pay-<rental>`; asked again, the same one): amount = total + tax in cents, `customer`, `transfer_data.destination` = lender, `application_fee_amount` (when > 0), `setup_future_usage=off_session`, `automatic_payment_methods` without redirects. Returns `{ ok, rental_id, payment_intent_id, client_secret, publishable_key, amount, currency }` |
+| `stripe-deposit` | the lender: `{ action: "place", rental_id }`; the outbox: `{ operation_id }` with `x-payments-secret` | | Place: a manual-capture PaymentIntent off-session on the saved card (`DZ-E4034` without one), destination = lender, key `dz-op-<id>`; held → marks picked up (200 `{ status: "picked_up" }`), not yet capturable → 202 `{ deposit_status: "pending" }` (the webhook confirms; call again), declined → `DZ-E4035`. Outbox: `deposit_release` (cancel), `deposit_capture` (capture `amount_to_capture`; if the hold ended, an off-session charge for the amount), `deposit_renew` (a new hold, then the old one cancelled). Anything else from people: `DZ-E9016` |
+| `stripe-refund` | the outbox only (`DZ-E9004` otherwise) | `{ operation_id }` | `refund` (`/v1/refunds`, `reverse_transfer`, `refund_application_fee`), `payment_cancel` (cancel an unpaid PaymentIntent) |
+| `stripe-webhook` | Stripe | the raw event | Below |
+
+Stripe errors: a failure Stripe decides (4xx) is recorded on the operation (`failed`, shown on the Payments page) and answered 200; no answer or 5xx is 503 for the outbox to retry with the same key, or `DZ-E4036` for a person. Every create and change call carries an idempotency key. Outbox kinds `stripe_deposit` and `stripe_refund` (Vault `stripe_deposit_url`, `stripe_refund_url`, `payments_job_secret` = function secret `PAYMENTS_JOB_SECRET`); a dead job marks its operation failed. API version pinned `2024-06-20`. `STRIPE_API_BASE` (tests only) is ignored for a live key.
+
+### Webhook (`stripe-webhook`)
+1. **Signature first:** `Stripe-Signature` (`t=…,v1=…`) checked on the raw bytes with `STRIPE_WEBHOOK_SECRET` (and `STRIPE_CONNECT_WEBHOOK_SECRET` when set), timestamps within 5 minutes; else 400 `DZ-E4038` and nothing is read or written. Bodies over 512 KB: 413.
+2. **Once:** `payment_handle_event` inserts the event id into `payment_events`; a repeated id answers 200 `{ received: true, result: "duplicate" }`. The whole event is one transaction (a failure answers 500 and Stripe retries).
+3. **Rows are found by the Stripe ids Dzirent stored**, never by metadata.
+
+| Event | Effect |
+| --- | --- |
+| `payment_intent.succeeded` | rental PaymentIntent: `paid` (+ the card kept); after the rental ended: a full refund. Deposit PaymentIntent: `captured` |
+| `payment_intent.payment_failed` | `payment_status` / `deposit_status` `failed` |
+| `payment_intent.canceled` | hold `released`; unpaid payment `canceled` |
+| `payment_intent.amount_capturable_updated` | hold `held`, `deposit_capture_before` from the charge (about 7 days when Stripe doesn't say) |
+| `charge.refunded` | `refund_amount` = `amount_refunded`; `refunded` or `partially_refunded` |
+| `charge.dispute.created`, `charge.dispute.closed` | `card_disputes` row (admin Payments page) |
+| `account.updated` | `payout_accounts` flags |
+| anything else | recorded, `ignored` |
+
+While `payments_enabled` is off or a key is blank the webhook answers 503 `DZ-E4030`; Stripe retries for up to 3 days.
+
+### Screens (C5)
+Android (shared Kotlin: `util/Rentals.kt`, `ui/RentalViews.kt`, `ui/ChatScreens.kt`, `ui/MyStudioScreen.kt`, `ui/PaymentSheet*.kt`) and the website (`lib/rentals.ts`, `components/rental-card.tsx`, `components/payouts.tsx`, `app/app/pay/[id]`, `components/pay-form.tsx`) have the same rules; the database decides every step. iPhone: the same common code, with the payment sheet for the Mac session (Pay answers `DZ-E4049` "Pay on dzirent.com").
+- **Hidden while payments are off:** every payment action and line follows the rental's `payments_enabled` (and `rental_settings().payments_enabled` for My studio and the listing editor). With it off the screens are the C3 ones.
+- **My studio > Payouts:** state from `payout_accounts` (owner read): "Not set up", "Finish setup" (an account without charges and payouts), "Payouts ready". "Set up payouts" calls `stripe-onboard` (return and refresh URL `https://dzirent.com/app/settings/studio?payouts=return|refresh`; `/app/settings/payouts` opens the same page) and opens the link in the browser; on return (the app resumes, or the website page loads with `?payouts=`) `stripe-account-status` refreshes it.
+- **Lender's notice:** a request while payments are on and the lender can't take payments shows `DZ-W4001` "Set up payouts in My studio first: the renter can't pay until your payouts are ready."
+- **Listing editor:** an optional "Deposit ($)" (`listings.deposit_amount`, > $0, ≤ $99,999.99, cents; `DZ-E4051`), shown only while payments are on; `deposit_note` stays. With payments off the saved amount is left as it is.
+- **Card states and actions** (`rentalActions(status, iAmLender, PaymentFacts)`; labels from `rentalStatusLabel` with the server's `rental_request_hours`):
+
+| State | Renter | Lender | Lines |
+| --- | --- | --- | --- |
+| `requested` | Cancel | Accept, Decline | the lender's `DZ-W4001` notice when needed |
+| `awaiting_payment` | **Pay $total**, Cancel | Cancel | "Pay $X by <time> …" / "The renter has until <time> to pay …"; "The lender is still setting up payouts" |
+| `paid` | Add pickup photos, Cancel | Add pickup photos, **Place deposit hold and mark picked up** (with a deposit not yet held; else Mark picked up), Cancel | "Deposit $40: held on the renter's card at pickup" |
+| `picked_up` | Add return photos | Add return photos, Mark returned | "Deposit $40: held on the renter's card, not charged" |
+| `returned` | Add return photos | Add return photos, **File a claim** (window open, hold in place, no claim yet), Complete rental | "… can file a claim against the deposit until <time> …" |
+| `claimed` | **Accept the claim**, **Dispute the claim** (open claim) | none | "Claim for $30: accept or dispute it" / "… waiting for the renter" |
+| `disputed` | none | none | "Claim for $30: disputed. Dzirent will decide." |
+| `completed`, `cancelled` (paid) | **Receipt** | **Receipt** | the deposit's end ("released, nothing charged" / "$20 charged for the claim"), the claim's decision, "Refunded $X" |
+
+- **Pay:** a dialog first (the amount; the card is kept by the payment processor for the deposit hold and a decided claim, never above the deposit; Dzirent never sees the card: compliance gap 34), then `stripe-pay`'s `client_secret` and `publishable_key` into Stripe's own form: Android the Stripe Android SDK's PaymentSheet (`com.stripe:paymentsheet` 21.29.2), the website the Payment Element on `/app/pay/<rental>` (Stripe.js through `@stripe/stripe-js` 9.17.0, `confirmPayment` with `redirect: "if_required"`, return URL the same page; wallets off). The pay page is the only page that loads Stripe.js and the only one whose CSP allows Stripe (`next.config.ts`; the Pay button is a full page load). A sheet failure shows `DZ-E4050`. The webhook marks it paid; the card updates live.
+- **Deposit hold:** `stripe-deposit` `{ action: "place" }` (200 `picked_up`, or 202 while Stripe confirms: "tap again in a moment").
+- **Claim:** amount ≤ the deposit with cents (`DZ-E4041`), a reason of 3-500 (`DZ-E4042`), 1-10 of the rental's return photos (`DZ-E4043`), then `file_claim`; the renter's `respond_claim` accept or dispute with an optional note (≤ 300).
+- **Receipt** (`rentalReceipt`): renter: "$55.00 × 4 days", sales tax (when > 0), Paid, Refunded, Charged from the deposit, Total; lender: the rental, Dzirent fee and Refunded to the renter (in proportion), From the deposit, You receive; a released hold; the completed or cancelled time.
+- **Website routes** (`/api/workflows/...`, same-origin POST, as the signed-in person): `chat/<id>/rental_hold`, `chat/<id>/rental_claim`, `chat/<id>/rental_claim_answer`, `pay` `{ rentalId }` → `{ clientSecret, publishableKey, amount }` (never stored), `payouts/link`, `payouts/status`.
+- **End-to-end checks** that need Stripe's test keys are listed in `pranalika/stripe-rehearsal.md`.
+
+### Deposit holds over time
+`dzirent-deposit-holds`, nightly 09:45 UTC (`app_private.check_deposit_holds()`): a held deposit of a rental still `picked_up` whose `capture_before` is within `deposit_hold_warning_hours` (24) plus a day: `deposit_hold_ending` to both (once per hold) and a `deposit_renew` step (a new hold replaces the old). After return, a claim whose hold has ended is charged off-session for the amount instead.
+
+### Runbook: the day real keys arrive
+Who: an agent with the Supabase CLI and the secrets folder (never in the repo, never printed). Order matters.
+1. **Get the three keys** from the Stripe dashboard (Developers > API keys) of the Dzirent platform account with Connect enabled: the secret key (`sk_live_…`, or `sk_test_…` for a test-mode rehearsal) and the publishable key (`pk_…`). Save them in `H:\DziRent\secrets\providers.env` as `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY`.
+2. **Register the webhook endpoints** (Developers > Webhooks > Add endpoint), URL `https://pwfzkyjeivadbtkfkdxr.supabase.co/functions/v1/stripe-webhook`, API version `2024-06-20`:
+   - "Events on your account": `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled`, `payment_intent.amount_capturable_updated`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`. Its signing secret (`whsec_…`) is `STRIPE_WEBHOOK_SECRET`.
+   - "Events on Connected accounts": `account.updated`. Its signing secret is `STRIPE_CONNECT_WEBHOOK_SECRET` (optional: without it, `stripe-account-status` still refreshes a lender's account when they come back from onboarding).
+3. **Set the function secrets** from a temporary env file (deleted at once; never echo values): `supabase secrets set --env-file <tmp>` with `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` (and `STRIPE_CONNECT_WEBHOOK_SECRET`). `PAYMENTS_JOB_SECRET` is already set (copied from Vault `payments_job_secret` in C4). Never set `STRIPE_API_BASE` on the live project. The publishable key needs no app or website build setting: `stripe-pay` returns it with the client secret.
+4. **Check:** admin website > Integrations shows Payments **configured**; `supabase secrets list` shows the names.
+5. **Rehearse in test mode first** (test keys), with the checklist in `pranalika/stripe-rehearsal.md` (C5): onboarding, paying on Android and the website (3-D Secure, a decline), the payment deadline, the hold, a disputed claim, receipts, refunds, a card dispute. Then swap to live keys (steps 1-4 again).
+6. **Switch on:** admin website > Flags > `payments_enabled` (logged). From then on, accepting a rental waits for payment. The C5 screens (pay, payouts, deposit, claims, receipts) are built for Android and the website; the iPhone payment sheet is for the Mac session (iPhone Pay sends people to dzirent.com until then).
+7. **To switch off in an emergency:** Flags > `payments_enabled` off. Payment calls answer `DZ-E4030`; Stripe keeps retrying webhooks for 3 days, and queued payment steps retry and then wait as dead jobs (Background jobs > Retry) until it is on again.
+
+---
+
+## 8. Settings and integrations (C4)
+
+### Settings (`app_private.settings`, closed)
+Every business number and rule; never in code or env files. Each row: `key`, `value` (JSON), `label`, `area` (`payments`, `rentals`, `rate_limits`, `retention`), `value_type` (`integer`, `number`, `boolean`, `timezone`, `choice`, `rate_limit` = `{ max, window_seconds }`, the range for `max`), `unit`, `min_value`, `max_value`, `choices`, `note` (the plain description), `decided_by` (`owner`, `business_owner`, `attorney`), `affects_terms`, `updated_at`. A trigger refuses a value of the wrong type (`DZ-E5072`) or outside the range (`DZ-E5070` "Enter a value from 1 to 336 (hours)."), for every writer, migrations included. Code reads them with `app_private.setting_int / setting_num / setting_bool / setting_text` (a missing one is `DZ-E9020`).
+
+| Area | Keys (default) |
+| --- | --- |
+| Payments | `platform_fee_percent` (0, BO, terms), `claim_window_hours` (48, BO, terms), `cancellation_refund_cutoff_hours` (48, BO, terms), `late_cancellation_refund_percent` (0, BO, terms), `sales_tax_enabled` (false, attorney/tax adviser, terms), `deposit_hold_warning_hours` (24), `payment_deadline_hours` (24, 1-72 "hours after acceptance", BO, terms; C5) |
+| Rentals | `rental_request_hours` (48), `rental_autocancel_days` (2), `rental_overdue_reminder_days` (3), `rental_reminder_hour` (9), `rental_timezone` (America/Chicago) |
+| Rate limits | `rate_limit_message` (30/min), `rate_limit_new_chat`, `rate_limit_report`, `rate_limit_new_listing` (per day), `rate_limit_photo_scan` (per hour), `rate_limit_rental_request` (20/day), `data_export_interval_hours` (24) |
+| Retention | `email_log_retention_days` (30, attorney, terms; C5), `report_retention_days` (730, attorney, terms), `condition_photo_retention_days` (365, attorney, terms), `declaration_retention_years` (7, attorney, terms), `draft_retention_days`, `orphan_photo_days`, `photo_check_retention_days`, `data_export_retention_days` (at least 8), `age_checks_keep` ("latest"), `suggestion_retention_days`, `device_token_stale_days` |
+| Verification (C6) | `didit_workflow_id` (the Free KYC workflow, type `uuid`, owner), `didit_application_id` (type `uuid`, owner; webhooks for another application are refused), `id_verification_max_attempts` (3, 1-10 "checks per person", owner) |
+
+Not settings, on purpose (technical, not business): the outbox retry schedule, the 24-hour freshness of an admin's two-step code (a security rule), the 10-minute photo-check timeout, cron cadences, Stripe's 5-minute webhook tolerance and 7-day authorization fallback.
+
+- `admin_list_settings()` → `jsonb` array (`key`, `label`, `area`, `value`, `type`, `unit`, `min`, `max`, `choices`, `description`, `decided_by`, `affects_terms`, `updated_at`); logged `view_settings`.
+- `admin_set_setting(p_key text, p_value jsonb, p_reason text)` → `{ key, old_value, new_value, affects_terms, reminder_schedule_utc }`. Text is read as a number or true/false where the type says so; a number for a rate limit is its new maximum. Unknown key `DZ-E5071`. Changing `rental_reminder_hour` or `rental_timezone` reschedules `dzirent-rental-reminders`. Logged `set_setting` with the old and new value.
+- Website `/admin/settings`: grouped by area; Edit → the new value → a confirmation "From … to …" with a reason; settings marked "Legal pages" warn that the Terms or Privacy Policy may need updating.
+- **C5, for the screens:** `rental_settings()` → `jsonb` `{ payments_enabled, rental_request_hours, payment_deadline_hours, claim_window_hours, cancellation_refund_cutoff_hours, late_cancellation_refund_percent, platform_fee_percent }`, readable by guests and signed-in people (rules the Terms state; no secrets). The apps cache it per session; the website reads it with the chat, Settings and the listing editor.
+
+### Integrations (`admin-integrations` Edge Function, `/admin/integrations`)
+`POST {}` with an admin's token → `{ ok, integrations: [{ key, name, configured, status }] }` for `payments` (`STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYMENTS_JOB_SECRET`), `id_checks` (named "ID verification" since C6: `DIDIT_API_KEY`, `DIDIT_WEBHOOK_SECRET`), `notifications` (`FIREBASE_SERVICE_ACCOUNT_BASE64`, `SEND_PUSH_SECRET`), `email` (`EMAIL_API_KEY`), `photo_checks` (`VISION_URL`, `VISION_INVOKER_KEY_BASE64`, `SCAN_LISTING_SECRET`): "configured" when every named secret is set, else "not configured". Only those words: never a value or length; nothing is accepted or stored. The admin check and the log entry (`view_integrations`, booleans only) are `admin_record_integrations_check` as the caller; a non-admin gets 403 `DZ-E5008`.
+
+---
+
+## 9. Email (C5)
+
+Transactional emails, built and **inactive while the provider key is blank** (now): every email is queued, then marked skipped by `send-email`. Emails go only to the account's own email address and never carry messages, a claim's written reason, measurements or places.
+
+### Which emails
+| Template | To | When | Switch |
+| --- | --- | --- | --- |
+| `rental_request` | lender | a request (with the `rental_request` push) | Email me about rentals |
+| `request_accepted` | renter | accepted (with payments on: "Pay $X by <time>") | same |
+| `request_declined` | renter | declined | same |
+| `payment_receipt` | renter | `payment_status` becomes `paid` (trigger `rentals_receipt_email`) | same |
+| `pickup_reminder` | both | `pickup_tomorrow` | same |
+| `return_reminder` | both | `return_tomorrow`, `return_overdue` | same |
+| `claim_filed` | renter | `file_claim` | same |
+| `claim_decided` | lender when the renter accepts; both when Dzirent decides | with `claim_decided` | same |
+| `account_deleted` | the deleted account's address | `delete-account`, after the deletion | always |
+
+Rental emails are queued inside `queue_rental_push` after its blocked-pair check (so never between blocked people), with their own switch and without needing a phone; cancels, expiries, completion and hold renewals send none. `notification_settings.email_rentals` (default on; "Email me about rentals" in Settings > Notifications on the apps and website).
+
+### Data and the outbox
+- `app_private.email_messages` (closed): `id`, `template`, `recipient_id` (null only for `account_deleted`), `to_address` (only `account_deleted`; cleared when it finishes), `rental_id`, `details` (the push kind and an amount line the database wrote), `status` (`queued`, `sent`, `skipped`, `failed`), `skip_reason` (`not_configured`, `turned_off`, `no_address`, `rental_gone`), `provider_message_id`, `error`, `created_at`, `finished_at`. Never the email text. Finished rows are deleted after `email_log_retention_days` (30, attorney; by `run_async_jobs`). `export_my_data` lists yours (template, status, times).
+- Outbox kind `send_email`, payload `{ email_id }`, to Vault `send_email_url` with `x-email-secret` = Vault `email_job_secret` (function secret `EMAIL_JOB_SECRET`). New job status `skipped`: a 2xx answer for an email `send-email` skipped. Done and skipped jobs are kept 1 day. A dead job marks its email failed (address dropped). Admin Background jobs: the "Emails" kind, with "skipped (not set up)" in 24 hours; the dead list shows the template only.
+- Server-key functions: `email_prepare(p_email_id)` → `{ state: send, to, template, data }` or `{ state: skipped, reason }` / `finished` / `gone`; `data` holds only `role`, `name`, `other_name`, `listing_title`, `status`, dates, `days`, prices and amounts, `deposit_status`, `payment_status`, `payment_due_at`, `expires_at`, `payments_enabled`, `timezone`, `chat_path`, `kind`, `detail` and `claim` (`amount`, `status`, `decision_amount`). `email_finish(p_email_id, p_status, p_reason, p_provider_id)` (`sent`, `skipped`, `failed`; else `DZ-E9016`). `queue_account_deleted_email(p_email)` (delete-account).
+
+### `send-email` (Edge Function, `verify_jwt = false`)
+- Only the outbox (`x-email-secret`, else 401 `DZ-E9004`); body `{ email_id }` (else `DZ-E9010`-`E9016`).
+- **Key blank** (`EMAIL_API_KEY` or `EMAIL_FROM`): `email_finish(skipped, not_configured)` before anything is read; 200 `{ skipped: true }`.
+- Otherwise `email_prepare`, render the template (`_shared/email-templates.ts`: plain HTML and text, Dzirent's look), one HTTPS call to the provider (`_shared/email.ts`), then `sent` with the provider's id, or `failed` for a refusal the provider decides (4xx), or 503 for no answer / 429 / 5xx (the outbox retries; the email stays queued).
+- Secrets (names only): `EMAIL_PROVIDER` (`resend` default, or `postmark`), `EMAIL_API_KEY`, `EMAIL_FROM` (a verified sender, e.g. `Dzirent <rentals@dzirent.com>`), `EMAIL_JOB_SECRET`; `EMAIL_API_URL` for tests only. Admin > Integrations shows Email "configured" when `EMAIL_API_KEY` is set.
+
+### Sign-in emails (Supabase Auth)
+`supabase/templates/confirmation.html`, `recovery.html`, `email_change.html` (same look), referenced from `supabase/config.toml` (`[auth.email.template.confirmation|recovery|email_change]`) for the **local stack only**. The live project's Auth settings are unchanged: confirmations off, the built-in email (team addresses only, G4/compliance gap 19).
+
+### Runbook: switching on a custom email service
+Who: an agent with the CLI and the secrets folder, with the owner (who owns the provider account and the DNS). Never print or commit a key.
+1. **Provider account and domain:** the owner creates the account and verifies `dzirent.com` (the provider's SPF, DKIM and return-path DNS records; DMARC `p=none` to start). Pick the sender, e.g. `rentals@dzirent.com`.
+2. **Transactional emails:** save the API key in `H:\DziRent\secrets\providers.env` as `EMAIL_API_KEY`; set the function secrets from a temporary env file (deleted at once): `EMAIL_PROVIDER`, `EMAIL_API_KEY`, `EMAIL_FROM`. `EMAIL_JOB_SECRET` must equal Vault `email_job_secret` (set in C5). Never set `EMAIL_API_URL` on live.
+3. **Check:** Admin > Integrations: Email **configured**. Send one test email by having a test user request a rental from another test user (it goes to the lender's account email); Admin > Background jobs shows the Emails kind done, `email_messages` status `sent`.
+4. **Sign-in emails** (separate, in the dashboard or `supabase config push` reviewed line by line, never blind): Authentication > Emails > SMTP settings: the provider's SMTP host, port 587, user, password (the provider's SMTP key), sender `Dzirent <no-reply@dzirent.com>`. Templates: paste `supabase/templates/confirmation.html`, `recovery.html` and `email_change.html` with their subjects from `config.toml`. Set Site URL to `https://dzirent.com` and the redirect allow-list (compliance gap 19).
+5. **Then** (owner decision, P8C): turn on email confirmations. Test sign-up, password reset and change email with a test address first.
+6. **To switch off:** remove `EMAIL_API_KEY` (`supabase secrets unset EMAIL_API_KEY`): new emails are skipped again; nothing else changes.
+
+---
+
+## 10. ID verification (C6)
+
+One-time ID verification with Didit ([docs.didit.me](https://docs.didit.me)), for renters and lenders. **Two separate switches:**
+- **Available** whenever the Edge Function secrets `DIDIT_API_KEY` and `DIDIT_WEBHOOK_SECRET` are set (Admin > Integrations: ID verification **configured**). Anyone can then verify from Settings. With either blank every Didit function answers **503 `DZ-E6002` "ID verification isn't available yet."** before anything else.
+- **Required** only while the `app_settings` flag `verification_required` is on (it is **off**). Then `start_conversation` (any call), a new chat (a `conversations` insert, `request_rental` included), a message (`messages` insert) and publishing a listing (status becoming `active`, insert or update; paused drafts are fine) refuse an unverified caller with `P0001` **`DZ-E6001` "Verify your ID once to continue."** (`app_private.require_verified`, after the terms check). Reading, saving and browsing never need it. Server jobs and admins acting on someone else's row aren't stopped.
+
+### Statuses
+`identity_verifications.status`: `not_started`, `in_progress`, `in_review`, `verified`, `declined`, `expired`. Didit's strings, compared **case-sensitively** (`app_private.didit_status_map`):
+
+| Didit | Dzirent |
+| --- | --- |
+| `Approved` | `verified` (badge on, an `adult` age check from the ID). With a duplicate-face warning (`DUPLICATED_FACE`, `POSSIBLE_DUPLICATED_FACE` in any `*[].warnings`): `in_review`, reason "Possible duplicate account". An ID showing under 18: `declined`, reason "Under 18 (from the ID)", a `minor` age check (the account is blocked, its listings paused) |
+| `Declined` | `declined`, reason "Declined by the verification provider (<risk codes>)"; no name or 18+ result kept |
+| `In Review` | `in_review` (Didit's own reviewers), reason "The verification provider is reviewing it" |
+| `Not Started`, `In Progress`, `Awaiting User`, `Resubmitted` | `in_progress` |
+| `Abandoned`, `Expired` | `expired` (the attempt counts) |
+| `Kyc Expired` | `expired`, the badge removed, reason "The verification expired" |
+| anything else | ignored (recorded as `unknown_status`) |
+
+A verified person is never moved back by a late event of the same session (except `Kyc Expired`); an event for an older session can only verify the person; an admin's decision on a session stands against later Didit decisions for it.
+
+### Data (all server-written)
+| Table | Who reads | Columns |
+| --- | --- | --- |
+| `identity_verifications` | the owner: `user_id`, `status`, `updated_at` only (column grants; Realtime sends only those) | `user_id`, `status`, `provider_session_id`, `legal_name` (private, at most 200), `is_adult`, `attempts`, `reason` (for admins, at most 300), `verified_at`, `created_at`, `updated_at`. **Never** an ID image, selfie, birthdate, document number, address, nationality or IP |
+| `profiles.is_verified` | the owner; everyone through the shop window (section 1) | true while the status is `verified` (trigger `identity_verifications_badge`) |
+| `app_private.didit_sessions` | nobody (closed) | `session_id` (Didit's), `user_id`, `status` (Didit's last), `event_created_at` (Didit's `created_at` of the last event applied: events are applied in that order), `checked_at` (the last decision check), `admin_decision`, times |
+| `app_private.didit_events` | nobody (closed) | `event_id` (primary key: each event processed once), `webhook_type`, `session_id`, `status`, `received_at`, `result`. Never the payload. Kept 30 days |
+
+### Database functions
+- `my_verification()` → `jsonb` (signed in): `{ status, attempts, max_attempts, attempts_left, can_start, required, verified_at, updated_at }`. `can_start` is false while verified, in review, or out of attempts.
+- Server key only (the Edge Functions): `didit_start_prepare(p_user)` (reserves an attempt; `DZ-E6004` verified, `DZ-E6005` in review, `DZ-E6003` "Contact support to verify." after `id_verification_max_attempts`), `didit_start_release(p_user)` (gives the attempt back when Didit didn't create the session), `didit_start_record(p_user, p_session_id)` (`in_progress`), `didit_webhook_received(p_event_id, p_type, p_application_id, p_session_id, p_vendor_data, p_status, p_created_at)` (`DZ-E6009` for another application; results `duplicate`, `unknown_session`, `wrong_person`, `ignored`, `unknown_status`, `older`, `queued`, or the status applied), `didit_apply_decision(p_session_id, p_status, p_legal_name, p_is_adult, p_duplicate, p_reason)`, `didit_sessions_for(p_user)`, `didit_forget(p_user)`.
+- Admins (two-step, fresh; every call logged): `admin_list_id_reviews(p_status default null ('in_review' | 'declined'), p_limit, p_offset)` → `jsonb` array (`user_id`, names and handle, `status`, `reason`, `attempts`, `max_attempts`, `session_id`, `is_adult`, dates; never the legal name or images; `view_id_reviews`); `admin_decide_id_verification(p_user_id, p_decision 'approve' | 'reject', p_reason)` (in review, or approve a declined one; `DZ-E6010` not found, `DZ-E6011` wrong state, `DZ-E6012` bad decision; an approved ID showing 18+ records the ID's `adult`; `decide_id_verification` with the status before and after); `admin_reset_id_attempts(p_user_id, p_reason)` (`reset_id_attempts`).
+- `admin_queues().id_verification_reviews` counts `in_review`.
+- Reconciliation: `app_private.didit_reconcile()`, pg_cron `dzirent-didit-reconcile` every 10 minutes: a decision check (outbox) for each session still `in_progress` more than 30 minutes after its last change, at most once per 30 minutes per session (Didit retries a webhook only twice); it also drops events older than 30 days.
+
+### Edge Functions (`verify_jwt = false`; each checks in code)
+| Function | Caller | Body | Does |
+| --- | --- | --- | --- |
+| `didit-start` | a signed-in person (token) | `{ action: "check" }` | `{ ok, available }`: whether the two keys are set |
+| | | `{ action?: "start", return_url? }` | `didit_start_prepare`, then `POST https://verification.didit.me/v3/session/` (`x-api-key`) with `workflow_id` = setting `didit_workflow_id`, `vendor_data` = our account id, `callback` = `return_url` if it is `https://dzirent.com/verify/done`, `https://www.dzirent.com/verify/done` or `https://dzirent.vercel.app/verify/done` (else the first); then `didit_start_record`. `{ ok, url, session_token, verification }`. Didit didn't create the session (no answer, or a refusal such as 403): the attempt is given back, 502 `DZ-E6006`, and the log line names Didit's `provider_status` (runbook below) |
+| `didit-webhook` | Didit | the raw event | Below |
+| `didit-sync` | the outbox only (`x-didit-job-secret` = `DIDIT_JOB_SECRET`, Vault `didit_job_secret`; else 401 `DZ-E9004`) | `{ session_id }` | `GET /v3/session/{id}/decision/`, reduced in memory to the status, the legal name (`full_name`, else first + last), `is_adult` (from `date_of_birth` on today's date, then dropped), a duplicate-face flag and a reason of risk codes; then `didit_apply_decision`. 404 = expired (a verified person is never touched). No answer or 5xx: 502 `DZ-E6006`, the outbox retries (1, 5, 30, 120 minutes) |
+
+Outbox kind `didit_sync` (Vault `didit_sync_url`); a check for a session that no longer exists is skipped. `DIDIT_API_BASE` (tests only: a local Docker name or 127.0.0.1) is never set on live.
+
+### Webhook (`didit-webhook`), exactly as the owner's Didit console shows
+1. **Signature first:** `X-Signature` = hex HMAC-SHA256 of the **raw request body bytes** with `DIDIT_WEBHOOK_SECRET` (64 hex characters), compared in constant time, else 401 `DZ-E6007` and nothing is read or written. (`X-Signature-V2`, `X-Signature-Simple` and the `-Previous` headers are not used.)
+2. **Fresh:** the body's own `timestamp` (Unix seconds) within 300 seconds of now, else 400 `DZ-E6008`. The `X-Timestamp` header is never used (the body's timestamp is covered by the signature).
+3. **Ours:** `application_id` = setting `didit_application_id`, else 400 `DZ-E6009` (not recorded).
+4. **Once:** `event_id` inserted into `app_private.didit_events` (primary key); a repeat answers 200 `{ received: true, result: "duplicate" }`.
+5. **At once:** status-only steps apply in the same call; `Approved`, `Declined` and `In Review` queue a `didit_sync` job (the decision is read from Didit's API, never stored from the payload). The answer is 200 well within Didit's 5 seconds. A database failure answers 500 (Didit retries twice; reconciliation catches the rest).
+
+Subscribed events (Didit console, endpoint `https://pwfzkyjeivadbtkfkdxr.supabase.co/functions/v1/didit-webhook`, v3): `status.updated`, `data.updated`. Bodies over 1 MB: 413.
+
+### Screens
+- **Settings > ID verification** (website `/app/settings/verification`, Android Settings > Privacy & safety > ID verification): the status, one sentence, and **Verify ID** (or "Start again" / "Try again") whenever checks are available and `can_start`; out of attempts: "Contact support to verify.". Before starting, a short note: Dzirent keeps the result and the badge, the legal name (private) and an 18+ result; never ID photos, selfies, the birthdate or document details; the provider shows its own consent screen next (Dzirent shows no second consent).
+- **Website:** "Continue" goes to Didit's hosted `url` (a full page load); Didit returns to `/verify/done` on the same site, which shows "Checking…" (Realtime on the person's row, a read every 3 seconds, up to 3 minutes) and, once verified, continues to the page whose action was refused (kept in `sessionStorage`).
+- **Android:** Didit's native SDK (`me.didit:didit-sdk` 4.9.1 from Didit's Maven repository, initialized at app start) started with `session_token`; afterwards "Checking…" the same way. **iPhone:** opens Didit's hosted page in the browser until the Mac session adds Didit's iOS SDK.
+- **A refused action (`DZ-E6001`)**: the website shows "Verify ID" next to the message and comes back afterwards (`?resume=message` reopens Message; a chat's unsent text is kept); the apps open the verification over the screen and run the action again once verified.
+- **The badge** "Verified" on listing cards, listing pages, studio pages and chat headers (website and apps).
+- **Admin > ID verification** (`/admin/id-verification`): checks in review and declined (status, reason, attempts, the session id to look up in Didit's console, dates; never images or names), Approve / Reject with a reason and a confirmation, Reset attempts.
+
+### Runbook: rotating the Didit API key
+Who: an agent with the CLI and the secrets folder (never printed or committed).
+1. In Didit's console create a new API key with the same access (Didit sets None, Read or Write per resource): Sessions Read + Write (starting and deleting sessions), Decisions Read, People (users) Read + Write (deleting Didit's user record), Workflows Read, Media none. Save it in `H:\DziRent\secrets\providers.env` as `DIDIT_API_KEY`.
+2. `supabase secrets set --env-file <temporary file>` with `DIDIT_API_KEY` only (delete the file at once). Functions read secrets on each start, so no redeploy is needed.
+3. Check: Admin > Integrations still shows ID verification configured; one `didit-start { action: "check" }` answers `available: true`.
+4. Revoke the old key in Didit's console.
+
+### Runbook: `didit-start` answers `DZ-E6006`
+Each failed start gives the attempt back (`didit_start_release`) and writes one line to the `didit-start` Edge Function logs: `{"fn":"didit-start","ok":false,"provider_status":<Didit's HTTP status>}` (no names or ids).
+- **If didit-start logs provider_status 403, the Didit key is missing Sessions Write.** In Didit's console set the key's Sessions access to Read + Write. It is the same key, so no secret change and no redeploy; the person presses Verify ID again. (Seen in C6's live test, 2026-11-15.)
+- 401: the key is wrong, revoked or expired; rotate it (runbook above).
+- 0 or 5xx: Didit didn't answer properly; try again later.
+- Deleting an account uses the same key at Didit: Sessions Write for the sessions and People (users) Write for Didit's user record. Without them `delete-account` answers 503 `DZ-E6013` and keeps the account and its Dzirent rows (it logs no provider status); fix the key and delete again (a session already gone at Didit counts as done).
+
+### Runbook: rotating the webhook secret
+1. In Didit's console rotate the destination's signing secret; save the new one as `DIDIT_WEBHOOK_SECRET` in `providers.env`.
+2. Set it at once: `supabase secrets set --env-file <temporary file>` with `DIDIT_WEBHOOK_SECRET` (file deleted). Events signed with the new secret before the secret is set are refused (401) and Didit retries twice within about 5 minutes; anything still missed is picked up by `dzirent-didit-reconcile` within about 40 minutes.
+3. Check the function logs for `didit-webhook` results (no 401s after the change).
+
+### Runbook: switching `verification_required` on
+1. Make sure Admin > Integrations shows ID verification **configured** and a test account has verified end to end (status `verified`, the badge in the shop window).
+2. The legal pages: the privacy page says it "may later" be asked for; update the Terms and the privacy text to say it is required before messaging and publishing (attorney), and bump the versions if needed (G34).
+3. Admin website > Flags > `verification_required` on (logged). From then on unverified people can't start chats, send messages or publish; existing listings stay live.
+4. To switch off: the same flag off. Nothing else changes.

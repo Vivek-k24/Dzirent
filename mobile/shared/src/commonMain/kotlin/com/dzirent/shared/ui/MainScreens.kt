@@ -53,9 +53,11 @@ import com.dzirent.shared.util.formatPerDay
 import com.dzirent.shared.util.parseDateRange
 import com.dzirent.shared.util.DateRange
 import com.dzirent.shared.util.daysAndTotal
+import com.dzirent.shared.util.withVerifiedLabel
 import kotlinx.coroutines.launch
 import com.dzirent.shared.util.isBefore
-import com.dzirent.shared.util.isDraft
+import com.dzirent.shared.util.isUnfinished
+import com.dzirent.shared.util.listingActions
 import com.dzirent.shared.util.today
 
 sealed class UiState<out T> {
@@ -84,7 +86,7 @@ fun ListingCard(listing: Listing, onClick: () -> Unit, modifier: Modifier = Modi
             .fillMaxWidth()
             .clickable(onClickLabel = "open") { onClick() }
             .clearAndSetSemantics {
-                contentDescription = listOf(listing.title, subtitle.replace(" · ", ", "))
+                contentDescription = listOf(withVerifiedLabel(listing.title, listing.lender?.isVerified), subtitle.replace(" · ", ", "))
                     .filter { it.isNotBlank() }
                     .joinToString(", ")
             }
@@ -104,6 +106,8 @@ fun ListingCard(listing: Listing, onClick: () -> Unit, modifier: Modifier = Modi
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+        // C6: the lender verified their ID.
+        VerifiedBadge(listing.lender?.isVerified, modifier = Modifier.padding(vertical = 2.dp))
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodySmall,
@@ -199,13 +203,15 @@ fun ListingDetailScreen(
                         Icon(Icons.Default.Share, contentDescription = "Share")
                     }
                 }
-                if (loaded != null && loaded.lenderId == currentUserId) {
+                // F1: your own listing offers Edit, never Save or Report listing.
+                val actions = loaded?.let { listingActions(isOwn = it.lenderId == currentUserId, isGuest = isGuest) }
+                if (loaded != null && actions?.edit == true) {
                     IconButton(onClick = { onEdit(loaded.id) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit listing")
                     }
                 } else if (loaded != null) {
                     val saved = isSaved
-                    if (saved != null) {
+                    if (saved != null && actions?.save == true) {
                         IconButton(onClick = { toggleSaved(loaded) }, enabled = !savingBookmark) {
                             Icon(
                                 imageVector = if (saved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
@@ -214,7 +220,7 @@ fun ListingDetailScreen(
                             )
                         }
                     }
-                    if (!isGuest) Box {
+                    if (actions?.report == true) Box {
                         IconButton(onClick = { menuOpen = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "More options")
                         }
@@ -312,6 +318,7 @@ fun ListingDetailScreen(
                             ).joinToString(" · "),
                             style = MaterialTheme.typography.bodyMedium
                         )
+                        VerifiedBadge(listing.lender?.isVerified, modifier = Modifier.padding(start = 6.dp))
                         Icon(
                             imageVector = Icons.Default.ChevronRight,
                             contentDescription = "Open studio",
@@ -556,6 +563,7 @@ private fun MyListingsContent(
     var actionError by remember { mutableStateOf<String?>(null) }
     var pendingDelete by remember { mutableStateOf<Listing?>(null) }
     val scope = rememberCoroutineScope()
+    val verificationGate = LocalVerificationGate.current
 
     fun loadMyListings() {
         scope.launch {
@@ -589,7 +597,10 @@ private fun MyListingsContent(
                 // Republishing clears the server's pause note (the database does the same).
                 updateListing(listing.id) { it.copy(status = status, autoPausedReason = if (active) null else it.autoPausedReason) }
             } catch (e: Exception) {
-                actionError = e.userMessage("Couldn't update your listing. Please try again.")
+                // C6: publishing needs the one-time ID check while verification_required is on.
+                if (!verificationGate.handle(e) { setActive(listing, active) }) {
+                    actionError = e.userMessage("Couldn't update your listing. Please try again.")
+                }
             }
             busyIds = busyIds - listing.id
         }
@@ -717,7 +728,9 @@ private fun ClosetListingCard(
 ) {
     val isActive = listing.status == "active"
     // A draft row holds only uploaded photos (placeholder details): Edit carries on with it.
-    val isDraft = listing.isDraft
+    // F1: so does a row saved from the website's details step without a size or price yet:
+    // it goes live only through Publish in the editor, never the switch.
+    val isDraft = listing.isUnfinished
     Card(
         modifier = Modifier
             .fillMaxWidth()

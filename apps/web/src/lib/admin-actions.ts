@@ -19,6 +19,11 @@ async function requireAdminSession() {
 }
 
 async function callAdminEdgeFunction(payload: Record<string, unknown>) {
+  return callAdminFunction("admin-actions", payload);
+}
+
+/** An admin Edge Function with the admin's own token (the function checks is_admin again). */
+async function callAdminFunction(name: string, payload: Record<string, unknown>) {
   const { client } = await requireAdminSession();
   const {
     data: { session },
@@ -29,7 +34,7 @@ async function callAdminEdgeFunction(payload: Record<string, unknown>) {
 
   const { url, key } = config();
   const response = await fetch(
-    `${url.replace(/\/$/, "")}/functions/v1/admin-actions`,
+    `${url.replace(/\/$/, "")}/functions/v1/${name}`,
     {
       method: "POST",
       headers: {
@@ -332,6 +337,79 @@ export async function userRentalsAction(userId: string) {
   return { rentals, links: await signRentalPhotos(client, paths) };
 }
 
+/** C4: signed links (1 hour) to a claim's evidence photos (return condition photos). */
+export async function claimEvidenceLinksAction(paths: string[]) {
+  const { client } = await requireAdminSession();
+  return signRentalPhotos(client, paths.slice(0, 20));
+}
+
+/** C4: capture from the deposit (0 releases the hold) to decide a claim; logged. */
+export async function decideClaimAction(claimId: string, amount: number, reason: string) {
+  const { client } = await requireAdminSession();
+  const { data, error } = await client.rpc("admin_decide_claim", { p_claim_id: claimId, p_amount: amount, p_reason: reason });
+  if (error) throw new Error(errorText(describeError(error)));
+  revalidatePath("/admin/payments");
+  return data as Record<string, unknown>;
+}
+
+/** C4: refund part or all of a rental payment through the payment processor; logged. */
+export async function refundRentalAction(rentalId: string, amount: number, reason: string) {
+  const { client } = await requireAdminSession();
+  const { data, error } = await client.rpc("admin_refund_rental", { p_rental_id: rentalId, p_amount: amount, p_reason: reason });
+  if (error) throw new Error(errorText(describeError(error)));
+  revalidatePath("/admin/payments");
+  return data as Record<string, unknown>;
+}
+
+/** C4: end a stuck rental as cancelled or completed, with the refund and deposit hold choice; logged. */
+export async function endRentalAction(input: {
+  rentalId: string;
+  outcome: "cancelled" | "completed";
+  reason: string;
+  refundAmount?: number | null;
+  depositAction?: "release" | "capture" | null;
+  captureAmount?: number | null;
+}) {
+  const { client } = await requireAdminSession();
+  const { data, error } = await client.rpc("admin_end_rental", {
+    p_rental_id: input.rentalId,
+    p_outcome: input.outcome,
+    p_reason: input.reason,
+    p_refund_amount: input.refundAmount ?? null,
+    p_deposit_action: input.depositAction ?? null,
+    p_capture_amount: input.captureAmount ?? null,
+  });
+  if (error) throw new Error(errorText(describeError(error)));
+  revalidatePath("/admin/payments");
+  revalidatePath("/admin/users");
+  return data as Record<string, unknown>;
+}
+
+/** C4: change one setting (type and range checked by the database); logged with old and new value. */
+export async function setSettingAction(key: string, value: unknown, reason: string) {
+  const { client } = await requireAdminSession();
+  const { data, error } = await client.rpc("admin_set_setting", { p_key: key, p_value: value, p_reason: reason });
+  if (error) throw new Error(errorText(describeError(error)));
+  revalidatePath("/admin/settings");
+  return data as { key: string; old_value: unknown; new_value: unknown; affects_terms: boolean };
+}
+
+export type IntegrationStatus = { key: string; name: string; configured: boolean; status: string };
+
+/**
+ * C4: which outside services have their secrets set, from the admin-integrations Edge Function
+ * ("configured" / "not configured" only; never a value). The read is logged.
+ */
+export async function integrationsAction(): Promise<IntegrationStatus[]> {
+  const body = await callAdminFunction("admin-integrations", {});
+  return ((body?.integrations as IntegrationStatus[] | undefined) ?? []).map((i) => ({
+    key: String(i.key),
+    name: String(i.name),
+    configured: i.configured === true,
+    status: i.configured === true ? "configured" : "not configured",
+  }));
+}
+
 /** C1: starts a dead background job (send-push or scan-listing) again; logged in the admin log. */
 export async function retryJobAction(jobId: number) {
   const { client } = await requireAdminSession();
@@ -340,4 +418,50 @@ export async function retryJobAction(jobId: number) {
   revalidatePath("/admin");
   revalidatePath("/admin/jobs");
   return data as { id: number; kind: string; status: string; attempts: number };
+}
+
+export type IdReview = {
+  user_id: string;
+  display_name: string;
+  studio_name: string | null;
+  studio_handle: string | null;
+  status: "in_review" | "declined";
+  reason: string | null;
+  attempts: number;
+  max_attempts: number;
+  /** The provider's session, to find it in the provider's console (never images here). */
+  session_id: string | null;
+  is_adult: boolean | null;
+  verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** C6: ID checks waiting for an admin (in review) and declined ones; never images or the legal name. Logged. */
+export async function idReviewsAction(status: "in_review" | "declined" | null = null): Promise<IdReview[]> {
+  const { client } = await requireAdminSession();
+  const { data, error } = await client.rpc("admin_list_id_reviews", { p_status: status });
+  if (error) throw new Error(errorText(describeError(error)));
+  return (data ?? []) as IdReview[];
+}
+
+/** C6: approve (verified) or reject (declined) an ID check in review, or approve a declined one; logged. */
+export async function decideIdVerificationAction(userId: string, decision: "approve" | "reject", reason: string) {
+  const { client } = await requireAdminSession();
+  const { error } = await client.rpc("admin_decide_id_verification", {
+    p_user_id: userId,
+    p_decision: decision,
+    p_reason: reason,
+  });
+  if (error) throw new Error(errorText(describeError(error)));
+  revalidatePath("/admin");
+  revalidatePath("/admin/id-verification");
+}
+
+/** C6: give a person their ID check attempts back (after they contacted support); logged. */
+export async function resetIdAttemptsAction(userId: string, reason: string) {
+  const { client } = await requireAdminSession();
+  const { error } = await client.rpc("admin_reset_id_attempts", { p_user_id: userId, p_reason: reason });
+  if (error) throw new Error(errorText(describeError(error)));
+  revalidatePath("/admin/id-verification");
 }

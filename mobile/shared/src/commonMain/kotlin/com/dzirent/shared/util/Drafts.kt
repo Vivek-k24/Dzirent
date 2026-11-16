@@ -56,6 +56,8 @@ data class SavedDraft(
     val priceNote: String = "",
     val retailValueText: String = "",
     val depositNote: String = "",
+    /** C5: the deposit amount as typed (dollars; shown only while payments are on). */
+    val depositAmountText: String = "",
     val ranges: List<DraftRange>? = null,
     val listingDeclarationChecked: Boolean = false,
     val aiReviewNeeded: Boolean = false

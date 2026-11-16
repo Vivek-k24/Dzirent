@@ -66,6 +66,8 @@ const ABOUT = {
     chats: "Every chat you are part of, with all its messages. The other person is shown only by their name and handle.",
     rentals: "Rentals arranged in your chats: dates, the price agreed when it was requested, and every step (requested, accepted, picked up, returned, completed, cancelled ...) with who took it and when.",
     condition_photos: "Photos you took of a piece at pickup or return, with a link to each (valid 7 days).",
+    claims: "Damage claims against a deposit in your rentals: the amount, the reason, the answer and Dzirent's decision.",
+    payments: "Your payment set-up: when your payment profile was made and your payout account's status. Card and bank details stay with the payment processor and are never here.",
     blocked_people: "People you blocked, by name and handle.",
     reports_filed: "Reports you made, with your reason and details. Reports other people made about you are not included.",
     warnings: "Warnings Dzirent sent you.",
@@ -78,6 +80,9 @@ const ABOUT = {
     suggestion_choices: "Whether you kept, changed or cleared the suggestions filled in from your photos.",
     listing_activity: "Listings you viewed, saved or messaged about in the apps.",
     earlier_exports: "When you downloaded your data before.",
+    emails: "The emails Dzirent sent you (or skipped) in the last 30 days: which one, when and the outcome. Never their text.",
+    id_verification:
+      "Your ID verification: the result, your legal name from the ID (private: nobody else sees it), whether the ID shows you are 18 or older, how many checks you started, and when. Dzirent keeps no ID images, selfies, birthdate or document details.",
   },
 };
 

@@ -1,67 +1,33 @@
+"""The apps' color values and the color math the photo check shares (colors.py)."""
+
 import numpy as np
 
-from app.colors import color_votes, name_colors, nearest_color_name, rgb_to_lab
+from app.colors import NAMES, RELATED, linear_to_lab, looks_like_skin, rgb_to_lab, srgb_to_linear
 
 
-def solid(rgb, w=64, h=64):
-    return np.full((h, w, 3), rgb, dtype=np.uint8)
+def test_the_apps_fifteen_values_in_their_order():
+    # The values the apps and website use: a suggestion can only ever be one of these.
+    assert NAMES == ("Black", "White", "Grey", "Navy", "Blue", "Green", "Emerald", "Red", "Maroon", "Pink",
+                     "Purple", "Orange", "Yellow", "Beige", "Brown")
 
 
-def votes(image):
-    return color_votes(image, region=np.ones(image.shape[:2], dtype=bool))
+def test_related_shades_go_both_ways():
+    for i, related in RELATED.items():
+        assert i not in related
+        assert all(i in RELATED[j] for j in related)
 
 
-def test_typical_shades_get_their_names():
-    cases = {
-        (10, 10, 10): "Black", (250, 250, 250): "White", (128, 128, 128): "Grey", (0, 0, 128): "Navy",
-        (40, 95, 195): "Blue", (34, 139, 34): "Green", (0, 130, 95): "Emerald", (220, 25, 30): "Red",
-        (125, 10, 35): "Maroon", (255, 182, 193): "Pink", (128, 0, 128): "Purple", (255, 140, 0): "Orange",
-        (245, 215, 60): "Yellow", (225, 205, 170): "Beige", (110, 70, 40): "Brown",
-    }
-    assert {rgb: nearest_color_name(*rgb) for rgb in cases} == cases
+def test_lab_of_white_black_and_pure_red():
+    assert np.allclose(rgb_to_lab(np.array([255, 255, 255], dtype=np.uint8)), [100, 0, 0], atol=0.01)
+    assert np.allclose(rgb_to_lab(np.array([0, 0, 0], dtype=np.uint8)), [0, 0, 0], atol=1e-9)
+    assert np.allclose(rgb_to_lab(np.array([255, 0, 0], dtype=np.uint8)), [53.24, 80.09, 67.20], atol=0.05)
 
 
-def test_one_color_garment():
-    assert name_colors(votes(solid((200, 20, 30)))) == ("Red", None)
+def test_the_srgb_and_linear_paths_agree_exactly():
+    rgb = np.random.default_rng(0).integers(0, 256, (200, 3)).astype(np.uint8)
+    assert np.array_equal(rgb_to_lab(rgb), linear_to_lab(srgb_to_linear(rgb)))
 
 
-def test_clear_second_color():
-    image = solid((25, 35, 85))
-    image[:, 48:] = (245, 245, 245)  # three quarters navy, one quarter white
-    assert name_colors(votes(image)) == ("Navy", "White")
-
-
-def test_two_colors_too_close_to_call():
-    image = solid((200, 20, 30))
-    image[:, 32:] = (34, 139, 34)  # half red, half green
-    assert name_colors(votes(image)) == (None, None)
-
-
-def test_shadow_shades_are_not_a_second_color():
-    image = solid((205, 30, 35))
-    image[:, 40:] = (120, 15, 35)  # red with maroon shadows
-    assert name_colors(votes(image)) == ("Red", None)
-
-
-def test_too_few_pixels_names_nothing():
-    assert name_colors(votes(solid((200, 20, 30), 20, 20))) == (None, None)
-
-
-def test_dark_pixels_are_navy_only_when_blue():
-    assert name_colors(votes(solid((15, 20, 60))))[0] == "Navy"
-    assert name_colors(votes(solid((25, 25, 25))))[0] == "Black"
-
-
-def test_center_box_leaves_out_the_background():
-    image = solid((245, 245, 245), 100, 100)
-    image[30:70, 30:70] = (0, 130, 95)  # an emerald piece on white
-    background = rgb_to_lab(np.array([245, 245, 245], dtype=np.uint8))
-    assert name_colors(color_votes(image, None, background)) == ("Emerald", None)
-
-
-def test_skin_is_left_out_unless_it_is_most_of_the_piece():
-    image = solid((0, 0, 128))
-    image[:, :16] = (224, 172, 150)  # a navy dress with a quarter arms and face
-    assert name_colors(votes(image)) == ("Navy", None)
-    beige = solid((224, 172, 150))  # a skin-toned dress
-    assert name_colors(votes(beige))[0] is not None
+def test_skin_tones():
+    assert looks_like_skin(np.array([[224, 172, 150]], dtype=np.uint8))[0]
+    assert not looks_like_skin(np.array([[0, 0, 128], [34, 139, 34]], dtype=np.uint8)).any()

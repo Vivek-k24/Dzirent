@@ -77,6 +77,14 @@ Dzirent is built with the open-source projects below, each under its own license
 
 Changes to the list: Dzirent uses the English list as of commit `5faf2ba`, leaves out its one emoji entry, and switches off a few entries that are ordinary words on a clothing marketplace (for example "nude" as a color and "pussy bow" as a blouse style).
 
+### Color names
+
+| Data | What Dzirent uses it for | License | Project |
+|---|---|---|---|
+| xkcd color survey results (`rgb.txt`, the 949 most common color names) | The photo check names each of a piece's colors with the closest of these names, then maps that name to one of the apps' 15 colors | CC0 1.0 | [xkcd.com/color/rgb](https://xkcd.com/color/rgb/) |
+
+Changes to the list: none; the names and values are copied as published, into `services/vision/app/color_names.json`.
+
 ### Photo-check service
 
 | Software | What Dzirent uses it for | License | Project |
@@ -89,7 +97,8 @@ Changes to the list: Dzirent uses the English list as of commit `5faf2ba`, leave
 | huggingface_hub | Downloads the pinned model while the service is built | Apache 2.0 | [huggingface/huggingface_hub](https://github.com/huggingface/huggingface_hub) |
 | safetensors | Saves and loads the model weights | Apache 2.0 | [safetensors/safetensors](https://github.com/safetensors/safetensors) |
 | NumPy | Image and embedding math | BSD-3-Clause | [numpy/numpy](https://github.com/numpy/numpy) |
-| SciPy | Finds the piece's outline for the "whole piece in the frame" photo check | BSD-3-Clause | [scipy/scipy](https://github.com/scipy/scipy) |
+| SciPy | Finds the piece's outline for the "whole piece in the frame" photo check, and tidies the garment's outline before its colors are read | BSD-3-Clause | [scipy/scipy](https://github.com/scipy/scipy) |
+| OpenCV (`opencv-python-headless`) | Separates the garment from its background (GrabCut) before its colors are read | OpenCV: Apache 2.0; the wheel's packaging: MIT. The wheel also bundles FFmpeg (LGPL 2.1, never used by the service) and other libraries under their own licenses, listed in its `LICENSE-3RD-PARTY.txt` | [opencv/opencv](https://github.com/opencv/opencv), [opencv/opencv-python](https://github.com/opencv/opencv-python) |
 | Pillow | Opens and resizes photos | MIT-CMU | [python-pillow/Pillow](https://github.com/python-pillow/Pillow) |
 | FastAPI | The service's web API | MIT | [fastapi/fastapi](https://github.com/fastapi/fastapi) |
 | Starlette | Under FastAPI; runs each check off the request loop | BSD-3-Clause | [Kludex/starlette](https://github.com/Kludex/starlette) |
@@ -153,3 +162,4 @@ The Android app also uses Google Play services Location (the approximate locatio
   > Copyright 2019 Kenneth Reitz
 
 - The mobile apps' direct dependencies ship no NOTICE files in their packages.
+- OpenCV's wheel (`opencv-python-headless` 4.14.0.94) ships no NOTICE file; its `LICENSE.txt` and `LICENSE-3RD-PARTY.txt` are inside the photo-check service.

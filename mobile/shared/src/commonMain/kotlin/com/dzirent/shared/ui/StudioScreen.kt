@@ -29,7 +29,10 @@ import androidx.compose.ui.unit.dp
 import com.dzirent.shared.model.Listing
 import com.dzirent.shared.model.StudioPage
 import com.dzirent.shared.repository.DzirentRepository
+import com.dzirent.shared.util.StudioActions
+import com.dzirent.shared.util.isOwnStudio
 import com.dzirent.shared.util.replyTimeText
+import com.dzirent.shared.util.studioActions
 import com.dzirent.shared.util.sinceText
 import kotlinx.coroutines.launch
 
@@ -47,7 +50,9 @@ fun StudioScreen(
     onBack: () -> Unit,
     onOpenListing: (String) -> Unit,
     onMessageAbout: (Listing) -> Unit,
-    onSavedChanged: () -> Unit
+    onSavedChanged: () -> Unit,
+    /** F1: your own studio offers Edit studio (My studio) instead of Save and Message. */
+    onEditStudio: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val device = LocalDevice.current
@@ -85,7 +90,8 @@ fun StudioScreen(
     LaunchedEffect(lenderId) { load() }
 
     val page = (uiState as? UiState.Success)?.data
-    val isMine = page?.isOwn == true || lenderId == currentUserId
+    val isMine = isOwnStudio(page?.isOwn == true, lenderId, currentUserId)
+    val actions = studioActions(isMine, hasPieces = page?.pieces?.isNotEmpty() == true)
 
     if (showPiecePicker && page != null) {
         PiecePickerSheet(
@@ -121,7 +127,7 @@ fun StudioScreen(
                         Icon(Icons.Default.Share, contentDescription = "Share studio")
                     }
                 }
-                if (page != null && !isMine) {
+                if (page != null && actions.save) {
                     IconButton(onClick = { toggleSaved(page) }, enabled = !savingBookmark) {
                         Icon(
                             imageVector = if (page.isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
@@ -137,7 +143,8 @@ fun StudioScreen(
             is UiState.Error -> ErrorView(message = state.message, onRetry = { load() })
             is UiState.Success -> StudioContent(
                 page = state.data,
-                isMine = isMine,
+                actions = actions,
+                onEditStudio = onEditStudio,
                 onMessage = {
                     val pieces = state.data.pieces
                     // One piece: straight to the chat. More: pick which one it's about.
@@ -152,7 +159,8 @@ fun StudioScreen(
 @Composable
 private fun StudioContent(
     page: StudioPage,
-    isMine: Boolean,
+    actions: StudioActions,
+    onEditStudio: () -> Unit,
     onMessage: () -> Unit,
     onOpenListing: (String) -> Unit
 ) {
@@ -172,6 +180,8 @@ private fun StudioContent(
                 Avatar(name = lender.studioTitle, size = 72.dp)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(lender.studioTitle, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                // C6: the studio's owner verified their ID.
+                VerifiedBadge(lender.isVerified, modifier = Modifier.padding(top = 4.dp))
                 val place = listOfNotNull(lender.city.ifBlank { null }, page.since ?: sinceText(lender.createdAt)).joinToString(" · ")
                 if (place.isNotEmpty()) {
                     Text(place, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -194,10 +204,16 @@ private fun StudioContent(
                 facts.forEach {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                if (!isMine && page.pieces.isNotEmpty()) {
+                if (actions.message) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(onClick = onMessage, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)) {
                         Text("Message ${lender.studioTitle}", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                if (actions.edit) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(onClick = onEditStudio, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)) {
+                        Text("Edit studio")
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))

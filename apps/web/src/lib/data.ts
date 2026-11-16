@@ -189,6 +189,17 @@ export async function studio(
     throw new Error("We could not load this studio. Please try again.");
   return data?.[0] || null;
 }
+/** F1: the signed-in person's own studio handle (null without one), to tell their studio apart. */
+export const myStudioHandle = cache(async (): Promise<string | null> => {
+  const user = await currentUser();
+  if (!user) return null;
+  const { data } = await (await serverClient())
+    .from("profiles")
+    .select("studio_handle")
+    .eq("id", user.id)
+    .maybeSingle();
+  return data?.studio_handle ?? null;
+});
 export async function isSaved(id: string) {
   const user = await currentUser();
   if (!user) return false;

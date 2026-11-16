@@ -27,7 +27,7 @@ async function signIn(email, password) {
     headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  if (!res.ok) throw new Error(`Sign in failed for ${email}: ${res.status}`);
+  if (!res.ok) throw new Error(`Sign in failed for a test user (no address shown): HTTP ${res.status}`);
   const data = await res.json();
   return { token: data.access_token, user: data.user };
 }

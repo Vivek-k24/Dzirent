@@ -58,8 +58,12 @@ data class PhotoReview(
     }
 }
 
-/** Something that holds up a step: [button] is what the Next / Publish button says, [message] the longer line. */
-data class Missing(val button: String, val message: String)
+/**
+ * Something that holds up a step: [button] is what the Next / Publish button says, [message] the
+ * longer line. F1: a listing field's gap also names its [field] (the database column) and its
+ * catalog [code], and [message] is the catalog's words with the code, "Choose a size. (DZ-E2074)".
+ */
+data class Missing(val button: String, val message: String, val field: String? = null, val code: String? = null)
 
 /** "Add 1 more photo", "Add 2 more photos". */
 fun morePhotos(n: Int): String = "Add $n more photo" + if (n == 1) "" else "s"

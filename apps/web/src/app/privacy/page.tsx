@@ -161,6 +161,31 @@ export default function PrivacyPage() {
           </li>
         </ul>
 
+        <h3>Payments and Payouts (when in-app payments are turned on)</h3>
+        <ul>
+          <li>
+            <strong>A payment processor handles the money:</strong> When
+            in-app payments are on, a payment processor takes rental payments,
+            places and releases refundable deposit holds on the renter&apos;s
+            card, sends refunds, and pays lenders out to their bank account. You
+            enter your card and bank details on the processor&apos;s own forms.
+          </li>
+          <li>
+            <strong>Dzirent never stores card or bank details:</strong> We keep
+            only the processor&apos;s reference numbers for your payment
+            profile, your payout account and each payment, plus the amounts,
+            the fee, refunds, deposit holds, and whether your payout account is
+            ready. Lenders give their identity, bank and tax details to the
+            processor directly when they set up payouts.
+          </li>
+          <li>
+            <strong>Damage claims:</strong> If a lender claims part of a
+            deposit after a return, we keep the amount, the reason, the return
+            photos chosen as evidence, the renter&apos;s answer and, when
+            Dzirent decides a disputed claim, the decision.
+          </li>
+        </ul>
+
         <h3>Accessory and Listing Attestations</h3>
         <ul>
           <li>
@@ -204,6 +229,37 @@ export default function PrivacyPage() {
             <strong>Safe notification text:</strong> Notifications never include
             phone numbers, email addresses, street addresses, map links, or
             coordinates, even if a message contains them.
+          </li>
+        </ul>
+
+        <h3>Emails About Your Rentals</h3>
+        <ul>
+          <li>
+            <strong>Which emails:</strong> When email is set up, we send short
+            emails to your account&apos;s email address only: a rental request
+            you received, the answer to your request, a payment receipt, the
+            pickup and return reminders, a damage claim filed and its decision,
+            and a confirmation when your account is deleted. Sign-in emails
+            (confirming your address, resetting your password, changing your
+            email) come from our sign-in service.
+          </li>
+          <li>
+            <strong>What they contain:</strong> the other person&apos;s name as
+            Dzirent shows it, the piece&apos;s title, the dates, the amounts
+            (price, total, deposit, claim) and a link to the chat. They never
+            include your messages, a claim&apos;s written reason, body
+            measurements, or any address or location.
+          </li>
+          <li>
+            <strong>Your choice:</strong> Turn rental emails off in Settings
+            &gt; Notifications (&ldquo;Email me about rentals&rdquo;). The
+            account-deleted confirmation is always sent.
+          </li>
+          <li>
+            <strong>What we keep:</strong> for 30 days, which email was sent to
+            which account, when, and whether it was sent or skipped; never its
+            text. For the account-deleted email we hold your address only until
+            that one email is sent.
           </li>
         </ul>
 
@@ -334,8 +390,37 @@ export default function PrivacyPage() {
         </p>
       </section>
 
+      <section id="id-verification">
+        <h2>6. ID Verification</h2>
+        <p>
+          You can verify your ID once, from Settings. It is optional today;
+          Dzirent may later ask for it once, before you message someone or
+          publish a listing. A verification provider does the check: it looks at
+          a photo of your ID, a selfie (to see that the ID is yours and that you
+          are really there), and your device and connection (to catch fraud).
+          Before you start, the provider shows you its own consent screen
+          explaining what it collects and why.
+        </p>
+        <div className="legal-callout">
+          <p>
+            <strong>What Dzirent keeps:</strong> only the result (verified or not,
+            and a &ldquo;Verified&rdquo; badge other people see on your listings,
+            studio and chats), your legal name from the ID (private: nobody else
+            sees it) and whether the ID shows you are 18 or older. Dzirent stores
+            no ID images, selfies, birthdates or document details.
+          </p>
+        </div>
+        <p>
+          The provider deletes its data within 12 months of your last
+          verification. When you delete your Dzirent account, we ask the provider
+          to delete your verification data right away. If your ID shows you are
+          under 18, your account is limited as described under the age
+          requirement below.
+        </p>
+      </section>
+
       <section id="cookies">
-        <h2>6. Cookies & Browser Storage</h2>
+        <h2>7. Cookies & Browser Storage</h2>
         <p>
           The website stores a few things in your browser. All of them are ours
           and are used only to make the site work for you. There are no
@@ -359,7 +444,7 @@ export default function PrivacyPage() {
       </section>
 
       <section id="who-sees-what">
-        <h2>7. Who Can See Your Information</h2>
+        <h2>8. Who Can See Your Information</h2>
         <ul>
           <li>
             <strong>Guests &amp; the Public:</strong> Anyone visiting the site
@@ -390,17 +475,35 @@ export default function PrivacyPage() {
       </section>
 
       <section id="outside-services">
-        <h2>8. Outside Service Providers</h2>
+        <h2>9. Outside Service Providers</h2>
         <p>
           A few trusted service providers help us run {LEGAL_CONFIG.BRAND_NAME}:
           they host our database and photos, run our website, check listing
           photos, and send app notifications. They handle data only to run
           Dzirent for us, in the United States.
         </p>
+        <p>
+          When in-app payments are on, a payment processor also handles
+          payments, deposit holds, refunds and lender payouts. It receives the
+          rental amount, your payment profile reference and, for lenders, the
+          details they give it to get paid. Dzirent never stores card or bank
+          details.
+        </p>
+        <p>
+          When email is set up, an email delivery service sends the rental
+          emails described above. It receives your email address and the
+          email&apos;s text, and delivers it for us.
+        </p>
+        <p>
+          When you verify your ID, a verification provider checks your ID, a
+          selfie and your device and connection, and tells us only the result,
+          your legal name and whether you are 18 or older (see ID Verification
+          above).
+        </p>
       </section>
 
       <section id="no-tracking-no-ads">
-        <h2>9. No Ads, No Tracking, No Selling</h2>
+        <h2>10. No Ads, No Tracking, No Selling</h2>
         <p>
           We believe in straightforward software. Our revenue model is based on
           facilitating peer-to-peer wardrobe sharing, not monetizing your
@@ -415,7 +518,7 @@ export default function PrivacyPage() {
       </section>
 
       <section id="retention">
-        <h2>10. Data Retention</h2>
+        <h2>11. Data Retention</h2>
         <p>
           We retain your information according to the following principles:
         </p>
@@ -532,7 +635,7 @@ export default function PrivacyPage() {
       </section>
 
       <section id="deletion">
-        <h2>11. Account Deletion &amp; What Remains</h2>
+        <h2>12. Account Deletion &amp; What Remains</h2>
         <p>
           You have full control over your account. You can permanently delete your
           account at any time through our apps or directly on our public{" "}
@@ -559,6 +662,10 @@ export default function PrivacyPage() {
           </li>
           <li>Your phone is no longer registered for notifications.</li>
           <li>Your saved pieces and studios, your terms acceptance, your age checks, and any warnings on your account are deleted.</li>
+          <li>
+            Your ID verification is deleted, and we ask the verification provider
+            to delete its copy of your check at the same time.
+          </li>
         </ul>
 
         <div className="legal-callout">
@@ -609,7 +716,7 @@ export default function PrivacyPage() {
       </section>
 
       <section id="display-names">
-        <h2>12. Display Names on Public Listings</h2>
+        <h2>13. Display Names on Public Listings</h2>
         <p>
           When you list a piece on {LEGAL_CONFIG.BRAND_NAME}, renters need to
           know who is offering the garment:
@@ -633,7 +740,7 @@ export default function PrivacyPage() {
       </section>
 
       <section id="your-rights">
-        <h2>13. Your Rights &amp; Choices</h2>
+        <h2>14. Your Rights &amp; Choices</h2>
         <p>
           Depending on where you live (including under the Texas Data Privacy and
           Security Act and other state privacy laws), you have specific rights
@@ -678,7 +785,7 @@ export default function PrivacyPage() {
       </section>
 
       <section id="children">
-        <h2>14. Age Requirement (18+)</h2>
+        <h2>15. Age Requirement (18+)</h2>
         <p>
           {LEGAL_CONFIG.BRAND_NAME} is strictly intended for adults. You must be
           at least 18 years old to create an account, list clothing, or rent
@@ -690,6 +797,12 @@ export default function PrivacyPage() {
           18 or older. We never ask for or store your birthdate. If your app
           store says you are under 18, your account can no longer be used,
           except to see your own information and delete the account.
+        </p>
+        <p>
+          If you verify your ID, the result from your ID (18 or older, or not)
+          counts over the app store&apos;s check and the sign-up confirmation.
+          The birthdate on your ID is used only to work out that result and is
+          not kept.
         </p>
         <p>
           We do not knowingly collect personal data from children under 18. If we
@@ -705,7 +818,7 @@ export default function PrivacyPage() {
       </section>
 
       <section id="security">
-        <h2>15. Security Safeguards</h2>
+        <h2>16. Security Safeguards</h2>
         <p>
           We take care of your information in these ways:
         </p>
@@ -736,7 +849,7 @@ export default function PrivacyPage() {
       </section>
 
       <section id="changes">
-        <h2>16. Policy Updates &amp; Contact</h2>
+        <h2>17. Policy Updates &amp; Contact</h2>
         <p>
           We may update this Privacy Policy from time to time to reflect product
           improvements, new features, or evolving legal requirements. When we

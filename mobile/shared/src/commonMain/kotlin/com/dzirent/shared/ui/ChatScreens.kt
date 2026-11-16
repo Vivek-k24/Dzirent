@@ -301,12 +301,21 @@ fun ChatScreen(
     var isSending by remember { mutableStateOf(false) }
     var sendError by remember { mutableStateOf<String?>(null) }
     var sendRefused by remember { mutableStateOf(false) }
+    val verificationGate = LocalVerificationGate.current
     val suspended = rememberSuspensionNotice(repository)
     var actionError by remember { mutableStateOf<String?>(null) }
     var isSavingRental by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     var showRequestDialog by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
+    // C5: payments and claims (dialogs), a plain notice after a step, and the server's rental rules.
+    var showPayDialog by remember { mutableStateOf(false) }
+    var showClaimDialog by remember { mutableStateOf(false) }
+    var claimAnswer by remember { mutableStateOf<Boolean?>(null) }
+    var showReceipt by remember { mutableStateOf(false) }
+    var rentalNotice by remember { mutableStateOf<String?>(null) }
+    var rentalSettings by remember { mutableStateOf<RentalSettings?>(null) }
+    LaunchedEffect(Unit) { rentalSettings = runCatching { repository.rentalSettings() }.getOrNull() }
     /** The condition photo stage whose camera-or-gallery choice is showing. */
     var choosingPhotoStage by remember { mutableStateOf<String?>(null) }
     var uploadingStage by remember { mutableStateOf<String?>(null) }
@@ -413,9 +422,12 @@ fun ChatScreen(
                     }
                 }
             } catch (e: Exception) {
-                sendError = e.userMessage("Couldn't send your message. Please try again.")
-                // The text filter said no: sending the same text again can't work.
-                sendRefused = (e as? DzirentException)?.field != null
+                // C6: the one-time ID check (only while verification_required is on): verify, then send again.
+                if (!verificationGate.handle(e) { send(body) }) {
+                    sendError = e.userMessage("Couldn't send your message. Please try again.")
+                    // The text filter said no: sending the same text again can't work.
+                    sendRefused = (e as? DzirentException)?.field != null
+                }
             }
             isSending = false
         }
@@ -474,8 +486,42 @@ fun ChatScreen(
         onMessage = { actionError = it }
     )
 
+    // C5: Stripe's payment sheet. On success the webhook marks the rental paid; the card updates live.
+    val paymentSheet = rememberPaymentSheetLauncher { outcome ->
+        isSavingRental = false
+        when (outcome) {
+            PaymentSheetOutcome.Completed -> {
+                rentalNotice = "Payment sent. The rental shows Paid in a moment."
+                scope.launch { runCatching { reloadRental() } }
+            }
+            PaymentSheetOutcome.Canceled -> Unit
+            is PaymentSheetOutcome.Failed -> actionError = ErrorCatalog.shown(outcome.code).text
+        }
+    }
+
+    fun pay() {
+        val current = rental ?: return
+        if (!paymentSheet.available) {
+            actionError = ErrorCatalog.shown("DZ-E4049").text
+            return
+        }
+        scope.launch {
+            isSavingRental = true
+            actionError = null
+            rentalNotice = null
+            try {
+                val start = repository.startPayment(current.id)
+                paymentSheet.present(start.publishableKey, start.clientSecret)
+            } catch (e: Exception) {
+                actionError = e.userMessage("Couldn't start the payment. Please try again.")
+                isSavingRental = false
+            }
+        }
+    }
+
     fun onRentalAction(action: RentalAction) {
         val current = rental ?: return
+        rentalNotice = null
         when (action) {
             RentalAction.ACCEPT -> rentalStep { repository.respondRental(current.id, accept = true) }
             RentalAction.DECLINE -> rentalStep { repository.respondRental(current.id, accept = false) }
@@ -485,7 +531,62 @@ fun ChatScreen(
             RentalAction.MARK_PICKED_UP -> rentalStep { repository.markPickedUp(current.id) }
             RentalAction.MARK_RETURNED -> rentalStep { repository.markReturned(current.id) }
             RentalAction.COMPLETE -> rentalStep { repository.completeRental(current.id) }
+            RentalAction.PAY -> showPayDialog = true
+            RentalAction.PLACE_HOLD -> rentalStep {
+                if (repository.placeDepositHold(current.id) != "picked_up") {
+                    rentalNotice = "The deposit hold is being confirmed. Tap again in a moment to mark it picked up."
+                }
+            }
+            RentalAction.FILE_CLAIM -> showClaimDialog = true
+            RentalAction.ACCEPT_CLAIM -> claimAnswer = true
+            RentalAction.DISPUTE_CLAIM -> claimAnswer = false
+            RentalAction.RECEIPT -> showReceipt = true
         }
+    }
+
+    if (showPayDialog) {
+        rental?.let { current ->
+            PayDialog(
+                rental = current,
+                onDismiss = { showPayDialog = false },
+                onContinue = { showPayDialog = false; pay() }
+            )
+        }
+    }
+
+    if (showClaimDialog) {
+        rental?.let { current ->
+            ClaimDialog(
+                rental = current,
+                photoLinks = photoLinks,
+                onDismiss = { showClaimDialog = false },
+                onConfirm = { amount, reason, photos ->
+                    showClaimDialog = false
+                    rentalStep { repository.fileClaim(current.id, amount, reason, photos) }
+                }
+            )
+        }
+    }
+
+    claimAnswer?.let { accept ->
+        val claim = rental?.claim
+        if (claim == null) {
+            claimAnswer = null
+        } else {
+            ClaimAnswerDialog(
+                accept = accept,
+                amount = claim.amount,
+                onDismiss = { claimAnswer = null },
+                onConfirm = { note ->
+                    claimAnswer = null
+                    rentalStep { repository.respondClaim(claim.id, accept, note) }
+                }
+            )
+        }
+    }
+
+    if (showReceipt) {
+        rental?.let { current -> ReceiptDialog(rental = current, onDismiss = { showReceipt = false }) }
     }
 
     fun setBlocked(block: Boolean) {
@@ -574,7 +675,11 @@ fun ChatScreen(
         TopAppBar(
             title = {
                 Column {
-                    Text(otherName, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(otherName, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                        // C6: the other person verified their ID.
+                        VerifiedBadge(conversation?.otherUser(currentUserId)?.isVerified, modifier = Modifier.padding(start = 6.dp))
+                    }
                     conversation?.listing?.title?.let {
                         Text(
                             text = it,
@@ -697,12 +802,18 @@ fun ChatScreen(
                     }
                     rental?.let { current ->
                         item(key = "rental") {
-                            RentalCard(
-                                rental = current,
-                                photoLinks = photoLinks,
-                                busy = isSavingRental,
-                                onAction = { onRentalAction(it) }
-                            )
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                RentalCard(
+                                    rental = current,
+                                    photoLinks = photoLinks,
+                                    busy = isSavingRental,
+                                    onAction = { onRentalAction(it) },
+                                    settings = rentalSettings
+                                )
+                                rentalNotice?.let {
+                                    Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.announced())
+                                }
+                            }
                         }
                     }
                     // The renter's way in: a request card when there's no open rental.

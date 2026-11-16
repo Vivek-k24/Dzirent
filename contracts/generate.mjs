@@ -5,6 +5,7 @@
 // The website build (prebuild) and the Android build (generateErrorCodes) run it. The generated
 // files are committed, so a machine without Node (the Mac) builds from them as they are.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -161,7 +162,33 @@ function main() {
     console.error("Out of date (run node contracts/generate.mjs):\n  " + stale.join("\n  "));
     process.exit(1);
   }
-  if (check) console.log(`error codes: ${catalog.codes.length} codes, generated files up to date`);
+  if (check) {
+    console.log(`error codes: ${catalog.codes.length} codes, generated files up to date`);
+    if (!codeReferenceFresh()) process.exit(1);
+  }
+}
+
+// C5: the generated code index (pranalika/code-reference.md, tools/gen-code-reference.py) must match
+// the source too. CI runs this check in the contracts job and before the website lint. Without
+// Python on a developer's machine it is skipped with a note; in CI (CI=true) that is a failure.
+function codeReferenceFresh() {
+  const script = join(ROOT, "tools", "gen-code-reference.py");
+  if (!existsSync(script)) return true;
+  // Windows has a "python3" placeholder that only opens the Store, so it goes last there.
+  const pythons = process.platform === "win32" ? ["python", "py", "python3"] : ["python3", "python"];
+  for (const python of pythons) {
+    const run = spawnSync(python, [script, "--check"], { cwd: ROOT, encoding: "utf8" });
+    if (run.error) continue;
+    process.stdout.write(run.stdout ?? "");
+    process.stderr.write(run.stderr ?? "");
+    return run.status === 0;
+  }
+  if (process.env.CI) {
+    console.error("code reference: Python not found, so pranalika/code-reference.md couldn't be checked");
+    return false;
+  }
+  console.warn("code reference: Python not found, check skipped (CI runs it)");
+  return true;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main();

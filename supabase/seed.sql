@@ -184,7 +184,17 @@ begin
     ('scan_listing_url', 'http://dzirent-stubs:8787/scan'),
     ('scan_listing_secret', 'local-scan-secret'),
     ('cleanup_files_url', 'http://kong:8000/functions/v1/cleanup-files'),
-    ('cleanup_files_secret', 'local-cleanup-secret')
+    ('cleanup_files_secret', 'local-cleanup-secret'),
+    -- C4: the payment steps go to the locally served functions (which talk to stripe-mock).
+    ('stripe_deposit_url', 'http://kong:8000/functions/v1/stripe-deposit'),
+    ('stripe_refund_url', 'http://kong:8000/functions/v1/stripe-refund'),
+    ('payments_job_secret', 'local-payments-secret'),
+    -- C5: emails go to the locally served send-email (the provider key is blank: skipped).
+    ('send_email_url', 'http://kong:8000/functions/v1/send-email'),
+    ('email_job_secret', 'local-email-secret'),
+    -- C6: decision checks go to the locally served didit-sync (which talks to the Didit stub).
+    ('didit_sync_url', 'http://kong:8000/functions/v1/didit-sync'),
+    ('didit_job_secret', 'local-didit-secret')
   ) as t(name, value) loop
     select s.id into v_id from vault.secrets s where s.name = v.name;
     if v_id is null then

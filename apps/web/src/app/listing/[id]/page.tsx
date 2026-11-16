@@ -16,6 +16,7 @@ import { Icon } from "@/components/icon";
 import { savePiece } from "@/app/actions";
 import { GatedActionTrigger } from "@/components/guest-gate";
 import { refusalText } from "@/lib/refusals";
+import { VerifiedBadge } from "@/components/verified-badge";
 // P5C: link previews come from what a guest sees (preview.ts), so a signed-in sharer's view never
 // leaks into them. The picture is this route's opengraph-image / twitter-image.
 export async function generateMetadata({
@@ -160,7 +161,10 @@ export default async function ListingPage({
             </span>
             <span>
               <small>FROM THE CLOSET OF</small>
-              <strong>{listing.studio_name || "A local studio"}</strong>
+              <strong>
+                {listing.studio_name || "A local studio"}
+                <VerifiedBadge verified={listing.is_verified} />
+              </strong>
             </span>
             <Icon name="chevron" />
           </GatedActionTrigger>
@@ -170,7 +174,8 @@ export default async function ListingPage({
               Edit listing
             </Link>
           ) : user ? (
-            <StartChat listingId={id} start={ctx.start} end={ctx.end} />
+            // C6: back from verifying the ID ("?resume=message"), the message step opens again.
+            <StartChat listingId={id} start={ctx.start} end={ctx.end} autoOpen={value(q, "resume") === "message"} />
           ) : (
             <GatedActionTrigger
               action="message"
