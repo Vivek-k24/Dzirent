@@ -79,6 +79,14 @@
       "description": "simple item of clothing, loosely worn over the shoulders, upper body and arms",
       "search": "shawl",
       "rank": 1
+    },
+    {
+      "key": "watch",
+      "qid": "Q178794",
+      "label": "watch",
+      "description": "personal time indicator, portable, used as an accessory, usually worn on the wrist or kept in a pocket",
+      "search": "watch",
+      "rank": 5
     }
   ],
   "banned": [
@@ -371,6 +379,64 @@
       "search": "professional wear",
       "rank": 1,
       "scope": "clothing"
+    }
+  ],
+  "instance_of": [
+    {
+      "key": "fictional_object",
+      "qid": "Q15706911",
+      "label": "fictional object",
+      "description": "anything that may be observed or acted upon by a subject in fictional stories",
+      "search": "fictional object",
+      "rank": 1
+    },
+    {
+      "key": "fictional_clothing",
+      "qid": "Q62595215",
+      "label": "fictional clothing",
+      "description": "clothing that only exists in works of fiction",
+      "search": "fictional clothing",
+      "rank": 1
+    },
+    {
+      "key": "brand",
+      "qid": "Q431289",
+      "label": "brand",
+      "description": "identification for a good or service",
+      "search": "brand",
+      "rank": 3
+    },
+    {
+      "key": "trademark",
+      "qid": "Q167270",
+      "label": "trademark",
+      "description": "trade identifier of products or services",
+      "search": "trademark",
+      "rank": 1
+    },
+    {
+      "key": "product_model",
+      "qid": "Q10929058",
+      "label": "product model",
+      "description": "class of manufactured objects of similar design generally sold under a specific brand",
+      "search": "product model",
+      "rank": 2
+    },
+    {
+      "key": "product_line",
+      "qid": "Q811701",
+      "label": "model series",
+      "description": "a series of product models sold under a common product name or market identity, simultaneously or consecutively",
+      "search": "product line",
+      "rank": 1
+    },
+    {
+      "key": "archaeological_artefact",
+      "qid": "Q220659",
+      "label": "archaeological artefact",
+      "description": "something made or modified by humans and of archaeological interest",
+      "search": "archaeological artefact",
+      "rank": 1
     }
   ],
   "skip": [
@@ -1101,6 +1167,233 @@
       "d1_label": "undergarment",
       "d1_description": "clothes worn under other clothes",
       "d1_check": "pass"
+    }
+  ],
+  "keep": [
+    {
+      "qid": "Q15013",
+      "label": "Advanced Crew Escape Suit",
+      "description": "full pressure suit"
+    },
+    {
+      "qid": "Q118463",
+      "label": "Mao suit",
+      "description": "style of attire from China"
+    },
+    {
+      "qid": "Q182064",
+      "label": "djellaba",
+      "description": "long loose-fitting unisex outer robe with full sleeves, traditionally worn in the region of North Africa"
+    },
+    {
+      "qid": "Q297424",
+      "label": "oilskin",
+      "description": "waterproof garment made from treated sailcloth or canvas"
+    },
+    {
+      "qid": "Q305718",
+      "label": "abaya",
+      "description": "simple, loose over-garment wore by humans, especially Muslim women"
+    },
+    {
+      "qid": "Q758069",
+      "label": "attila",
+      "description": "elaborately braided Hungarian shell-jacket"
+    },
+    {
+      "qid": "Q932999",
+      "label": "duster",
+      "description": "light, loose-fitting long coat"
+    },
+    {
+      "qid": "Q1000777",
+      "label": "fatsuit",
+      "description": "bodysuit-like undergarment used to thicken the appearance of an actress or actor"
+    },
+    {
+      "qid": "Q1016353",
+      "label": "burka",
+      "description": "rough raincoat"
+    },
+    {
+      "qid": "Q1663649",
+      "label": "rain cape",
+      "description": "garment"
+    },
+    {
+      "qid": "Q1934317",
+      "label": "waders",
+      "description": "waterproof garment combining high-waisted trousers and boots, worn by fishermen"
+    },
+    {
+      "qid": "Q1988132",
+      "label": "Tunic (military)",
+      "description": "type of coat or jacket"
+    },
+    {
+      "qid": "Q2018769",
+      "label": "raincoat",
+      "description": "waterproof coat"
+    },
+    {
+      "qid": "Q2576557",
+      "label": "Mackintosh",
+      "description": "waterproof raincoat"
+    },
+    {
+      "qid": "Q2637777",
+      "label": "simar",
+      "description": "woman's long dress or robe"
+    },
+    {
+      "qid": "Q2899124",
+      "label": "priestly tunic",
+      "description": ""
+    },
+    {
+      "qid": "Q2933073",
+      "label": "cagoule",
+      "description": "lightweight, weatherproof raincoat or anorak with a hood"
+    },
+    {
+      "qid": "Q2998209",
+      "label": "mantle",
+      "description": "ecclesiastical overgarment"
+    },
+    {
+      "qid": "Q3247116",
+      "label": "pinafore",
+      "description": "sleeveless apronlike garments which have a skirt and a bodice portion and which cover the front, sides, and a portion of the back"
+    },
+    {
+      "qid": "Q3658926",
+      "label": "environmental suit",
+      "description": "any of various suits designed specifically for a particular environment, usually one otherwise hostile to humans"
+    },
+    {
+      "qid": "Q3979915",
+      "label": "tabard",
+      "description": "ecclesiastical cloak, usually of wool, provided with a silk pilgrim and a velvet collar"
+    },
+    {
+      "qid": "Q4795383",
+      "label": "skin suit",
+      "description": "aerodynamic suit for speedskating"
+    },
+    {
+      "qid": "Q5523301",
+      "label": "Garibaldi shirt",
+      "description": "red wool shirt, as worn by the followers of Giuseppe Garibaldi, or a woman's blouse or jacket inspired by these shirts"
+    },
+    {
+      "qid": "Q5586484",
+      "label": "gorilla suit",
+      "description": "creature suit"
+    },
+    {
+      "qid": "Q7233286",
+      "label": "Positive pressure personnel suit",
+      "description": "Totally encapsulating, industrial protection garments worn within special biocontainment or maximum containment laboratory facilities"
+    },
+    {
+      "qid": "Q11400500",
+      "label": "racing silks",
+      "description": "jacket worn by jockeys"
+    },
+    {
+      "qid": "Q11626363",
+      "label": "ikan",
+      "description": "type of Japanese dress"
+    },
+    {
+      "qid": "Q16522478",
+      "label": "posing trunks",
+      "description": "regulation trunks worn by male bodybuilders in competition"
+    },
+    {
+      "qid": "Q16671745",
+      "label": "qamis",
+      "description": "long shirt or tunic worn alone or with trousers in many parts of Asia and the Middle East"
+    },
+    {
+      "qid": "Q16889336",
+      "label": "zephyr",
+      "description": "henley-style shirt worn in competition rowing, usually trimmed in team colors on the sleeve and neck binding and placket"
+    },
+    {
+      "qid": "Q26877520",
+      "label": "cold-protection suit",
+      "description": ""
+    },
+    {
+      "qid": "Q29572363",
+      "label": "walking suit",
+      "description": "women's suit worn for walking and other similar physical activities, dating from around 1900, usually consisting of a coat or jacket and long skirt"
+    },
+    {
+      "qid": "Q29655703",
+      "label": "track suit top",
+      "description": "upper body component of a track suit, usually a jacket or pullover, often with a hood"
+    },
+    {
+      "qid": "Q29749328",
+      "label": "communion clothing",
+      "description": "special clothing worn for first communions or confirmations in some Christain cultures"
+    },
+    {
+      "qid": "Q44222414",
+      "label": "beach dress",
+      "description": "dress designed to be worn at the sea shore"
+    },
+    {
+      "qid": "Q48767474",
+      "label": "cat suit",
+      "description": "suit made to resemble a feline"
+    },
+    {
+      "qid": "Q48810759",
+      "label": "dinosaur suit",
+      "description": ""
+    },
+    {
+      "qid": "Q48843371",
+      "label": "Teba jacket",
+      "description": "soft jacket with notchless lapels and shirt-like sleeves, designed as a shooting blazer"
+    },
+    {
+      "qid": "Q48995588",
+      "label": "bear suit",
+      "description": "Costumed character or creature suit"
+    },
+    {
+      "qid": "Q51099841",
+      "label": "jingle dress",
+      "description": "dress decorated with conical tin jingles, worn for the jingle dress dance"
+    },
+    {
+      "qid": "Q97618878",
+      "label": "informal dress (changfu)",
+      "description": "a type of formal dress in China"
+    },
+    {
+      "qid": "Q105200672",
+      "label": "shaluka",
+      "description": "type of tunic"
+    },
+    {
+      "qid": "Q125628759",
+      "label": "Speed skating suits",
+      "description": "One-piece suits used at speed skating sport competitions"
+    },
+    {
+      "qid": "Q131283709",
+      "label": "Farwah",
+      "description": "A traditional winter coat worn across parts of the Arab world, featuring an inner lining of natural or synthetic fur or heavy felt for warmth. The farwa is loose-fitting, in colors like brown or black, sometimes with simple decorations."
+    },
+    {
+      "qid": "Q138839719",
+      "label": "Al-Azhar attire",
+      "description": "scholars, students, and reciters affiliated with [[Al-Azhar University|Al-Azhar]]"
     }
   ]
 }

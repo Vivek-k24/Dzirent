@@ -353,17 +353,6 @@
   ]
  },
  {
-  "qid": "Q368859",
-  "label": "Moon Boot",
-  "description": "après-ski boot trademark",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "footwear",
-  "roots": [
-   "clothing",
-   "footwear"
-  ]
- },
- {
   "qid": "Q372381",
   "label": "patten",
   "description": "protective overshoe with a wooden or wood and metal sole, held in place by leather or cloth bands",
@@ -1848,17 +1837,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q1767924",
-  "label": "Cantabrian albarcas",
-  "description": "rustic wooden shoe from northern Spain",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "footwear",
-  "roots": [
-   "clothing",
-   "footwear"
   ]
  },
  {
@@ -3761,17 +3739,6 @@
   ]
  },
  {
-  "qid": "Q5315336",
-  "label": "Dunk",
-  "description": "line of shoes by Nike",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "footwear",
-  "roots": [
-   "clothing",
-   "footwear"
-  ]
- },
- {
   "qid": "Q5317427",
   "label": "Dutch cap",
   "description": "style of woman's cap",
@@ -3879,17 +3846,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q5459736",
-  "label": "Flipsters",
-  "description": "brand of folding shoes made to store in a pouch and be carried in a handbag",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "footwear",
-  "roots": [
-   "clothing",
-   "footwear"
   ]
  },
  {
@@ -4247,18 +4203,6 @@
   ]
  },
  {
-  "qid": "Q6455911",
-  "label": "L'eggs",
-  "description": "brand of pantyhose",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "lingerie, hosiery",
-  "roots": [
-   "clothing",
-   "hosiery",
-   "lingerie"
-  ]
- },
- {
   "qid": "Q6497446",
   "label": "veil",
   "description": "any lightweight covering for the head or face or both",
@@ -4569,17 +4513,6 @@
   ]
  },
  {
-  "qid": "Q7380451",
-  "label": "Ruputer",
-  "description": "early smartwatch",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q7406228",
   "label": "Saltwater sandals",
   "description": "American footwear",
@@ -4811,17 +4744,6 @@
   "roots": [
    "clothing",
    "swimwear"
-  ]
- },
- {
-  "qid": "Q7950747",
-  "label": "WIMM One",
-  "description": "developer device for the WIMM platform produced by WIMM Labs",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
   ]
  },
  {
@@ -5212,17 +5134,6 @@
   ]
  },
  {
-  "qid": "Q11682766",
-  "label": "I'm Watch",
-  "description": "smart watch",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q11736726",
   "label": "riding helmet",
   "description": "",
@@ -5341,17 +5252,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q12318915",
-  "label": "Jacoform",
-  "description": "shoe brand",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "footwear",
-  "roots": [
-   "clothing",
-   "footwear"
   ]
  },
  {
@@ -5853,17 +5753,6 @@
   ]
  },
  {
-  "qid": "Q17142060",
-  "label": "Qualcomm Toq",
-  "description": "smartwatch developed by Qualcomm",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q17194171",
   "label": "heukrip",
   "description": "",
@@ -5950,28 +5839,6 @@
   "roots": [
    "clothing",
    "undergarment"
-  ]
- },
- {
-  "qid": "Q17646806",
-  "label": "Samsung Gear S",
-  "description": "smartwatch by Samsung Electronics",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q18010946",
-  "label": "Apple Watch",
-  "description": "line of smartwatches created by Apple Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
   ]
  },
  {
@@ -6063,17 +5930,6 @@
   ]
  },
  {
-  "qid": "Q19382870",
-  "label": "Nesna Lobben boots",
-  "description": "brand of wool felt winter shoes",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "footwear",
-  "roots": [
-   "clothing",
-   "footwear"
-  ]
- },
- {
   "qid": "Q19392655",
   "label": "tobladlue",
   "description": "traditional woman's cap of Norway",
@@ -6082,17 +5938,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q19521131",
-  "label": "Pebble Time",
-  "description": "smartwatch model",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
   ]
  },
  {
@@ -6173,17 +6018,6 @@
   ]
  },
  {
-  "qid": "Q21029144",
-  "label": "Huawei Watch",
-  "description": "smartwatch by Huawei",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q21157367",
   "label": "coiffe bretonne",
   "description": "any of various styles of woman's cap worn with folk dress of Brittany",
@@ -6192,17 +6026,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q21160864",
-  "label": "Moto 360 (2nd gen.)",
-  "description": "Android smartwatch by Motorola",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
   ]
  },
  {
@@ -6236,28 +6059,6 @@
   "roots": [
    "clothing",
    "hosiery"
-  ]
- },
- {
-  "qid": "Q21996579",
-  "label": "Samsung Gear S2",
-  "description": "smartwatch developed by Samsung Electronics",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q23044850",
-  "label": "LG Watch Urbane",
-  "description": "2015 smartwatch by LG Corporation",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
   ]
  },
  {
@@ -6330,17 +6131,6 @@
   "qid": "Q25043195",
   "label": "pigache",
   "description": "types of shoe with a long pointed turned up toe, worn during the Romanesque and Byzantine periods",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "footwear",
-  "roots": [
-   "clothing",
-   "footwear"
-  ]
- },
- {
-  "qid": "Q25044495",
-  "label": "Totectors",
-  "description": "British brand of safety footwear and other workwear",
   "reason": "banned kind beyond its root's examples",
   "detail": "footwear",
   "roots": [
@@ -6459,16 +6249,6 @@
   ]
  },
  {
-  "qid": "Q26868823",
-  "label": "Apple Watch Series 2",
-  "description": "smartwatch designed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q26927672",
   "label": "balzo",
   "description": "Italian noblewoman's headdress of the 15th and early 16th centuries",
@@ -6488,17 +6268,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q27890205",
-  "label": "Samsung Gear S3",
-  "description": "smartwatch",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
   ]
  },
  {
@@ -6532,16 +6301,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q28418943",
-  "label": "Apple Watch Series 1",
-  "description": "smartwatch designed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
   ]
  },
  {
@@ -6820,28 +6579,6 @@
   ]
  },
  {
-  "qid": "Q29578321",
-  "label": "LG Watch Sport",
-  "description": "2017 Android smartwatch",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q29578323",
-  "label": "LG Watch Style",
-  "description": "smartwatch model",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q29748909",
   "label": "maternity corset",
   "description": "supportive corset for pregnant women",
@@ -6899,16 +6636,6 @@
   ]
  },
  {
-  "qid": "Q30900667",
-  "label": "Apple Watch",
-  "description": "smartwatch designed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q31080239",
   "label": "loslue",
   "description": "type of warm hat made of leather with ear flaps and an upright brim lined with fur or similar material",
@@ -6953,17 +6680,6 @@
   ]
  },
  {
-  "qid": "Q31888821",
-  "label": "Pebble 2",
-  "description": "smartwatch model",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q32067768",
   "label": "Jhumar",
   "description": "Woman's head ornament",
@@ -7005,16 +6721,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q39512123",
-  "label": "Apple Watch Series 3",
-  "description": "smartwatch designed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
   ]
  },
  {
@@ -7161,17 +6867,6 @@
   ]
  },
  {
-  "qid": "Q55080313",
-  "label": "Xiaomi Mi Band 3",
-  "description": "wearable activity tracker",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q55358825",
   "label": "Zhongyi",
   "description": "",
@@ -7227,17 +6922,6 @@
   ]
  },
  {
-  "qid": "Q56071642",
-  "label": "Samsung Galaxy Watch",
-  "description": "first generation of the Galaxy Watch smartwatch",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q56291769",
   "label": "zmijovka",
   "description": "traditional Czech knitted wool cap",
@@ -7268,16 +6952,6 @@
   "roots": [
    "clothing",
    "undergarment"
-  ]
- },
- {
-  "qid": "Q56599236",
-  "label": "Apple Watch Series 4",
-  "description": "smartwatch designed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
   ]
  },
  {
@@ -7501,17 +7175,6 @@
   ]
  },
  {
-  "qid": "Q65259897",
-  "label": "Samsung Galaxy Watch Active",
-  "description": "smartwatch model",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q65766965",
   "label": "bust form",
   "description": "padding placed inside a corset or brassiere to fill out the bust",
@@ -7531,28 +7194,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q66309682",
-  "label": "Samsung Galaxy Watch Active 2",
-  "description": "fitness smartwatch",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q67936441",
-  "label": "Apple Watch Series 5",
-  "description": "smartwatch designed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
   ]
  },
  {
@@ -7765,17 +7406,6 @@
   ]
  },
  {
-  "qid": "Q96397326",
-  "label": "Olio Model One",
-  "description": "smartwatch",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q96969747",
   "label": "baby bonnet",
   "description": "bonnet, usually of a soft delicate fabric, such as lace, knitwear, and handkerchief linen, and sometimes with frills surrounding the brim",
@@ -7795,48 +7425,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q97798631",
-  "label": "Samsung Galaxy Watch 3",
-  "description": "smartwatches",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q99231226",
-  "label": "Garmin fēnix 6 Pro Solar",
-  "description": "multisport GPS smartwatch with solar technology",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q99355766",
-  "label": "Apple Watch SE",
-  "description": "smartwatch developed by Apple Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q99371670",
-  "label": "Apple Watch Series 6",
-  "description": "smartwatch developed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
   ]
  },
  {
@@ -8071,17 +7659,6 @@
   ]
  },
  {
-  "qid": "Q102074341",
-  "label": "Samsung Galaxy Watch series",
-  "description": "line of smartwatches developed by Samsung",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q102248417",
   "label": "heeled ankle-length boot",
   "description": "",
@@ -8237,17 +7814,6 @@
   ]
  },
  {
-  "qid": "Q108163500",
-  "label": "Samsung Galaxy Watch 4",
-  "description": "2021 Samsung developed smartwatch",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q108203205",
   "label": "merry widow",
   "description": "woman's undergarment consisting of a combined bra and short girdle, providing no or minimal waist compression",
@@ -8256,27 +7822,6 @@
   "roots": [
    "clothing",
    "undergarment"
-  ]
- },
- {
-  "qid": "Q108545364",
-  "label": "Apple Watch Series 7",
-  "description": "smartwatch designed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q110208293",
-  "label": "IBM WatchPad",
-  "description": "",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
   ]
  },
  {
@@ -8467,17 +8012,6 @@
   ]
  },
  {
-  "qid": "Q112191881",
-  "label": "Seiko Data-2000",
-  "description": "early smartwatch",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q112702291",
   "label": "Germanic boar helmet",
   "description": "decorated helmet in Germanic cultures",
@@ -8522,17 +8056,6 @@
   ]
  },
  {
-  "qid": "Q113584921",
-  "label": "Samsung Galaxy Watch 5",
-  "description": "smartwatch developed by Samsung Electronics",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q113628443",
   "label": "Kukmor valenki",
   "description": "Russian folk art",
@@ -8541,26 +8064,6 @@
   "roots": [
    "clothing",
    "footwear"
-  ]
- },
- {
-  "qid": "Q113815700",
-  "label": "Apple Watch Series 8",
-  "description": "smartwatch designed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q113815892",
-  "label": "Apple Watch Ultra",
-  "description": "smartwatch developed by Apple Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
   ]
  },
  {
@@ -8638,26 +8141,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q122441959",
-  "label": "Apple Watch Series 9",
-  "description": "smartwatch designed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q122442081",
-  "label": "Apple Watch Ultra 2",
-  "description": "smartwatch developed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
   ]
  },
  {
@@ -8859,16 +8342,6 @@
   ]
  },
  {
-  "qid": "Q130267919",
-  "label": "Apple Watch Series 10",
-  "description": "smartwatch designed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q130306960",
   "label": "bikini underwear",
   "description": "type of underwear, similar to bikini",
@@ -9034,17 +8507,6 @@
   ]
  },
  {
-  "qid": "Q134774654",
-  "label": "Leather shoe with holes decoration and leather inserts",
-  "description": "leather footwear of the Byzantine Egypt, 400–642 CE, in the collection of Museo Egizio, Turin, Italy (S.10015)",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "footwear",
-  "roots": [
-   "clothing",
-   "footwear"
-  ]
- },
- {
   "qid": "Q134996023",
   "label": "trampoline socks",
   "description": "",
@@ -9122,26 +8584,6 @@
   "roots": [
    "clothing",
    "footwear"
-  ]
- },
- {
-  "qid": "Q136193227",
-  "label": "Apple Watch Series 11",
-  "description": "smartwatch designed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q136193290",
-  "label": "Apple Watch Ultra 3",
-  "description": "smartwatch developed by Apple, Inc.",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "smartwatch"
   ]
  },
  {
@@ -9244,28 +8686,6 @@
   ]
  },
  {
-  "qid": "Q141104551",
-  "label": "Garmin Instinct",
-  "description": "line of sport watches produced by Garmin",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
-  "qid": "Q141141581",
-  "label": "Pixel Watch 5",
-  "description": "2026 smartwatch by Google",
-  "reason": "banned kind beyond its root's examples",
-  "detail": "smartwatch",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q141444186",
   "label": "Taraza",
   "description": "a head covering in North Africa made from Mediterranean fan palm (Chamaerops humilis) or rushes",
@@ -9326,16 +8746,6 @@
   "description": "straw hat",
   "reason": "banned kind more than 2 levels below its root",
   "detail": "headgear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q74586",
-  "label": "Heelys",
-  "description": "brand of shoes",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "footwear",
   "roots": [
    "clothing"
   ]
@@ -9672,16 +9082,6 @@
   ]
  },
  {
-  "qid": "Q767924",
-  "label": "Stahlhelm",
-  "description": "steel combat helmet of Germany",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "headgear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q778659",
   "label": "ballet shoe",
   "description": "soft shoe worn for dancing",
@@ -9864,16 +9264,6 @@
   ]
  },
  {
-  "qid": "Q1076923",
-  "label": "Nike Mercurial Vapor",
-  "description": "football boot manufactured by Nike",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "footwear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q1089648",
   "label": "chupalla",
   "description": "traditional Chilean horseman's straw hat",
@@ -10007,16 +9397,6 @@
   "qid": "Q1245430",
   "label": "football helmet",
   "description": "protective headgear for football players",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "headgear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q1248891",
-  "label": "Sikh helmet",
-  "description": "defensive weapon",
   "reason": "banned kind more than 2 levels below its root",
   "detail": "headgear",
   "roots": [
@@ -10219,16 +9599,6 @@
   "description": "helmet of 16th and 17th century Europe",
   "reason": "banned kind more than 2 levels below its root",
   "detail": "headgear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q1530702",
-  "label": "Reebok Pump",
-  "description": "Athletic shoe by Reebok",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "footwear",
   "roots": [
    "clothing"
   ]
@@ -10469,16 +9839,6 @@
   "description": "loincloth that the sumo wrestler wears during training or in competition",
   "reason": "banned kind more than 2 levels below its root",
   "detail": "undergarment",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q1923361",
-  "label": "Adrian helmet",
-  "description": "combat helmet",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "headgear",
   "roots": [
    "clothing"
   ]
@@ -10874,26 +10234,6 @@
   ]
  },
  {
-  "qid": "Q3110656",
-  "label": "Goodnites",
-  "description": "Brand of disposable undergarments designed for managing Nocturnal Enuresis",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "undergarment",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q3142214",
-  "label": "Huggies",
-  "description": "a brand of disposable diapers and baby wipes marketed by Kimberly-Clark",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "undergarment",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q3197612",
   "label": "kitten heel shoe",
   "description": "type of shoe with a thin, curved heel",
@@ -11189,16 +10529,6 @@
   "description": "worn by army soldiers",
   "reason": "banned kind more than 2 levels below its root",
   "detail": "headgear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q4698273",
-  "label": "Nike Air Zoom Vomero",
-  "description": "series of running shoes",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "footwear",
   "roots": [
    "clothing"
   ]
@@ -11524,16 +10854,6 @@
   ]
  },
  {
-  "qid": "Q6706125",
-  "label": "Luvs",
-  "description": "Disposable Diaper",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "undergarment",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q6713647",
   "label": "M1C Helmet",
   "description": "A variant of the US M1 helmet for paratroopers.",
@@ -11549,16 +10869,6 @@
   "description": "",
   "reason": "banned kind more than 2 levels below its root",
   "detail": "headgear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q7034770",
-  "label": "Nike Air Yeezy",
-  "description": "Footwear collaboration project by Nike and Kanye West",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "footwear",
   "roots": [
    "clothing"
   ]
@@ -12425,26 +11735,6 @@
   ]
  },
  {
-  "qid": "Q20716203",
-  "label": "Reebok Ventilator",
-  "description": "line of sport shoes by Reebok",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "footwear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q20716209",
-  "label": "Reebok Zig",
-  "description": "athletic shoe",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "footwear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q21117214",
   "label": "Pahlavi hat",
   "description": "hat prescribed for men in Iran under Reza Shah",
@@ -12806,16 +12096,6 @@
   ]
  },
  {
-  "qid": "Q85782796",
-  "label": "M1942 Modelo Z",
-  "description": "Military helmet",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "headgear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q85788306",
   "label": "Netherlands M34",
   "description": "Netherlands steel combat helmet",
@@ -12829,16 +12109,6 @@
   "qid": "Q85802469",
   "label": "Spanish M1921",
   "description": "combat helmet",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "headgear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q85802470",
-  "label": "Spanish M1926",
-  "description": "Spanish military equipment",
   "reason": "banned kind more than 2 levels below its root",
   "detail": "headgear",
   "roots": [
@@ -12948,16 +12218,6 @@
  {
   "qid": "Q97382687",
   "label": "sugarloaf helm",
-  "description": "",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "headgear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q97597612",
-  "label": "MARTE helmet",
   "description": "",
   "reason": "banned kind more than 2 levels below its root",
   "detail": "headgear",
@@ -13106,16 +12366,6 @@
   ]
  },
  {
-  "qid": "Q110205149",
-  "label": "Dive Dynamics AH-3",
-  "description": "free flow diving helmet model",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "headgear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q110462485",
   "label": "Lenten shroud",
   "description": "veil on crucifixes and images during Passiontide",
@@ -13236,16 +12486,6 @@
   ]
  },
  {
-  "qid": "Q121734034",
-  "label": "Puma Suede",
-  "description": "athletic shoe by Puma",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "footwear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q122841494",
   "label": "F3 helmet",
   "description": "",
@@ -13296,16 +12536,6 @@
   ]
  },
  {
-  "qid": "Q123965080",
-  "label": "Adidas Ultraboost",
-  "description": "line of shoes produced by Adidas",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "footwear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q124171404",
   "label": "Sandals with a closed back",
   "description": "",
@@ -13341,26 +12571,6 @@
   "description": "ceremonial aprons worn by wrestlers of the two-highest divisions in professional sumo",
   "reason": "banned kind more than 2 levels below its root",
   "detail": "undergarment",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q124830440",
-  "label": "Never Surrender High-Top",
-  "description": "brand of sneaker by Donald Trump",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "footwear",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q125895367",
-  "label": "Nike Air Ship",
-  "description": "basketball shoe released by Nike",
-  "reason": "banned kind more than 2 levels below its root",
-  "detail": "footwear",
   "roots": [
    "clothing"
   ]
@@ -13483,6 +12693,1762 @@
   "detail": "headgear",
   "roots": [
    "clothing"
+  ]
+ },
+ {
+  "qid": "Q11460",
+  "label": "clothing",
+  "description": "covering worn on the body",
+  "reason": "generic entry",
+  "detail": "'clothing'",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q1036729",
+  "label": "gown",
+  "description": "full-length garment consisting of a bodice and attached skirt, worn from the Middle Ages to modern times",
+  "reason": "generic entry",
+  "detail": "'gown'",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q1732031",
+  "label": "gown",
+  "description": "knee-length or full-length loose upper garment, often with wide or hanging sleeves and fur lining, worn by men and women",
+  "reason": "generic entry",
+  "detail": "'gown'",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q74586",
+  "label": "Heelys",
+  "description": "brand of shoes",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q117107",
+  "label": "Eco-Drive",
+  "description": "model range of watches by Citizen",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q134632",
+  "label": "Perfecto",
+  "description": "line of motorcycle jackets from Schott",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q199180",
+  "label": "Zierscheibe",
+  "description": "disk-shaped ornament associated with late Bronze Age and Iron Age in Europe",
+  "reason": "instance of an excluded class",
+  "detail": "archaeological_artefact (P31)",
+  "roots": [
+   "clothing",
+   "jewellery"
+  ]
+ },
+ {
+  "qid": "Q292832",
+  "label": "Ice-Watch",
+  "description": "trademark",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31), product_line (P31)",
+  "roots": [
+   "clothing",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q368859",
+  "label": "Moon Boot",
+  "description": "après-ski boot trademark",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31), brand (P31)",
+  "roots": [
+   "clothing",
+   "footwear"
+  ]
+ },
+ {
+  "qid": "Q420953",
+  "label": "Air Jordan",
+  "description": "brand of shoes and athletic clothing designed, owned, and produced for Michael Jordan by Nike",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "footwear"
+  ]
+ },
+ {
+  "qid": "Q477634",
+  "label": "Pebble",
+  "description": "series of smartwatches",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q575092",
+  "label": "Q575092",
+  "description": "optical head-mounted computer glasses",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q626713",
+  "label": "LG GD910",
+  "description": "cell phone model",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q767924",
+  "label": "Stahlhelm",
+  "description": "steel combat helmet of Germany",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q803914",
+  "label": "Fakir’s Crutch",
+  "description": "walking stick weapon",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q999668",
+  "label": "Resurrection Stone",
+  "description": "magical item in the Harry Potter universe",
+  "reason": "instance of an excluded class",
+  "detail": "fictional_object (P31)",
+  "roots": [
+   "jewellery"
+  ]
+ },
+ {
+  "qid": "Q1047701",
+  "label": "G-Shock",
+  "description": "watch model series manufactured by Casio",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31), product_line (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q1076923",
+  "label": "Nike Mercurial Vapor",
+  "description": "football boot manufactured by Nike",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q1248891",
+  "label": "Sikh helmet",
+  "description": "defensive weapon",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q1530702",
+  "label": "Reebok Pump",
+  "description": "Athletic shoe by Reebok",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q1573844",
+  "label": "Silly Bandz",
+  "description": "shaped rubber bands",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "jewellery"
+  ]
+ },
+ {
+  "qid": "Q1586189",
+  "label": "Harrington jacket",
+  "description": "type of jacket",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q1613666",
+  "label": "Hermès scarf",
+  "description": "square silk scarf, produced since 1937 by the French fashion company Hermès",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "scarf"
+  ]
+ },
+ {
+  "qid": "Q1923361",
+  "label": "Adrian helmet",
+  "description": "combat helmet",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q1933859",
+  "label": "Bulgarian umbrella",
+  "description": "secret weapon",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q2006959",
+  "label": "shillelagh",
+  "description": "Irish type of club (weapon)",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q2092839",
+  "label": "Stetson",
+  "description": "brand of hat manufactured by the John B. Stetson Company",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q2487557",
+  "label": "Ray-Ban Wayfarer",
+  "description": "model of sunglasses",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "sunglasses"
+  ]
+ },
+ {
+  "qid": "Q2568517",
+  "label": "Jade burial suit",
+  "description": "ceremonial suit made of pieces of jade",
+  "reason": "instance of an excluded class",
+  "detail": "archaeological_artefact (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q2655317",
+  "label": "kakute",
+  "description": "Ninja spiked ring weapons",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing",
+   "jewellery"
+  ]
+ },
+ {
+  "qid": "Q2982868",
+  "label": "Tatanua mask",
+  "description": "traditional mask made by the natives in the province of New Ireland, Papua New Guinea",
+  "reason": "instance of an excluded class",
+  "detail": "archaeological_artefact (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q3062633",
+  "label": "Extravehicular Mobility Unit",
+  "description": "series of semi-rigid two-piece space suit models from the United States",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q3110656",
+  "label": "Goodnites",
+  "description": "Brand of disposable undergarments designed for managing Nocturnal Enuresis",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q3125149",
+  "label": "HP-01",
+  "description": "Calculator watch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q3142214",
+  "label": "Huggies",
+  "description": "a brand of disposable diapers and baby wipes marketed by Kimberly-Clark",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q3237209",
+  "label": "Levi's 501",
+  "description": "jeans model by Levi Strauss & Co.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "jeans"
+  ]
+ },
+ {
+  "qid": "Q3477900",
+  "label": "Seiko 5",
+  "description": "",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q4451540",
+  "label": "Sony SmartWatch",
+  "description": "wearable device that connects to an Android smartphone",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q4698273",
+  "label": "Nike Air Zoom Vomero",
+  "description": "series of running shoes",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31), product_line (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q4698311",
+  "label": "Air conditioned clothing",
+  "description": "Actively cooling clothing",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q4745978",
+  "label": "Amfibia",
+  "description": "watch",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31)",
+  "roots": [
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q5047341",
+  "label": "Cartier Tank",
+  "description": "line of wristwatches made by Cartier",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q5048909",
+  "label": "Casio DW-5000C",
+  "description": "",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q5048911",
+  "label": "Casio DW-5600E",
+  "description": "",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q5315336",
+  "label": "Dunk",
+  "description": "line of shoes by Nike",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "footwear"
+  ]
+ },
+ {
+  "qid": "Q5459736",
+  "label": "Flipsters",
+  "description": "brand of folding shoes made to store in a pouch and be carried in a handbag",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "footwear"
+  ]
+ },
+ {
+  "qid": "Q5501312",
+  "label": "Freezy Freakies",
+  "description": "snow gloves that reveal patterns on exposure to cold; fad of the 1980s",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q5579081",
+  "label": "Golden-i",
+  "description": "",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q5962618",
+  "label": "Hyundai MB 910",
+  "description": "watch phone by Hyundai",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q6371145",
+  "label": "Kariyushi shirt",
+  "description": "Dress shirt style from Okinawa, Japan, developed by the Okinawa Prefectural Tourism Federation in 1970",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31), brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q6455911",
+  "label": "L'eggs",
+  "description": "brand of pantyhose",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31)",
+  "roots": [
+   "clothing",
+   "hosiery",
+   "lingerie"
+  ]
+ },
+ {
+  "qid": "Q6706125",
+  "label": "Luvs",
+  "description": "Disposable Diaper",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q6931588",
+  "label": "Mudd Jeans",
+  "description": "American women's clothing brand",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "jeans"
+  ]
+ },
+ {
+  "qid": "Q7034770",
+  "label": "Nike Air Yeezy",
+  "description": "Footwear collaboration project by Nike and Kanye West",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q7090020",
+  "label": "Omega Seamaster",
+  "description": "Line of mechanical and quartz diving watches",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q7259615",
+  "label": "Pulsar",
+  "description": "watch brand",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q7353767",
+  "label": "Rocha John Rocha",
+  "description": "clothing and homewares brand",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q7950747",
+  "label": "WIMM One",
+  "description": "developer device for the WIMM platform produced by WIMM Labs",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q8060125",
+  "label": "yubi-bo",
+  "description": "staff weapon type of feudal Japan",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q8063312",
+  "label": "ZYPAD",
+  "description": "wearable personal digital assistant",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q8564894",
+  "label": "Fossil Wrist PDA",
+  "description": "Early consumer smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q10671291",
+  "label": "Skört",
+  "description": "Swedish term for a type of garment",
+  "reason": "instance of an excluded class",
+  "detail": "archaeological_artefact (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q12318915",
+  "label": "Jacoform",
+  "description": "shoe brand",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "footwear"
+  ]
+ },
+ {
+  "qid": "Q14655737",
+  "label": "Samsung Galaxy Gear",
+  "description": "smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q15630235",
+  "label": "Google Contact Lens",
+  "description": "smart contact lens project",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q15646506",
+  "label": "Omate TrueSmart",
+  "description": "canceled Chinese-made smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q15802512",
+  "label": "Samsung Gear 2",
+  "description": "smartwatches produced by Samsung Electronics",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q15818108",
+  "label": "Samsung Gear",
+  "description": "line of wearable computing devices produced by Samsung Electronics",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31), product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q15972454",
+  "label": "Moto 360",
+  "description": "Android Wear-based smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q16034580",
+  "label": "Lady Dior",
+  "description": "Women's handbag by Christian Dior",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "handbag"
+  ]
+ },
+ {
+  "qid": "Q17004874",
+  "label": "Autographer",
+  "description": "wearable digital camera for automatically taking photos",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q17010792",
+  "label": "Epiphany Eyewear",
+  "description": "brand of smart glasses",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q17069007",
+  "label": "MetaWatch",
+  "description": "smartwatch brand",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q17142060",
+  "label": "Qualcomm Toq",
+  "description": "smartwatch developed by Qualcomm",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q17291408",
+  "label": "Samsung Gear Live",
+  "description": "Android Wear-based smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q17334636",
+  "label": "LG G Watch",
+  "description": "smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q17641276",
+  "label": "LG G Watch R",
+  "description": "smartwatch from LG",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q17646806",
+  "label": "Samsung Gear S",
+  "description": "smartwatch by Samsung Electronics",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q18010946",
+  "label": "Apple Watch",
+  "description": "line of smartwatches created by Apple Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31), product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q18844389",
+  "label": "Microsoft HoloLens",
+  "description": "mixed reality device from Microsoft",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31), product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q19382870",
+  "label": "Nesna Lobben boots",
+  "description": "brand of wool felt winter shoes",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "footwear"
+  ]
+ },
+ {
+  "qid": "Q19521131",
+  "label": "Pebble Time",
+  "description": "smartwatch model",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q20716203",
+  "label": "Reebok Ventilator",
+  "description": "line of sport shoes by Reebok",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q20716209",
+  "label": "Reebok Zig",
+  "description": "athletic shoe",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q21029144",
+  "label": "Huawei Watch",
+  "description": "smartwatch by Huawei",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q21160864",
+  "label": "Moto 360 (2nd gen.)",
+  "description": "Android smartwatch by Motorola",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q21996579",
+  "label": "Samsung Gear S2",
+  "description": "smartwatch developed by Samsung Electronics",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q23044850",
+  "label": "LG Watch Urbane",
+  "description": "2015 smartwatch by LG Corporation",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q25044495",
+  "label": "Totectors",
+  "description": "British brand of safety footwear and other workwear",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "footwear"
+  ]
+ },
+ {
+  "qid": "Q26868823",
+  "label": "Apple Watch Series 2",
+  "description": "smartwatch designed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q27236417",
+  "label": "Pokémon Go Plus",
+  "description": "wearable device that allows players to play Pokémon Go",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q27866035",
+  "label": "Spectacles",
+  "description": "pair of smartglasses developed and manufactured by Snap Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31), product_line (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q28418943",
+  "label": "Apple Watch Series 1",
+  "description": "smartwatch designed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q28927484",
+  "label": "Breitling Superocean",
+  "description": "line of watches",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q29578321",
+  "label": "LG Watch Sport",
+  "description": "2017 Android smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q29578323",
+  "label": "LG Watch Style",
+  "description": "smartwatch model",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q30900667",
+  "label": "Apple Watch",
+  "description": "smartwatch designed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q31888821",
+  "label": "Pebble 2",
+  "description": "smartwatch model",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q39081426",
+  "label": "Cartier Santos",
+  "description": "A wristwatch created by Cartier",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q39512123",
+  "label": "Apple Watch Series 3",
+  "description": "smartwatch designed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q43174945",
+  "label": "Mamuli",
+  "description": "type of precious metal ornaments",
+  "reason": "instance of an excluded class",
+  "detail": "archaeological_artefact (P31)",
+  "roots": [
+   "clothing",
+   "jewellery"
+  ]
+ },
+ {
+  "qid": "Q48730719",
+  "label": "Death masks of Mycenae",
+  "description": "archaeological finds",
+  "reason": "instance of an excluded class",
+  "detail": "archaeological_artefact (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q48999496",
+  "label": "Saint Tropez",
+  "description": "Danish fashion brand",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q51593195",
+  "label": "Nelsonic Game Watch",
+  "description": "wristwatch with games",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q55080313",
+  "label": "Xiaomi Mi Band 3",
+  "description": "wearable activity tracker",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q56071642",
+  "label": "Samsung Galaxy Watch",
+  "description": "first generation of the Galaxy Watch smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q56599236",
+  "label": "Apple Watch Series 4",
+  "description": "smartwatch designed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q59506760",
+  "label": "Carolina Lemke",
+  "description": "Israeli sunglasses and eyeglasses company",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "sunglasses"
+  ]
+ },
+ {
+  "qid": "Q61703243",
+  "label": "Junghans Mega",
+  "description": "world's first radio-controlled wristwatch with hands (analog)",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31), product_line (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q65259897",
+  "label": "Samsung Galaxy Watch Active",
+  "description": "smartwatch model",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q66309682",
+  "label": "Samsung Galaxy Watch Active 2",
+  "description": "fitness smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q67936441",
+  "label": "Apple Watch Series 5",
+  "description": "smartwatch designed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q85782796",
+  "label": "M1942 Modelo Z",
+  "description": "Military helmet",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q85802470",
+  "label": "Spanish M1926",
+  "description": "Spanish military equipment",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q96397326",
+  "label": "Olio Model One",
+  "description": "smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q97597612",
+  "label": "MARTE helmet",
+  "description": "",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q97798631",
+  "label": "Samsung Galaxy Watch 3",
+  "description": "smartwatches",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q99231226",
+  "label": "Garmin fēnix 6 Pro Solar",
+  "description": "multisport GPS smartwatch with solar technology",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q99355766",
+  "label": "Apple Watch SE",
+  "description": "smartwatch developed by Apple Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q99371670",
+  "label": "Apple Watch Series 6",
+  "description": "smartwatch developed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q102074341",
+  "label": "Samsung Galaxy Watch series",
+  "description": "line of smartwatches developed by Samsung",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q108163500",
+  "label": "Samsung Galaxy Watch 4",
+  "description": "2021 Samsung developed smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q108545364",
+  "label": "Apple Watch Series 7",
+  "description": "smartwatch designed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q108803484",
+  "label": "Ray-Ban Stories",
+  "description": "smartglasses model created by Meta Platforms and EssilorLuxottica",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q108940411",
+  "label": "Belle's ball gown",
+  "description": "dress featured in Beauty and the Beast",
+  "reason": "instance of an excluded class",
+  "detail": "fictional_object (P31), fictional_clothing (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q110205149",
+  "label": "Dive Dynamics AH-3",
+  "description": "free flow diving helmet model",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q110208293",
+  "label": "IBM WatchPad",
+  "description": "",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q110651531",
+  "label": "KFC bucket",
+  "description": "cardboard bucket in which KFC serves fried chicken meals",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q112191881",
+  "label": "Seiko Data-2000",
+  "description": "early smartwatch",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q113584921",
+  "label": "Samsung Galaxy Watch 5",
+  "description": "smartwatch developed by Samsung Electronics",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q113815700",
+  "label": "Apple Watch Series 8",
+  "description": "smartwatch designed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q113815892",
+  "label": "Apple Watch Ultra",
+  "description": "smartwatch developed by Apple Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q116875248",
+  "label": "MOMOTARO JEANS",
+  "description": "Japanese clothing brand",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "jeans"
+  ]
+ },
+ {
+  "qid": "Q116875382",
+  "label": "BIG JOHN",
+  "description": "Japanese clothing brand",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing",
+   "jeans"
+  ]
+ },
+ {
+  "qid": "Q121734034",
+  "label": "Puma Suede",
+  "description": "athletic shoe by Puma",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q122441959",
+  "label": "Apple Watch Series 9",
+  "description": "smartwatch designed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q122442081",
+  "label": "Apple Watch Ultra 2",
+  "description": "smartwatch developed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q122955632",
+  "label": "Q122955632",
+  "description": "2023 smartwatch by Google",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q123566684",
+  "label": "Dangerous Beast costume",
+  "description": "costume featured in Fate/Grand Order",
+  "reason": "instance of an excluded class",
+  "detail": "fictional_object (P31), fictional_clothing (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q123965080",
+  "label": "Adidas Ultraboost",
+  "description": "line of shoes produced by Adidas",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q124545024",
+  "label": "Q124545024",
+  "description": "",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q124681243",
+  "label": "Galaxy Ring",
+  "description": "smart ring developed by Samsung",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "jewellery"
+  ]
+ },
+ {
+  "qid": "Q124830440",
+  "label": "Never Surrender High-Top",
+  "description": "brand of sneaker by Donald Trump",
+  "reason": "instance of an excluded class",
+  "detail": "brand (P31), product_line (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q125877227",
+  "label": "Oura Ring",
+  "description": "smart health ring product",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "jewellery"
+  ]
+ },
+ {
+  "qid": "Q125895367",
+  "label": "Nike Air Ship",
+  "description": "basketball shoe released by Nike",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q129906288",
+  "label": "Q129906288",
+  "description": "2024 smartwatch by Google",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q130267919",
+  "label": "Apple Watch Series 10",
+  "description": "smartwatch designed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q131531064",
+  "label": "Axiom Extravehicular Mobility Unit",
+  "description": "space suit under development for NASA's Artemis Program",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q134774654",
+  "label": "Leather shoe with holes decoration and leather inserts",
+  "description": "leather footwear of the Byzantine Egypt, 400–642 CE, in the collection of Museo Egizio, Turin, Italy (S.10015)",
+  "reason": "instance of an excluded class",
+  "detail": "archaeological_artefact (P31)",
+  "roots": [
+   "clothing",
+   "footwear"
+  ]
+ },
+ {
+  "qid": "Q135529149",
+  "label": "Exploration Extravehicular Mobility Unit",
+  "description": "prototype space suit design developed by NASA's Johnson Space Center for the Artemis Program",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q135652758",
+  "label": "Grand Seiko Hi-Beat",
+  "description": "line of watches by Grand Seiko",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q136090340",
+  "label": "Q136090340",
+  "description": "2025 smartwatch by Google",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q136193227",
+  "label": "Apple Watch Series 11",
+  "description": "smartwatch designed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q136193290",
+  "label": "Apple Watch Ultra 3",
+  "description": "smartwatch developed by Apple, Inc.",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q136326745",
+  "label": "Ray-Ban Meta",
+  "description": "smartglasses model series produced by Meta",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q136795476",
+  "label": "Q136795476",
+  "description": "",
+  "reason": "instance of an excluded class",
+  "detail": "trademark (P31)",
+  "roots": [
+   "clothing",
+   "watch",
+   "wristwatch"
+  ]
+ },
+ {
+  "qid": "Q137289004",
+  "label": "Ray-Ban Aviator",
+  "description": "aviator sunglasses by Ray-Ban",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "sunglasses"
+  ]
+ },
+ {
+  "qid": "Q140690383",
+  "label": "Samsung Galaxy Glasses",
+  "description": "2026 product by Samsung Electronics",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q141104551",
+  "label": "Garmin Instinct",
+  "description": "line of sport watches produced by Garmin",
+  "reason": "instance of an excluded class",
+  "detail": "product_line (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
+  ]
+ },
+ {
+  "qid": "Q141141581",
+  "label": "Pixel Watch 5",
+  "description": "2026 smartwatch by Google",
+  "reason": "instance of an excluded class",
+  "detail": "product_model (P31)",
+  "roots": [
+   "clothing",
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -15500,6 +16466,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -18133,6 +19100,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -18574,7 +19542,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "watch"
   ]
  },
  {
@@ -19335,7 +20304,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "watch"
   ]
  },
  {
@@ -20047,7 +21017,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "watch"
   ]
  },
  {
@@ -21345,6 +22316,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -21773,6 +22745,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -22020,7 +22993,8 @@
   "detail": "",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -22302,7 +23276,8 @@
   "detail": "",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -22346,6 +23321,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -22366,7 +23342,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "watch"
   ]
  },
  {
@@ -22487,7 +23464,8 @@
   "detail": "",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -22542,7 +23520,8 @@
   "detail": "",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -24317,7 +25296,8 @@
   "detail": "",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -24462,6 +25442,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -24665,7 +25646,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "watch"
   ]
  },
  {
@@ -24696,7 +25678,8 @@
   "detail": "",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -25284,7 +26267,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "watch"
   ]
  },
  {
@@ -27063,6 +28047,7 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
+   "watch",
    "wristwatch"
   ]
  },
@@ -27304,6 +28289,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -27315,6 +28301,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -27336,6 +28323,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -27347,6 +28335,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -27501,7 +28490,8 @@
   "detail": "",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -27532,7 +28522,8 @@
   "detail": "",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -29738,7 +30729,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "watch"
   ]
  },
  {
@@ -29768,7 +30760,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "watch"
   ]
  },
  {
@@ -29843,6 +30836,7 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
+   "watch",
    "wristwatch"
   ]
  },
@@ -30074,7 +31068,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -30432,7 +31427,8 @@
   "detail": "",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -30646,7 +31642,8 @@
   "detail": "",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -31520,6 +32517,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -31531,6 +32529,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -32036,16 +33035,6 @@
   "qid": "Q44928",
   "label": "Q44928",
   "description": "",
-  "reason": "no English label",
-  "detail": "",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q575092",
-  "label": "Q575092",
-  "description": "optical head-mounted computer glasses",
   "reason": "no English label",
   "detail": "",
   "roots": [
@@ -33846,7 +34835,8 @@
   "detail": "",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -33982,17 +34972,6 @@
   ]
  },
  {
-  "qid": "Q122955632",
-  "label": "Q122955632",
-  "description": "2023 smartwatch by Google",
-  "reason": "no English label",
-  "detail": "",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q123701143",
   "label": "Q123701143",
   "description": "",
@@ -34034,16 +35013,6 @@
   ]
  },
  {
-  "qid": "Q124545024",
-  "label": "Q124545024",
-  "description": "",
-  "reason": "no English label",
-  "detail": "",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q124627835",
   "label": "Q124627835",
   "description": "",
@@ -34072,17 +35041,6 @@
   "detail": "",
   "roots": [
    "clothing"
-  ]
- },
- {
-  "qid": "Q129906288",
-  "label": "Q129906288",
-  "description": "2024 smartwatch by Google",
-  "reason": "no English label",
-  "detail": "",
-  "roots": [
-   "clothing",
-   "smartwatch"
   ]
  },
  {
@@ -34179,17 +35137,6 @@
   ]
  },
  {
-  "qid": "Q136090340",
-  "label": "Q136090340",
-  "description": "2025 smartwatch by Google",
-  "reason": "no English label",
-  "detail": "",
-  "roots": [
-   "clothing",
-   "smartwatch"
-  ]
- },
- {
   "qid": "Q136222225",
   "label": "Q136222225",
   "description": "",
@@ -34217,17 +35164,6 @@
   "detail": "",
   "roots": [
    "clothing"
-  ]
- },
- {
-  "qid": "Q136795476",
-  "label": "Q136795476",
-  "description": "",
-  "reason": "no English label",
-  "detail": "",
-  "roots": [
-   "clothing",
-   "wristwatch"
   ]
  },
  {
@@ -34515,16 +35451,6 @@
   ]
  },
  {
-  "qid": "Q178794",
-  "label": "watch",
-  "description": "personal time indicator, portable, used as an accessory, usually worn on the wrist or kept in a pocket",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q182058",
   "label": "cigar cutter",
   "description": "cutter for cigars",
@@ -34635,16 +35561,6 @@
   ]
  },
  {
-  "qid": "Q292832",
-  "label": "Ice-Watch",
-  "description": "trademark",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q297223",
   "label": "oil-paper umbrella",
   "description": "Type of umbrella originating in China",
@@ -34735,16 +35651,6 @@
   ]
  },
  {
-  "qid": "Q485071",
-  "label": "analog watch",
-  "description": "watch whose display is not digital but rather analog with a traditional clock face",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q488638",
   "label": "pilgrim badge",
   "description": "effects worn by Christian pilgrims",
@@ -34828,16 +35734,6 @@
   "qid": "Q583504",
   "label": "antistatic wrist strap",
   "description": "wristband or strap designed to minimize static discharge",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q587934",
-  "label": "Fischer clock",
-  "description": "digital chess clock devised by Fischer",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -35035,59 +35931,9 @@
   ]
  },
  {
-  "qid": "Q803914",
-  "label": "Fakir’s Crutch",
-  "description": "walking stick weapon",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q814196",
   "label": "bands",
   "description": "formal neckwear consisting of two oblong pieces of cloth tied at the neck, worn with some forms of clerical, judicial, and academic dress",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q818567",
-  "label": "Deck Watches",
-  "description": "",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q831765",
-  "label": "chess clock",
-  "description": "two adjacent clocks with stop/start buttons",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q843994",
-  "label": "stopwatch",
-  "description": "analog or digital timepiece designed to measure an amount of time, having push buttons to start/stop and reset a time stopping action",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q849813",
-  "label": "pocket watch",
-  "description": "timepiece designed to be carried in the user's pocket",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -35555,16 +36401,6 @@
   ]
  },
  {
-  "qid": "Q1548498",
-  "label": "24-hour analog dial",
-  "description": "clock or watch face showing the full 24 hours",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q1549506",
   "label": "wristband",
   "description": "any band or strap worn around the wrist",
@@ -35815,16 +36651,6 @@
   ]
  },
  {
-  "qid": "Q1933859",
-  "label": "Bulgarian umbrella",
-  "description": "secret weapon",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q1944974",
   "label": "Cigar bands",
   "description": "loop of paper or foil that surrounds a cigar",
@@ -35855,16 +36681,6 @@
   ]
  },
  {
-  "qid": "Q2006959",
-  "label": "shillelagh",
-  "description": "Irish type of club (weapon)",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q2032056",
   "label": "pastie",
   "description": "adhesive patches worn to cover the nipples and areolae",
@@ -35888,16 +36704,6 @@
   "qid": "Q2059715",
   "label": "opium pipe",
   "description": "pipe designed for the vaporization and inhalation of opium",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q2092839",
-  "label": "Stetson",
-  "description": "brand of hat manufactured by the John B. Stetson Company",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -35948,16 +36754,6 @@
   "qid": "Q2238808",
   "label": "bow",
   "description": "knot with two loops and two ends, made of ribbon or other textile material, and worn as a fashion accessory",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q2257402",
-  "label": "nurse watch",
-  "description": "Watch used by nursing staff in clinics or assistants in doctors' surgeries",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -36215,26 +37011,6 @@
   ]
  },
  {
-  "qid": "Q3103207",
-  "label": "mechanical watch",
-  "description": "type of watch which uses a clockwork mechanism to measure the passage of time",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q3125149",
-  "label": "HP-01",
-  "description": "Calculator watch",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q3198662",
   "label": "kongō-zue",
   "description": "walking staff",
@@ -36445,16 +37221,6 @@
   ]
  },
  {
-  "qid": "Q4774914",
-  "label": "antimagnetic watch",
-  "description": "watch designed to maintain accuracy in situations where magnetic fluctuations can be expected",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q4795516",
   "label": "facial tissue",
   "description": "disposable paper used on the face",
@@ -36518,16 +37284,6 @@
   "qid": "Q4951452",
   "label": "bowyang",
   "description": "cord tied just below the wearer's knees",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q4955692",
-  "label": "Braille watch",
-  "description": "watch for the visually impaired",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -36615,16 +37371,6 @@
   ]
  },
  {
-  "qid": "Q5357672",
-  "label": "Electric watch",
-  "description": "Pre-quartz watches powered electronically",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q5422874",
   "label": "eyewear",
   "description": "items and accessories worn on or over the eyes",
@@ -36665,29 +37411,9 @@
   ]
  },
  {
-  "qid": "Q5514343",
-  "label": "GPS watch",
-  "description": "watch with integrated GPS receiver",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q5520964",
   "label": "gang patch",
   "description": "identifying insignia of a street gang",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q5579081",
-  "label": "Golden-i",
-  "description": "",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -36708,16 +37434,6 @@
   "qid": "Q5882463",
   "label": "golilla",
   "description": "stiffened, semicircular band or collar of Spanish origin, or the fabric-covered stiffened support for such a collar",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q5962618",
-  "label": "Hyundai MB 910",
-  "description": "watch phone by Hyundai",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -36925,16 +37641,6 @@
   ]
  },
  {
-  "qid": "Q7499877",
-  "label": "shock resistant watch",
-  "description": "watch that copes with mechanical shocks",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q7500017",
   "label": "shoe buckle",
   "description": "fashion accessory worn on men's and women's shoes from circa 1650 - 1800",
@@ -36948,16 +37654,6 @@
   "qid": "Q7505670",
   "label": "Shutter Shades",
   "description": "type of sunglasses",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q7555818",
-  "label": "Solar-powered watch",
-  "description": "",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -37005,16 +37701,6 @@
   ]
  },
  {
-  "qid": "Q7973117",
-  "label": "Watchclock",
-  "description": "mechanical clock used by security guards to mark patrols",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q7983255",
   "label": "Weres",
   "description": "Egyptian artefact type",
@@ -37038,16 +37724,6 @@
   "qid": "Q8045415",
   "label": "Xyloband",
   "description": "wristbands containing LEDs",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q8060125",
-  "label": "yubi-bo",
-  "description": "staff weapon type of feudal Japan",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -37185,16 +37861,6 @@
   ]
  },
  {
-  "qid": "Q15630235",
-  "label": "Google Contact Lens",
-  "description": "smart contact lens project",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q15631700",
   "label": "Nazi concentration camp badge",
   "description": "cloth emblems; part of the system of identification in Nazi concentration camps",
@@ -37295,26 +37961,6 @@
   ]
  },
  {
-  "qid": "Q17004874",
-  "label": "Autographer",
-  "description": "wearable digital camera for automatically taking photos",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q17010792",
-  "label": "Epiphany Eyewear",
-  "description": "brand of smart glasses",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q17016925",
   "label": "willy warmer",
   "description": "man's novelty garment designed to fit over the penis",
@@ -37398,16 +38044,6 @@
   "qid": "Q18293793",
   "label": "clay pipe",
   "description": "used for smoking",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q18844389",
-  "label": "Microsoft HoloLens",
-  "description": "mixed reality device from Microsoft",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -37535,16 +38171,6 @@
   ]
  },
  {
-  "qid": "Q25325320",
-  "label": "The Vacheron Constantin Reference 57260",
-  "description": "Complicated mechanical pocket watch",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q26766731",
   "label": "beach umbrella",
   "description": "large fixed or barely portable umbrellas intended for protection against the sun, particularly at beaches",
@@ -37565,29 +38191,9 @@
   ]
  },
  {
-  "qid": "Q27236417",
-  "label": "Pokémon Go Plus",
-  "description": "wearable device that allows players to play Pokémon Go",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q27783611",
   "label": "MagicBand",
   "description": "plastic RFID bracelet used by guests at Walt Disney World Resort and Disneyland Resort",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q27866035",
-  "label": "Spectacles",
-  "description": "pair of smartglasses developed and manufactured by Snap Inc.",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -38305,16 +38911,6 @@
   ]
  },
  {
-  "qid": "Q108803484",
-  "label": "Ray-Ban Stories",
-  "description": "smartglasses model created by Meta Platforms and EssilorLuxottica",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q108809869",
   "label": "archive carton",
   "description": "",
@@ -38325,39 +38921,9 @@
   ]
  },
  {
-  "qid": "Q109001436",
-  "label": "Boule de Genève",
-  "description": "type of watch",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q109230504",
   "label": "car cigarette lighter",
   "description": "cigarette lighter that fits in the auxiliary power outlet of a car",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q109339596",
-  "label": "luxury watch",
-  "description": "a manually manufactured watch of high quality and with a premium price",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q110651531",
-  "label": "KFC bucket",
-  "description": "cardboard bucket in which KFC serves fried chicken meals",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -38695,29 +39261,9 @@
   ]
  },
  {
-  "qid": "Q125454714",
-  "label": "digital watch",
-  "description": "type of watch with digital display rather than physical hands and clockface",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q125465179",
   "label": "mariner's cuff",
   "description": "a cuff divided by a three-pointed flap",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q126697562",
-  "label": "stem-winder",
-  "description": "a watch that is wound up by turning a small knob (at the stem).",
   "reason": "reached only through a skipped class (cut B)",
   "detail": "fashion accessory",
   "roots": [
@@ -38795,16 +39341,6 @@
   ]
  },
  {
-  "qid": "Q136326745",
-  "label": "Ray-Ban Meta",
-  "description": "smartglasses model series produced by Meta",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q136664955",
   "label": "Masonic regalia",
   "description": "ritual garments and decorations in freemasonry",
@@ -38875,16 +39411,6 @@
   ]
  },
  {
-  "qid": "Q140690383",
-  "label": "Samsung Galaxy Glasses",
-  "description": "2026 product by Samsung Electronics",
-  "reason": "reached only through a skipped class (cut B)",
-  "detail": "fashion accessory",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q7434",
   "label": "uniform",
   "description": "similar clothing worn by a group of people",
@@ -38910,16 +39436,6 @@
   "description": "mask depicting Guy Fawkes, now an icon of the group Anonymous",
   "reason": "under an excluded root",
   "detail": "mask (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q15013",
-  "label": "Advanced Crew Escape Suit",
-  "description": "full pressure suit",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -38960,16 +39476,6 @@
   "description": "watertight face cover with view-ports for improving underwater vision",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279), mask (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q118463",
-  "label": "Mao suit",
-  "description": "style of attire from China",
-  "reason": "under an excluded root",
-  "detail": "uniform (P279)",
   "roots": [
    "clothing"
   ]
@@ -39100,16 +39606,6 @@
   "description": "single-use glove worn during medical examinations and procedures",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q182064",
-  "label": "djellaba",
-  "description": "long loose-fitting unisex outer robe with full sleeves, traditionally worn in the region of North Africa",
-  "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
   "roots": [
    "clothing"
   ]
@@ -39277,31 +39773,11 @@
   ]
  },
  {
-  "qid": "Q297424",
-  "label": "oilskin",
-  "description": "waterproof garment made from treated sailcloth or canvas",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q301697",
   "label": "Medal of youth, sports and community involvement",
   "description": "order",
   "reason": "under an excluded root",
   "detail": "award (P279), title (P279), position (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q305718",
-  "label": "abaya",
-  "description": "simple, loose over-garment wore by humans, especially Muslim women",
-  "reason": "under an excluded root",
-  "detail": "religious_clothing (P31)",
   "roots": [
    "clothing"
   ]
@@ -40129,16 +40605,6 @@
   ]
  },
  {
-  "qid": "Q758069",
-  "label": "attila",
-  "description": "elaborately braided Hungarian shell-jacket",
-  "reason": "under an excluded root",
-  "detail": "uniform (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q758174",
   "label": "Attic helmet",
   "description": "helmet originating in classical Greece consisting of a skull-piece, neck-guard, and hinged cheek-pieces",
@@ -40492,16 +40958,6 @@
   ]
  },
  {
-  "qid": "Q932999",
-  "label": "duster",
-  "description": "light, loose-fitting long coat",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q944031",
   "label": "chiton",
   "description": "sewn garment worn by men and women in Ancient Greece",
@@ -40572,31 +41028,11 @@
   ]
  },
  {
-  "qid": "Q1000777",
-  "label": "fatsuit",
-  "description": "bodysuit-like undergarment used to thicken the appearance of an actress or actor",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q1004730",
   "label": "bumbawe befao",
   "description": "Indonesian facemask, part of armour",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279), mask (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q1016353",
-  "label": "burka",
-  "description": "rough raincoat",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -40730,6 +41166,7 @@
   "detail": "organization (P279)",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
   ]
  },
@@ -41534,16 +41971,6 @@
   ]
  },
  {
-  "qid": "Q1663649",
-  "label": "rain cape",
-  "description": "garment",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q1664669",
   "label": "sabaton",
   "description": "part of Medieval armour that protects the foot and ankle",
@@ -41907,16 +42334,6 @@
   ]
  },
  {
-  "qid": "Q1934317",
-  "label": "waders",
-  "description": "waterproof garment combining high-waisted trousers and boots, worn by fishermen",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q1937628",
   "label": "wash mitt",
   "description": "tool used for bathing",
@@ -41968,16 +42385,6 @@
   ]
  },
  {
-  "qid": "Q1988132",
-  "label": "Tunic (military)",
-  "description": "type of coat or jacket",
-  "reason": "under an excluded root",
-  "detail": "uniform (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q1989262",
   "label": "kidney belt",
   "description": "",
@@ -42016,16 +42423,6 @@
   "roots": [
    "clothing",
    "headgear"
-  ]
- },
- {
-  "qid": "Q2018769",
-  "label": "raincoat",
-  "description": "waterproof coat",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
   ]
  },
  {
@@ -42550,31 +42947,11 @@
   ]
  },
  {
-  "qid": "Q2576557",
-  "label": "Mackintosh",
-  "description": "waterproof raincoat",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q2617576",
   "label": "exomis",
   "description": "one-shouldered belted tunic of Ancient Greece",
   "reason": "under an excluded root",
   "detail": "religious_clothing (P279), professional_wear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q2637777",
-  "label": "simar",
-  "description": "woman's long dress or robe",
-  "reason": "under an excluded root",
-  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -42690,16 +43067,6 @@
   ]
  },
  {
-  "qid": "Q2899124",
-  "label": "priestly tunic",
-  "description": "",
-  "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q2903199",
   "label": "priestly sash",
   "description": "ancient Jewish religious garment",
@@ -42717,17 +43084,8 @@
   "detail": "organization (P279)",
   "roots": [
    "clothing",
+   "watch",
    "wristwatch"
-  ]
- },
- {
-  "qid": "Q2933073",
-  "label": "cagoule",
-  "description": "lightweight, weatherproof raincoat or anorak with a hood",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
   ]
  },
  {
@@ -42746,26 +43104,6 @@
   "description": "cloth covering laid over a horse or other animal for protection and decoration",
   "reason": "under an excluded root",
   "detail": "armour (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q2982868",
-  "label": "Tatanua mask",
-  "description": "traditional mask made by the natives in the province of New Ireland, Papua New Guinea",
-  "reason": "under an excluded root",
-  "detail": "mask (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q2998209",
-  "label": "mantle",
-  "description": "ecclesiastical overgarment",
-  "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P31)",
   "roots": [
    "clothing"
   ]
@@ -42806,16 +43144,6 @@
   "description": "",
   "reason": "under an excluded root",
   "detail": "award (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q3062633",
-  "label": "Extravehicular Mobility Unit",
-  "description": "series of semi-rigid two-piece space suit models from the United States",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -42876,16 +43204,6 @@
   "description": "type of uniform worn by baseball players",
   "reason": "under an excluded root",
   "detail": "sportswear (P279), uniform (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q3247116",
-  "label": "pinafore",
-  "description": "sleeveless apronlike garments which have a skirt and a bodice portion and which cover the front, sides, and a portion of the back",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -43132,16 +43450,6 @@
   ]
  },
  {
-  "qid": "Q3658926",
-  "label": "environmental suit",
-  "description": "any of various suits designed specifically for a particular environment, usually one otherwise hostile to humans",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q3664967",
   "label": "ballistic plate",
   "description": "protective armoured plate",
@@ -43307,16 +43615,6 @@
   "description": "shield designed to stop or deflect bullets and other projectiles fired at their carrier",
   "reason": "under an excluded root",
   "detail": "armour (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q3979915",
-  "label": "tabard",
-  "description": "ecclesiastical cloak, usually of wool, provided with a silk pilgrim and a velvet collar",
-  "reason": "under an excluded root",
-  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -43648,16 +43946,6 @@
   "description": "dress of Roman military units",
   "reason": "under an excluded root",
   "detail": "uniform (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q4795383",
-  "label": "skin suit",
-  "description": "aerodynamic suit for speedskating",
-  "reason": "under an excluded root",
-  "detail": "sportswear (P279)",
   "roots": [
    "clothing"
   ]
@@ -44075,26 +44363,6 @@
   ]
  },
  {
-  "qid": "Q5501312",
-  "label": "Freezy Freakies",
-  "description": "snow gloves that reveal patterns on exposure to cold; fad of the 1980s",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q5523301",
-  "label": "Garibaldi shirt",
-  "description": "red wool shirt, as worn by the followers of Giuseppe Garibaldi, or a woman's blouse or jacket inspired by these shirts",
-  "reason": "under an excluded root",
-  "detail": "uniform (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q5531750",
   "label": "General Campaign Star",
   "description": "campaign medal within the Canadian system of honours",
@@ -44120,16 +44388,6 @@
   "description": "special product of Gifu city, Japan",
   "reason": "under an excluded root",
   "detail": "occupation (P31), position (P31)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q5586484",
-  "label": "gorilla suit",
-  "description": "creature suit",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -44512,16 +44770,6 @@
   "description": "clothing for wear at the beach, or at poolside",
   "reason": "under an excluded root",
   "detail": "sportswear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q7233286",
-  "label": "Positive pressure personnel suit",
-  "description": "Totally encapsulating, industrial protection garments worn within special biocontainment or maximum containment laboratory facilities",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279), professional_wear (P279)",
   "roots": [
    "clothing"
   ]
@@ -45190,16 +45438,6 @@
   ]
  },
  {
-  "qid": "Q11400500",
-  "label": "racing silks",
-  "description": "jacket worn by jockeys",
-  "reason": "under an excluded root",
-  "detail": "sportswear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q11482407",
   "label": "Heian shōzoku",
   "description": "",
@@ -45275,16 +45513,6 @@
   "description": "mask used in noh",
   "reason": "under an excluded root",
   "detail": "mask (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q11626363",
-  "label": "ikan",
-  "description": "type of Japanese dress",
-  "reason": "under an excluded root",
-  "detail": "uniform (P279)",
   "roots": [
    "clothing"
   ]
@@ -45751,16 +45979,6 @@
   ]
  },
  {
-  "qid": "Q16522478",
-  "label": "posing trunks",
-  "description": "regulation trunks worn by male bodybuilders in competition",
-  "reason": "under an excluded root",
-  "detail": "sportswear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q16534695",
   "label": "Chasseur Alpin beret",
   "description": "oversized beret worn by the Chasseurs Alpins, an elite French military unit",
@@ -45791,16 +46009,6 @@
   ]
  },
  {
-  "qid": "Q16671745",
-  "label": "qamis",
-  "description": "long shirt or tunic worn alone or with trousers in many parts of Asia and the Middle East",
-  "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q16705140",
   "label": "theatre mask",
   "description": "kind of mask",
@@ -45826,16 +46034,6 @@
   "description": "honorific braided cord worn on military uniforms",
   "reason": "under an excluded root",
   "detail": "award (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q16889336",
-  "label": "zephyr",
-  "description": "henley-style shirt worn in competition rowing, usually trimmed in team colors on the sleeve and neck binding and placket",
-  "reason": "under an excluded root",
-  "detail": "sportswear (P279)",
   "roots": [
    "clothing"
   ]
@@ -45958,7 +46156,8 @@
   "detail": "organization (P31)",
   "roots": [
    "clothing",
-   "smartwatch"
+   "smartwatch",
+   "watch"
   ]
  },
  {
@@ -46454,16 +46653,6 @@
   ]
  },
  {
-  "qid": "Q26877520",
-  "label": "cold-protection suit",
-  "description": "",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q26882554",
   "label": "bunker pants",
   "description": "protective overpants worn by firefighters",
@@ -46544,16 +46733,6 @@
   ]
  },
  {
-  "qid": "Q29572363",
-  "label": "walking suit",
-  "description": "women's suit worn for walking and other similar physical activities, dating from around 1900, usually consisting of a coat or jacket and long skirt",
-  "reason": "under an excluded root",
-  "detail": "sportswear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q29586882",
   "label": "period costume",
   "description": "theatrical or film costume replicating or intended to evoke the clothing of a prior time and particular place",
@@ -46577,16 +46756,6 @@
   "qid": "Q29655630",
   "label": "hunting clothes",
   "description": "clothing for outdoor pursuits such as hunting and shooting",
-  "reason": "under an excluded root",
-  "detail": "sportswear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q29655703",
-  "label": "track suit top",
-  "description": "upper body component of a track suit, usually a jacket or pullover, often with a hood",
   "reason": "under an excluded root",
   "detail": "sportswear (P279)",
   "roots": [
@@ -46619,16 +46788,6 @@
   "description": "jacket worn for skiing, or for general cold-weather wear",
   "reason": "under an excluded root",
   "detail": "sportswear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q29749328",
-  "label": "communion clothing",
-  "description": "special clothing worn for first communions or confirmations in some Christain cultures",
-  "reason": "under an excluded root",
-  "detail": "religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -46734,16 +46893,6 @@
   ]
  },
  {
-  "qid": "Q44222414",
-  "label": "beach dress",
-  "description": "dress designed to be worn at the sea shore",
-  "reason": "under an excluded root",
-  "detail": "sportswear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q46190961",
   "label": "Order of the White Star, Medal Class",
   "description": "grade of an order awarded by the Republic of Estonia",
@@ -46764,26 +46913,6 @@
   ]
  },
  {
-  "qid": "Q48730719",
-  "label": "Death masks of Mycenae",
-  "description": "archaeological finds",
-  "reason": "under an excluded root",
-  "detail": "mask (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q48767474",
-  "label": "cat suit",
-  "description": "suit made to resemble a feline",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q48777856",
   "label": "disposable plastic glove",
   "description": "",
@@ -46799,36 +46928,6 @@
   "description": "",
   "reason": "under an excluded root",
   "detail": "uniform (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q48810759",
-  "label": "dinosaur suit",
-  "description": "",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q48843371",
-  "label": "Teba jacket",
-  "description": "soft jacket with notchless lapels and shirt-like sleeves, designed as a shooting blazer",
-  "reason": "under an excluded root",
-  "detail": "sportswear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q48995588",
-  "label": "bear suit",
-  "description": "Costumed character or creature suit",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -46898,16 +46997,6 @@
   "qid": "Q50997621",
   "label": "powwow dance regalia",
   "description": "dress worn by Native American and First Nations dancers at powwows or other dances",
-  "reason": "under an excluded root",
-  "detail": "sportswear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q51099841",
-  "label": "jingle dress",
-  "description": "dress decorated with conical tin jingles, worn for the jingle dress dance",
   "reason": "under an excluded root",
   "detail": "sportswear (P279)",
   "roots": [
@@ -47466,16 +47555,6 @@
   ]
  },
  {
-  "qid": "Q97618878",
-  "label": "informal dress (changfu)",
-  "description": "a type of formal dress in China",
-  "reason": "under an excluded root",
-  "detail": "uniform (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q97620853",
   "label": "outer coat with rank badge (bufu)",
   "description": "a type of offical dress with a rank badge worn in ancient China",
@@ -47627,21 +47706,11 @@
   ]
  },
  {
-  "qid": "Q105200672",
-  "label": "shaluka",
-  "description": "type of tunic",
-  "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q106346014",
   "label": "Real Madrid C.F. kit",
   "description": "",
   "reason": "under an excluded root",
-  "detail": "uniform (P279), sportswear (P279)",
+  "detail": "sportswear (P279), uniform (P279)",
   "roots": [
    "clothing"
   ]
@@ -47751,7 +47820,7 @@
   "label": "plague mask",
   "description": "distinctive long-nosed mask worn by plague doctors",
   "reason": "under an excluded root",
-  "detail": "protective_clothing (P279), mask (P279)",
+  "detail": "mask (P279), protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -48230,16 +48299,6 @@
   ]
  },
  {
-  "qid": "Q125628759",
-  "label": "Speed skating suits",
-  "description": "One-piece suits used at speed skating sport competitions",
-  "reason": "under an excluded root",
-  "detail": "sportswear (P31)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q125976281",
   "label": "slashed glove",
   "description": "",
@@ -48311,31 +48370,11 @@
   ]
  },
  {
-  "qid": "Q131283709",
-  "label": "Farwah",
-  "description": "A traditional winter coat worn across parts of the Arab world, featuring an inner lining of natural or synthetic fur or heavy felt for warmth. The farwa is loose-fitting, in colors like brown or black, sometimes with simple decorations.",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q131452239",
   "label": "Commander Coins",
   "description": "military award given by a high-ranking officer, often a general",
   "reason": "under an excluded root",
   "detail": "award (P279), organization (P31)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q131531064",
-  "label": "Axiom Extravehicular Mobility Unit",
-  "description": "space suit under development for NASA's Artemis Program",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -48451,16 +48490,6 @@
   ]
  },
  {
-  "qid": "Q135529149",
-  "label": "Exploration Extravehicular Mobility Unit",
-  "description": "prototype space suit design developed by NASA's Johnson Space Center for the Artemis Program",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q135670723",
   "label": "Cricket kits",
   "description": "Uniform worn by cricket players",
@@ -48516,16 +48545,6 @@
   "description": "",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q138839719",
-  "label": "Al-Azhar attire",
-  "description": "scholars, students, and reciters affiliated with [[Al-Azhar University|Al-Azhar]]",
-  "reason": "under an excluded root",
-  "detail": "uniform (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]

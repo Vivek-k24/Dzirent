@@ -1,24 +1,27 @@
 #!/usr/bin/env python3
 """
-validate.py (D1c)
+validate.py (D1c; D2 added the instance-of and generic-entry checks and the keep list)
 Checks taxonomy.json, review.csv and vocabulary.json against the product rules and against how
 they were built:
 
-1. Every root, skipped class and launch type resolved to its expected label and description
-   (roots.json).
+1. Every root, excluded instance-of class, skipped class and launch type resolved to its
+   expected label and description, and every keep-list type to its QID and label (roots.json).
 2. No kept type is under an excluded root (P279* or P31/P279*). Cut A's roots (scope "clothing")
-   allow a launch type, a banned root's example and a type another positive root reaches. Cut B:
-   no path passes through a skipped class, and every other type is reached by a positive root.
+   allow a launch type, a keep-list type, a banned root's example and a type another positive
+   root reaches. Cut B: no path passes through a skipped class, and every other type is reached
+   by a positive root. No type other than a launch type is an instance of an excluded class
+   (brand, trademark, product model or line, fictional object or clothing, archaeological
+   artefact) or a generic entry ("clothing", "garment", "gown").
 3. No label names a degree, title or award (degree, doctorate, knight, duke, ...).
 4. The depth bound holds: no type more than 4 subclass-of steps below its positive root (2 below
    a banned root), and each step of its recorded path is a subclass-of edge.
 5. Every banned rule has a not-allowed type, and no banned root contributes more than 15.
 6. Every launch type has its QID, priority "launch", keep "yes" (or the owner's "no") and at
-   least two names.
+   least two names; every keep-list type is in, marked as such, and nothing else is.
 7. Only the database's values (and none_fits / not_applicable) in category, garment type and
    item type; known allowed and region values; no duplicate QIDs; review.csv matches
-   taxonomy.json in order and parts (launch rows with needs_owner = yes, then review, then the
-   rest); vocabulary.json holds exactly the allowed and not-allowed types not marked keep = no.
+   taxonomy.json in order and parts (launch rows, then the keep list, both with needs_owner =
+   yes, then review, then the rest); vocabulary.json holds exactly the allowed and not-allowed types not marked keep = no.
 8. Countries of origin are countries (no city, state or province), and the sheet's size is
    within the expected range.
 Then prints the counts by category, region and allowed status.
@@ -38,8 +41,8 @@ from pathlib import Path
 
 import specs
 from build_taxonomy import (ALLOWED, CATEGORIES, CSV_COLUMNS, EXCLUDED_JSON, FETCHED_JSON, GARMENT_TYPES, ITEM_TYPES,
-                            KEEP_VALUES, MAX_ROWS, MIN_ROWS, REGIONS, REVIEW_CSV, SHEET_GROUPS, TAXONOMY_JSON,
-                            VOCABULARY_JSON, bfs_paths, read_review_csv, vocabulary_entries)
+                            KEEP_VALUES, MAX_ROWS, MIN_ROWS, NEEDS_OWNER_GROUPS, REGIONS, REVIEW_CSV, SHEET_GROUPS,
+                            TAXONOMY_JSON, VOCABULARY_JSON, bfs_paths, read_review_csv, vocabulary_entries)
 
 ROOTS_JSON = Path(__file__).resolve().parent / "roots.json"
 FORBIDDEN_LABEL = re.compile(r"degree|doctorate|knight|duke|duchess|rector|chancellor|medal|honorary|citizen", re.I)
@@ -102,7 +105,8 @@ def main() -> int:
     # 1. Roots, skipped classes and launch types.
     problems = []
     groups = [("positive", specs.POSITIVE_ROOTS), ("banned", specs.BANNED_ROOTS), ("exclude", specs.EXCLUDE_ROOTS),
-              ("skip", specs.SKIP_UNDER_CLOTHING), ("country_classes", specs.COUNTRY_CLASSES)]
+              ("instance_of", specs.EXCLUDE_INSTANCE_OF), ("skip", specs.SKIP_UNDER_CLOTHING),
+              ("country_classes", specs.COUNTRY_CLASSES)]
     for group, spec_list in groups:
         by_key = {r["key"]: r for r in roots.get(group, [])}
         for spec in spec_list:
@@ -115,12 +119,22 @@ def main() -> int:
         entry = launch_roots.get(spec["qid"])
         if not entry or not matches(entry, spec):
             problems.append(f"launch {spec['concept']} {spec['qid']}")
-    check("every root, skipped class and launch QID resolved to its expected label and description", problems)
+    keep_roots = {k["qid"]: k for k in roots.get("keep", [])}
+    for spec in specs.KEEP_LIST:
+        entry = keep_roots.get(spec["qid"])
+        if not entry or entry["label"].casefold() != spec["label"].casefold():
+            problems.append(f"keep list {spec['qid']} {spec['label']}: {entry and entry['label']}")
+    if set(keep_roots) != specs.KEEP_QIDS:
+        problems.append(f"roots.json keep list {sorted(set(keep_roots) ^ specs.KEEP_QIDS)} differs from specs.KEEP_LIST")
+    check("every root, instance-of class, skipped class, launch QID and keep-list QID resolved to its expected label "
+          "and description", problems)
 
     # 2. Excluded roots (cut A) and skipped classes (cut B).
     exclude = {r["qid"]: r["key"] for r in roots["exclude"]}
     clothing_scope = {r["qid"] for r in roots["exclude"] if r.get("scope") == "clothing"}
     skip = {r["qid"] for r in roots["skip"]}
+    instance_of = {r["qid"]: r["key"] for r in roots["instance_of"]}
+    generic = {g.casefold() for g in specs.GENERIC_LEAF_LABELS}
     problems = []
     for r in rows:
         name = f"{r['qid']} {r['english_name']}"
@@ -128,7 +142,15 @@ def main() -> int:
         hard = [exclude[a] for a in under if a not in clothing_scope]
         if hard:
             problems.append(f"{name} under {hard}")
-        exempt = is_launch[r["qid"]] or r["banned_root"] or set(r["positive_roots"]) - {"clothing"}
+        if not is_launch[r["qid"]]:
+            inst = [instance_of[a] for a, via in r["ancestor_roots"].items() if a in instance_of and via == "P31"]
+            inst += [instance_of[c["qid"]] for c in r["instance_of"] if c["qid"] in instance_of]
+            if inst:
+                problems.append(f"{name} is an instance of {sorted(set(inst))}")
+            if r["english_name"].casefold() in generic:
+                problems.append(f"{name} is a generic entry")
+        exempt = (is_launch[r["qid"]] or r["keep_list"] or r["banned_root"]
+                  or set(r["positive_roots"]) - {"clothing"})
         if not exempt and any(a in clothing_scope for a in under):
             problems.append(f"{name} under {[exclude[a] for a in under if a in clothing_scope]} (cut A)")
         if any(p["qid"] in skip for p in r["path"]):
@@ -145,8 +167,8 @@ def main() -> int:
             if r["positive_roots"] != [k for k in paths if r["qid"] in paths[k]]:
                 problems.append(f"{r['qid']} {r['english_name']}: positive roots differ from the cache's crawls")
     check("no type under an excluded root (title, award, occupation, degree, position, human, organization, military "
-          "unit, armour; cut A's nine for what only clothing reaches); none only through fashion accessory (cut B)",
-          problems)
+          "unit, armour; cut A's nine for what only clothing reaches); none only through fashion accessory (cut B); "
+          "no instance of an excluded class and no generic entry (D2)", problems)
 
     # 3. Degree, title and award words.
     check("no label names a degree, title or award",
@@ -205,7 +227,11 @@ def main() -> int:
     launch_rows = sum(is_launch.values())
     if launch_rows != len(specs.LAUNCH):
         problems.append(f"{launch_rows} launch rows, expected {len(specs.LAUNCH)}")
-    check("every launch type has its QID, keep 'yes' (or the owner's 'no') and at least two names", problems)
+    keep_rows = {r["qid"] for r in rows if r["keep_list"]}
+    problems += [f"keep list {q} missing" for q in sorted(specs.KEEP_QIDS - keep_rows)]
+    problems += [f"{q} is marked keep list but isn't on it" for q in sorted(keep_rows - specs.KEEP_QIDS)]
+    check("every launch type has its QID, keep 'yes' (or the owner's 'no') and at least two names; every keep-list "
+          "type is in and marked", problems)
 
     # 7. Values, duplicates, the sheet and the vocabulary.
     problems = []
@@ -219,6 +245,8 @@ def main() -> int:
             problems.append(f"{r['qid']} item type '{r['dzirent_item_type']}'")
         if (r["sheet_group"] == "launch") != is_launch[r["qid"]]:
             problems.append(f"{r['qid']} sheet part '{r['sheet_group']}' but launch {is_launch[r['qid']]}")
+        if (r["sheet_group"] == "keep") != (r["keep_list"] and not is_launch[r["qid"]]):
+            problems.append(f"{r['qid']} sheet part '{r['sheet_group']}' but keep list {r['keep_list']}")
     dupes = [q for q, n in Counter(r["qid"] for r in rows).items() if n > 1]
     problems += [f"duplicate QID {q}" for q in dupes]
     parts = [SHEET_GROUPS.index(r["sheet_group"]) for r in rows if r["sheet_group"] in SHEET_GROUPS]
@@ -230,8 +258,9 @@ def main() -> int:
     elif [s["qid"] for s in sheet] != [r["qid"] for r in rows]:
         problems.append("review.csv rows don't match taxonomy.json (same QIDs, same order)")
     else:
+        group = {r["qid"]: r["sheet_group"] for r in rows}
         problems += [f"review.csv {s['qid']}: needs_owner '{s['needs_owner']}'" for s in sheet
-                     if s["needs_owner"] != ("yes" if is_launch[s["qid"]] else "")]
+                     if s["needs_owner"] != ("yes" if group[s["qid"]] in NEEDS_OWNER_GROUPS else "")]
     vocabulary = json.loads(VOCABULARY_JSON.read_text(encoding="utf-8"))
     if vocabulary.get("entries") != vocabulary_entries(rows):
         problems.append("vocabulary.json isn't the allowed and not-allowed rows of taxonomy.json (keep = no left out)")
@@ -254,8 +283,9 @@ def main() -> int:
     check(f"countries of origin are countries; {MIN_ROWS}-{MAX_ROWS} rows", problems)
 
     print("\n--- Counts ---")
-    print(f"rows {len(rows)}, launch {launch_rows}, in vocabulary.json {len(vocabulary['entries'])}, "
-          f"keep = no {sum(r['keep'] == 'no' for r in rows)}")
+    print(f"rows {len(rows)}, launch {launch_rows}, keep list {len(keep_rows)}, needs_owner = yes "
+          f"{sum(r['sheet_group'] in NEEDS_OWNER_GROUPS for r in rows)}, in vocabulary.json "
+          f"{len(vocabulary['entries'])}, keep = no {sum(r['keep'] == 'no' for r in rows)}")
     for field in ("dzirent_category", "region", "allowed"):
         print(f"by {field}: " + ", ".join(f"{k} {n}" for k, n in Counter(r[field] for r in rows).most_common()))
     if EXCLUDED_JSON.exists():

@@ -30,6 +30,9 @@ POSITIVE_ROOTS = [
      "desc": ["jewelry", "inexpensive"]},
     {"key": "scarf", "labels": ["scarf"], "desc": ["worn", "neck"]},
     {"key": "shawl", "labels": ["shawl"], "desc": ["worn", "shoulders"]},
+    # D2: plain watches (pocket, analog, mechanical, digital) aren't under wristwatch, and cut B
+    # dropped them. Smartwatches stay not allowed: smartwatch is a banned root, which wins.
+    {"key": "watch", "labels": ["watch"], "desc": ["time indicator", "accessory"]},
 ]
 
 # Banned examples: BANNED_DEPTH levels only, and at most BANNED_KEEP items per root. `rule` is
@@ -89,6 +92,83 @@ EXCLUDE_ROOTS = [
     {"key": "professional_wear", "labels": ["professional wear"], "desc": ["profession"], "qid": "Q29000407",
      "scope": "clothing"},
 ]
+
+# D2: an item that is an instance of one of these classes (P31, or P31 of a subclass: P31/P279*)
+# names one made thing, not a type of garment: a brand, a product line, a fictional prop, an
+# archaeological find. It is dropped, whatever its name says.
+EXCLUDE_INSTANCE_OF = [
+    {"key": "fictional_object", "labels": ["fictional object"], "desc": ["fictional stories"]},
+    # No item is labelled "fictional item of clothing"; this one is "clothing that only exists in
+    # works of fiction".
+    {"key": "fictional_clothing", "labels": ["fictional clothing"], "desc": ["works of fiction"]},
+    {"key": "brand", "labels": ["brand"], "desc": ["identification", "good or service"]},
+    {"key": "trademark", "labels": ["trademark"], "desc": ["trade identifier"]},
+    {"key": "product_model", "labels": ["product model"], "desc": ["manufactured objects"]},
+    # "product line" is an English alias of "model series".
+    {"key": "product_line", "labels": ["model series"], "search": "product line", "desc": ["series of product models"]},
+    # No item is labelled "archaeological artefact type"; this one is the artefact class, "something
+    # made or modified by humans and of archaeological interest".
+    {"key": "archaeological_artefact", "labels": ["archaeological artefact", "archaeological artifact"],
+     "search": "archaeological artefact", "desc": ["archaeological interest"]},
+]
+
+# D2: entries that name no type of their own, matched on the whole English label (never a
+# substring): the clothing root itself ("clothing", with the aliases "garment" and "apparel") and
+# the two items labelled only "gown". A launch type is never dropped by this.
+GENERIC_LEAF_LABELS = ["clothing", "garment", "gown"]
+
+# D2: the 45 types cut A removed that the classifier had as allowed (D1c; recomputed from
+# excluded.json with build_taxonomy.classify). Each is checked by QID and English label on every
+# fetch (roots.json, "keep"), comes back past cut A only, is classified by the normal rules, and
+# gets needs_owner = yes in review.csv. Every other drop rule still applies to them.
+KEEP_LIST = [
+    {"qid": "Q15013", "label": "Advanced Crew Escape Suit"},
+    {"qid": "Q118463", "label": "Mao suit"},
+    {"qid": "Q182064", "label": "djellaba"},
+    {"qid": "Q297424", "label": "oilskin"},
+    {"qid": "Q305718", "label": "abaya"},
+    {"qid": "Q758069", "label": "attila"},
+    {"qid": "Q932999", "label": "duster"},
+    {"qid": "Q1000777", "label": "fatsuit"},
+    {"qid": "Q1016353", "label": "burka"},
+    {"qid": "Q1663649", "label": "rain cape"},
+    {"qid": "Q1934317", "label": "waders"},
+    {"qid": "Q1988132", "label": "Tunic (military)"},
+    {"qid": "Q2018769", "label": "raincoat"},
+    {"qid": "Q2576557", "label": "Mackintosh"},
+    {"qid": "Q2637777", "label": "simar"},
+    {"qid": "Q2899124", "label": "priestly tunic"},
+    {"qid": "Q2933073", "label": "cagoule"},
+    {"qid": "Q2998209", "label": "mantle"},
+    {"qid": "Q3247116", "label": "pinafore"},
+    {"qid": "Q3658926", "label": "environmental suit"},
+    {"qid": "Q3979915", "label": "tabard"},
+    {"qid": "Q4795383", "label": "skin suit"},
+    {"qid": "Q5523301", "label": "Garibaldi shirt"},
+    {"qid": "Q5586484", "label": "gorilla suit"},
+    {"qid": "Q7233286", "label": "Positive pressure personnel suit"},
+    {"qid": "Q11400500", "label": "racing silks"},
+    {"qid": "Q11626363", "label": "ikan"},
+    {"qid": "Q16522478", "label": "posing trunks"},
+    {"qid": "Q16671745", "label": "qamis"},
+    {"qid": "Q16889336", "label": "zephyr"},
+    {"qid": "Q26877520", "label": "cold-protection suit"},
+    {"qid": "Q29572363", "label": "walking suit"},
+    {"qid": "Q29655703", "label": "track suit top"},
+    {"qid": "Q29749328", "label": "communion clothing"},
+    {"qid": "Q44222414", "label": "beach dress"},
+    {"qid": "Q48767474", "label": "cat suit"},
+    {"qid": "Q48810759", "label": "dinosaur suit"},
+    {"qid": "Q48843371", "label": "Teba jacket"},
+    {"qid": "Q48995588", "label": "bear suit"},
+    {"qid": "Q51099841", "label": "jingle dress"},
+    {"qid": "Q97618878", "label": "informal dress (changfu)"},
+    {"qid": "Q105200672", "label": "shaluka"},
+    {"qid": "Q125628759", "label": "Speed skating suits"},
+    {"qid": "Q131283709", "label": "Farwah"},
+    {"qid": "Q138839719", "label": "Al-Azhar attire"},
+]
+KEEP_QIDS = {entry["qid"] for entry in KEEP_LIST}
 
 # Cut B (D1c): accessories only from the accessory roots above. The clothing crawl doesn't pass
 # through these classes, so what clothing reaches only through them is dropped unless another

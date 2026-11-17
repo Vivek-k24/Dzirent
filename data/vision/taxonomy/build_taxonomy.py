@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-build_taxonomy.py (D1b; D1c added cuts A and B, needs_owner and vocabulary.json)
+build_taxonomy.py (D1b; D1c added cuts A and B, needs_owner and vocabulary.json; D2 added the
+instance-of drop, the generic-entry drop and the keep list)
 Turns taxonomy/raw/fetched.json (written by fetch_wikidata.py) into:
 - taxonomy/taxonomy.json (every kept type, with its Wikidata fields)
 - taxonomy/review.csv (the owner's review sheet; needs_owner = yes on the launch rows)
@@ -10,6 +11,11 @@ Turns taxonomy/raw/fetched.json (written by fetch_wikidata.py) into:
 Cut A: the exclusion roots with scope "clothing" (costume, uniform, mask, ...) drop only what the
 clothing root brings in. Cut B: the clothing crawl never passes through "fashion accessory", so
 accessories come from their own roots.
+
+D2: an item that is an instance of a brand, trademark, product model, product line, fictional
+object, fictional clothing or archaeological artefact (P31 or P31/P279*, with the classes resolved
+in roots.json) is dropped, and so are the generic entries in specs.GENERIC_LEAF_LABELS. The keep
+list (specs.KEEP_LIST) comes back past cut A only and gets needs_owner = yes.
 
 Classification is by the item itself: its English label, aliases, description and parent
 labels decide category, garment type and allowed. Which root an item sits under is never
@@ -59,9 +65,11 @@ REGIONS = ["South Asian", "East Asian", "Southeast Asian", "Central Asian", "Mid
 CSV_COLUMNS = ["needs_owner", "keep", "priority", "english_name", "also_called", "region", "dzirent_category",
                "dzirent_garment_type", "allowed", "notes", "qid"]
 KEEP_VALUES = ["", "yes", "no"]
-# The sheet's three parts, in order: launch types (needs_owner = yes), then the types the build
-# left for review, then the rest by category. Set by the build; the owner's edits don't move a row.
-SHEET_GROUPS = ["launch", "review", "other"]
+# The sheet's four parts, in order: launch types, then the keep list (both needs_owner = yes),
+# then the types the build left for review, then the rest by category. Set by the build; the
+# owner's edits don't move a row.
+SHEET_GROUPS = ["launch", "keep", "review", "other"]
+NEEDS_OWNER_GROUPS = ("launch", "keep")
 VOCABULARY_FIELDS = ["qid", "english_name", "vocabulary", "dzirent_category", "dzirent_item_type",
                      "dzirent_garment_type", "allowed", "region"]
 
@@ -396,6 +404,9 @@ def build_taxonomy() -> int:
     country_types = f["country_types"]
     country_classes = {r["qid"] for r in roots["country_classes"]}
     exclude_qids = {r["qid"]: r["key"] for r in roots["exclude"]}
+    instance_qids = {r["qid"]: r["key"] for r in roots["instance_of"]}  # D2
+    keep_list = {k["qid"] for k in roots["keep"]}  # D2
+    generic_labels = {g.casefold() for g in specs.GENERIC_LEAF_LABELS}  # D2
     clothing_scope = {r["qid"] for r in roots["exclude"] if r.get("scope") == "clothing"}  # cut A
     skip_qids = {r["qid"] for r in roots.get("skip", [])}  # cut B
     banned_by_qid = {r["qid"]: r for r in roots["banned"]}
@@ -458,6 +469,20 @@ def build_taxonomy() -> int:
                 drop(q, "under an excluded root", ", ".join(f"{exclude_qids[a]} ({anc[a]})" for a in anc
                                                             if a in exclude_qids and a not in clothing_scope))
                 continue
+        # Instance of (P31, or P31 of a subclass), never subclass of: Wikidata files a few real
+        # types ("dress fastener") as subclasses of "archaeological artefact".
+        inst = sorted({a for a in anc if a in instance_qids and anc[a] == "P31"}
+                      | {c for c in e["claims"]["P31"] if c in instance_qids}, key=lambda x: int(x[1:]))
+        if inst:
+            detail = ", ".join(f"{instance_qids[a]} (P31)" for a in inst)
+            if is_launch:
+                logger.warning("launch type %s %s is an instance of %s; kept as a launch type", q, label, detail)
+            else:
+                drop(q, "instance of an excluded class", detail)
+                continue
+        if label.casefold() in generic_labels and not is_launch:
+            drop(q, "generic entry", f"'{label}'")
+            continue
         word = LABEL_WORDS_RE.search(label.lower()) or LABEL_PATTERN_RE.search(label.lower())
         if word and not is_launch:
             drop(q, "label word", f"'{word.group(0)}'")
@@ -483,7 +508,7 @@ def build_taxonomy() -> int:
                 drop(q, "reached only through a skipped class (cut B)", ", ".join(L(s) for s in sorted(skip_qids)))
             continue  # otherwise a banned root's crawl only
         cut = [a for a in anc if a in clothing_scope]
-        if cut and not is_launch and reached == ["clothing"]:
+        if cut and not is_launch and q not in keep_list and reached == ["clothing"]:
             drop(q, "under an excluded root", ", ".join(f"{exclude_qids[a]} ({anc[a]})" for a in cut))
             continue
         kept[q] = {"under_banned": under_banned}
@@ -557,6 +582,10 @@ def build_taxonomy() -> int:
             cfg = launch[q]
             cls = {**cls, "category": cfg["category"], "garment_type": cfg["garment_type"],
                    "item_type": cfg.get("item_type"), "allowed": cfg["allowed"], "notes": cfg.get("notes", "")}
+        elif q in keep_list:
+            cut_by = ", ".join(L(a) for a in anc if a in clothing_scope) or "none"
+            cls = {**cls, "notes": f"Keep list: back from cut A ({cut_by}); check category and allowed."
+                                   + (f" {cls['notes']}" if cls["notes"] else "")}
 
         # Region: origin, then the parent chain, then the item's text. A class whose English label
         # is a bare garment word ("jacket") gives no origin, to itself or below it: Wikidata's
@@ -604,7 +633,8 @@ def build_taxonomy() -> int:
         vocabulary = sorted(vocab, key=lambda s: (len(s), s.lower()))
         o = origin(q)
         image = e["claims"]["P18"][0] if e["claims"]["P18"] else None
-        group = "launch" if q in launch else "review" if cls["allowed"] == "review" else "other"
+        group = ("launch" if q in launch else "keep" if q in keep_list
+                 else "review" if cls["allowed"] == "review" else "other")
         rows.append({
             "qid": q,
             "english_name": item["label"],
@@ -612,6 +642,7 @@ def build_taxonomy() -> int:
             "aliases": en_aliases,
             "multilingual": multilingual,
             "parents": [{"qid": p, "label": L(p)} for p in parent_qids],
+            "instance_of": [{"qid": c, "label": L(c)} for c in e["claims"]["P31"]],
             "country_of_origin": [L(c) for c in o["countries"]],
             # Why each country was kept: the verified country classes it is an instance of.
             "country_evidence": [{"qid": c, "label": L(c), "classes": sorted(set(country_types.get(c, [])) & country_classes)}
@@ -631,6 +662,7 @@ def build_taxonomy() -> int:
             "keep": "yes" if q in launch else "",
             "notes": cls["notes"],
             "launch_concept": launch[q]["concept"] if q in launch else None,
+            "keep_list": q in keep_list,
             "root": root_key,
             "positive_roots": positive_keys,
             "banned_root": banned_key,
@@ -668,7 +700,8 @@ def write_review_csv(rows: list[dict]) -> None:
         writer.writerow(CSV_COLUMNS)
         for r in rows:
             also = [n for n in r["vocabulary"] if n.lower() != r["english_name"].lower()][:5]
-            writer.writerow(["yes" if r["sheet_group"] == "launch" else "", r["keep"], r["priority"], r["english_name"],
+            writer.writerow(["yes" if r["sheet_group"] in NEEDS_OWNER_GROUPS else "", r["keep"], r["priority"],
+                             r["english_name"],
                              "; ".join(also), r["region"], r["dzirent_category"], r["dzirent_garment_type"] or "",
                              r["allowed"], r["notes"], r["qid"]])
 
@@ -688,7 +721,9 @@ def write_vocabulary(rows: list[dict]) -> int:
 
 
 def print_counts(rows: list[dict], excluded: list[dict]) -> None:
-    print(f"rows: {len(rows)} (launch {sum(r['priority'] == 'launch' for r in rows)})")
+    print(f"rows: {len(rows)} (launch {sum(r['priority'] == 'launch' for r in rows)}, keep list "
+          f"{sum(r['sheet_group'] == 'keep' for r in rows)}, needs_owner = yes "
+          f"{sum(r['sheet_group'] in NEEDS_OWNER_GROUPS for r in rows)})")
     for field in ("dzirent_category", "region", "allowed", "root"):
         print(f"  by {field}: " + ", ".join(f"{k} {v}" for k, v in Counter(r[field] for r in rows).most_common()))
     print("  excluded by reason: " + ", ".join(f"{k} {v}" for k, v in Counter(x["reason"] for x in excluded).most_common()))

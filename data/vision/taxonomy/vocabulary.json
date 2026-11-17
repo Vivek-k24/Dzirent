@@ -6,8 +6,8 @@
    "qid": "Q883234",
    "english_name": "blazer",
    "vocabulary": [
-    "blazer",
     "Blazer",
+    "blazer",
     "Bleiser",
     "Bléiser",
     "Bleiseres",
@@ -45,8 +45,8 @@
    "vocabulary": [
     "fato",
     "suit",
-    "Terno",
     "terno",
+    "Terno",
     "traje",
     "complet",
     "Costard",
@@ -94,8 +94,8 @@
     "calças",
     "slacks",
     "Suruali",
-    "Pantalon",
     "pantalon",
+    "Pantalon",
     "pantalón",
     "trousers",
     "pantalones",
@@ -287,8 +287,8 @@
     "anarkali suit",
     "anarkali dress",
     "Anarkali lehenga",
-    "Anarkali Salwar Suit",
-    "anarkali salwar suit"
+    "anarkali salwar suit",
+    "Anarkali Salwar Suit"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -388,8 +388,8 @@
     "Chosŏn-ot",
     "Joseon-ot",
     "chima jeogori",
-    "Traditional Korean Dress",
     "traditional korean dress",
+    "Traditional Korean Dress",
     "Tradisyunal na damit ng Korea"
    ],
    "dzirent_category": "Cultural & Traditional",
@@ -404,8 +404,8 @@
    "vocabulary": [
     "Hipil",
     "Huepil",
-    "Huipil",
     "huipil",
+    "Huipil",
     "embroidered tunic",
     "embroidered huipil"
    ],
@@ -467,12 +467,12 @@
    "qid": "Q172827",
    "english_name": "sari",
    "vocabulary": [
-    "Sari",
     "sari",
+    "Sari",
     "sári",
     "saree",
-    "Saris",
     "saris",
+    "Saris",
     "shari",
     "sarees",
     "draped sari"
@@ -504,8 +504,8 @@
    "qid": "Q837879",
    "english_name": "Sherwani",
    "vocabulary": [
-    "Sherwani",
     "sherwani",
+    "Sherwani",
     "achkan coat",
     "traditional sherwani"
    ],
@@ -575,8 +575,8 @@
     "Jalda",
     "Palda",
     "Saias",
-    "Skirt",
     "skirt",
+    "Skirt",
     "Babong",
     "Iskert",
     "Iskirt",
@@ -885,8 +885,8 @@
    "qid": "Q83363",
    "english_name": "jeans",
    "vocabulary": [
-    "Jean",
     "jean",
+    "Jean",
     "denim",
     "jeans",
     "Jeans",
@@ -984,8 +984,8 @@
    "vocabulary": [
     "short",
     "chorte",
-    "shorts",
     "Shorts",
+    "shorts",
     "calções",
     "Kaptura",
     "casual shorts",
@@ -1124,8 +1124,8 @@
     "playera",
     "t shirt",
     "T shirt",
-    "T-shirt",
     "t-shirt",
+    "T-shirt",
     "camiseta",
     "camisola",
     "t-shirts",
@@ -1187,6 +1187,665 @@
    "dzirent_item_type": null,
    "dzirent_garment_type": "none_fits",
    "allowed": "not_allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q15013",
+   "english_name": "Advanced Crew Escape Suit",
+   "vocabulary": [
+    "ACES",
+    "pumpkin suit",
+    "Advanced Crew Escape Suit"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q48995588",
+   "english_name": "bear suit",
+   "vocabulary": [
+    "bear suit"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q48767474",
+   "english_name": "cat suit",
+   "vocabulary": [
+    "cat suit"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q26877520",
+   "english_name": "cold-protection suit",
+   "vocabulary": [
+    "cold-protection suit"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q48810759",
+   "english_name": "dinosaur suit",
+   "vocabulary": [
+    "dinosaur suit"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q3658926",
+   "english_name": "environmental suit",
+   "vocabulary": [
+    "environmental suit"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q1000777",
+   "english_name": "fatsuit",
+   "vocabulary": [
+    "fatsuit",
+    "fat suit",
+    "fat-suit"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q5586484",
+   "english_name": "gorilla suit",
+   "vocabulary": [
+    "gorilla suit"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q118463",
+   "english_name": "Mao suit",
+   "vocabulary": [
+    "Mao suit",
+    "Túnica Mao",
+    "uniforme Mao",
+    "Zhongshan suit"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "East Asian"
+  },
+  {
+   "qid": "Q16522478",
+   "english_name": "posing trunks",
+   "vocabulary": [
+    "posing suit",
+    "posing trunks"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q7233286",
+   "english_name": "Positive pressure personnel suit",
+   "vocabulary": [
+    "PPPS",
+    "Positive pressure personnel suit",
+    "positive pressure protective suits"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q4795383",
+   "english_name": "skin suit",
+   "vocabulary": [
+    "skin suit",
+    "iceskating suit",
+    "fato de patinagem",
+    "speedskating suit",
+    "ice skating costume",
+    "tenue de patin à glace",
+    "tenue  de patinage sur glace",
+    "combinaison de patinage de vitesse",
+    "indumentaria de patinaje sobre hielo"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q125628759",
+   "english_name": "Speed skating suits",
+   "vocabulary": [
+    "Speed skating suits"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q1934317",
+   "english_name": "waders",
+   "vocabulary": [
+    "waders",
+    "Bota de pesca"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "trousers",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q29572363",
+   "english_name": "walking suit",
+   "vocabulary": [
+    "trotteur",
+    "walking suit",
+    "fato de passeio",
+    "tenue de marche",
+    "vestido de paseo",
+    "fato de caminhada",
+    "tenue de randonnée"
+   ],
+   "dzirent_category": "Career & Professional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "suit",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q305718",
+   "english_name": "abaya",
+   "vocabulary": [
+    "Abaya",
+    "abaya",
+    "ëbayë",
+    "abayah",
+    "abayas",
+    "abbaya",
+    "aabaaya",
+    "Abaia (roupa)"
+   ],
+   "dzirent_category": "Cultural & Traditional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "dress",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q138839719",
+   "english_name": "Al-Azhar attire",
+   "vocabulary": [
+    "Azhari attire",
+    "al-Azhar dress",
+    "Al-Azhar attire"
+   ],
+   "dzirent_category": "Cultural & Traditional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "dress",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q182064",
+   "english_name": "djellaba",
+   "vocabulary": [
+    "jelab",
+    "jelib",
+    "Darija",
+    "jelaba",
+    "jellab",
+    "jellib",
+    "Jellāb",
+    "Jilbab",
+    "jlaleb",
+    "chilaba",
+    "jellaba",
+    "Jilbaab",
+    "jillaba",
+    "Djellaba",
+    "djellaba",
+    "Galabiya",
+    "jellabah",
+    "Jellabah",
+    "Jellabia"
+   ],
+   "dzirent_category": "Cultural & Traditional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "dress",
+   "allowed": "allowed",
+   "region": "African"
+  },
+  {
+   "qid": "Q131283709",
+   "english_name": "Farwah",
+   "vocabulary": [
+    "Farwa",
+    "Furwa",
+    "Farwah",
+    "The Farwa",
+    "Farwa Saudi",
+    "Saudi Farwa",
+    "farwa gaithe",
+    "farwa tfalia",
+    "Saudi Farwah",
+    "farwa chabbasheiya",
+    "Saudi winter cloak"
+   ],
+   "dzirent_category": "Cultural & Traditional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Middle Eastern"
+  },
+  {
+   "qid": "Q16671745",
+   "english_name": "qamis",
+   "vocabulary": [
+    "Qamis",
+    "qamis",
+    "kameez"
+   ],
+   "dzirent_category": "Cultural & Traditional",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Middle Eastern"
+  },
+  {
+   "qid": "Q44222414",
+   "english_name": "beach dress",
+   "vocabulary": [
+    "beach dress",
+    "robe de plage"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "dress",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q29749328",
+   "english_name": "communion clothing",
+   "vocabulary": [
+    "communion clothing",
+    "first communion dress",
+    "vêtement de communion",
+    "first communion clothing",
+    "robe de première communion",
+    "vestido de primeira comunhão",
+    "vêtement de première communion"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "dress",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q5523301",
+   "english_name": "Garibaldi shirt",
+   "vocabulary": [
+    "Garibaldi shirt",
+    "Garibaldi blouse",
+    "Garibaldi jacket"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q11626363",
+   "english_name": "ikan",
+   "vocabulary": [
+    "ikan"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "dress",
+   "allowed": "allowed",
+   "region": "East Asian"
+  },
+  {
+   "qid": "Q97618878",
+   "english_name": "informal dress (changfu)",
+   "vocabulary": [
+    "informal dress (changfu)"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "dress",
+   "allowed": "allowed",
+   "region": "East Asian"
+  },
+  {
+   "qid": "Q51099841",
+   "english_name": "jingle dress",
+   "vocabulary": [
+    "jingle dress",
+    "jingle dance dress"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "dress",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q297424",
+   "english_name": "oilskin",
+   "vocabulary": [
+    "oilskin",
+    "oilskins",
+    "oil frock",
+    "toile huilee",
+    "toile huilée"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "dress",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q3247116",
+   "english_name": "pinafore",
+   "vocabulary": [
+    "pichi",
+    "pinny",
+    "pintora",
+    "pinafore",
+    "robe tablier"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "dress",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q2899124",
+   "english_name": "priestly tunic",
+   "vocabulary": [
+    "Cutonet",
+    "Ketonet",
+    "priestly tunic",
+    "Túnica do sumo sacerdote de Israel"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q105200672",
+   "english_name": "shaluka",
+   "vocabulary": [
+    "shaluka"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q2637777",
+   "english_name": "simar",
+   "vocabulary": [
+    "cimar",
+    "cymar",
+    "simar",
+    "samare",
+    "simare",
+    "simarre"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "dress",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q29655703",
+   "english_name": "track suit top",
+   "vocabulary": [
+    "hoodie",
+    "sweat-shirt",
+    "track suit top"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q1988132",
+   "english_name": "Tunic (military)",
+   "vocabulary": [
+    "Tunic (military)"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q16889336",
+   "english_name": "zephyr",
+   "vocabulary": [
+    "zephyr"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q758069",
+   "english_name": "attila",
+   "vocabulary": [
+    "attila",
+    "Attila (uniforme)"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "European"
+  },
+  {
+   "qid": "Q1016353",
+   "english_name": "burka",
+   "vocabulary": [
+    "burka",
+    "Bourka"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q2933073",
+   "english_name": "cagoule",
+   "vocabulary": [
+    "cagoul",
+    "kagool",
+    "cagoule",
+    "Cagoule",
+    "kagoule"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q932999",
+   "english_name": "duster",
+   "vocabulary": [
+    "duster",
+    "dust coat",
+    "dust wrap",
+    "cache-poussière"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q2576557",
+   "english_name": "Mackintosh",
+   "vocabulary": [
+    "mac",
+    "mack",
+    "Mackintosh"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q2998209",
+   "english_name": "mantle",
+   "vocabulary": [
+    "Manto",
+    "mantle",
+    "Manteau",
+    "Mantiya",
+    "clerical mantle",
+    "Manteo clerical"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q11400500",
+   "english_name": "racing silks",
+   "vocabulary": [
+    "Kasak",
+    "casaque",
+    "racing silks",
+    "racing colours"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q1663649",
+   "english_name": "rain cape",
+   "vocabulary": [
+    "poncho",
+    "rain cape",
+    "rain poncho",
+    "poncho de pluie"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q2018769",
+   "english_name": "raincoat",
+   "vocabulary": [
+    "raincoat",
+    "rain coat",
+    "chubasquero",
+    "impermeable",
+    "imperméable",
+    "capa de chuva"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q3979915",
+   "english_name": "tabard",
+   "vocabulary": [
+    "tabard"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q48843371",
+   "english_name": "Teba jacket",
+   "vocabulary": [
+    "Teba jacket"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
    "region": "Global"
   },
   {
@@ -1290,8 +1949,8 @@
     "capri pants",
     "clam-diggers",
     "toreador pants",
-    "Pantalones capri",
     "Pantalones Capri",
+    "Pantalones capri",
     "Pantalones pirata",
     "corsaire (vêtement)",
     "three quarter pants",
@@ -1700,8 +2359,8 @@
    "qid": "Q19945950",
    "english_name": "Nábrók",
    "vocabulary": [
-    "Nábrók",
     "nábrók",
+    "Nábrók",
     "necropants",
     "necrocalzones"
    ],
@@ -2135,18 +2794,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q108940411",
-   "english_name": "Belle's ball gown",
-   "vocabulary": [
-    "Belle's ball gown"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "dress",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q4949376",
    "english_name": "bouffant gown",
    "vocabulary": [
@@ -2232,36 +2879,6 @@
    "dzirent_category": "Occasion & Party",
    "dzirent_item_type": null,
    "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q1036729",
-   "english_name": "gown",
-   "vocabulary": [
-    "gown",
-    "gauni",
-    "vestido"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "dress",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q1732031",
-   "english_name": "gown",
-   "vocabulary": [
-    "gown",
-    "robe",
-    "ropa",
-    "frock",
-    "nightgown"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "dress",
    "allowed": "allowed",
    "region": "Global"
   },
@@ -2400,8 +3017,8 @@
    "qid": "Q112053",
    "english_name": "tailcoat",
    "vocabulary": [
-    "Frac",
     "frac",
+    "Frac",
     "tails",
     "casaca",
     "paletóa",
@@ -2502,8 +3119,8 @@
    "qid": "Q19887880",
    "english_name": "andarak",
    "vocabulary": [
-    "Andarak",
-    "andarak"
+    "andarak",
+    "Andarak"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -2565,11 +3182,11 @@
    "qid": "Q969639",
    "english_name": "Barong Tagalog",
    "vocabulary": [
-    "baro",
     "Baro",
+    "baro",
     "Barong",
-    "Barong tagalog",
-    "Barong Tagalog"
+    "Barong Tagalog",
+    "Barong tagalog"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -2637,8 +3254,8 @@
    "qid": "Q4918149",
    "english_name": "Bisht",
    "vocabulary": [
-    "bisht",
     "Bisht",
+    "bisht",
     "Cloak Arab Dress"
    ],
    "dzirent_category": "Cultural & Traditional",
@@ -2734,8 +3351,8 @@
    "english_name": "chador",
    "vocabulary": [
     "xador",
-    "chador",
     "Chador",
+    "chador",
     "tchador"
    ],
    "dzirent_category": "Cultural & Traditional",
@@ -2775,8 +3392,8 @@
    "qid": "Q861019",
    "english_name": "choli",
    "vocabulary": [
-    "choli",
     "Choli",
+    "choli",
     "polku",
     "ravike"
    ],
@@ -2790,8 +3407,8 @@
    "qid": "Q867122",
    "english_name": "churidar",
    "vocabulary": [
-    "Churidar",
     "churidar",
+    "Churidar",
     "churidars",
     "churidar pyjamas",
     "Pantalon churidar",
@@ -2821,8 +3438,8 @@
    "qid": "Q1182320",
    "english_name": "deel",
    "vocabulary": [
-    "Deel",
     "deel",
+    "Deel",
     "Deel (vestimenta)"
    ],
    "dzirent_category": "Cultural & Traditional",
@@ -2851,8 +3468,8 @@
     "Dhoti",
     "Dhotî",
     "dhuti",
-    "dhotis",
-    "Dhotis"
+    "Dhotis",
+    "dhotis"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -2864,8 +3481,8 @@
    "qid": "Q73603",
    "english_name": "dirndl",
    "vocabulary": [
-    "dirndl",
     "Dirndl",
+    "dirndl",
     "dirndls",
     "Bavarian dress"
    ],
@@ -2891,8 +3508,8 @@
    "qid": "Q1204334",
    "english_name": "furisode",
    "vocabulary": [
-    "Furisode",
     "furisode",
+    "Furisode",
     "Hurisode",
     "Furisode Kimonos"
    ],
@@ -2957,10 +3574,10 @@
    "qid": "Q164668",
    "english_name": "hakama",
    "vocabulary": [
-    "hakama",
     "Hakama",
-    "hakama trousers",
-    "Hakama Trousers"
+    "hakama",
+    "Hakama Trousers",
+    "hakama trousers"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -2973,8 +3590,8 @@
    "english_name": "handloom sari",
    "vocabulary": [
     "handloom sari",
-    "Handloom saree",
-    "handloom saree"
+    "handloom saree",
+    "Handloom saree"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3004,8 +3621,8 @@
    "qid": "Q1132685",
    "english_name": "hanten",
    "vocabulary": [
-    "hanten",
-    "Hanten"
+    "Hanten",
+    "hanten"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3068,8 +3685,8 @@
    "english_name": "Janggan",
    "vocabulary": [
     "Janggan",
-    "Janggan kebaya",
-    "Janggan Kebaya"
+    "Janggan Kebaya",
+    "Janggan kebaya"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3108,8 +3725,8 @@
    "qid": "Q2384562",
    "english_name": "kadroun",
    "vocabulary": [
-    "Kadroun",
-    "kadroun"
+    "kadroun",
+    "Kadroun"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3177,8 +3794,8 @@
     "leso",
     "Kanga",
     "kanga",
-    "Khanga",
     "khanga",
+    "Khanga",
     "Kanga (vestuário)"
    ],
    "dzirent_category": "Cultural & Traditional",
@@ -3232,8 +3849,8 @@
    "qid": "Q1542206",
    "english_name": "kira",
    "vocabulary": [
-    "kira",
-    "Kira"
+    "Kira",
+    "kira"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3330,8 +3947,8 @@
     "'ie",
     "lavalava",
     "lava lava",
-    "Lava-lava",
-    "lava-lava"
+    "lava-lava",
+    "Lava-lava"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3408,8 +4025,8 @@
    "qid": "Q6744520",
    "english_name": "Malong",
    "vocabulary": [
-    "Malong",
-    "malong"
+    "malong",
+    "Malong"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3531,8 +4148,8 @@
    "qid": "Q13156645",
    "english_name": "mundu",
    "vocabulary": [
-    "Mundu",
-    "mundu"
+    "mundu",
+    "Mundu"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3557,8 +4174,8 @@
    "english_name": "paranja",
    "vocabulary": [
     "burqa",
-    "paranja",
-    "Paranja"
+    "Paranja",
+    "paranja"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3666,8 +4283,8 @@
    "qid": "Q9061659",
    "english_name": "Poncho salteño",
    "vocabulary": [
-    "Poncho salteño",
     "Poncho Salteño",
+    "Poncho salteño",
     "Poncho de Salta",
     "Poncho argentino",
     "Poncho Güemesiano"
@@ -3842,8 +4459,8 @@
    "qid": "Q4192272",
    "english_name": "Sukmana",
    "vocabulary": [
-    "Sukmana",
-    "sukmana"
+    "sukmana",
+    "Sukmana"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3977,8 +4594,8 @@
    "qid": "Q967222",
    "english_name": "tomesode",
    "vocabulary": [
-    "tomesode",
     "Tomesode",
+    "tomesode",
     "irotomesode",
     "kurotomesode"
    ],
@@ -4007,8 +4624,8 @@
    "qid": "Q6151535",
    "english_name": "traje de tuna",
    "vocabulary": [
-    "Traje de tuna",
-    "traje de tuna"
+    "traje de tuna",
+    "Traje de tuna"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -4128,8 +4745,8 @@
    "qid": "Q849302",
    "english_name": "yukata",
    "vocabulary": [
-    "Yukata",
     "yukata",
+    "Yukata",
     "Casual Kimonos"
    ],
    "dzirent_category": "Cultural & Traditional",
@@ -4215,8 +4832,8 @@
    "qid": "Q4827367",
    "english_name": "Av Pak",
    "vocabulary": [
-    "av pak",
-    "Av Pak"
+    "Av Pak",
+    "av pak"
    ],
    "dzirent_category": "Everyday",
    "dzirent_item_type": null,
@@ -4456,42 +5073,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q11460",
-   "english_name": "clothing",
-   "vocabulary": [
-    "garb",
-    "ropa",
-    "wear",
-    "damit",
-    "dress",
-    "roupa",
-    "attire",
-    "mavazi",
-    "prenda",
-    "apparel",
-    "clothes",
-    "costume",
-    "garment",
-    "clothing",
-    "garments",
-    "kasuotan",
-    "vestment",
-    "vêtement",
-    "vestuario",
-    "vestuário",
-    "vestimenta",
-    "habillement",
-    "indumentaria",
-    "indumentária",
-    "prenda de vestir"
-   ],
-   "dzirent_category": "Everyday",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "dress",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q16949531",
    "english_name": "coatdress",
    "vocabulary": [
@@ -4601,8 +5182,8 @@
    "qid": "Q5436408",
    "english_name": "Farshi Pajama",
    "vocabulary": [
-    "Farshi pajama",
-    "Farshi Pajama"
+    "Farshi Pajama",
+    "Farshi pajama"
    ],
    "dzirent_category": "Everyday",
    "dzirent_item_type": null,
@@ -4716,8 +5297,8 @@
    "qid": "Q3110357",
    "english_name": "gomesi",
    "vocabulary": [
-    "gomesi",
-    "Gomesi"
+    "Gomesi",
+    "gomesi"
    ],
    "dzirent_category": "Everyday",
    "dzirent_item_type": null,
@@ -4936,19 +5517,6 @@
    "dzirent_garment_type": "top",
    "allowed": "allowed",
    "region": "Global"
-  },
-  {
-   "qid": "Q6371145",
-   "english_name": "Kariyushi shirt",
-   "vocabulary": [
-    "Kariyushi wear",
-    "Kariyushi shirt"
-   ],
-   "dzirent_category": "Everyday",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "top",
-   "allowed": "allowed",
-   "region": "East Asian"
   },
   {
    "qid": "Q151948",
@@ -5374,8 +5942,8 @@
    "qid": "Q755313",
    "english_name": "polo shirt",
    "vocabulary": [
-    "polo",
     "Polo",
+    "polo",
     "Niqui",
     "Chomba",
     "golf shirt",
@@ -5692,8 +6260,8 @@
     "Pulover",
     "Pulóver",
     "pulôver",
-    "sweater",
     "Sweater",
+    "sweater",
     "camisola",
     "chandail",
     "pullover",
@@ -5970,8 +6538,8 @@
    "english_name": "anorak",
    "vocabulary": [
     "parca",
-    "parka",
     "Parka",
+    "parka",
     "Anorak",
     "anorak",
     "cagoule"
@@ -6068,8 +6636,8 @@
    "english_name": "blouson",
    "vocabulary": [
     "jumper",
-    "Blouson",
     "blouson",
+    "Blouson",
     "blouse jacket"
    ],
    "dzirent_category": "Outerwear",
@@ -6569,23 +7137,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q1586189",
-   "english_name": "Harrington jacket",
-   "vocabulary": [
-    "G9",
-    "Harrington",
-    "Baracuta jacket",
-    "Harrington Jacket",
-    "Harrington jacket",
-    "Harrington (chaqueta)"
-   ],
-   "dzirent_category": "Outerwear",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "top",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q20760856",
    "english_name": "Heuque",
    "vocabulary": [
@@ -6605,8 +7156,8 @@
    "qid": "Q1433816",
    "english_name": "Inverness cape",
    "vocabulary": [
-    "inverness",
     "Inverness",
+    "inverness",
     "Macfarlane",
     "Inverness cape",
     "Inverness coat",
@@ -6635,8 +7186,8 @@
    "qid": "Q849964",
    "english_name": "jacket",
    "vocabulary": [
-    "Saco",
     "saco",
+    "Saco",
     "veste",
     "casaca",
     "chumpa",
@@ -6691,10 +7242,10 @@
    "qid": "Q3191652",
    "english_name": "kabic",
    "vocabulary": [
-    "kabic",
     "Kabic",
-    "Kabig",
-    "kabig"
+    "kabic",
+    "kabig",
+    "Kabig"
    ],
    "dzirent_category": "Outerwear",
    "dzirent_item_type": null,
@@ -7298,17 +7849,19 @@
    "region": "African"
   },
   {
-   "qid": "Q4745978",
-   "english_name": "Amfibia",
+   "qid": "Q485071",
+   "english_name": "analog watch",
    "vocabulary": [
-    "Amfibia",
-    "Amphibia (reloj)"
+    "analog watch",
+    "analogue watch",
+    "reloj analógico",
+    "reloj de esfera"
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Watch (non-smart)",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
-   "region": "European"
+   "region": "Unknown"
   },
   {
    "qid": "Q122950462",
@@ -7376,6 +7929,23 @@
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q4774914",
+   "english_name": "antimagnetic watch",
+   "vocabulary": [
+    "ISO 764",
+    "antimagnetic watch",
+    "reloj antimagnético",
+    "montre antimagnétique",
+    "Relógio antimagnético",
+    "reloj resistente al magnetismo"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Global"
@@ -7487,6 +8057,18 @@
    "region": "Global"
   },
   {
+   "qid": "Q109001436",
+   "english_name": "Boule de Genève",
+   "vocabulary": [
+    "Boule de Genève"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
    "qid": "Q14125",
    "english_name": "bow tie",
    "vocabulary": [
@@ -7522,6 +8104,19 @@
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q4955692",
+   "english_name": "Braille watch",
+   "vocabulary": [
+    "Braille watch",
+    "Montre Braille"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Global"
@@ -7584,19 +8179,6 @@
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Global"
-  },
-  {
-   "qid": "Q59506760",
-   "english_name": "Carolina Lemke",
-   "vocabulary": [
-    "Carolina Lemke",
-    "Carolina Lemke Berlin"
-   ],
-   "dzirent_category": "Accessories",
-   "dzirent_item_type": "Sunglasses",
-   "dzirent_garment_type": "one_size",
-   "allowed": "allowed",
-   "region": "Middle Eastern"
   },
   {
    "qid": "Q5070157",
@@ -7836,14 +8418,26 @@
    "qid": "Q5801066",
    "english_name": "decenario",
    "vocabulary": [
-    "Decenario",
-    "decenario"
+    "decenario",
+    "Decenario"
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Latin American"
+  },
+  {
+   "qid": "Q818567",
+   "english_name": "Deck Watches",
+   "vocabulary": [
+    "Deck Watches"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
   },
   {
    "qid": "Q126991311",
@@ -7865,6 +8459,18 @@
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Handbag",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q125454714",
+   "english_name": "digital watch",
+   "vocabulary": [
+    "digital watch"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Global"
@@ -8019,6 +8625,23 @@
    "region": "Global"
   },
   {
+   "qid": "Q5357672",
+   "english_name": "Electric watch",
+   "vocabulary": [
+    "Electric watch",
+    "Electronic watch",
+    "montre électrique",
+    "reloj de pulsera eléctrico",
+    "montre à mouvement électrique",
+    "mouvement d'horlogerie électrique"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
    "qid": "Q7929",
    "english_name": "engagement ring",
    "vocabulary": [
@@ -8151,19 +8774,6 @@
    "region": "Latin American"
   },
   {
-   "qid": "Q124681243",
-   "english_name": "Galaxy Ring",
-   "vocabulary": [
-    "Galaxy Ring",
-    "Samsung Galaxy Ring"
-   ],
-   "dzirent_category": "Accessories",
-   "dzirent_item_type": "Costume jewelry",
-   "dzirent_garment_type": "one_size",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q16839772",
    "english_name": "gel bracelet",
    "vocabulary": [
@@ -8213,6 +8823,20 @@
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q5514343",
+   "english_name": "GPS watch",
+   "vocabulary": [
+    "GPS watch",
+    "reloj GPS",
+    "montre GPS"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Global"
@@ -8341,8 +8965,8 @@
    "qid": "Q1674989",
    "english_name": "It Bag",
    "vocabulary": [
-    "It bag",
-    "It Bag"
+    "It Bag",
+    "It bag"
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Handbag",
@@ -8396,20 +9020,6 @@
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
-   "dzirent_garment_type": "one_size",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q61703243",
-   "english_name": "Junghans Mega",
-   "vocabulary": [
-    "Junghans Mega",
-    "Junghans Mega 2",
-    "Model-Nr.  025/4103"
-   ],
-   "dzirent_category": "Accessories",
-   "dzirent_item_type": "Watch (non-smart)",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Global"
@@ -8514,18 +9124,6 @@
    "region": "East Asian"
   },
   {
-   "qid": "Q16034580",
-   "english_name": "Lady Dior",
-   "vocabulary": [
-    "Lady Dior"
-   ],
-   "dzirent_category": "Accessories",
-   "dzirent_item_type": "Handbag",
-   "dzirent_garment_type": "one_size",
-   "allowed": "allowed",
-   "region": "European"
-  },
-  {
    "qid": "Q111700957",
    "english_name": "Langton Down brooch",
    "vocabulary": [
@@ -8598,6 +9196,37 @@
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q109339596",
+   "english_name": "luxury watch",
+   "vocabulary": [
+    "luxury watch",
+    "montre de luxe"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q3103207",
+   "english_name": "mechanical watch",
+   "vocabulary": [
+    "reloj mecanico",
+    "reloj mecánico",
+    "mechanical watch",
+    "montre mécanique",
+    "compositon d'une montre mecanique",
+    "compositon D'une Montre Mécanique",
+    "composition d'une montre mécanique"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Global"
@@ -8765,18 +9394,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q51593195",
-   "english_name": "Nelsonic Game Watch",
-   "vocabulary": [
-    "Nelsonic Game Watch"
-   ],
-   "dzirent_category": "Accessories",
-   "dzirent_item_type": "Watch (non-smart)",
-   "dzirent_garment_type": "one_size",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q140914334",
    "english_name": "noisy pendants",
    "vocabulary": [
@@ -8793,18 +9410,6 @@
    "english_name": "Nordic crown-shaped chokers",
    "vocabulary": [
     "Nordic crown-shaped chokers"
-   ],
-   "dzirent_category": "Accessories",
-   "dzirent_item_type": "Costume jewelry",
-   "dzirent_garment_type": "one_size",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q125877227",
-   "english_name": "Oura Ring",
-   "vocabulary": [
-    "Oura Ring"
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
@@ -8942,6 +9547,25 @@
    "region": "Global"
   },
   {
+   "qid": "Q849813",
+   "english_name": "pocket watch",
+   "vocabulary": [
+    "pocketwatch",
+    "pocket watch",
+    "montre gousset",
+    "montre à gousset",
+    "relógio de bolso",
+    "montre de gousset",
+    "reloj de bolsillo",
+    "reloj de faltriquera"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
    "qid": "Q7208474",
    "english_name": "poison ring",
    "vocabulary": [
@@ -9074,18 +9698,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q137289004",
-   "english_name": "Ray-Ban Aviator",
-   "vocabulary": [
-    "Ray-Ban Aviator"
-   ],
-   "dzirent_category": "Accessories",
-   "dzirent_item_type": "Sunglasses",
-   "dzirent_garment_type": "one_size",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q10650794",
    "english_name": "relief fibula",
    "vocabulary": [
@@ -9124,8 +9736,8 @@
     "anéis",
     "bague",
     "Anilio",
-    "anillo",
     "Anillo",
+    "anillo",
     "Anilyo",
     "anneau",
     "bizimu",
@@ -9319,6 +9931,22 @@
    "region": "Global"
   },
   {
+   "qid": "Q7499877",
+   "english_name": "shock resistant watch",
+   "vocabulary": [
+    "shock resistant",
+    "reloj antichoque",
+    "shock resistant watch",
+    "reloj resistente a golpes",
+    "reloj resistente a choques"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
    "qid": "Q2387838",
    "english_name": "signet ring",
    "vocabulary": [
@@ -9330,6 +9958,20 @@
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q16698271",
+   "english_name": "Skeleton watch",
+   "vocabulary": [
+    "Skeleton watch",
+    "Reloj esqueleto",
+    "Montre squelette"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Global"
@@ -9398,6 +10040,22 @@
    "region": "Global"
   },
   {
+   "qid": "Q7555818",
+   "english_name": "Solar-powered watch",
+   "vocabulary": [
+    "reloj solar",
+    "reloj fotovoltáico",
+    "Solar-powered watch",
+    "reloj con energía solar",
+    "reloj alimentado con energía solar"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
    "qid": "Q111699862",
    "english_name": "square-headed brooch",
    "vocabulary": [
@@ -9406,6 +10064,18 @@
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q126697562",
+   "english_name": "stem-winder",
+   "vocabulary": [
+    "stem-winder"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Global"
@@ -9553,6 +10223,21 @@
    "region": "Global"
   },
   {
+   "qid": "Q25325320",
+   "english_name": "The Vacheron Constantin Reference 57260",
+   "vocabulary": [
+    "Reference 57260",
+    "Vacheron Constantin 57260",
+    "Vacheron Constantin Referencia 57260",
+    "The Vacheron Constantin Reference 57260"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
    "qid": "Q111710697",
    "english_name": "thistle brooch",
    "vocabulary": [
@@ -9686,6 +10371,27 @@
    "region": "European"
   },
   {
+   "qid": "Q178794",
+   "english_name": "watch",
+   "vocabulary": [
+    "relo",
+    "reloj",
+    "Watch",
+    "watch",
+    "montre",
+    "relógio",
+    "Watches",
+    "chronometer",
+    "reloj de mano",
+    "saa ya mkononi"
+   ],
+   "dzirent_category": "Accessories",
+   "dzirent_item_type": "Watch (non-smart)",
+   "dzirent_garment_type": "one_size",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
    "qid": "Q1386008",
    "english_name": "watch strap",
    "vocabulary": [
@@ -9789,24 +10495,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q420953",
-   "english_name": "Air Jordan",
-   "vocabulary": [
-    "Jordan",
-    "Jordans",
-    "Air Jordan",
-    "Nike Air Jordan",
-    "Air Jordan shoes",
-    "Air Jordan product",
-    "Air Jordan product line"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "none_fits",
-   "allowed": "not_allowed",
-   "region": "Middle Eastern"
-  },
-  {
    "qid": "Q390210",
    "english_name": "aqal",
    "vocabulary": [
@@ -9847,8 +10535,8 @@
    "qid": "Q4842289",
    "english_name": "bahag",
    "vocabulary": [
-    "Bahag",
-    "bahag"
+    "bahag",
+    "Bahag"
    ],
    "dzirent_category": "not_applicable",
    "dzirent_item_type": null,
@@ -9861,8 +10549,8 @@
    "english_name": "Baja hoodie",
    "vocabulary": [
     "Baja hoodie",
-    "Poncho Baja",
     "poncho Baja",
+    "Poncho Baja",
     "surfer hoodie"
    ],
    "dzirent_category": "not_applicable",
@@ -9965,8 +10653,8 @@
    "qid": "Q1151995",
    "english_name": "beoseon",
    "vocabulary": [
-    "Beoseon",
-    "beoseon"
+    "beoseon",
+    "Beoseon"
    ],
    "dzirent_category": "not_applicable",
    "dzirent_item_type": null,
@@ -9988,19 +10676,6 @@
    "dzirent_garment_type": "trousers",
    "allowed": "not_allowed",
    "region": "Global"
-  },
-  {
-   "qid": "Q116875382",
-   "english_name": "BIG JOHN",
-   "vocabulary": [
-    "BIG JOHN",
-    "Big John (brand)"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "trousers",
-   "allowed": "not_allowed",
-   "region": "East Asian"
   },
   {
    "qid": "Q133270444",
@@ -10160,8 +10835,8 @@
    "qid": "Q13716",
    "english_name": "bra",
    "vocabulary": [
-    "bra",
     "Bra",
+    "bra",
     "sutiã",
     "sostén",
     "sutién",
@@ -10184,8 +10859,8 @@
    "english_name": "bustier",
    "vocabulary": [
     "bustiê",
-    "Bustier",
     "bustier",
+    "Bustier",
     "bustiere"
    ],
    "dzirent_category": "not_applicable",
@@ -10243,6 +10918,25 @@
    "region": "Global"
   },
   {
+   "qid": "Q1767924",
+   "english_name": "Cantabrian albarcas",
+   "vocabulary": [
+    "abarca",
+    "abarcas",
+    "albarca",
+    "albarcas",
+    "Albarcas cantabras",
+    "Albarcas cántabras",
+    "Cantabrian albarcas",
+    "Albarca de Cantabria"
+   ],
+   "dzirent_category": "not_applicable",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "none_fits",
+   "allowed": "not_allowed",
+   "region": "European"
+  },
+  {
    "qid": "Q572240",
    "english_name": "chaperon",
    "vocabulary": [
@@ -10264,8 +10958,8 @@
     "shift",
     "smock",
     "Shalha",
-    "Chemise",
-    "chemise"
+    "chemise",
+    "Chemise"
    ],
    "dzirent_category": "not_applicable",
    "dzirent_item_type": null,
@@ -10420,8 +11114,8 @@
     "corps",
     "corse",
     "corsé",
-    "corset",
     "Corset",
+    "corset",
     "corsets",
     "corselet",
     "espartilho",
@@ -10711,20 +11405,6 @@
    "dzirent_garment_type": "none_fits",
    "allowed": "not_allowed",
    "region": "Unknown"
-  },
-  {
-   "qid": "Q8564894",
-   "english_name": "Fossil Wrist PDA",
-   "vocabulary": [
-    "AU5005",
-    "Fossil Abacus",
-    "Fossil Wrist PDA"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
-   "allowed": "not_allowed",
-   "region": "Global"
   },
   {
    "qid": "Q5508343",
@@ -11028,8 +11708,8 @@
    "vocabulary": [
     "Poweriser",
     "Powerizer",
-    "Powerbocking",
     "powerbocking",
+    "Powerbocking",
     "bounce stilts",
     "spring stilts",
     "Jumping stilts",
@@ -11087,49 +11767,6 @@
    "dzirent_garment_type": "none_fits",
    "allowed": "not_allowed",
    "region": "Global"
-  },
-  {
-   "qid": "Q3237209",
-   "english_name": "Levi's 501",
-   "vocabulary": [
-    "501s",
-    "Levis 501",
-    "Levi's 501"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "trousers",
-   "allowed": "not_allowed",
-   "region": "Unknown"
-  },
-  {
-   "qid": "Q17641276",
-   "english_name": "LG G Watch R",
-   "vocabulary": [
-    "LG-W110",
-    "G watch r",
-    "LG G Watch R"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
-   "allowed": "not_allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q626713",
-   "english_name": "LG GD910",
-   "vocabulary": [
-    "GD910",
-    "LG GD910",
-    "LG-GD910",
-    "LG GD910 Tope de Gama"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
-   "allowed": "not_allowed",
-   "region": "Unknown"
   },
   {
    "qid": "Q1608687",
@@ -11237,8 +11874,8 @@
    "qid": "Q3302840",
    "english_name": "maxtlatl",
    "vocabulary": [
-    "Maxtlatl",
     "maxtlatl",
+    "Maxtlatl",
     "Tlalpilli"
    ],
    "dzirent_category": "not_applicable",
@@ -11258,18 +11895,6 @@
    "dzirent_garment_type": "none_fits",
    "allowed": "not_allowed",
    "region": "Global"
-  },
-  {
-   "qid": "Q17069007",
-   "english_name": "MetaWatch",
-   "vocabulary": [
-    "MetaWatch"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
-   "allowed": "not_allowed",
-   "region": "Unknown"
   },
   {
    "qid": "Q3311978",
@@ -11323,26 +11948,14 @@
    "qid": "Q6897014",
    "english_name": "mom jeans",
    "vocabulary": [
-    "mom jeans",
-    "Mom jeans"
+    "Mom jeans",
+    "mom jeans"
    ],
    "dzirent_category": "not_applicable",
    "dzirent_item_type": null,
    "dzirent_garment_type": "trousers",
    "allowed": "not_allowed",
    "region": "Global"
-  },
-  {
-   "qid": "Q116875248",
-   "english_name": "MOMOTARO JEANS",
-   "vocabulary": [
-    "MOMOTARO JEANS"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "trousers",
-   "allowed": "not_allowed",
-   "region": "East Asian"
   },
   {
    "qid": "Q1462535",
@@ -11358,38 +11971,14 @@
    "region": "Global"
   },
   {
-   "qid": "Q15972454",
-   "english_name": "Moto 360",
-   "vocabulary": [
-    "Moto 360"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
-   "allowed": "not_allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q6931588",
-   "english_name": "Mudd Jeans",
-   "vocabulary": [
-    "Mudd Jeans"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "trousers",
-   "allowed": "not_allowed",
-   "region": "North American"
-  },
-  {
    "qid": "Q1758403",
    "english_name": "negligee",
    "vocabulary": [
     "Neglige",
     "negligé",
     "Négligé",
-    "negligee",
     "Negligee",
+    "negligee",
     "Négligée",
     "peignoir",
     "Deshabille",
@@ -11405,8 +11994,8 @@
    "qid": "Q763606",
    "english_name": "nemes",
    "vocabulary": [
-    "Nemes",
     "nemes",
+    "Nemes",
     "Némès",
     "nemyss"
    ],
@@ -11444,18 +12033,6 @@
    "dzirent_category": "not_applicable",
    "dzirent_item_type": null,
    "dzirent_garment_type": "none_fits",
-   "allowed": "not_allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q15646506",
-   "english_name": "Omate TrueSmart",
-   "vocabulary": [
-    "Omate TrueSmart"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
    "allowed": "not_allowed",
    "region": "Global"
   },
@@ -11504,8 +12081,8 @@
     "Pantys",
     "sheers",
     "Collant",
-    "Collants",
     "collants",
+    "Collants",
     "pantihose",
     "pantyhose",
     "Pantyhose",
@@ -11520,18 +12097,6 @@
    "dzirent_garment_type": "none_fits",
    "allowed": "not_allowed",
    "region": "Global"
-  },
-  {
-   "qid": "Q477634",
-   "english_name": "Pebble",
-   "vocabulary": [
-    "Pebble"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
-   "allowed": "not_allowed",
-   "region": "Unknown"
   },
   {
    "qid": "Q11164286",
@@ -11725,11 +12290,10 @@
    "region": "Global"
   },
   {
-   "qid": "Q14655737",
-   "english_name": "Samsung Galaxy Gear",
+   "qid": "Q7380451",
+   "english_name": "Ruputer",
    "vocabulary": [
-    "The watch",
-    "Samsung Galaxy Gear"
+    "Ruputer"
    ],
    "dzirent_category": "not_applicable",
    "dzirent_item_type": "none_fits",
@@ -11738,34 +12302,10 @@
    "region": "Global"
   },
   {
-   "qid": "Q15818108",
-   "english_name": "Samsung Gear",
+   "qid": "Q27890205",
+   "english_name": "Samsung Gear S3",
    "vocabulary": [
-    "Samsung Gear"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
-   "allowed": "not_allowed",
-   "region": "Unknown"
-  },
-  {
-   "qid": "Q15802512",
-   "english_name": "Samsung Gear 2",
-   "vocabulary": [
-    "Samsung Gear 2"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
-   "allowed": "not_allowed",
-   "region": "Unknown"
-  },
-  {
-   "qid": "Q17291408",
-   "english_name": "Samsung Gear Live",
-   "vocabulary": [
-    "Samsung Gear Live"
+    "Samsung Gear S3"
    ],
    "dzirent_category": "not_applicable",
    "dzirent_item_type": "none_fits",
@@ -11880,19 +12420,6 @@
    "dzirent_category": "not_applicable",
    "dzirent_item_type": null,
    "dzirent_garment_type": "none_fits",
-   "allowed": "not_allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q4451540",
-   "english_name": "Sony SmartWatch",
-   "vocabulary": [
-    "Sony SmartWatch",
-    "Sony Smart Watch"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
    "allowed": "not_allowed",
    "region": "Global"
   },
@@ -12210,8 +12737,8 @@
    "qid": "Q1520055",
    "english_name": "valenki",
    "vocabulary": [
-    "Valenki",
     "valenki",
+    "Valenki",
     "valenko"
    ],
    "dzirent_category": "not_applicable",
@@ -12232,18 +12759,6 @@
    "dzirent_garment_type": "trousers",
    "allowed": "not_allowed",
    "region": "Global"
-  },
-  {
-   "qid": "Q8063312",
-   "english_name": "ZYPAD",
-   "vocabulary": [
-    "ZYPAD"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
-   "allowed": "not_allowed",
-   "region": "Unknown"
   }
  ]
 }

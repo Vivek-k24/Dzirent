@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 """
-fetch_wikidata.py (D1b; D1c added cut A's exclusion roots and cut B's skipped class)
+fetch_wikidata.py (D1b; D1c added cut A's exclusion roots and cut B's skipped class; D2 added the
+watch root, the excluded instance-of classes and the keep list)
 Collects Dzirent's clothing types from Wikidata in cached steps:
 
-1. Roots: every root, exclusion root, skipped class, country class and launch type in specs.py is resolved by
-   label search (wbsearchentities) and checked with wbgetentities; any label or description
-   that doesn't match stops the run. D1's launch QIDs are checked the same way. The result is
+1. Roots: every root, exclusion root, excluded instance-of class, skipped class, country class
+   and launch type in specs.py is resolved by label search (wbsearchentities) and checked with
+   wbgetentities; any label or description that doesn't match stops the run. D1's launch QIDs are
+   checked the same way, and each keep-list type by its QID and English label. The result is
    recorded in taxonomy/roots.json.
 2. Crawl: "subclass of" (P279) below each root, one SPARQL query per root with explicit hop
    paths (wdt:P279, wdt:P279/wdt:P279, ...; never P279*): 1-4 hops below a positive root,
    1-2 below a banned root.
 3. Details (wbgetentities) for each crawled item with a Commons category, an image or an
    English Wikipedia article, and for every launch type.
-4. Ancestors: which exclusion, banned and positive roots each of those items is under
-   (P279* or P31/P279*).
-5. English labels of the parents, countries and cultures they name, and the classes of each
-   country of origin.
+4. Ancestors: which exclusion, banned and positive roots and excluded instance-of classes each
+   of those items is under (P279* or P31/P279*).
+5. English labels of the parents, classes (P31), countries and cultures they name, and the
+   classes of each country of origin.
 
 Writes taxonomy/raw/fetched.json for build_taxonomy.py. Every response is cached in
 taxonomy/raw/, so a second run makes no requests. No images are downloaded.
@@ -99,9 +101,11 @@ def resolve(client: Client, spec: dict) -> dict:
 
 def resolve_all(client: Client) -> dict:
     errors: list[str] = []
-    out: dict = {"positive": [], "banned": [], "exclude": [], "skip": [], "country_classes": [], "launch": []}
+    out: dict = {"positive": [], "banned": [], "exclude": [], "instance_of": [], "skip": [], "country_classes": [],
+                 "launch": [], "keep": []}
     groups = [("positive", specs.POSITIVE_ROOTS), ("banned", specs.BANNED_ROOTS), ("exclude", specs.EXCLUDE_ROOTS),
-              ("skip", specs.SKIP_UNDER_CLOTHING), ("country_classes", specs.COUNTRY_CLASSES)]
+              ("instance_of", specs.EXCLUDE_INSTANCE_OF), ("skip", specs.SKIP_UNDER_CLOTHING),
+              ("country_classes", specs.COUNTRY_CLASSES)]
     for group, spec_list in groups:
         for spec in spec_list:
             try:
@@ -124,6 +128,15 @@ def resolve_all(client: Client) -> dict:
         if "d1_qid" in spec and d1_ok:
             errors.append(f"{spec['concept']}: D1's {d1} passes the check, so replacing it isn't needed")
         out["launch"].append(entry)
+    # The keep list (D2): each type by its QID, which must carry the English label recorded with it.
+    keep_ents = client.entities([k["qid"] for k in specs.KEEP_LIST], "labels|descriptions|aliases", "en", "verify")
+    for spec in specs.KEEP_LIST:
+        ent = keep_ents.get(spec["qid"], {})
+        label = en_text(ent, "labels")
+        if label.casefold() != spec["label"].casefold():
+            errors.append(f"keep list {spec['qid']}: English label is '{label}', expected '{spec['label']}'")
+            continue
+        out["keep"].append({"qid": spec["qid"], "label": label, "description": en_text(ent, "descriptions")})
     if errors:
         for e in errors:
             logger.error(e)
@@ -235,9 +248,10 @@ def main() -> None:
     roots = resolve_all(client)
     ROOTS_JSON.write_text(json.dumps(roots, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     failed_d1 = [l for l in roots["launch"] if l["d1_check"] == "fail"]
-    logger.info("Roots and launch types resolved: %d positive, %d banned, %d exclusion, %d skipped, %d launch "
-                "(%d of D1's launch QIDs failed and were replaced).", len(roots["positive"]), len(roots["banned"]),
-                len(roots["exclude"]), len(roots["skip"]), len(roots["launch"]), len(failed_d1))
+    logger.info("Roots and launch types resolved: %d positive, %d banned, %d exclusion, %d instance-of, %d skipped, "
+                "%d launch (%d of D1's launch QIDs failed and were replaced), %d on the keep list.",
+                len(roots["positive"]), len(roots["banned"]), len(roots["exclude"]), len(roots["instance_of"]),
+                len(roots["skip"]), len(roots["launch"]), len(failed_d1), len(roots["keep"]))
     if args.roots_only:
         return
 
@@ -249,7 +263,7 @@ def main() -> None:
 
     # The quality floor, from the crawl's flags: details are fetched only for items that pass.
     root_qids = {r["qid"] for g in ("positive", "banned") for r in roots[g]}
-    launch_qids = {l["qid"] for l in roots["launch"]}
+    launch_qids = {l["qid"] for l in roots["launch"]} | {k["qid"] for k in roots["keep"]}
     candidates, below_floor = set(root_qids | launch_qids), {}
     for key, c in crawls.items():
         for q, a in c["nodes"].items():
@@ -266,7 +280,7 @@ def main() -> None:
     entities = {q: trim(e) for q, e in raw_entities.items() if "missing" not in e}
     logger.info("Details for %d classes.", len(entities))
 
-    targets = sorted({r["qid"] for g in ("exclude", "banned", "positive") for r in roots[g]}, key=qid_num)
+    targets = sorted({r["qid"] for g in ("exclude", "banned", "positive", "instance_of") for r in roots[g]}, key=qid_num)
     rows = client.sparql_batched(sorted(entities, key=qid_num), lambda b: ancestor_query(b, targets),
                                  f"ancestors_{digest(targets)[:8]}", ANCESTOR_BATCH)
     ancestors: dict[str, dict[str, str]] = defaultdict(dict)
@@ -279,7 +293,7 @@ def main() -> None:
     labels = {q: a["label"] for c in crawls.values() for q, a in c["nodes"].items() if a["label"]}
     labels.update({r["qid"]: r["label"] for g in roots.values() for r in g})
     labels.update({q: e["labels"].get("en", "") for q, e in entities.items()})
-    referenced = {v for e in entities.values() for p in ("P279", "P495", "P2596") for v in e["claims"][p]}
+    referenced = {v for e in entities.values() for p in ("P279", "P31", "P495", "P2596") for v in e["claims"][p]}
     missing = sorted((q for q in referenced if q.startswith("Q") and not labels.get(q)), key=qid_num)
     for q, e in client.entities(missing, "labels|descriptions", "en", "labels").items():
         labels[q] = en_text(e, "labels")
