@@ -3,3 +3,12 @@ charset-normalizer==3.5.2
 idna==3.20
 requests==2.32.3
 urllib3==2.8.0
+# D2/D3: Pillow for the label-check page's thumbnails, pytest (with what it needs) for tests/.
+# The same versions as services/vision and its CI job.
+pillow==13.0.0
+pytest==8.4.2
+iniconfig==2.1.0
+pluggy==1.6.0
+packaging==26.3
+Pygments==2.21.0
+colorama==0.4.6; sys_platform == "win32"
