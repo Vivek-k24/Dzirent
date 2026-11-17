@@ -114,7 +114,7 @@ jobs:
       - run: python -m pytest -m "not model" tests
 
   vision-data:
-    name: vision-data (clothing type list, no network)
+    name: vision-data (clothing type list and photo tools, no network)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     defaults:
@@ -132,6 +132,10 @@ jobs:
       # The committed files only: the Wikidata cache (taxonomy/raw/) isn't in the repo, so no --cache.
       - name: Validate taxonomy.json, roots.json, review.csv and vocabulary.json
         run: python taxonomy/validate.py
+      # D2/D3: fetch_commons.py and review_server.py on recorded responses (tests/fixtures/); the
+      # tests fail on any connection that isn't to this machine.
+      - name: Test the Commons downloader, the label-check page and the instance-of rule
+        run: python -m pytest -q tests
 
   database:
     name: database (local backend, pgTAP, integration)

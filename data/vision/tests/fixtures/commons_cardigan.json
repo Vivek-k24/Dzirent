@@ -1,0 +1,828 @@
+{
+ "recorded": "Wikimedia Commons API, 2026-11-17, through fetch_commons.py's cache (images/raw/). The cardigan type's P18 file, its category, its first subcategory and that subcategory's files, trimmed to a few pages each with continuation removed; the category listing also carries six real pages from other categories that the filters must refuse (TIFF, SVG, GIF, PDF, a short side under 300 px, no machine-readable license).",
+ "row": {
+  "qid": "Q877140",
+  "english_name": "cardigan",
+  "dzirent_category": "Everyday",
+  "allowed": "allowed",
+  "sheet_group": "launch",
+  "keep": "yes",
+  "image": "Sesame Full View.jpg",
+  "commons_category": "Cardigans"
+ },
+ "subcategory": "Category:Lusekofte",
+ "fileinfo": {
+  "batchcomplete": true,
+  "query": {
+   "pages": [
+    {
+     "pageid": 3593567,
+     "ns": 6,
+     "title": "File:Sesame Full View.jpg",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 156995,
+       "width": 598,
+       "height": 1000,
+       "thumburl": "https://upload.wikimedia.org/wikipedia/commons/a/a8/Sesame_Full_View.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+       "thumbwidth": 1280,
+       "thumbheight": 2140,
+       "thumbattribs": {
+        "src": "https://upload.wikimedia.org/wikipedia/commons/a/a8/Sesame_Full_View.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 2140
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/Sesame_Full_View.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Sesame_Full_View.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/3593567",
+       "sha1": "b9327829769180127d13a0bf0b8681ece0170580",
+       "extmetadata": {
+        "Credit": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/96466040@N00/371521511\">Flickr</a>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/96466040@N00\">Lauren \"Lolly\" Weinhold</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY 2.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://creativecommons.org/licenses/by/2.0",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-2.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "category": {
+  "batchcomplete": true,
+  "query": {
+   "pages": [
+    {
+     "pageid": 1363495,
+     "ns": 6,
+     "title": "File:Norway knit.jpg",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 68992,
+       "width": 378,
+       "height": 283,
+       "thumburl": "https://upload.wikimedia.org/wikipedia/commons/5/54/Norway_knit.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+       "thumbwidth": 1280,
+       "thumbheight": 958,
+       "thumbattribs": {
+        "src": "https://upload.wikimedia.org/wikipedia/commons/5/54/Norway_knit.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 958
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/5/54/Norway_knit.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Norway_knit.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/1363495",
+       "sha1": "bd8acc03b758f61c2b51d09c55d51b36a20559c6",
+       "extmetadata": {
+        "LicenseShortName": {
+         "value": "CC BY-SA 3.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "http://creativecommons.org/licenses/by-sa/3.0/",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-sa-3.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 2384877,
+     "ns": 6,
+     "title": "File:Fred Rogers sweater.jpg",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 1439903,
+       "width": 2048,
+       "height": 1536,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Fred_Rogers_sweater.jpg/1280px-Fred_Rogers_sweater.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 960,
+       "responsiveUrls": {
+        "2": "https://upload.wikimedia.org/wikipedia/commons/4/43/Fred_Rogers_sweater.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+       },
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Fred_Rogers_sweater.jpg/1280px-Fred_Rogers_sweater.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 960,
+        "srcset": "https://upload.wikimedia.org/wikipedia/commons/4/43/Fred_Rogers_sweater.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/4/43/Fred_Rogers_sweater.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Fred_Rogers_sweater.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/2384877",
+       "sha1": "00ed1dfefad5108e8e5ffc82ba3ce4a49052d206",
+       "extmetadata": {
+        "Credit": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/96463101@N00/235677058\">Flickr</a>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/96463101@N00\">Rudi Riet</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY-SA 2.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://creativecommons.org/licenses/by-sa/2.0",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-sa-2.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 3445286,
+     "ns": 6,
+     "title": "File:Cardigan, sweater.JPG",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 2182633,
+       "width": 2171,
+       "height": 2119,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c1/Cardigan%2C_sweater.JPG/1280px-Cardigan%2C_sweater.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 1249,
+       "responsiveUrls": {
+        "2": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Cardigan%2C_sweater.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+       },
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c1/Cardigan%2C_sweater.JPG/1280px-Cardigan%2C_sweater.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 1249,
+        "srcset": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Cardigan%2C_sweater.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Cardigan%2C_sweater.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Cardigan,_sweater.JPG",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/3445286",
+       "sha1": "51c2233896cafe0b5a712fea62b26e987e88df33",
+       "extmetadata": {
+        "Credit": {
+         "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a href=\"//commons.wikimedia.org/wiki/User:Rovdyr\" title=\"User:Rovdyr\">Rovdyr</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY 2.5",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://creativecommons.org/licenses/by/2.5",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-2.5",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 3584306,
+     "ns": 6,
+     "title": "File:Aran cardigan.jpg",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 383620,
+       "width": 1024,
+       "height": 768,
+       "thumburl": "https://upload.wikimedia.org/wikipedia/commons/6/65/Aran_cardigan.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+       "thumbwidth": 1280,
+       "thumbheight": 960,
+       "thumbattribs": {
+        "src": "https://upload.wikimedia.org/wikipedia/commons/6/65/Aran_cardigan.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 960
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/6/65/Aran_cardigan.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Aran_cardigan.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/3584306",
+       "sha1": "93dae431c37c1d4edbbbf4a8918534b4dc62e441",
+       "extmetadata": {
+        "Credit": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/48744022@N00/2160124070/\">Aran Sweater</a>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/48744022@N00\">Lisa Dusseault</a> from USA",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY 2.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://creativecommons.org/licenses/by/2.0",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-2.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 3610926,
+     "ns": 6,
+     "title": "File:Lusekofte.jpg",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 1375827,
+       "width": 1575,
+       "height": 1950,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/Lusekofte.jpg/1280px-Lusekofte.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 1585,
+       "responsiveUrls": {
+        "2": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Lusekofte.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+       },
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/Lusekofte.jpg/1280px-Lusekofte.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 1585,
+        "srcset": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Lusekofte.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Lusekofte.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Lusekofte.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/3610926",
+       "sha1": "ed4ea6aeb57962d5b2d7755807bd7cf7a8b68a14",
+       "extmetadata": {
+        "Credit": {
+         "value": "Self-made with <a href=\"https://en.wikipedia.org/wiki/Canon_EOS_300D\" class=\"extiw\" title=\"en:Canon EOS 300D\">Canon EOS 300D</a>.",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a href=\"//commons.wikimedia.org/wiki/User:Nbarth\" title=\"User:Nbarth\">Nils R. Barth</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "Public domain",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "License": {
+         "value": "pd",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 5311360,
+     "ns": 6,
+     "title": "File:Wp magic jacket front01.jpg",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 1999980,
+       "width": 2304,
+       "height": 3072,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7f/Wp_magic_jacket_front01.jpg/1280px-Wp_magic_jacket_front01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 1707,
+       "responsiveUrls": {
+        "2": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Wp_magic_jacket_front01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+       },
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7f/Wp_magic_jacket_front01.jpg/1280px-Wp_magic_jacket_front01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 1707,
+        "srcset": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Wp_magic_jacket_front01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Wp_magic_jacket_front01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Wp_magic_jacket_front01.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/5311360",
+       "sha1": "f98dadca46d60879f6c6c50d721e40055d8039a7",
+       "extmetadata": {
+        "Credit": {
+         "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a href=\"//commons.wikimedia.org/wiki/User:Jahn_Henne\" title=\"User:Jahn Henne\">Jahn Henne</a>.",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY-SA 3.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "http://creativecommons.org/licenses/by-sa/3.0/",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-sa-3.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 66694140,
+     "ns": 6,
+     "title": "File:Face detail, Faisal, King of Iraq - Emir of Hijaz LCCN2004679499.tiff",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 1690274,
+       "width": 1099,
+       "height": 1536,
+       "pagecount": 1,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a3/Face_detail%2C_Faisal%2C_King_of_Iraq_-_Emir_of_Hijaz_LCCN2004679499.tiff/lossy-page1-960px-Face_detail%2C_Faisal%2C_King_of_Iraq_-_Emir_of_Hijaz_LCCN2004679499.tiff.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 1789,
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a3/Face_detail%2C_Faisal%2C_King_of_Iraq_-_Emir_of_Hijaz_LCCN2004679499.tiff/lossy-page1-960px-Face_detail%2C_Faisal%2C_King_of_Iraq_-_Emir_of_Hijaz_LCCN2004679499.tiff.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 1789
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Face_detail%2C_Faisal%2C_King_of_Iraq_-_Emir_of_Hijaz_LCCN2004679499.tiff?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Face_detail,_Faisal,_King_of_Iraq_-_Emir_of_Hijaz_LCCN2004679499.tiff",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/66694140",
+       "sha1": "8161163780b15f9bb436cae9a8fe1a58cfc1b8dc",
+       "extmetadata": {
+        "Credit": {
+         "value": "<p>Library of Congress\n</p>\n<ul><li><i>Catalog:</i> <a rel=\"nofollow\" class=\"external free\" href=\"https://lccn.loc.gov/2004679499\">https://lccn.loc.gov/2004679499</a></li>\n<li><i>Image download:</i> <a rel=\"nofollow\" class=\"external free\" href=\"https://cdn.loc.gov/master/pnp/cph/3b00000/3b03000/3b03500/3b03523u.tif\">https://cdn.loc.gov/master/pnp/cph/3b00000/3b03000/3b03500/3b03523u.tif</a></li>\n<li><i>Original url:</i> <a rel=\"nofollow\" class=\"external free\" href=\"https://www.loc.gov/pictures/item/2004679499/\">https://www.loc.gov/pictures/item/2004679499/</a></li></ul>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "George Grantham Bain Collection",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "Public domain",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "License": {
+         "value": "pd",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/tiff"
+      }
+     ]
+    },
+    {
+     "pageid": 65938337,
+     "ns": 6,
+     "title": "File:A Cool And Calm Cartoon Businesswoman.svg",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 133607,
+       "width": 440,
+       "height": 1056,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/A_Cool_And_Calm_Cartoon_Businesswoman.svg/1280px-A_Cool_And_Calm_Cartoon_Businesswoman.svg.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 3072,
+       "responsiveUrls": {
+        "2": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/A_Cool_And_Calm_Cartoon_Businesswoman.svg/3840px-A_Cool_And_Calm_Cartoon_Businesswoman.svg.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+       },
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/A_Cool_And_Calm_Cartoon_Businesswoman.svg/1280px-A_Cool_And_Calm_Cartoon_Businesswoman.svg.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 3072,
+        "srcset": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/A_Cool_And_Calm_Cartoon_Businesswoman.svg/3840px-A_Cool_And_Calm_Cartoon_Businesswoman.svg.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail 2x"
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/b/bc/A_Cool_And_Calm_Cartoon_Businesswoman.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:A_Cool_And_Calm_Cartoon_Businesswoman.svg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/65938337",
+       "sha1": "56c2c395c80f13087060b93129e838928f034a60",
+       "extmetadata": {
+        "Credit": {
+         "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://vectortoons.com/\">Clip Art by Vector Toons</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY-SA 4.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://creativecommons.org/licenses/by-sa/4.0",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-sa-4.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/svg+xml"
+      }
+     ]
+    },
+    {
+     "pageid": 75902485,
+     "ns": 6,
+     "title": "File:Frau im Ballkleid.gif",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 55933,
+       "width": 1057,
+       "height": 1294,
+       "thumburl": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Frau_im_Ballkleid.gif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+       "thumbwidth": 1280,
+       "thumbheight": 1567,
+       "thumbattribs": {
+        "src": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Frau_im_Ballkleid.gif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 1567
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Frau_im_Ballkleid.gif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Frau_im_Ballkleid.gif",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/75902485",
+       "sha1": "fa6cf60d5e942c036503888b7d21b279f0f457d4",
+       "extmetadata": {
+        "Credit": {
+         "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:KlausN.1976&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:KlausN.1976 (page does not exist)\">Klaus Nürnberger</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY-SA 4.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://creativecommons.org/licenses/by-sa/4.0",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-sa-4.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/gif"
+      }
+     ]
+    },
+    {
+     "pageid": 34947560,
+     "ns": 6,
+     "title": "File:CME DPE suit fact sheet.pdf",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 200328,
+       "width": 1275,
+       "height": 1650,
+       "pagecount": 1,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/CME_DPE_suit_fact_sheet.pdf/page1-960px-CME_DPE_suit_fact_sheet.pdf.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 1656,
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/CME_DPE_suit_fact_sheet.pdf/page1-960px-CME_DPE_suit_fact_sheet.pdf.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 1656
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/8/8f/CME_DPE_suit_fact_sheet.pdf?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:CME_DPE_suit_fact_sheet.pdf",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/34947560",
+       "sha1": "00b81b79f631393236c80e7d9aba958a673c8a7d",
+       "extmetadata": {
+        "Credit": {
+         "value": "<a rel=\"nofollow\" class=\"external free\" href=\"http://www.cma.army.mil/fndocumentviewer.aspx?docid=003676566\">http://www.cma.army.mil/fndocumentviewer.aspx?docid=003676566</a>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "U.S. Army Chemical Materials Agency",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "Public domain",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "License": {
+         "value": "pd",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "application/pdf"
+      }
+     ]
+    },
+    {
+     "pageid": 147263,
+     "ns": 6,
+     "title": "File:Elamite worshipper.jpg",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 31081,
+       "width": 220,
+       "height": 470,
+       "thumburl": "https://upload.wikimedia.org/wikipedia/commons/5/51/Elamite_worshipper.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+       "thumbwidth": 1280,
+       "thumbheight": 2735,
+       "thumbattribs": {
+        "src": "https://upload.wikimedia.org/wikipedia/commons/5/51/Elamite_worshipper.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 2735
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/5/51/Elamite_worshipper.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Elamite_worshipper.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/147263",
+       "sha1": "3b91ff312778179b6672f78b7f1fcce336233634",
+       "extmetadata": {
+        "Credit": {
+         "value": "English-speaking Wikipedia",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a href=\"https://en.wikipedia.org/wiki/User:Amir85\" class=\"extiw\" title=\"en:User:Amir85\">en:User:Amir85</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY-SA 3.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "http://creativecommons.org/licenses/by-sa/3.0/",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-sa-3.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 51432147,
+     "ns": 6,
+     "title": "File:Launch and entry suits hang in readiness for the STS-111 crew (5135053006).jpg",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 263282,
+       "width": 1536,
+       "height": 1008,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f0/Launch_and_entry_suits_hang_in_readiness_for_the_STS-111_crew_%285135053006%29.jpg/1280px-Launch_and_entry_suits_hang_in_readiness_for_the_STS-111_crew_%285135053006%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 840,
+       "responsiveUrls": {
+        "2": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Launch_and_entry_suits_hang_in_readiness_for_the_STS-111_crew_%285135053006%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+       },
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f0/Launch_and_entry_suits_hang_in_readiness_for_the_STS-111_crew_%285135053006%29.jpg/1280px-Launch_and_entry_suits_hang_in_readiness_for_the_STS-111_crew_%285135053006%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 840,
+        "srcset": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Launch_and_entry_suits_hang_in_readiness_for_the_STS-111_crew_%285135053006%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Launch_and_entry_suits_hang_in_readiness_for_the_STS-111_crew_%285135053006%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Launch_and_entry_suits_hang_in_readiness_for_the_STS-111_crew_(5135053006).jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/51432147",
+       "sha1": "6b0fdcdce999d92bd3ad2213479002eeb91c5e9d",
+       "extmetadata": {
+        "Credit": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/nasacommons/5135053006/\">Launch and entry suits hang in readiness for the STS-111 crew</a>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/44494372@N05\">NASA on The Commons</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "No restrictions",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://www.flickr.com/commons/usage/",
+         "source": "commons-desc-page"
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "subcats": {
+  "batchcomplete": true,
+  "query": {
+   "categorymembers": [
+    {
+     "pageid": 26346735,
+     "ns": 14,
+     "title": "Category:Lusekofte"
+    }
+   ]
+  }
+ },
+ "subcategory_files": {
+  "batchcomplete": true,
+  "query": {
+   "pages": [
+    {
+     "pageid": 3477666,
+     "ns": 6,
+     "title": "File:FritzSolveigGutt02Just.jpg",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 96093,
+       "width": 781,
+       "height": 530,
+       "thumburl": "https://upload.wikimedia.org/wikipedia/commons/d/dc/FritzSolveigGutt02Just.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+       "thumbwidth": 1280,
+       "thumbheight": 869,
+       "thumbattribs": {
+        "src": "https://upload.wikimedia.org/wikipedia/commons/d/dc/FritzSolveigGutt02Just.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 869
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/d/dc/FritzSolveigGutt02Just.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:FritzSolveigGutt02Just.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/3477666",
+       "sha1": "ee1f10be2e3ef1bee01386c019e7e77c96018981",
+       "extmetadata": {
+        "Credit": {
+         "value": "Photo owned by Solveig Askjem, sent by e-mail from Ane Vallevik Håbjørg, editor Cappelen, Damm - 2008-01-30",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "Solveig Askjem. Sent to, and uploaded by <a href=\"//commons.wikimedia.org/wiki/User:Friman\" title=\"User:Friman\">User:Friman</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY-SA 3.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://creativecommons.org/licenses/by-sa/3.0",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-sa-3.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 5413639,
+     "ns": 6,
+     "title": "File:Bundesarchiv Bild 101I-759-0141-29A, Norwegen, Soldat und Kinder mit Zeitung.jpg",
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 63712,
+       "width": 548,
+       "height": 800,
+       "thumburl": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Bundesarchiv_Bild_101I-759-0141-29A%2C_Norwegen%2C_Soldat_und_Kinder_mit_Zeitung.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+       "thumbwidth": 1280,
+       "thumbheight": 1869,
+       "thumbattribs": {
+        "src": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Bundesarchiv_Bild_101I-759-0141-29A%2C_Norwegen%2C_Soldat_und_Kinder_mit_Zeitung.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 1869
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Bundesarchiv_Bild_101I-759-0141-29A%2C_Norwegen%2C_Soldat_und_Kinder_mit_Zeitung.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Bundesarchiv_Bild_101I-759-0141-29A,_Norwegen,_Soldat_und_Kinder_mit_Zeitung.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/5413639",
+       "sha1": "88347a6ddf616becf2ca305fd69b1572a63126b3",
+       "extmetadata": {
+        "Artist": {
+         "value": "<div class=\"fn value\">\n<a href=\"//commons.wikimedia.org/w/index.php?title=Creator:Max_Ehlert&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Creator:Max Ehlert (page does not exist)\">Creator:Max Ehlert</a></div>",
+         "source": "commons-desc-page"
+        },
+        "Credit": {
+         "value": "<table style=\"width:100%; clear: both; text-align: center; margin: 0.5em auto; background-color: var(--background-color-interactive-subtle, #f9f9f9); color: inherit; border: 2px solid var(--border-color-muted, #e0e0e0);\" dir=\"ltr\" lang=\"en\" class=\"layouttemplate partnershiptemplate\" role=\"presentation\">\n<tbody><tr>\n<td style=\"width:100px;\"><span typeof=\"mw:File\"><a href=\"//commons.wikimedia.org/wiki/Commons:Bundesarchiv/en\" title=\"Logo Bundesarchiv\"><img alt=\"Logo Bundesarchiv\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/Bundesarchiv-Logo-ohne-Wappen.svg/120px-Bundesarchiv-Logo-ohne-Wappen.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"100\" height=\"83\" class=\"mw-file-element\" srcset=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/Bundesarchiv-Logo-ohne-Wappen.svg/250px-Bundesarchiv-Logo-ohne-Wappen.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail 2x\" data-file-width=\"240\" data-file-height=\"200\"></a></span>\n</td>\n<td>This image was provided to Wikimedia Commons by the <a rel=\"nofollow\" class=\"external text\" href=\"http://www.bundesarchiv.de/\">German Federal Archive</a> (Deutsches Bundesarchiv) as part of a <a href=\"//commons.wikimedia.org/wiki/Commons:Bundesarchiv\" title=\"Commons:Bundesarchiv\">cooperation project</a>. The German Federal Archive guarantees an authentic representation only using the originals (negative and/or positive), resp. the digitalization of the originals as provided by the <a rel=\"nofollow\" class=\"external text\" href=\"http://www.bild.bundesarchiv.de\">Digital Image Archive</a>.\n</td></tr></tbody></table>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY-SA 3.0 de",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://creativecommons.org/licenses/by-sa/3.0/de/deed.en",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-sa-3.0-de",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

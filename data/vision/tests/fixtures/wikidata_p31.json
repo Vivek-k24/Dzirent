@@ -1,0 +1,153 @@
+{
+ "recorded": "Wikidata, 2026-11-17: wbgetentities P31 claims and the ancestor SPARQL rows (P279* / P31/P279*), from taxonomy/raw/fetched.json",
+ "instance_of": [
+  {
+   "key": "fictional_object",
+   "qid": "Q15706911",
+   "label": "fictional object",
+   "description": "anything that may be observed or acted upon by a subject in fictional stories",
+   "search": "fictional object",
+   "rank": 1
+  },
+  {
+   "key": "fictional_clothing",
+   "qid": "Q62595215",
+   "label": "fictional clothing",
+   "description": "clothing that only exists in works of fiction",
+   "search": "fictional clothing",
+   "rank": 1
+  },
+  {
+   "key": "brand",
+   "qid": "Q431289",
+   "label": "brand",
+   "description": "identification for a good or service",
+   "search": "brand",
+   "rank": 3
+  },
+  {
+   "key": "trademark",
+   "qid": "Q167270",
+   "label": "trademark",
+   "description": "trade identifier of products or services",
+   "search": "trademark",
+   "rank": 1
+  },
+  {
+   "key": "product_model",
+   "qid": "Q10929058",
+   "label": "product model",
+   "description": "class of manufactured objects of similar design generally sold under a specific brand",
+   "search": "product model",
+   "rank": 2
+  },
+  {
+   "key": "product_line",
+   "qid": "Q811701",
+   "label": "model series",
+   "description": "a series of product models sold under a common product name or market identity, simultaneously or consecutively",
+   "search": "product line",
+   "rank": 1
+  },
+  {
+   "key": "archaeological_artefact",
+   "qid": "Q220659",
+   "label": "archaeological artefact",
+   "description": "something made or modified by humans and of archaeological interest",
+   "search": "archaeological artefact",
+   "rank": 1
+  }
+ ],
+ "items": {
+  "Q16034580": {
+   "label": "Lady Dior",
+   "P31": [
+    "Q10929058"
+   ],
+   "ancestors": {
+    "Q467505": "P279",
+    "Q11460": "P279",
+    "Q10929058": "P31"
+   },
+   "expected": "drop"
+  },
+  "Q1586189": {
+   "label": "Harrington jacket",
+   "P31": [
+    "Q167270"
+   ],
+   "ancestors": {
+    "Q11460": "P279",
+    "Q167270": "P31"
+   },
+   "expected": "drop"
+  },
+  "Q15818108": {
+   "label": "Samsung Gear",
+   "P31": [
+    "Q811701",
+    "Q19799938"
+   ],
+   "ancestors": {
+    "Q5362345": "P279",
+    "Q178794": "P279",
+    "Q11460": "P279",
+    "Q10929058": "P31",
+    "Q811701": "P31"
+   },
+   "expected": "drop"
+  },
+  "Q477634": {
+   "label": "Pebble",
+   "P31": [
+    "Q19799938"
+   ],
+   "ancestors": {
+    "Q5362345": "P279",
+    "Q178794": "P279",
+    "Q11460": "P279",
+    "Q10929058": "P31"
+   },
+   "expected": "drop"
+  },
+  "Q108940411": {
+   "label": "Belle's ball gown",
+   "P31": [
+    "Q62595215"
+   ],
+   "ancestors": {
+    "Q11460": "P279",
+    "Q62595215": "P31",
+    "Q15706911": "P31"
+   },
+   "expected": "drop"
+  },
+  "Q1243050": {
+   "label": "dress fastener",
+   "P31": [],
+   "ancestors": {
+    "Q220659": "P279",
+    "Q2142903": "P279",
+    "Q11460": "P279"
+   },
+   "expected": "keep"
+  },
+  "Q172827": {
+   "label": "sari",
+   "P31": [],
+   "ancestors": {
+    "Q11460": "P279"
+   },
+   "expected": "keep"
+  },
+  "Q849813": {
+   "label": "pocket watch",
+   "P31": [],
+   "ancestors": {
+    "Q178794": "P279",
+    "Q11460": "P279"
+   },
+   "expected": "keep"
+  }
+ }
+}
