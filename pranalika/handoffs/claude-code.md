@@ -104,7 +104,7 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
    - keep "maybe" was skipped and reported;
    - the validator then passed 8 of 8.
    - With two planted defects (a clothing-only type under uniform, and needs_owner on a non-launch row), checks 2 and 7 failed, as they should.
-6. **CI:** (added after the push).
+6. **CI:** [run 44023221048](https://github.com/Vivek-k24/Dzirent/actions/runs/44023221048) on `c3508b6`, green: contracts, website, android, vision, database and the new `vision-data`. Its log shows the pinned packages installed and "ALL 8 CHECKS PASSED" (1,731 rows, 57 launch, 812 in `vocabulary.json`).
 
 **Owner's next step:** Open data/vision/taxonomy/review.csv in Excel; check only the rows where needs_owner is yes (dzirent_category and allowed); save as CSV; tell the coordinator.
 
