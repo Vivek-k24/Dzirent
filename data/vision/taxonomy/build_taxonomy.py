@@ -378,6 +378,15 @@ def load_fetched() -> dict:
     return json.loads(FETCHED_JSON.read_text(encoding="utf-8"))
 
 
+def excluded_instance_of(p31: list[str], ancestors: dict[str, str], instance_qids) -> list[str]:
+    """The excluded classes (D2: brand, trademark, product model, ...) an item is an instance of:
+    a P31 value, or an ancestor reached through P31 (P31/P279*). Never "subclass of": Wikidata
+    files a few real types ("dress fastener") as subclasses of "archaeological artefact"."""
+    hits = {a for a, via in ancestors.items() if a in instance_qids and via == "P31"}
+    hits |= {c for c in p31 if c in instance_qids}
+    return sorted(hits, key=lambda q: int(q[1:]))
+
+
 def bfs_paths(crawl: dict, skip: set[str] = frozenset()) -> dict[str, list[str]]:
     """Shortest subclass-of path from the root to each crawled class (root first), within the
     crawl's hop limit and never through a class in `skip`."""
@@ -469,10 +478,7 @@ def build_taxonomy() -> int:
                 drop(q, "under an excluded root", ", ".join(f"{exclude_qids[a]} ({anc[a]})" for a in anc
                                                             if a in exclude_qids and a not in clothing_scope))
                 continue
-        # Instance of (P31, or P31 of a subclass), never subclass of: Wikidata files a few real
-        # types ("dress fastener") as subclasses of "archaeological artefact".
-        inst = sorted({a for a in anc if a in instance_qids and anc[a] == "P31"}
-                      | {c for c in e["claims"]["P31"] if c in instance_qids}, key=lambda x: int(x[1:]))
+        inst = excluded_instance_of(e["claims"]["P31"], anc, instance_qids)
         if inst:
             detail = ", ".join(f"{instance_qids[a]} (P31)" for a in inst)
             if is_launch:
@@ -630,7 +636,7 @@ def build_taxonomy() -> int:
                     vocab.add(name)
         if q in launch:
             vocab.update(launch[q]["fallback_names"])
-        vocabulary = sorted(vocab, key=lambda s: (len(s), s.lower()))
+        vocabulary = sorted(vocab, key=lambda s: (len(s), s.lower(), s))  # the last key makes reruns identical
         o = origin(q)
         image = e["claims"]["P18"][0] if e["claims"]["P18"] else None
         group = ("launch" if q in launch else "keep" if q in keep_list

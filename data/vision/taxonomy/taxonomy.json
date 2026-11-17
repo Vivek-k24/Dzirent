@@ -328,8 +328,8 @@
   "vocabulary": [
    "fato",
    "suit",
-   "terno",
    "Terno",
+   "terno",
    "traje",
    "complet",
    "Costard",
@@ -422,8 +422,8 @@
    "three-piece suit",
    "Costume trois pièces",
    "Costume trois-pieces",
-   "Costume trois-pièces",
-   "Costume Trois-pièces"
+   "Costume Trois-pièces",
+   "Costume trois-pièces"
   ],
   "priority": "launch",
   "keep": "yes",
@@ -589,8 +589,8 @@
    "calças",
    "slacks",
    "Suruali",
-   "pantalon",
    "Pantalon",
+   "pantalon",
    "pantalón",
    "trousers",
    "pantalones",
@@ -1672,8 +1672,8 @@
    "anarkali suit",
    "anarkali dress",
    "Anarkali lehenga",
-   "anarkali salwar suit",
-   "Anarkali Salwar Suit"
+   "Anarkali Salwar Suit",
+   "anarkali salwar suit"
   ],
   "priority": "launch",
   "keep": "yes",
@@ -2177,8 +2177,8 @@
   "region": "Latin American",
   "region_evidence": "D1 launch mapping",
   "vocabulary": [
-   "guayabera",
    "Guayabera",
+   "guayabera",
    "wedding shirt",
    "guayabera shirt"
   ],
@@ -2324,8 +2324,8 @@
    "Chosŏn-ot",
    "Joseon-ot",
    "chima jeogori",
-   "traditional korean dress",
    "Traditional Korean Dress",
+   "traditional korean dress",
    "Tradisyunal na damit ng Korea"
   ],
   "priority": "launch",
@@ -2423,8 +2423,8 @@
   "vocabulary": [
    "Hipil",
    "Huepil",
-   "huipil",
    "Huipil",
+   "huipil",
    "embroidered tunic",
    "embroidered huipil"
   ],
@@ -2669,8 +2669,8 @@
   "region_evidence": "text",
   "vocabulary": [
    "ghagra",
-   "lehenga",
    "Lehenga",
+   "lehenga",
    "lehengas",
    "lehenga choli"
   ],
@@ -2919,12 +2919,12 @@
   "region": "South Asian",
   "region_evidence": "text",
   "vocabulary": [
-   "sari",
    "Sari",
+   "sari",
    "sári",
    "saree",
-   "saris",
    "Saris",
+   "saris",
    "shari",
    "sarees",
    "draped sari"
@@ -3047,8 +3047,8 @@
   "vocabulary": [
    "salwar suit",
    "salwar kameej",
-   "salwar kameez",
    "Salwar kameez",
+   "salwar kameez",
    "shalwar kameez",
    "shalwar qameez"
   ],
@@ -3149,8 +3149,8 @@
   "region": "South Asian",
   "region_evidence": "D1 launch mapping",
   "vocabulary": [
-   "sherwani",
    "Sherwani",
+   "sherwani",
    "achkan coat",
    "traditional sherwani"
   ],
@@ -3651,8 +3651,8 @@
    "Jalda",
    "Palda",
    "Saias",
-   "skirt",
    "Skirt",
+   "skirt",
    "Babong",
    "Iskert",
    "Iskirt",
@@ -4582,8 +4582,8 @@
    "Necktie",
    "necktie",
    "long tie",
-   "neck tie",
    "Neck tie",
+   "neck tie",
    "Neck-tie",
    "Magkorbata",
    "Magkurbata",
@@ -5429,11 +5429,11 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "jean",
    "Jean",
+   "jean",
    "denim",
-   "jeans",
    "Jeans",
+   "jeans",
    "Bluyin",
    "Bluyín",
    "Jìínsì",
@@ -5444,8 +5444,8 @@
    "bluejean",
    "blue jean",
    "Bluejeans",
-   "blue jeans",
    "Blue jeans",
+   "blue jeans",
    "blue-jeans",
    "Pecosbiles",
    "calça jeans",
@@ -6375,8 +6375,8 @@
    "tog",
    "malla",
    "cossie",
-   "bathers",
    "Bathers",
+   "bathers",
    "bañador",
    "swimsuit",
    "swimwear",
@@ -6394,8 +6394,8 @@
    "Panpaglalanguy",
    "roupa de banho",
    "traje de banho",
-   "bathing costume",
    "Bathing costume",
+   "bathing costume",
    "calção de banho",
    "costume de bain",
    "little Swimmers",
@@ -6566,10 +6566,10 @@
    "Tshirt",
    "franela",
    "playera",
-   "t shirt",
    "T shirt",
-   "t-shirt",
+   "t shirt",
    "T-shirt",
+   "t-shirt",
    "camiseta",
    "camisola",
    "t-shirts",
@@ -8420,8 +8420,8 @@
    "Djellaba",
    "djellaba",
    "Galabiya",
-   "jellabah",
    "Jellabah",
+   "jellabah",
    "Jellabia"
   ],
   "priority": "later",
@@ -10031,8 +10031,8 @@
   "vocabulary": [
    "cagoul",
    "kagool",
-   "cagoule",
    "Cagoule",
+   "cagoule",
    "kagoule"
   ],
   "priority": "later",
@@ -11465,8 +11465,8 @@
   "region": "African",
   "region_evidence": "text",
   "vocabulary": [
-   "kalasiris",
-   "Kalasiris"
+   "Kalasiris",
+   "kalasiris"
   ],
   "priority": "later",
   "keep": "",
@@ -11616,8 +11616,8 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "Le smoking",
-   "Le Smoking"
+   "Le Smoking",
+   "Le smoking"
   ],
   "priority": "later",
   "keep": "",
@@ -13693,8 +13693,8 @@
   "region_evidence": "",
   "vocabulary": [
    "gabardine",
-   "gaberdine",
-   "Gaberdine"
+   "Gaberdine",
+   "gaberdine"
   ],
   "priority": "later",
   "keep": "",
@@ -13944,8 +13944,8 @@
    "andrienne",
    "contouche",
    "robe volante",
-   "robe battante",
-   "Robe battante"
+   "Robe battante",
+   "robe battante"
   ],
   "priority": "later",
   "keep": "",
@@ -14119,8 +14119,8 @@
    "robe battante",
    "robe à paniers",
    "sack-back gown",
-   "robe à la française",
-   "Robe à la française"
+   "Robe à la française",
+   "robe à la française"
   ],
   "priority": "later",
   "keep": "",
@@ -14392,8 +14392,8 @@
   "region": "European",
   "region_evidence": "parent: clothing in ancient Greece",
   "vocabulary": [
-   "abolla",
-   "Abolla"
+   "Abolla",
+   "abolla"
   ],
   "priority": "later",
   "keep": "",
@@ -15781,12 +15781,12 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "burkini",
    "Burkini",
+   "burkini",
    "Burqini",
    "burqini",
-   "bodykini",
    "Bodykini",
+   "bodykini",
    "burquini",
    "burquíni"
   ],
@@ -15863,8 +15863,8 @@
   "region": "European",
   "region_evidence": "text",
   "vocabulary": [
-   "camisola poveira",
-   "Camisola poveira"
+   "Camisola poveira",
+   "camisola poveira"
   ],
   "priority": "later",
   "keep": "",
@@ -16215,8 +16215,8 @@
   "region": "African",
   "region_evidence": "origin: Algeria",
   "vocabulary": [
-   "Chedda de tlemcen",
    "Chedda de Tlemcen",
+   "Chedda de tlemcen",
    "Chedda of Tlemcen",
    "chedda of Tlemcen",
    "Chedda de Tremecén"
@@ -17919,8 +17919,8 @@
   "region": "African",
   "region_evidence": "origin: Algeria",
   "vocabulary": [
-   "ghlila",
-   "Ghlila"
+   "Ghlila",
+   "ghlila"
   ],
   "priority": "later",
   "keep": "",
@@ -18018,8 +18018,8 @@
   "vocabulary": [
    "g'o",
    "g'ô",
-   "gho",
-   "Gho"
+   "Gho",
+   "gho"
   ],
   "priority": "later",
   "keep": "",
@@ -19324,8 +19324,8 @@
   "region": "African",
   "region_evidence": "origin: Algeria",
   "vocabulary": [
-   "karakou",
    "Karakou",
+   "karakou",
    "Women's embroidered jacket from Algiers",
    "Veste féminine de velours garnie de broderies d'Alger"
   ],
@@ -19902,8 +19902,8 @@
   "region": "European",
   "region_evidence": "parent: Spanish costume",
   "vocabulary": [
-   "saya",
    "Saya",
+   "saya",
    "kirtle",
    "Cotardie"
   ],
@@ -19986,8 +19986,8 @@
   "region_evidence": "",
   "vocabulary": [
    "Lambahoany",
-   "Kisaly et salovana",
-   "Kisaly et Salovana"
+   "Kisaly et Salovana",
+   "Kisaly et salovana"
   ],
   "priority": "later",
   "keep": "",
@@ -20506,8 +20506,8 @@
   "region_evidence": "origin: Venezuela",
   "vocabulary": [
    "Liquiliqui",
-   "liqui liqui",
-   "Liqui liqui"
+   "Liqui liqui",
+   "liqui liqui"
   ],
   "priority": "later",
   "keep": "",
@@ -20631,8 +20631,8 @@
    "Tapis",
    "Pagnes",
    "guayuco",
-   "loincloth",
    "Loincloth",
+   "loincloth",
    "taparrabo",
    "loin cloth",
    "Loin-cloth",
@@ -21712,8 +21712,8 @@
   "region": "European",
   "region_evidence": "parent: clothing in ancient Rome",
   "vocabulary": [
-   "palla",
-   "Palla"
+   "Palla",
+   "palla"
   ],
   "priority": "later",
   "keep": "",
@@ -22865,8 +22865,8 @@
   "region": "Latin American",
   "region_evidence": "origin: Venezuela",
   "vocabulary": [
-   "ruana",
-   "Ruana"
+   "Ruana",
+   "ruana"
   ],
   "priority": "later",
   "keep": "",
@@ -23428,10 +23428,10 @@
    "saruel",
    "sirwal",
    "Saroual",
-   "sarouel",
    "Sarouel",
-   "seroual",
+   "sarouel",
    "Seroual",
+   "seroual",
    "shalvar",
    "sherwal",
    "Sherowal",
@@ -23518,8 +23518,8 @@
   "region": "Southeast Asian",
   "region_evidence": "parent: Khmer Traditional Costumes",
   "vocabulary": [
-   "sampot",
    "Sampot",
+   "sampot",
    "Sompot"
   ],
   "priority": "later",
@@ -23799,8 +23799,8 @@
   "region": "European",
   "region_evidence": "parent: clothing in ancient Rome",
   "vocabulary": [
-   "stola",
    "Stola",
+   "stola",
    "estola"
   ],
   "priority": "later",
@@ -24347,8 +24347,8 @@
    "talit",
    "Taleth",
    "Talith",
-   "tallit",
    "Tallit",
+   "tallit",
    "Tallét",
    "prayer shawl"
   ],
@@ -26247,8 +26247,8 @@
   "region": "Southeast Asian",
   "region_evidence": "text",
   "vocabulary": [
-   "ao dai",
    "Ao dai",
+   "ao dai",
    "áo dài"
   ],
   "priority": "later",
@@ -27152,8 +27152,8 @@
   "vocabulary": [
    "costume au XVIIe siecle",
    "costume Au XVIIe Siècle",
-   "costume au xviie siècle",
-   "costume au XVIIe siècle"
+   "costume au XVIIe siècle",
+   "costume au xviie siècle"
   ],
   "priority": "later",
   "keep": "",
@@ -28293,9 +28293,9 @@
    "18th-century clothing",
    "Mode du XVIIIe siècle",
    "Costume au XVIIIe siecle",
-   "Costume au xviiie siècle",
    "Costume Au XVIIIe Siècle",
    "Costume au XVIIIe siècle",
+   "Costume au xviiie siècle",
    "clothing of the 18th century"
   ],
   "priority": "later",
@@ -29360,8 +29360,8 @@
    "La mode en 1800",
    "Victorian fashion",
    "Mode au XIXe siecle",
-   "Mode au xixe siècle",
    "Mode Au XIXe Siècle",
+   "Mode au xixe siècle",
    "mode au XIXe siècle",
    "19th-century costume",
    "19th-century fashion",
@@ -29614,9 +29614,9 @@
   "region_evidence": "",
   "vocabulary": [
    "Mode au XXe siecle",
-   "Mode au xxe siècle",
    "Mode Au XXe Siècle",
    "Mode au XXe siècle",
+   "Mode au xxe siècle",
    "20th-century costume",
    "20th-century fashion",
    "costume of the 1900s",
@@ -32899,8 +32899,8 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "camauro",
-   "Camauro"
+   "Camauro",
+   "camauro"
   ],
   "priority": "later",
   "keep": "",
@@ -33466,8 +33466,8 @@
   "region_evidence": "",
   "vocabulary": [
    "kids' clothing",
-   "Mode enfantine",
    "Mode Enfantine",
+   "Mode enfantine",
    "roupa infantil",
    "costume d'enfant",
    "children's clothes",
@@ -34612,8 +34612,8 @@
   "region_evidence": "origin: Kingdom of France",
   "vocabulary": [
    "cote",
-   "cotte",
-   "Cotte"
+   "Cotte",
+   "cotte"
   ],
   "priority": "later",
   "keep": "",
@@ -35174,8 +35174,8 @@
   "region": "East Asian",
   "region_evidence": "parent: Korean clothing",
   "vocabulary": [
-   "dangui",
    "Dangui",
+   "dangui",
    "Dang'ui"
   ],
   "priority": "later",
@@ -35867,8 +35867,8 @@
   "region": "East Asian",
   "region_evidence": "text",
   "vocabulary": [
-   "dopo",
-   "Dopo"
+   "Dopo",
+   "dopo"
   ],
   "priority": "later",
   "keep": "",
@@ -38172,8 +38172,8 @@
   "region_evidence": "",
   "vocabulary": [
    "Fer de Berlin",
-   "fer-de-berlin",
    "Fer-de-Berlin",
+   "fer-de-berlin",
    "Berliner Eisen"
   ],
   "priority": "later",
@@ -38931,8 +38931,8 @@
    "Plaid",
    "full plaid",
    "Plaid (vêtement)",
-   "Plaid (linge de maison)",
-   "Plaid (Linge de maison)"
+   "Plaid (Linge de maison)",
+   "Plaid (linge de maison)"
   ],
   "priority": "later",
   "keep": "",
@@ -39880,8 +39880,8 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "dos nu",
    "Dos Nu",
+   "dos nu",
    "halterneck",
    "halter neck",
    "Escote halter"
@@ -40061,8 +40061,8 @@
   "region": "East Asian",
   "region_evidence": "origin: Japan",
   "vocabulary": [
-   "haramaki",
-   "Haramaki"
+   "Haramaki",
+   "haramaki"
   ],
   "priority": "later",
   "keep": "",
@@ -40652,8 +40652,8 @@
   "region": "East Asian",
   "region_evidence": "parent kimono, origin: Japan",
   "vocabulary": [
-   "hitatare",
-   "Hitatare"
+   "Hitatare",
+   "hitatare"
   ],
   "priority": "later",
   "keep": "",
@@ -41367,8 +41367,8 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "body",
    "Body",
+   "body",
    "onesie",
    "bodysuit",
    "snapsuit",
@@ -42518,8 +42518,8 @@
   "region": "East Asian",
   "region_evidence": "parent kimono, origin: Japan",
   "vocabulary": [
-   "kamishimo",
-   "Kamishimo"
+   "Kamishimo",
+   "kamishimo"
   ],
   "priority": "later",
   "keep": "",
@@ -42898,8 +42898,8 @@
   "vocabulary": [
    "Cáunace",
    "Kaunace",
-   "kaunakes",
    "Kaunakes",
+   "kaunakes",
    "kaunakès"
   ],
   "priority": "later",
@@ -43006,8 +43006,8 @@
   "region_evidence": "origin: Indonesia",
   "vocabulary": [
    "kemban",
-   "kemben",
-   "Kemben"
+   "Kemben",
+   "kemben"
   ],
   "priority": "later",
   "keep": "",
@@ -43328,8 +43328,8 @@
   "region": "East Asian",
   "region_evidence": "text",
   "vocabulary": [
-   "kolomo",
    "Kolomo",
+   "kolomo",
    "koromo"
   ],
   "priority": "later",
@@ -47735,8 +47735,8 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "onesie",
    "Onesie",
+   "onesie",
    "kigurumi",
    "cosplay pajamas"
   ],
@@ -50185,8 +50185,8 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "ready made garment",
    "Ready Made Garment",
+   "ready made garment",
    "ready-made clothes",
    "ready-made garment"
   ],
@@ -50295,8 +50295,8 @@
    "off the rack",
    "Pret-a-porter",
    "pret-a-porter",
-   "prêt-à-porter",
    "Prêt-à-porter",
+   "prêt-à-porter",
    "ready-to-wear"
   ],
   "priority": "later",
@@ -51213,8 +51213,8 @@
   "vocabulary": [
    "robe à la Turque",
    "robe à Circassienne",
-   "robe à la circassienne",
-   "robe à la Circassienne"
+   "robe à la Circassienne",
+   "robe à la circassienne"
   ],
   "priority": "later",
   "keep": "",
@@ -52423,8 +52423,8 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "sarape",
    "Sarape",
+   "sarape",
    "serape",
    "jorongo"
   ],
@@ -52673,10 +52673,10 @@
   "region": "African",
   "region_evidence": "origin: Ancient Egypt",
   "vocabulary": [
-   "shenti",
    "Shenti",
-   "schenti",
+   "shenti",
    "Schenti",
+   "schenti",
    "shendyt",
    "Chendjit",
    "Shendyt kilt"
@@ -54778,8 +54778,8 @@
   "region": "European",
   "region_evidence": "parent: clothing in ancient Rome",
   "vocabulary": [
-   "subarmalis",
    "Subarmalis",
+   "subarmalis",
    "Thoracomachus"
   ],
   "priority": "later",
@@ -55815,8 +55815,8 @@
   "region": "Oceanian",
   "region_evidence": "text",
   "vocabulary": [
-   "ta'ovala",
-   "Ta'ovala"
+   "Ta'ovala",
+   "ta'ovala"
   ],
   "priority": "later",
   "keep": "",
@@ -56109,8 +56109,8 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "testimony of simplicity",
    "Testimony of Simplicity",
+   "testimony of simplicity",
    "Testemunho de simplicidade"
   ],
   "priority": "later",
@@ -56586,8 +56586,8 @@
   "region_evidence": "parent: clothing in ancient Rome",
   "vocabulary": [
    "tufa",
-   "toupha",
    "Toupha",
+   "toupha",
    "triumphal decoration"
   ],
   "priority": "later",
@@ -56677,8 +56677,8 @@
   "region": "European",
   "region_evidence": "parent: clothing in ancient Rome",
   "vocabulary": [
-   "trabea",
    "Trabea",
+   "trabea",
    "Trabée",
    "trábea"
   ],
@@ -57195,8 +57195,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "tutu",
    "Tutu",
+   "tutu",
    "tutú",
    "ballet tutu",
    "tutus de ballets"
@@ -58297,8 +58297,8 @@
   "region_evidence": "text",
   "vocabulary": [
    "tricô",
-   "tricot",
    "Tricot",
+   "tricot",
    "stockinet",
    "Sockinette",
    "warp knitting",
@@ -58541,8 +58541,8 @@
   "vocabulary": [
    "Ropa de boda",
    "traje de boda",
-   "traje nupcial",
    "Traje nupcial",
+   "traje nupcial",
    "traje de novia",
    "traje de novio",
    "wedding clothing",
@@ -60220,8 +60220,8 @@
   "vocabulary": [
    "Capote",
    "capote de brega",
-   "Capote (corrida)",
    "Capote (Corrida)",
+   "Capote (corrida)",
    "capote (tauromaquia)"
   ],
   "priority": "later",
@@ -60318,8 +60318,8 @@
    "caraco",
    "caracó",
    "Caraco (vetement)",
-   "Caraco (vêtement)",
    "Caraco (Vêtement)",
+   "Caraco (vêtement)",
    "Pierrot (vêtement)"
   ],
   "priority": "later",
@@ -61041,8 +61041,8 @@
   "region": "Middle Eastern",
   "region_evidence": "text",
   "vocabulary": [
-   "dolman",
    "Dolman",
+   "dolman",
    "dolmán"
   ],
   "priority": "later",
@@ -61471,8 +61471,8 @@
    "fieltro",
    "balandran",
    "ferraguolo",
-   "ferreruelo",
    "Ferreruelo",
+   "ferreruelo",
    "ferreruolo",
    "Herreruelo",
    "herreruelo"
@@ -62853,8 +62853,8 @@
   "region_evidence": "text",
   "vocabulary": [
    "pénula",
-   "paenula",
-   "Paenula"
+   "Paenula",
+   "paenula"
   ],
   "priority": "later",
   "keep": "",
@@ -65449,8 +65449,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "canana",
    "Canana",
+   "canana",
    "Patrona",
    "bandoleer",
    "bandolera",
@@ -66659,8 +66659,8 @@
   "region": "European",
   "region_evidence": "parent: traditional clothing of the Netherlands",
   "vocabulary": [
-   "boek",
-   "Boek"
+   "Boek",
+   "boek"
   ],
   "priority": "later",
   "keep": "",
@@ -71327,8 +71327,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "focale",
-   "Focale"
+   "Focale",
+   "focale"
   ],
   "priority": "later",
   "keep": "",
@@ -74641,8 +74641,8 @@
    "shemagh",
    "yashmar",
    "kaffiyeh",
-   "keffiyeh",
    "Keffiyeh",
+   "keffiyeh",
    "Mehramah",
    "Arab scarf",
    "Palestinian scarf",
@@ -75028,8 +75028,8 @@
   "region": "East Asian",
   "region_evidence": "text",
   "vocabulary": [
-   "khata",
    "Khata",
+   "khata",
    "khatag"
   ],
   "priority": "later",
@@ -78234,8 +78234,8 @@
   "region": "East Asian",
   "region_evidence": "parent: Japanese clothing",
   "vocabulary": [
-   "obi",
    "Obi",
+   "obi",
    "Obis",
    "Maru Obi",
    "Fukuro Obi",
@@ -78618,8 +78618,8 @@
   "region": "European",
   "region_evidence": "text",
   "vocabulary": [
-   "paisley shawl",
-   "Paisley shawl"
+   "Paisley shawl",
+   "paisley shawl"
   ],
   "priority": "later",
   "keep": "",
@@ -79067,8 +79067,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "pashmina",
    "Pashmina",
+   "pashmina",
    "Pashmînâ",
    "kashmir shawl",
    "pashmina shawl"
@@ -79652,8 +79652,8 @@
    "Badge",
    "badge",
    "botón",
-   "button",
    "Button",
+   "button",
    "pinback",
    "pin-back",
    "pin button",
@@ -82093,8 +82093,8 @@
   "region_evidence": "text",
   "vocabulary": [
    "Shatush",
-   "shahtoosh",
-   "Shahtoosh"
+   "Shahtoosh",
+   "shahtoosh"
   ],
   "priority": "later",
   "keep": "",
@@ -83130,8 +83130,8 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "strapon",
    "Strapon",
+   "strapon",
    "Strap on",
    "strap-on",
    "cintaralho",
@@ -84424,8 +84424,8 @@
    "torc",
    "torq",
    "grivna",
-   "torque",
    "Torque",
+   "torque",
    "grivna (jewellery)",
    "Torque (collier) et autres bijoux celtes"
   ],
@@ -84670,8 +84670,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "tsata",
    "Tsata",
+   "tsata",
    "Tsata (iconographie)"
   ],
   "priority": "later",
@@ -85880,8 +85880,8 @@
   "region_evidence": "origin: Gaucho culture",
   "vocabulary": [
    "bombacha",
-   "bombachas",
    "Bombachas",
+   "bombachas",
    "Bombacha de campo",
    "Bombacha de gaucho",
    "Bombacha gauchesca"
@@ -86699,8 +86699,8 @@
   "region_evidence": "generic",
   "vocabulary": [
    "culote",
-   "culotte",
    "Culotte",
+   "culotte",
    "culottes",
    "jupe-culotte"
   ],
@@ -88660,8 +88660,8 @@
   "region": "European",
   "region_evidence": "text",
   "vocabulary": [
-   "nábrók",
    "Nábrók",
+   "nábrók",
    "necropants",
    "necrocalzones"
   ],
@@ -90895,8 +90895,8 @@
   "region_evidence": "generic",
   "vocabulary": [
    "zazou",
-   "zoot suit",
    "Zoot suit",
+   "zoot suit",
    "zuit suit",
    "Terno zoot"
   ],
@@ -92386,8 +92386,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "frac",
    "Frac",
+   "frac",
    "tails",
    "casaca",
    "paletóa",
@@ -92969,8 +92969,8 @@
   "region": "European",
   "region_evidence": "parent: traditional clothing of Belarus",
   "vocabulary": [
-   "andarak",
-   "Andarak"
+   "Andarak",
+   "andarak"
   ],
   "priority": "later",
   "keep": "",
@@ -93935,8 +93935,8 @@
   "region": "African",
   "region_evidence": "parent: clothing of Algeria",
   "vocabulary": [
-   "blouza",
-   "Blouza"
+   "Blouza",
+   "blouza"
   ],
   "priority": "later",
   "keep": "",
@@ -94252,8 +94252,8 @@
   "vocabulary": [
    "burnus",
    "burnous",
-   "albornoz",
-   "Albornoz"
+   "Albornoz",
+   "albornoz"
   ],
   "priority": "later",
   "keep": "",
@@ -94853,8 +94853,8 @@
   "region": "South Asian",
   "region_evidence": "text",
   "vocabulary": [
-   "churidar",
    "Churidar",
+   "churidar",
    "churidars",
    "churidar pyjamas",
    "Pantalon churidar",
@@ -95019,8 +95019,8 @@
   "region": "East Asian",
   "region_evidence": "text",
   "vocabulary": [
-   "deel",
    "Deel",
+   "deel",
    "Deel (vestimenta)"
   ],
   "priority": "later",
@@ -95266,8 +95266,8 @@
   "region": "South Asian",
   "region_evidence": "origin: India",
   "vocabulary": [
-   "dhoti",
    "Dhoti",
+   "dhoti",
    "Dhotî",
    "dhuti",
    "Dhotis",
@@ -95599,8 +95599,8 @@
   "region": "East Asian",
   "region_evidence": "parent kimono, origin: Japan",
   "vocabulary": [
-   "furisode",
    "Furisode",
+   "furisode",
    "Hurisode",
    "Furisode Kimonos"
   ],
@@ -96105,8 +96105,8 @@
   "region_evidence": "",
   "vocabulary": [
    "handloom sari",
-   "handloom saree",
-   "Handloom saree"
+   "Handloom saree",
+   "handloom saree"
   ],
   "priority": "later",
   "keep": "",
@@ -96236,8 +96236,8 @@
   "region": "East Asian",
   "region_evidence": "origin: People's Republic of China",
   "vocabulary": [
-   "hanfu",
    "Hanfu",
+   "hanfu",
    "Han fu",
    "Hanhok",
    "Hanzhuang",
@@ -97064,8 +97064,8 @@
   "region": "African",
   "region_evidence": "parent: clothing of Algeria",
   "vocabulary": [
-   "kadroun",
-   "Kadroun"
+   "Kadroun",
+   "kadroun"
   ],
   "priority": "later",
   "keep": "",
@@ -97501,8 +97501,8 @@
    "leso",
    "Kanga",
    "kanga",
-   "khanga",
    "Khanga",
+   "khanga",
    "Kanga (vestuário)"
   ],
   "priority": "later",
@@ -98522,8 +98522,8 @@
    "'ie",
    "lavalava",
    "lava lava",
-   "lava-lava",
-   "Lava-lava"
+   "Lava-lava",
+   "lava-lava"
   ],
   "priority": "later",
   "keep": "",
@@ -98986,8 +98986,8 @@
   "region": "Southeast Asian",
   "region_evidence": "parent: clothing of the Philippines",
   "vocabulary": [
-   "malong",
-   "Malong"
+   "Malong",
+   "malong"
   ],
   "priority": "later",
   "keep": "",
@@ -99772,8 +99772,8 @@
   "region": "South Asian",
   "region_evidence": "text",
   "vocabulary": [
-   "mundu",
-   "Mundu"
+   "Mundu",
+   "mundu"
   ],
   "priority": "later",
   "keep": "",
@@ -100055,8 +100055,8 @@
   "region_evidence": "text",
   "vocabulary": [
    "manou",
-   "pareo",
    "Pareo",
+   "pareo",
    "paréo",
    "lavalava"
   ],
@@ -101094,8 +101094,8 @@
   "region": "European",
   "region_evidence": "parent: Russian traditional clothing",
   "vocabulary": [
-   "sarafan",
    "Sarafan",
+   "sarafan",
    "sarafán",
    "sarafane"
   ],
@@ -101361,8 +101361,8 @@
   "region": "Southeast Asian",
   "region_evidence": "text",
   "vocabulary": [
-   "sarong",
    "Sarong",
+   "sarong",
    "Sarongs",
    "sarongue"
   ],
@@ -101771,8 +101771,8 @@
   "region": "European",
   "region_evidence": "text",
   "vocabulary": [
-   "sukmana",
-   "Sukmana"
+   "Sukmana",
+   "sukmana"
   ],
   "priority": "later",
   "keep": "",
@@ -102475,8 +102475,8 @@
    "tobe",
    "Thawb",
    "thobe",
-   "dishdasha",
    "Dishdasha",
+   "dishdasha",
    "Saudi thobe",
    "thawb Saudi"
   ],
@@ -102822,8 +102822,8 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "traje de tuna",
-   "Traje de tuna"
+   "Traje de tuna",
+   "traje de tuna"
   ],
   "priority": "later",
   "keep": "",
@@ -103562,8 +103562,8 @@
   "region": "East Asian",
   "region_evidence": "parent kimono, origin: Japan",
   "vocabulary": [
-   "yukata",
    "Yukata",
+   "yukata",
    "Casual Kimonos"
   ],
   "priority": "later",
@@ -103821,8 +103821,8 @@
   "vocabulary": [
    "aloha shirt",
    "palaka aloha",
-   "hawaiian shirt",
    "Hawaiian shirt",
+   "hawaiian shirt",
    "Camisa havaiana",
    "Camisa hawaiana",
    "chemise hawaïenne"
@@ -106840,8 +106840,8 @@
   "region": "African",
   "region_evidence": "origin: Tanzania",
   "vocabulary": [
-   "gowni",
-   "Gowni"
+   "Gowni",
+   "gowni"
   ],
   "priority": "later",
   "keep": "",
@@ -107471,8 +107471,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "henley",
    "Henley",
+   "henley",
    "henley shirt",
    "Henley (vêtement)"
   ],
@@ -107890,8 +107890,8 @@
    "JSK",
    "pichi",
    "pinny",
-   "jumper",
    "Jumper",
+   "jumper",
    "Champer",
    "pinafore",
    "jumper dress",
@@ -114351,8 +114351,8 @@
   "region_evidence": "generic",
   "vocabulary": [
    "jumper",
-   "blouson",
    "Blouson",
+   "blouson",
    "blouse jacket"
   ],
   "priority": "later",
@@ -114549,8 +114549,8 @@
   "region": "European",
   "region_evidence": "text",
   "vocabulary": [
-   "British warm",
    "British Warm",
+   "British warm",
    "British Warm overcoat"
   ],
   "priority": "later",
@@ -116150,8 +116150,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "delia",
-   "Delia"
+   "Delia",
+   "delia"
   ],
   "priority": "later",
   "keep": "",
@@ -117725,8 +117725,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "saco",
    "Saco",
+   "saco",
    "veste",
    "casaca",
    "chumpa",
@@ -117994,8 +117994,8 @@
   "vocabulary": [
    "Kabic",
    "kabic",
-   "kabig",
-   "Kabig"
+   "Kabig",
+   "kabig"
   ],
   "priority": "later",
   "keep": "",
@@ -118085,8 +118085,8 @@
   "region_evidence": "text",
   "vocabulary": [
    "kontush",
-   "kontusz",
-   "Kontusz"
+   "Kontusz",
+   "kontusz"
   ],
   "priority": "later",
   "keep": "",
@@ -120388,8 +120388,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "spencer",
-   "Spencer"
+   "Spencer",
+   "spencer"
   ],
   "priority": "later",
   "keep": "",
@@ -121134,8 +121134,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "bata",
    "Bata",
+   "bata",
    "blouse",
    "jaleco",
    "lab coat",
@@ -125109,8 +125109,8 @@
   "region": "Latin American",
   "region_evidence": "text",
   "vocabulary": [
-   "decenario",
-   "Decenario"
+   "Decenario",
+   "decenario"
   ],
   "priority": "later",
   "keep": "",
@@ -130183,8 +130183,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "mood ring",
    "Mood ring",
+   "mood ring",
    "bague d'humeur",
    "Anillo de humor",
    "Anillo del humor"
@@ -132704,8 +132704,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "reticule",
    "Reticule",
+   "reticule",
    "Ridiculo",
    "ridículo",
    "réticule",
@@ -137143,8 +137143,8 @@
    "egal",
    "Eqal",
    "igal",
-   "iqal",
    "Iqal",
+   "iqal",
    "aggal",
    "Breem",
    "agghal"
@@ -137330,8 +137330,8 @@
   "region": "Southeast Asian",
   "region_evidence": "parent: clothing of the Philippines",
   "vocabulary": [
-   "bahag",
-   "Bahag"
+   "Bahag",
+   "bahag"
   ],
   "priority": "later",
   "keep": "",
@@ -137415,8 +137415,8 @@
   "region_evidence": "origin: Mexico",
   "vocabulary": [
    "Baja hoodie",
-   "poncho Baja",
    "Poncho Baja",
+   "poncho Baja",
    "surfer hoodie"
   ],
   "priority": "later",
@@ -138043,8 +138043,8 @@
   "region": "East Asian",
   "region_evidence": "text",
   "vocabulary": [
-   "beoseon",
-   "Beoseon"
+   "Beoseon",
+   "beoseon"
   ],
   "priority": "later",
   "keep": "",
@@ -138916,8 +138916,8 @@
    "caleçon",
    "calzoncillo",
    "Girl boxers",
-   "boxer shorts",
    "Boxer shorts",
+   "boxer shorts",
    "loose boxers",
    "Bokser na salawal",
    "Boxer Calzoncillo",
@@ -139013,8 +139013,8 @@
   "region_evidence": "",
   "vocabulary": [
    "Shorty",
-   "boyshorts",
    "Boyshorts",
+   "boyshorts",
    "Culotte garçonne"
   ],
   "priority": "later",
@@ -139268,8 +139268,8 @@
   "region_evidence": "generic",
   "vocabulary": [
    "bustiê",
-   "bustier",
    "Bustier",
+   "bustier",
    "bustiere"
   ],
   "priority": "later",
@@ -139762,8 +139762,8 @@
   "region": "Unknown",
   "region_evidence": "",
   "vocabulary": [
-   "chaperon",
    "Chaperon",
+   "chaperon",
    "chaperón",
    "Chaperon (headgear)"
   ],
@@ -139861,8 +139861,8 @@
    "shift",
    "smock",
    "Shalha",
-   "chemise",
-   "Chemise"
+   "Chemise",
+   "chemise"
   ],
   "priority": "later",
   "keep": "",
@@ -141083,8 +141083,8 @@
   "vocabulary": [
    "armador",
    "crinolina",
-   "crinoline",
    "Crinoline",
+   "crinoline",
    "mirinaque",
    "miriñaque"
   ],
@@ -143785,8 +143785,8 @@
    "hotpants",
    "Hot pants",
    "hot pants",
-   "microshort",
    "Microshort",
+   "microshort",
    "booty shorts",
    "short shorts"
   ],
@@ -144244,8 +144244,8 @@
   "vocabulary": [
    "Poweriser",
    "Powerizer",
-   "powerbocking",
    "Powerbocking",
+   "powerbocking",
    "bounce stilts",
    "spring stilts",
    "Jumping stilts",
@@ -145143,8 +145143,8 @@
   "region": "Latin American",
   "region_evidence": "text",
   "vocabulary": [
-   "maxtlatl",
    "Maxtlatl",
+   "maxtlatl",
    "Tlalpilli"
   ],
   "priority": "later",
@@ -145837,8 +145837,8 @@
   "region": "African",
   "region_evidence": "text",
   "vocabulary": [
-   "nemes",
    "Nemes",
+   "nemes",
    "Némès",
    "nemyss"
   ],
@@ -146348,11 +146348,11 @@
    "Pantys",
    "sheers",
    "Collant",
-   "collants",
    "Collants",
+   "collants",
    "pantihose",
-   "pantyhose",
    "Pantyhose",
+   "pantyhose",
    "meia-calça",
    "Pantimedia",
    "Pantimedias",
@@ -146551,8 +146551,8 @@
    "period undies",
    "period panties",
    "Braga menstrual",
-   "period underwear",
    "Period underwear",
+   "period underwear",
    "culotte de règles",
    "menstrual panties",
    "Bombacha menstrual",
@@ -146998,8 +146998,8 @@
   "region_evidence": "generic",
   "vocabulary": [
    "rashie",
-   "rash guard",
-   "Rash guard"
+   "Rash guard",
+   "rash guard"
   ],
   "priority": "later",
   "keep": "",
@@ -149097,8 +149097,8 @@
   "region": "Global",
   "region_evidence": "generic",
   "vocabulary": [
-   "tankini",
    "Tankini",
+   "tankini",
    "Tanquini",
    "tanquíni",
    "tank-top bikini"
@@ -149348,16 +149348,16 @@
    "tefilan",
    "tefilhn",
    "Tefilim",
-   "tefilin",
    "Tefilin",
+   "tefilin",
    "tefilín",
    "tfillin",
    "Téfilin",
    "t'fillin",
    "Teffilin",
    "Tefiline",
-   "tefillin",
    "Tefillin",
+   "tefillin",
    "Tephilin",
    "téfiline",
    "Téfillin",
@@ -149910,8 +149910,8 @@
   "region": "European",
   "region_evidence": "text",
   "vocabulary": [
-   "valenki",
    "Valenki",
+   "valenki",
    "valenko"
   ],
   "priority": "later",

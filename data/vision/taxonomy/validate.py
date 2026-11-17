@@ -42,7 +42,8 @@ from pathlib import Path
 import specs
 from build_taxonomy import (ALLOWED, CATEGORIES, CSV_COLUMNS, EXCLUDED_JSON, FETCHED_JSON, GARMENT_TYPES, ITEM_TYPES,
                             KEEP_VALUES, MAX_ROWS, MIN_ROWS, NEEDS_OWNER_GROUPS, REGIONS, REVIEW_CSV, SHEET_GROUPS,
-                            TAXONOMY_JSON, VOCABULARY_JSON, bfs_paths, read_review_csv, vocabulary_entries)
+                            TAXONOMY_JSON, VOCABULARY_JSON, bfs_paths, excluded_instance_of, read_review_csv,
+                            vocabulary_entries)
 
 ROOTS_JSON = Path(__file__).resolve().parent / "roots.json"
 FORBIDDEN_LABEL = re.compile(r"degree|doctorate|knight|duke|duchess|rector|chancellor|medal|honorary|citizen", re.I)
@@ -143,10 +144,9 @@ def main() -> int:
         if hard:
             problems.append(f"{name} under {hard}")
         if not is_launch[r["qid"]]:
-            inst = [instance_of[a] for a, via in r["ancestor_roots"].items() if a in instance_of and via == "P31"]
-            inst += [instance_of[c["qid"]] for c in r["instance_of"] if c["qid"] in instance_of]
+            inst = excluded_instance_of([c["qid"] for c in r["instance_of"]], r["ancestor_roots"], instance_of)
             if inst:
-                problems.append(f"{name} is an instance of {sorted(set(inst))}")
+                problems.append(f"{name} is an instance of {[instance_of[q] for q in inst]}")
             if r["english_name"].casefold() in generic:
                 problems.append(f"{name} is a generic entry")
         exempt = (is_launch[r["qid"]] or r["keep_list"] or r["banned_root"]

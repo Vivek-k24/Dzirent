@@ -1,7 +1,7 @@
 ﻿needs_owner,keep,priority,english_name,also_called,region,dzirent_category,dzirent_garment_type,allowed,notes,qid
 yes,yes,launch,blazer,Bleiser; Bléiser; Bleiseres; Bléiseres; sport coat,Global,Career & Professional,suit,allowed,,Q883234
 yes,yes,launch,sheath dress,sheath; fourreau; work dress; vestido recto; business dress,Global,Career & Professional,dress,allowed,,Q15008044
-yes,yes,launch,suit,fato; terno; Terno; traje; complet,Global,Career & Professional,suit,allowed,,Q614806
+yes,yes,launch,suit,fato; Terno; terno; traje; complet,Global,Career & Professional,suit,allowed,,Q614806
 yes,yes,launch,three-piece suit,vested suit; complete suit; three piece suit; Costume trois pièces; Costume trois-pieces,European,Career & Professional,suit,allowed,,Q2998484
 yes,yes,launch,trousers,pant; calça; futal; pants; calças,Global,Career & Professional,trousers,allowed,,Q39908
 yes,yes,launch,ball gown,ball dress; formal gown; robe de bal; quinceanera ball gown,Global,Occasion & Party,dress,allowed,Used as the primary Wikidata item representing full formal gowns including quinceañera and prom ball gowns.,Q635784
@@ -25,8 +25,8 @@ yes,yes,launch,huipil,Hipil; Huepil; embroidered tunic; embroidered huipil,Latin
 yes,yes,launch,kurta,Kurti; kurtas; kurta set; kurti tunic,South Asian,Cultural & Traditional,top,allowed,,Q855915
 yes,yes,launch,lehenga,ghagra; lehengas; lehenga choli,South Asian,Cultural & Traditional,saree,allowed,,Q17050816
 yes,yes,launch,Nehru jacket,bandhgala; Veste Nehru; mandarin collar jacket,South Asian,Cultural & Traditional,top,allowed,,Q11339904
-yes,yes,launch,sari,sári; saree; saris; Saris; shari,South Asian,Cultural & Traditional,saree,allowed,,Q172827
-yes,yes,launch,shalwar kameez,salwar suit; salwar kameej; salwar kameez; Salwar kameez; shalwar qameez,South Asian,Cultural & Traditional,dress,allowed,,Q12456113
+yes,yes,launch,sari,sári; saree; Saris; saris; shari,South Asian,Cultural & Traditional,saree,allowed,,Q172827
+yes,yes,launch,shalwar kameez,salwar suit; salwar kameej; Salwar kameez; salwar kameez; shalwar qameez,South Asian,Cultural & Traditional,dress,allowed,,Q12456113
 yes,yes,launch,Sherwani,achkan coat; traditional sherwani,South Asian,Cultural & Traditional,suit,allowed,,Q837879
 yes,yes,launch,blouse,blusa; Corsage; chemisier; dressy top; girl's blouse,Global,Everyday,top,allowed,,Q152563
 yes,yes,launch,cardigan,rebeca; knit cardigan; button sweater,European,Everyday,top,allowed,,Q877140
@@ -45,14 +45,14 @@ yes,yes,launch,wristwatch,watch; wrist watch; analog watch; saa ya mkononi; mont
 yes,yes,launch,cap,boné; képi; toca; gorra; toque,Global,not_applicable,none_fits,not_allowed,Caps and hats are excluded per Dzirent policy. No headwear garment_type in database.,Q6147804
 yes,yes,launch,hat,kofia; chapel; chapéu; chapeau; chapeaux,Global,not_applicable,none_fits,not_allowed,Caps and hats are excluded per Dzirent policy. No headwear garment_type in database.,Q80151
 yes,yes,launch,hoodie,hoody; souit; moletão; poleron; polerón,Global,not_applicable,top,not_allowed,Everyday basics / hoodies; excluded per Dzirent policy.,Q920929
-yes,yes,launch,jeans,jean; Jean; denim; Bluyin; Bluyín,Global,not_applicable,trousers,not_allowed,Plain everyday jeans; excluded per Dzirent policy.,Q83363
+yes,yes,launch,jeans,Jean; jean; denim; Bluyin; Bluyín,Global,not_applicable,trousers,not_allowed,Plain everyday jeans; excluded per Dzirent policy.,Q83363
 yes,yes,launch,lingerie,lencería; ropa íntima; undergarments; intimate apparel; lingerie féminine,Global,not_applicable,none_fits,not_allowed,Lingerie is excluded per Dzirent policy. No lingerie garment_type in database.,Q855691
 yes,yes,launch,shoe,kiatu; shoes; sapato; zapato; çapato,Global,not_applicable,none_fits,not_allowed,Shoes of any kind are excluded per Dzirent policy. No shoe garment_type in database.,Q22676
 yes,yes,launch,shorts,short; chorte; calções; Kaptura; casual shorts,Global,not_applicable,trousers,not_allowed,Everyday basics; excluded per Dzirent policy.,Q223269
 yes,yes,launch,smartwatch,smart watch; connected watch; montre connectée; montre téléphone; montre-téléphone,Global,not_applicable,one_size,not_allowed,Smartwatches are excluded per Dzirent policy (only non-smart watches allowed).,Q5362345
 yes,yes,launch,sports jersey,jersey; maillot; camiseta; sport tee; team jersey,Global,not_applicable,top,not_allowed,Athletic sportswear; excluded per Dzirent policy.,Q2623418
 yes,yes,launch,sweatshirt,Sudadera; sweat shirt; Sweat-shirt; fleece pullover; crewneck sweatshirt,Global,not_applicable,top,not_allowed,Everyday basics / sweatshirts; excluded per Dzirent policy.,Q19968163
-yes,yes,launch,swimsuit,tog; malla; cossie; bathers; Bathers,Global,not_applicable,dress,not_allowed,Swimwear is excluded per Dzirent policy.,Q212989
+yes,yes,launch,swimsuit,tog; malla; cossie; Bathers; bathers,Global,not_applicable,dress,not_allowed,Swimwear is excluded per Dzirent policy.,Q212989
 yes,yes,launch,t-shirt,tee; polera; remera; Tshirt; franela,Global,not_applicable,top,not_allowed,Everyday basic; excluded per Dzirent policy.,Q131151
 yes,yes,launch,tracksuit bottoms,sweatpants; sweat pants; track pants; Calças de jogging; Pantalón sudadera,Global,not_applicable,trousers,not_allowed,Athletic sportswear / basics; excluded per Dzirent policy.,Q2426768
 yes,yes,launch,undergarment,brip; brief; briefs; underwear; kalsonsilyo,Global,not_applicable,none_fits,not_allowed,Underwear is excluded per Dzirent policy. No underwear garment_type in database.,Q198763
@@ -162,12 +162,12 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Brunswick costume,costume du Brunswick; folk costume of Brunswick; costume folklorique du Brunswick; costume traditionnel du Brunswick,Unknown,Cultural & Traditional,none_fits,review,Costume.,Q902001
 ,,later,Bulgarian national garb,,European,Cultural & Traditional,none_fits,review,Costume.,Q12274247
 ,,later,bunad,,European,Cultural & Traditional,dress,review,"Traditional, made for one purpose ('costume'); check.",Q1004929
-,,later,burqini,burkini; Burkini; bodykini; Bodykini; burquini,Unknown,Cultural & Traditional,none_fits,review,"Under swimsuit in Wikidata (rule: swimwear), but its own name or description reads as swimwear; check.",Q936034
+,,later,burqini,Burkini; burkini; Bodykini; bodykini; burquini,Unknown,Cultural & Traditional,none_fits,review,"Under swimsuit in Wikidata (rule: swimwear), but its own name or description reads as swimwear; check.",Q936034
 ,,later,camisola poveira,,European,Cultural & Traditional,top,review,Type taken from its parent class only; check.,Q8256387
 ,,later,Castellonera costume,Traje de castellonera,European,Cultural & Traditional,none_fits,review,Costume.,Q20019044
 ,,later,Changshan,,East Asian,Cultural & Traditional,top,review,"Traditional, made for one purpose ('imperial'); check.",Q1622777
 ,,later,Chedda of Oran,Chedda Oranaise,African,Cultural & Traditional,none_fits,review,Costume.,Q140602354
-,,later,chedda of Tlemcen,Chedda de tlemcen; Chedda de Tlemcen; Chedda de Tremecén,African,Cultural & Traditional,none_fits,review,Costume.,Q2961935
+,,later,chedda of Tlemcen,Chedda de Tlemcen; Chedda de tlemcen; Chedda de Tremecén,African,Cultural & Traditional,none_fits,review,Costume.,Q2961935
 ,,later,Chepken,,Central Asian,Cultural & Traditional,dress,review,Traditional garment named in its description; check.,Q4508312
 ,,later,Chinese clothing,costume chinois; costume of China; Vestuário da China,East Asian,Cultural & Traditional,none_fits,review,Costume.,Q5100735
 ,,later,chlamys,clamis; clamide; clámide; clâmide; chlamyde,European,Cultural & Traditional,top,review,Historical garment; check that it can be listed today.,Q1075155
@@ -210,7 +210,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,khaftan,,Unknown,Cultural & Traditional,none_fits,review,Costume.,Q131590761
 ,,later,Khmer Traditional Costumes,Cambodian clothing; folk dress of Cambodia; folk costume of Cambodia; traditional costume of Cambodia,Southeast Asian,Cultural & Traditional,none_fits,review,Costume.,Q6401901
 ,,later,khăn vấn,,Southeast Asian,Cultural & Traditional,none_fits,review,"Traditional, but looks like a banned kind (hats and caps); check.",Q61128015
-,,later,kirtle,saya; Saya; Cotardie,European,Cultural & Traditional,none_fits,review,Costume.,Q3376447
+,,later,kirtle,Saya; saya; Cotardie,European,Cultural & Traditional,none_fits,review,Costume.,Q3376447
 ,,later,Kisaly et Salovana,Lambahoany,Unknown,Cultural & Traditional,none_fits,review,Costume.,Q131240135
 ,,later,kita loincloth,Pagne kita,African,Cultural & Traditional,none_fits,review,"Traditional, but looks like a banned kind (underwear); check.",Q3360447
 ,,later,Korean clothing,,East Asian,Cultural & Traditional,none_fits,review,Costume.,Q107044002
@@ -250,8 +250,8 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Scythian clothing,,Unknown,Cultural & Traditional,none_fits,review,Costume.,Q101429395
 ,,later,Setesdalsbunad,,European,Cultural & Traditional,none_fits,review,Costume.,Q7456411
 ,,later,shiromuku,,East Asian,Cultural & Traditional,dress,review,Type taken from its parent class only; check.,Q2279440
-,,later,sirwal,salvar; saruel; Saroual; sarouel; Sarouel,Middle Eastern,Cultural & Traditional,trousers,review,Historical garment; check that it can be listed today.,Q822893
-,,later,Sompot,sampot; Sampot,Southeast Asian,Cultural & Traditional,skirt,review,Type taken from its parent class only; check.,Q3946549
+,,later,sirwal,salvar; saruel; Saroual; Sarouel; sarouel,Middle Eastern,Cultural & Traditional,trousers,review,Historical garment; check that it can be listed today.,Q822893
+,,later,Sompot,Sampot; sampot,Southeast Asian,Cultural & Traditional,skirt,review,Type taken from its parent class only; check.,Q3946549
 ,,later,Sorbian folk costume,Wendish folk costume; Lusatian folk costume; Sorbian national dress,Unknown,Cultural & Traditional,none_fits,review,Costume.,Q1505279
 ,,later,Spanish costume,traje español; vestido español; costume espagnol; Spanish clothing; folk dress of Spain,European,Cultural & Traditional,none_fits,review,Costume.,Q6151536
 ,,later,stola,estola,European,Cultural & Traditional,dress,review,Historical garment; check that it can be listed today.,Q1535312
@@ -281,7 +281,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Wichs,,European,Cultural & Traditional,dress,review,Type taken from its parent class only; check.,Q1443911
 ,,later,Zeeland traditional costume,,Unknown,Cultural & Traditional,none_fits,review,Costume.,Q124637539
 ,,later,zoster,zōstēr,European,Cultural & Traditional,none_fits,review,"Traditional, but looks like a banned kind (underwear); check.",Q226882
-,,later,áo dài,ao dai; Ao dai,Southeast Asian,Cultural & Traditional,dress,review,"Traditional, made for one purpose ('costume'); check.",Q252187
+,,later,áo dài,Ao dai; ao dai,Southeast Asian,Cultural & Traditional,dress,review,"Traditional, made for one purpose ('costume'); check.",Q252187
 ,,later,áo nhật bình,,Southeast Asian,Cultural & Traditional,none_fits,review,"Academic, judicial or court dress.",Q137580279
 ,,later,żupan,Zupan; czupan,European,Cultural & Traditional,dress,review,Made for one purpose ('costume'); check.,Q2423981
 ,,later,حولي ليبي,h'rem; houli,African,Cultural & Traditional,none_fits,review,Costume.,Q3141289
@@ -292,7 +292,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,1500–1550 in European fashion,mode de 1500-1550; moda entre los años 1500 y 1550; moda entre os anos de 1500 e 1550,European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q225487
 ,,later,1550–1600 in European fashion,,European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q4550471
 ,,later,1600–1650 in Western fashion,moda das décadas de 1600 a 1650 na Europa Ocidental,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q1746174
-,,later,1650–1700 in Western fashion,costume au XVIIe siecle; costume Au XVIIe Siècle; costume au xviie siècle; costume au XVIIe siècle,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q1746172
+,,later,1650–1700 in Western fashion,costume au XVIIe siecle; costume Au XVIIe Siècle; costume au XVIIe siècle; costume au xviie siècle,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q1746172
 ,,later,16th-century clothing,16th-century dress; Moda del siglo XVI; 1500-1600 in fashion; 16th-century fashion,Unknown,Everyday,dress,review,Historical garment; check that it can be listed today.,Q28972137
 ,,later,1700–1750 in Western fashion,moda occidental entre 1700 y 1750,European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q4552313
 ,,later,1750–1775 in Western fashion,mode des années 1750-75; moda entre os anos de 1750 e 1795,European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q4552871
@@ -320,10 +320,10 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,1980s in fashion,moda 80's; a moda dos anos 80; années 1980 en mode; moda na década de 1980; moda en la década de 1980,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q4299286
 ,,later,1990s in fashion,années 1990 en mode; moda de los años 1990,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q4586478
 ,,later,19th century in fashion,fashion in the nineteenth century,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5436776
-,,later,19th-century clothing,La mode en 1800; Victorian fashion; Mode au XIXe siecle; Mode au xixe siècle; Mode Au XIXe Siècle,European,Everyday,none_fits,review,Costume.,Q3317779
+,,later,19th-century clothing,La mode en 1800; Victorian fashion; Mode au XIXe siecle; Mode Au XIXe Siècle; Mode au xixe siècle,European,Everyday,none_fits,review,Costume.,Q3317779
 ,,later,2000s in fashion,moda en los 2000-2009; ropa de los años 2000; disfraz de los años 2000,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q4598398
 ,,later,2010s in fashion,années 2010 en mode; moda en los años 2010; moda na década de 2010,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q4619167
-,,later,20th-century clothing,Mode au XXe siecle; Mode au xxe siècle; Mode Au XXe Siècle; Mode au XXe siècle; 20th-century costume,Unknown,Everyday,none_fits,review,Costume.,Q3317783
+,,later,20th-century clothing,Mode au XXe siecle; Mode Au XXe Siècle; Mode au XXe siècle; Mode au xxe siècle; 20th-century costume,Unknown,Everyday,none_fits,review,Costume.,Q3317783
 ,,later,21st-century clothing,ropa del siglo XXI; mode au XXIe siècle,Unknown,Everyday,none_fits,review,Costume.,Q28974333
 ,,later,Aboyne dress,,European,Everyday,dress,review,Made for one purpose ('costume'); check.,Q4668672
 ,,later,adaptive clothing,ropa adaptada; accessible clothing,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q4118157
@@ -371,7 +371,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,ceremonial dress,ceremonial costume; traje de ceremonio; traje de cerimónia; ceremonial clothing; costume de cérémonie,Global,Everyday,dress,review,Made for one purpose ('religious'); check.,Q5064153
 ,,later,chamanto,Chamantera; Chamanteras,Latin American,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5069462
 ,,later,chihaya,,East Asian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q11405538
-,,later,children's clothing,kids' clothing; Mode enfantine; Mode Enfantine; roupa infantil; costume d'enfant,Unknown,Everyday,none_fits,review,Costume.,Q2471487
+,,later,children's clothing,kids' clothing; Mode Enfantine; Mode enfantine; roupa infantil; costume d'enfant,Unknown,Everyday,none_fits,review,Costume.,Q2471487
 ,,later,Chong Kben,Phanung; chang kben; chongkraben; chong kraben; pha chong kraben,Southeast Asian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5071693
 ,,later,Christensen knot,cross knot,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5677290
 ,,later,cilice,cilicio; cilício; hairshirt; sackcloth,Unknown,Everyday,dress,review,Type taken from its parent class only; check.,Q325634
@@ -426,7 +426,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,fascia,faja; écharpe; ceinture; range cassock; Fáscia (faixa),Unknown,Everyday,none_fits,review,Religious dress.,Q1078244
 ,,later,fascia,apodêsmos; strophion; sthèthodesme,European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q1397337
 ,,later,Fengguan xiapei,,East Asian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q113669328
-,,later,Fer de Berlin,fer-de-berlin; Fer-de-Berlin; Berliner Eisen,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q1289087
+,,later,Fer de Berlin,Fer-de-Berlin; fer-de-berlin; Berliner Eisen,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q1289087
 ,,later,fetish fashion,fetishwear; fetish wear; fetish clothes; fetish clothing; Moda fetichista,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q770546
 ,,later,fig leaf,fig-leaf; fig leaves; fig-leaves; hoja de parra; feuille de vigne,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q1401595
 ,,later,figure skating costume,,Unknown,Everyday,none_fits,review,Costume.,Q137739669
@@ -435,7 +435,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,fly plaid,,European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5463256
 ,,later,form-fitting garment,,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5469866
 ,,later,formal wear,ropa formal; roupa formal; formal attire; atuendo formal; formal clothes,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q1151364
-,,later,full plaid,Plaid; Plaid (vêtement); Plaid (linge de maison); Plaid (Linge de maison),European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5508197
+,,later,full plaid,Plaid; Plaid (vêtement); Plaid (Linge de maison); Plaid (linge de maison),European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5508197
 ,,later,fur clothing,manteau de fourrure,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q197195
 ,,later,gabi,,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5515390
 ,,later,Gamurra,Zipa; Zupa; Socha; Gammurra,European,Everyday,dress,review,Historical garment; check that it can be listed today.,Q3758025
@@ -447,7 +447,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Grantchester knot,,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5596610
 ,,later,gákti,,European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q6979598
 ,,later,half-Windsor knot,single Windsor knot; Nœud de cravate demi-Windsor,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q3877680
-,,later,halterneck,dos nu; Dos Nu; halter neck; Escote halter,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q3037319
+,,later,halterneck,Dos Nu; dos nu; halter neck; Escote halter,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q3037319
 ,,later,haragake,,East Asian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q60986866
 ,,later,haramaki,,East Asian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5654070
 ,,later,haute couture,alta moda; alta costura; alta-costura; high fashion; haute-couture,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q216053
@@ -465,7 +465,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Imperial Robe,,European,Everyday,dress,review,Robe; check whether it's a garment Dzirent lists.,Q118996191
 ,,later,Indian wedding clothes,,South Asian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q6022903
 ,,later,Indo-Western clothing,,South Asian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q927418
-,,later,infant bodysuit,body; Body; onesie; bodysuit; snapsuit,Unknown,Everyday,none_fits,review,"Work, protective, sport or one-piece wear; not a type Dzirent lists as it is.",Q2069823
+,,later,infant bodysuit,Body; body; onesie; bodysuit; snapsuit,Unknown,Everyday,none_fits,review,"Work, protective, sport or one-piece wear; not a type Dzirent lists as it is.",Q2069823
 ,,later,infant clothing,baby clothes; baby clothing; roupa para bebês,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q17152912
 ,,later,infant one-piece,babygro; sleeper; babygrow; sleep & play; sleep N Play,Global,Everyday,none_fits,review,Sleepwear or loungewear.,Q80418664
 ,,later,Insects,,Unknown,Everyday,dress,review,Type taken from its parent class only; check.,Q124352942
@@ -573,8 +573,8 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,quarter-zipper,quarter-zip,Unknown,Everyday,top,review,Type taken from its parent class only; check.,Q117209747
 ,,later,quechquemitl,quexquemitl; quexquémitl; quezquemitl; quechquémitl,Latin American,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q7269893
 ,,later,qumbaz,,Middle Eastern,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q12233512
-,,later,ready-made garment,ready made garment; Ready Made Garment; ready-made clothes,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q1431632
-,,later,ready-to-wear,off the peg; off the rack; Pret-a-porter; pret-a-porter; prêt-à-porter,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q2912428
+,,later,ready-made garment,Ready Made Garment; ready made garment; ready-made clothes,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q1431632
+,,later,ready-to-wear,off the peg; off the rack; Pret-a-porter; pret-a-porter; Prêt-à-porter,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q2912428
 ,,later,Reconstructed clothing,,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q7302772
 ,,later,Red Serge,Tunique rouge,North American,Everyday,none_fits,review,Uniform.,Q7305014
 ,,later,Renaissance clothing,Renaissance costume; Renaissance fashion; costume de la Renaissance; clothing of the Renaissance,European,Everyday,none_fits,review,Costume.,Q28972141
@@ -601,10 +601,10 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,schema,skhima; schema monasticism,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q1811976
 ,,later,see-through clothing,sheer clothing; diaphanous clothing; translucent clothing; transparent clothing; vêtement transparent,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q2004245
 ,,later,sennechutteli,,European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q24816225
-,,later,serape,sarape; Sarape; jorongo,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q2224648
+,,later,serape,Sarape; sarape; jorongo,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q2224648
 ,,later,sexy nurse outfit,sexy nurse; enfermera sexi; sexy nurse costume; sexy nurse outfits; disfraz de enfermera sexi,Unknown,Everyday,none_fits,review,Costume.,Q110728580
 ,,later,sheer sleeve,,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q125554607
-,,later,shendyt,shenti; Shenti; schenti; Schenti; Chendjit,African,Everyday,skirt,review,Historical garment; check that it can be listed today.,Q3375464
+,,later,shendyt,Shenti; shenti; Schenti; schenti; Chendjit,African,Everyday,skirt,review,Historical garment; check that it can be listed today.,Q3375464
 ,,later,Shenyi,Shen i; Shen-i,East Asian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q5958716
 ,,later,shinobi shōzoku,,East Asian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q7497702
 ,,later,shitagasane,,East Asian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q11361318
@@ -642,7 +642,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,tanzen,dotera,East Asian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q9210345
 ,,later,tatreez,broderie palestinienne; Embroidery of Palestine,Middle Eastern,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q123515592
 ,,later,tattered,rags; ragged; tatters,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q43375775
-,,later,taʻovala,ta'ovala; Ta'ovala,Oceanian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q3512658
+,,later,taʻovala,Ta'ovala; ta'ovala,Oceanian,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q3512658
 ,,later,TDO-connector,Conector TDO,European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q970591
 ,,later,Tehuana,,Latin American,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q6140258
 ,,later,Teresiana,,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q6142641
@@ -672,10 +672,10 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,virago sleeve,virago; virago manche,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q7933576
 ,,later,visite,,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q26869306
 ,,later,Vittae,,European,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q131751054
-,,later,warp knitting,tricô; tricot; Tricot; stockinet; Sockinette,European,Everyday,top,review,Type taken from its parent class only; check.,Q73309
+,,later,warp knitting,tricô; Tricot; tricot; stockinet; Sockinette,European,Everyday,top,review,Type taken from its parent class only; check.,Q73309
 ,,later,Wearable art,,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q7978133
 ,,later,wearing blanket,manta de vestir,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q50380055
-,,later,wedding clothing,Ropa de boda; traje de boda; traje nupcial; Traje nupcial; traje de novia,Unknown,Everyday,dress,review,Type taken from its parent class only; check.,Q4375404
+,,later,wedding clothing,Ropa de boda; traje de boda; Traje nupcial; traje nupcial; traje de novia,Unknown,Everyday,dress,review,Type taken from its parent class only; check.,Q4375404
 ,,later,wedding train,traîne de mariée,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q29650181
 ,,later,weighted clothing,,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q17087314
 ,,later,Weighted vests for children,,Unknown,Everyday,none_fits,review,"No clear garment signal in its name, description or parents.",Q49000785
@@ -697,8 +697,8 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,basquine,basquin; basquiña; vasquine; basque jacket; basquine body,European,Outerwear,top,review,Historical garment; check that it can be listed today.,Q66309883
 ,,later,battle jacket,blouse; guerrera; battle dress blouse; battle dress jacket,Global,Outerwear,top,review,Made for one purpose ('military'); check.,Q50405083
 ,,later,Bernos,Barnos,Unknown,Outerwear,top,review,Type taken from its parent class only; check.,Q4894553
-,,later,Capote,capote de brega; Capote (corrida); Capote (Corrida); capote (tauromaquia),Unknown,Outerwear,top,review,Type taken from its parent class only; check.,Q2937538
-,,later,caraco,caracó; Caraco (vetement); Caraco (vêtement); Caraco (Vêtement); Pierrot (vêtement),Unknown,Outerwear,top,review,Historical garment; check that it can be listed today.,Q2937807
+,,later,Capote,capote de brega; Capote (Corrida); Capote (corrida); capote (tauromaquia),Unknown,Outerwear,top,review,Type taken from its parent class only; check.,Q2937538
+,,later,caraco,caracó; Caraco (vetement); Caraco (Vêtement); Caraco (vêtement); Pierrot (vêtement),Unknown,Outerwear,top,review,Historical garment; check that it can be listed today.,Q2937807
 ,,later,cardinal,capucha; cape rouge; capilla cardinal,Unknown,Outerwear,top,review,Historical garment; check that it can be listed today.,Q100796171
 ,,later,carmagnole,carmañola; Carmagnole (vetement); Carmagnole (Vêtement),Unknown,Outerwear,top,review,Type taken from its parent class only; check.,Q2939542
 ,,later,ceremonial royal mantle,,Global,Outerwear,top,review,Made for one purpose ('royalty'); check.,Q2156077
@@ -759,7 +759,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,aucissa fibula,aucissa brooch; fíbula tipo aucissa; Legionnaire's fibula,Global,Accessories,one_size,review,Made for one purpose ('soldiers'); check.,Q758628
 ,,later,baldric,bálteo; télamo; boldrié; baldrick; baudrier,Global,Accessories,one_size,review,Belt or sash; the database allows only belt buckles.,Q3225698
 ,,later,bandana,bandanna; kerchief; pañoleta; pañuelo de cabeza,Global,Accessories,one_size,review,Scarf or shawl; no item type in the database.,Q180617
-,,later,bandolier,canana; Canana; Patrona; bandoleer; bandolera,Global,Accessories,one_size,review,Belt or sash; the database allows only belt buckles.,Q806285
+,,later,bandolier,Canana; canana; Patrona; bandoleer; bandolera,Global,Accessories,one_size,review,Belt or sash; the database allows only belt buckles.,Q806285
 ,,later,bar torc,bar-twisted torc,Global,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q111770852
 ,,later,barbell,piercing barbell,Global,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q446509
 ,,later,barracoat,Gigoteuse; Turbulette,Unknown,Accessories,one_size,review,"A bag, but not under handbag in Wikidata; check.",Q3542278
@@ -927,7 +927,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,pendilia,Pendulia; pendilium; pendoulia,European,Accessories,one_size,review,Historical garment; check that it can be listed today.,Q7162417
 ,,later,Pibo,P'i-po,East Asian,Accessories,one_size,review,Scarf or shawl; no item type in the database.,Q74941899
 ,,later,pin,broche; alfiler; épingle; alfiler (joya); alfinete (joalharia),Global,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q29405120
-,,later,pin-back button,Badge; badge; botón; button; Button,Global,Accessories,one_size,review,Accessory that isn't in Dzirent's allowed list.,Q7132937
+,,later,pin-back button,Badge; badge; botón; Button; button,Global,Accessories,one_size,review,Accessory that isn't in Dzirent's allowed list.,Q7132937
 ,,later,plug,earplug; earspool; alargador,Unknown,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q1455863
 ,,later,Presentosa,,Unknown,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q3910941
 ,,later,presidential sash,banda presidencial; faixa presidencial; écharpe présidentielle,Global,Accessories,one_size,review,Belt or sash; the database allows only belt buckles.,Q522159
@@ -968,7 +968,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,solitaire,,Unknown,Accessories,one_size,review,Type taken from its parent class only; check.,Q125466261
 ,,later,stole,Palantin,Global,Accessories,one_size,review,Scarf or shawl; no item type in the database.,Q4342445
 ,,later,stopwatch,stopclock; cronógrafo; cronómetro; Stopwatches; reloj de parada,Unknown,Accessories,one_size,review,Type taken from its parent class only; check.,Q843994
-,,later,strap-on dildo,strapon; Strapon; Strap on; strap-on; cintaralho,Unknown,Accessories,one_size,review,Belt or sash; the database allows only belt buckles.,Q1639034
+,,later,strap-on dildo,Strapon; strapon; Strap on; strap-on; cintaralho,Unknown,Accessories,one_size,review,Belt or sash; the database allows only belt buckles.,Q1639034
 ,,later,students sash,ruban étudiant; ceinture d'étudiant,Global,Accessories,one_size,review,Belt or sash; the database allows only belt buckles.,Q120792533
 ,,later,susuk,charm needles,Southeast Asian,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q4207431
 ,,later,sword belt,talim; cincho; ceinturon d'épée,Global,Accessories,one_size,review,Belt or sash; the database allows only belt buckles.,Q66467330
@@ -983,7 +983,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Tooth gem,,Unknown,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q125146213
 ,,later,tooth jewellery,tooth jewelry; dental jewelry; dental jewellery,Global,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q143927
 ,,later,toquilla,chal; toca; mantón; pañuelo; mantilla,Unknown,Accessories,one_size,review,Scarf or shawl; no item type in the database.,Q41799181
-,,later,torc,torq; grivna; torque; Torque; grivna (jewellery),Global,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q397447
+,,later,torc,torq; grivna; Torque; torque; grivna (jewellery),Global,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q397447
 ,,later,total face veil,véu integral; velo integral; full face veil; full-face veil; voile intégral,Unknown,Accessories,one_size,review,Scarf or shawl; no item type in the database.,Q25377099
 ,,later,trench watch,wristlet; reloj de trinchera,Global,Accessories,one_size,review,Made for one purpose ('military'); check.,Q4462168
 ,,later,tsata,Tsata (iconographie),Global,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q4503337
@@ -1011,7 +1011,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,cargo pants,cargo trousers; pantalon cargo,Global,Career & Professional,trousers,allowed,,Q1036057
 ,,later,Chanel suit,Traje Chanel; tailleur Chanel,Global,Career & Professional,suit,allowed,,Q16678904
 ,,later,Chino cloth,Chino; chino pants; Pantalón chino,Global,Career & Professional,trousers,allowed,,Q1074407
-,,later,culottes,culote; culotte; Culotte; jupe-culotte,Global,Career & Professional,trousers,allowed,,Q15133790
+,,later,culottes,culote; Culotte; culotte; jupe-culotte,Global,Career & Professional,trousers,allowed,,Q15133790
 ,,later,demob suit,,European,Career & Professional,suit,allowed,,Q21834771
 ,,later,drape suit,,Global,Career & Professional,suit,allowed,,Q5305834
 ,,later,dress shirt,camisa; chemise; button-down; button shirt; button-front,Global,Career & Professional,top,allowed,,Q2393753
@@ -1080,7 +1080,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,robe à l'anglaise,close-bodied gown; English nightgown,European,Occasion & Party,dress,allowed,,Q1615491
 ,,later,slip dress,robe nuisette,Global,Occasion & Party,dress,allowed,,Q10671590
 ,,later,smoking jacket,batin; veste d'intérieur; veston d'intérieur,Global,Occasion & Party,suit,allowed,,Q1773210
-,,later,tailcoat,frac; Frac; tails; casaca; paletóa,Global,Occasion & Party,suit,allowed,,Q112053
+,,later,tailcoat,Frac; frac; tails; casaca; paletóa,Global,Occasion & Party,suit,allowed,,Q112053
 ,,later,tea gown,vestido de té; robe d'après-midi,European,Occasion & Party,dress,allowed,,Q1351525
 ,,later,Vadhuya,,South Asian,Occasion & Party,dress,allowed,,Q110555103
 ,,later,wedding dress,bridal gown; bridal dress; wedding gown; Robe de mariee; robe de mariée,Global,Occasion & Party,dress,allowed,,Q170063
@@ -1101,7 +1101,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Bomkai sari,Sonepuri; Bomkai saree,South Asian,Cultural & Traditional,saree,allowed,,Q7560934
 ,,later,Buka cloak,,Oceanian,Cultural & Traditional,top,allowed,,Q4986800
 ,,later,bunda,,Unknown,Cultural & Traditional,top,allowed,,Q1005325
-,,later,burnous,burnus; albornoz; Albornoz,African,Cultural & Traditional,top,allowed,,Q1016888
+,,later,burnous,burnus; Albornoz; albornoz,African,Cultural & Traditional,top,allowed,,Q1016888
 ,,later,capote,capot; blanket coat; blanket-coat; Hudson Bay coat,North American,Cultural & Traditional,top,allowed,,Q50364961
 ,,later,chador,xador; tchador,Middle Eastern,Cultural & Traditional,dress,allowed,,Q463843
 ,,later,Chapan,,Central Asian,Cultural & Traditional,top,allowed,,Q2218510
@@ -1120,7 +1120,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Gharara,,Unknown,Cultural & Traditional,dress,allowed,,Q5555695
 ,,later,gunia,,European,Cultural & Traditional,top,allowed,,Q9282694
 ,,later,hakama,Hakama Trousers; hakama trousers,East Asian,Cultural & Traditional,trousers,allowed,,Q164668
-,,later,handloom sari,handloom saree; Handloom saree,Unknown,Cultural & Traditional,saree,allowed,,Q21244980
+,,later,handloom sari,Handloom saree; handloom saree,Unknown,Cultural & Traditional,saree,allowed,,Q21244980
 ,,later,hanfu,Han fu; Hanhok; Hanzhuang; Han clothing; Han Chinese clothing,East Asian,Cultural & Traditional,dress,allowed,,Q1327357
 ,,later,hanten,,East Asian,Cultural & Traditional,top,allowed,,Q1132685
 ,,later,haori,haori jackets,East Asian,Cultural & Traditional,top,allowed,,Q1503993
@@ -1135,7 +1135,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,kaiku,,European,Cultural & Traditional,top,allowed,,Q12261193
 ,,later,Kalabubu,Kala bubu,Unknown,Cultural & Traditional,dress,allowed,,Q42746801
 ,,later,Kanchipuram sari,kancheepuram,South Asian,Cultural & Traditional,saree,allowed,,Q6361073
-,,later,kanga,leso; khanga; Khanga; Kanga (vestuário),African,Cultural & Traditional,dress,allowed,,Q942219
+,,later,kanga,leso; Khanga; khanga; Kanga (vestuário),African,Cultural & Traditional,dress,allowed,,Q942219
 ,,later,kebaya,kabaja; kabaya,Southeast Asian,Cultural & Traditional,dress,allowed,,Q1641029
 ,,later,Kerala sari,Set-saree,South Asian,Cultural & Traditional,saree,allowed,,Q7456209
 ,,later,kimono,quimono,East Asian,Cultural & Traditional,dress,allowed,,Q483444
@@ -1146,7 +1146,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,kozhukh,Kojoukh,European,Cultural & Traditional,top,allowed,,Q6435249
 ,,later,kukurio no hakama,nubakama; kukuri-bakama; kukuri-hakama,Unknown,Cultural & Traditional,trousers,allowed,,Q11497859
 ,,later,Lace sari,Lace saree,Unknown,Cultural & Traditional,saree,allowed,,Q125524433
-,,later,lavalava,'ie; lava lava; lava-lava; Lava-lava,Unknown,Cultural & Traditional,top,allowed,,Q1756839
+,,later,lavalava,'ie; lava lava; Lava-lava; lava-lava,Unknown,Cultural & Traditional,top,allowed,,Q1756839
 ,,later,lopapeysa,,European,Cultural & Traditional,top,allowed,,Q1674242
 ,,later,low-rise saris,,Unknown,Cultural & Traditional,saree,allowed,,Q75112483
 ,,later,lusekofte,setesdalsgenser,European,Cultural & Traditional,top,allowed,,Q3441677
@@ -1192,7 +1192,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Tant sari,Tant saree,South Asian,Cultural & Traditional,saree,allowed,,Q7683786
 ,,later,tear dress,,North American,Cultural & Traditional,dress,allowed,,Q98609848
 ,,later,terno,,Southeast Asian,Cultural & Traditional,dress,allowed,,Q112155193
-,,later,Thawb,tobe; thobe; dishdasha; Dishdasha; Saudi thobe,Middle Eastern,Cultural & Traditional,dress,allowed,,Q378648
+,,later,Thawb,tobe; thobe; Dishdasha; dishdasha; Saudi thobe,Middle Eastern,Cultural & Traditional,dress,allowed,,Q378648
 ,,later,tobi trousers,Tobi Style,East Asian,Cultural & Traditional,trousers,allowed,,Q3530132
 ,,later,tomesode,irotomesode; kurotomesode,East Asian,Cultural & Traditional,dress,allowed,,Q967222
 ,,later,traditional Thai clothing,chut Thai; tenue traditionnelle thaïlandaise; Vestimenta tradicional de Tailandia,Southeast Asian,Cultural & Traditional,dress,allowed,,Q17064772
@@ -1208,7 +1208,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,yukata,Casual Kimonos,East Asian,Cultural & Traditional,dress,allowed,,Q849302
 ,,later,zagalejo,,European,Cultural & Traditional,skirt,allowed,,Q22810159
 ,,later,afternoon dress,robe d'après-midi,Global,Everyday,dress,allowed,,Q11284623
-,,later,aloha shirt,palaka aloha; hawaiian shirt; Hawaiian shirt; Camisa havaiana; Camisa hawaiana,Oceanian,Everyday,top,allowed,,Q1145477
+,,later,aloha shirt,palaka aloha; Hawaiian shirt; hawaiian shirt; Camisa havaiana; Camisa hawaiana,Oceanian,Everyday,top,allowed,,Q1145477
 ,,later,Arab clothing,Arab dress; Arabic clothing; clothing in Arab cultures,Middle Eastern,Everyday,dress,allowed,,Q123382852
 ,,later,Aran jumper,Aran jersey; Aran sweater; Aran knitwear,European,Everyday,top,allowed,,Q2093993
 ,,later,Av Pak,,Southeast Asian,Everyday,top,allowed,,Q4827367
@@ -1255,7 +1255,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Hadiach shirt,,European,Everyday,top,allowed,,Q139383842
 ,,later,half zip sweater,quarter zip; button pullover; half zip pullover; quarter zip sweater; quarter zip pullover,Global,Everyday,top,allowed,,Q2455998
 ,,later,handkerchief skirt,handkerchief-point skirt,Global,Everyday,skirt,allowed,,Q5647451
-,,later,henley shirt,henley; Henley; Henley (vêtement),Global,Everyday,top,allowed,,Q5714710
+,,later,henley shirt,Henley; henley; Henley (vêtement),Global,Everyday,top,allowed,,Q5714710
 ,,later,High-low skirt,,Global,Everyday,skirt,allowed,,Q5754590
 ,,later,hobble skirt,Falda trabada,Global,Everyday,skirt,allowed,,Q1637220
 ,,later,house dress,housedress; morning dress,Global,Everyday,dress,allowed,,Q17143045
@@ -1376,10 +1376,10 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Heuque,Heuke; Hoike; Hoyke; Huque,European,Outerwear,top,allowed,,Q20760856
 ,,later,Inverness cape,Inverness; inverness; Macfarlane; Inverness coat; Inverness cloak,Global,Outerwear,top,allowed,,Q1433816
 ,,later,Inverness coat,,Global,Outerwear,top,allowed,,Q615737
-,,later,jacket,saco; Saco; veste; casaca; chumpa,Global,Outerwear,top,allowed,,Q849964
+,,later,jacket,Saco; saco; veste; casaca; chumpa,Global,Outerwear,top,allowed,,Q849964
 ,,later,jean jacket,denim jacket; jeans jacket; trucker jacket; chaqueta de jean; chaqueta de jeans,Global,Outerwear,top,allowed,,Q48524668
 ,,later,jupe,,Global,Outerwear,top,allowed,,Q1247166
-,,later,kabic,kabig; Kabig,Global,Outerwear,top,allowed,,Q3191652
+,,later,kabic,Kabig; kabig,Global,Outerwear,top,allowed,,Q3191652
 ,,later,kontusz,kontush,European,Outerwear,top,allowed,,Q1783432
 ,,later,letter jacket,varsity jacket; baseball jacket; letterman jacket,Global,Outerwear,top,allowed,,Q124445488
 ,,later,lounge jacket,veste; suit coat; dress coat; lounge coat; suit jacket,Global,Outerwear,top,allowed,,Q1522424
@@ -1416,7 +1416,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Union Jack jacket,,European,Outerwear,top,allowed,,Q10709668
 ,,later,wamus,,Global,Outerwear,top,allowed,,Q18394446
 ,,later,waxed jacket,Jaqueta encerada,European,Outerwear,top,allowed,,Q462753
-,,later,white coat,bata; Bata; blouse; jaleco; lab coat,Global,Outerwear,top,allowed,,Q1354040
+,,later,white coat,Bata; bata; blouse; jaleco; lab coat,Global,Outerwear,top,allowed,,Q1354040
 ,,later,windbreaker,coupe-vent; windcheater,Global,Outerwear,top,allowed,,Q8195483
 ,,later,Witzchoura,,Global,Outerwear,top,allowed,,Q18395231
 ,,later,zouave jacket,veste à la zouave,Global,Outerwear,top,allowed,,Q8074616
@@ -1607,10 +1607,10 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,wooden bow tie,Noeud papillon en bois,Global,Accessories,one_size,allowed,,Q25394653
 ,,later,yupei,,East Asian,Accessories,one_size,allowed,,Q111206277
 ,,later,acid-washed jeans,,Global,not_applicable,trousers,not_allowed,Not allowed: jeans.,Q132857942
-,,later,aqal,agal; egal; Eqal; igal; iqal,Unknown,not_applicable,none_fits,not_allowed,Not allowed: hats and caps.,Q390210
+,,later,aqal,agal; egal; Eqal; igal; Iqal,Unknown,not_applicable,none_fits,not_allowed,Not allowed: hats and caps.,Q390210
 ,,later,babydoll,nuisette; baby doll; picardias; picardías,Global,not_applicable,none_fits,not_allowed,Not allowed: lingerie.,Q797901
 ,,later,bahag,,Southeast Asian,not_applicable,none_fits,not_allowed,Not allowed: underwear.,Q4842289
-,,later,Baja hoodie,poncho Baja; Poncho Baja; surfer hoodie,Latin American,not_applicable,top,not_allowed,Not allowed: hoodies and sweatshirts.,Q6082375
+,,later,Baja hoodie,Poncho Baja; poncho Baja; surfer hoodie,Latin American,not_applicable,top,not_allowed,Not allowed: hoodies and sweatshirts.,Q6082375
 ,,later,balaclava,cagoule; shiesty; ski mask; balaclavas; monkey cap,Global,not_applicable,none_fits,not_allowed,Not allowed: hats and caps.,Q211003
 ,,later,baseball stirrups,,Unknown,not_applicable,none_fits,not_allowed,Not allowed: socks.,Q4866621
 ,,later,bashlyk,Bachlyk; bashlik; Baslique; Shkharkhon,Central Asian,not_applicable,none_fits,not_allowed,Not allowed: hats and caps.,Q809807
@@ -1677,12 +1677,12 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,horseshoe,fer; ferradura; Herradura; Ferraduras; herraduras,Unknown,not_applicable,none_fits,not_allowed,Not allowed: shoes.,Q192130
 ,,later,hose,Calza; hosen; Panty; calzas; cueras,Unknown,not_applicable,none_fits,not_allowed,Not allowed: pantyhose.,Q3059530
 ,,later,hosiery,legwear; bonneterie; calcetería,Global,not_applicable,none_fits,not_allowed,Not allowed: pantyhose.,Q2524539
-,,later,hot pants,hotpants; microshort; Microshort; booty shorts; short shorts,Global,not_applicable,trousers,not_allowed,Not allowed: shorts.,Q14957233
+,,later,hot pants,hotpants; Microshort; microshort; booty shorts; short shorts,Global,not_applicable,trousers,not_allowed,Not allowed: shorts.,Q14957233
 ,,later,hourglass corset,Victorian corset,European,not_applicable,none_fits,not_allowed,Not allowed: underwear.,Q12060560
 ,,later,ice hockey jersey,hockey jersey; chandail de hockey; ice hockey sweater; maillot (hockey sur glace); chandail (hockey sur glace),Global,not_applicable,top,not_allowed,Not allowed: T-shirts and tank tops.,Q2955988
 ,,later,jersey,Jezi; jersey frock,Global,not_applicable,top,not_allowed,Not allowed: T-shirts and tank tops.,Q1687904
 ,,later,jorts,jean shorts; denim shorts; shorts vaqueros; pantalón corto vaquero; pantalón vaquero corto,Global,not_applicable,trousers,not_allowed,Not allowed: shorts.,Q71722234
-,,later,Jumping stilts,Poweriser; Powerizer; powerbocking; Powerbocking; bounce stilts,Unknown,not_applicable,none_fits,not_allowed,Not allowed: shoes.,Q895138
+,,later,Jumping stilts,Poweriser; Powerizer; Powerbocking; powerbocking; bounce stilts,Unknown,not_applicable,none_fits,not_allowed,Not allowed: shoes.,Q895138
 ,,later,Kepis of the Confederate States,Confederate forage caps,Global,not_applicable,none_fits,not_allowed,Not allowed: hats and caps.,Q139858459
 ,,later,knee highs,Knee-high socks; below-the-knee socks,Global,not_applicable,none_fits,not_allowed,Not allowed: socks.,Q3757905
 ,,later,leg warmer,greave; polaina; jambière; Polainas; calentador,Global,not_applicable,none_fits,not_allowed,Not allowed: pantyhose.,Q1097922
@@ -1708,7 +1708,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,over-the-knee sock,calcetas; knee sock; Thigh Highs; over-knee sock,Global,not_applicable,none_fits,not_allowed,Not allowed: socks.,Q1134320
 ,,later,pantyhose,Panti; Panty; Pantis; Pantys; sheers,Global,not_applicable,none_fits,not_allowed,Not allowed: pantyhose.,Q276389
 ,,later,peignoir,robe de chambre,Global,not_applicable,none_fits,not_allowed,Not allowed: lingerie.,Q11164286
-,,later,period panties,period undies; Braga menstrual; period underwear; Period underwear; culotte de règles,Global,not_applicable,none_fits,not_allowed,Not allowed: underwear.,Q1944079
+,,later,period panties,period undies; Braga menstrual; Period underwear; period underwear; culotte de règles,Global,not_applicable,none_fits,not_allowed,Not allowed: underwear.,Q1944079
 ,,later,perizoma,Perizonium; perizonium; Périzonium; Paño de pureza; Paños de pureza,Global,not_applicable,none_fits,not_allowed,Not allowed: underwear.,Q3412010
 ,,later,petticoat,jupon; Nagwas; Camison; Hapslip; Kamison,Global,not_applicable,none_fits,not_allowed,Not allowed: underwear.,Q1062620
 ,,later,printed T-shirt,graphic T-shirt; tee-shirt imprimé,Global,not_applicable,top,not_allowed,Not allowed: T-shirts and tank tops.,Q7245278

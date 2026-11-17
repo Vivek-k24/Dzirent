@@ -45,8 +45,8 @@
    "vocabulary": [
     "fato",
     "suit",
-    "terno",
     "Terno",
+    "terno",
     "traje",
     "complet",
     "Costard",
@@ -74,8 +74,8 @@
     "three-piece suit",
     "Costume trois pièces",
     "Costume trois-pieces",
-    "Costume trois-pièces",
-    "Costume Trois-pièces"
+    "Costume Trois-pièces",
+    "Costume trois-pièces"
    ],
    "dzirent_category": "Career & Professional",
    "dzirent_item_type": null,
@@ -94,8 +94,8 @@
     "calças",
     "slacks",
     "Suruali",
-    "pantalon",
     "Pantalon",
+    "pantalon",
     "pantalón",
     "trousers",
     "pantalones",
@@ -287,8 +287,8 @@
     "anarkali suit",
     "anarkali dress",
     "Anarkali lehenga",
-    "anarkali salwar suit",
-    "Anarkali Salwar Suit"
+    "Anarkali Salwar Suit",
+    "anarkali salwar suit"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -364,8 +364,8 @@
    "qid": "Q1552950",
    "english_name": "guayabera",
    "vocabulary": [
-    "guayabera",
     "Guayabera",
+    "guayabera",
     "wedding shirt",
     "guayabera shirt"
    ],
@@ -388,8 +388,8 @@
     "Chosŏn-ot",
     "Joseon-ot",
     "chima jeogori",
-    "traditional korean dress",
     "Traditional Korean Dress",
+    "traditional korean dress",
     "Tradisyunal na damit ng Korea"
    ],
    "dzirent_category": "Cultural & Traditional",
@@ -404,8 +404,8 @@
    "vocabulary": [
     "Hipil",
     "Huepil",
-    "huipil",
     "Huipil",
+    "huipil",
     "embroidered tunic",
     "embroidered huipil"
    ],
@@ -437,8 +437,8 @@
    "english_name": "lehenga",
    "vocabulary": [
     "ghagra",
-    "lehenga",
     "Lehenga",
+    "lehenga",
     "lehengas",
     "lehenga choli"
    ],
@@ -467,12 +467,12 @@
    "qid": "Q172827",
    "english_name": "sari",
    "vocabulary": [
-    "sari",
     "Sari",
+    "sari",
     "sári",
     "saree",
-    "saris",
     "Saris",
+    "saris",
     "shari",
     "sarees",
     "draped sari"
@@ -489,8 +489,8 @@
    "vocabulary": [
     "salwar suit",
     "salwar kameej",
-    "salwar kameez",
     "Salwar kameez",
+    "salwar kameez",
     "shalwar kameez",
     "shalwar qameez"
    ],
@@ -504,8 +504,8 @@
    "qid": "Q837879",
    "english_name": "Sherwani",
    "vocabulary": [
-    "sherwani",
     "Sherwani",
+    "sherwani",
     "achkan coat",
     "traditional sherwani"
    ],
@@ -575,8 +575,8 @@
     "Jalda",
     "Palda",
     "Saias",
-    "skirt",
     "Skirt",
+    "skirt",
     "Babong",
     "Iskert",
     "Iskirt",
@@ -753,8 +753,8 @@
     "Necktie",
     "necktie",
     "long tie",
-    "neck tie",
     "Neck tie",
+    "neck tie",
     "Neck-tie",
     "Magkorbata",
     "Magkurbata",
@@ -885,11 +885,11 @@
    "qid": "Q83363",
    "english_name": "jeans",
    "vocabulary": [
-    "jean",
     "Jean",
+    "jean",
     "denim",
-    "jeans",
     "Jeans",
+    "jeans",
     "Bluyin",
     "Bluyín",
     "Jìínsì",
@@ -900,8 +900,8 @@
     "bluejean",
     "blue jean",
     "Bluejeans",
-    "blue jeans",
     "Blue jeans",
+    "blue jeans",
     "blue-jeans",
     "Pecosbiles",
     "calça jeans",
@@ -1064,8 +1064,8 @@
     "tog",
     "malla",
     "cossie",
-    "bathers",
     "Bathers",
+    "bathers",
     "bañador",
     "swimsuit",
     "swimwear",
@@ -1083,8 +1083,8 @@
     "Panpaglalanguy",
     "roupa de banho",
     "traje de banho",
-    "bathing costume",
     "Bathing costume",
+    "bathing costume",
     "calção de banho",
     "costume de bain",
     "little Swimmers",
@@ -1122,10 +1122,10 @@
     "Tshirt",
     "franela",
     "playera",
-    "t shirt",
     "T shirt",
-    "t-shirt",
+    "t shirt",
     "T-shirt",
+    "t-shirt",
     "camiseta",
     "camisola",
     "t-shirts",
@@ -1447,8 +1447,8 @@
     "Djellaba",
     "djellaba",
     "Galabiya",
-    "jellabah",
     "Jellabah",
+    "jellabah",
     "Jellabia"
    ],
    "dzirent_category": "Cultural & Traditional",
@@ -1721,8 +1721,8 @@
    "vocabulary": [
     "cagoul",
     "kagool",
-    "cagoule",
     "Cagoule",
+    "cagoule",
     "kagoule"
    ],
    "dzirent_category": "Outerwear",
@@ -1870,8 +1870,8 @@
    "english_name": "bombachas",
    "vocabulary": [
     "bombacha",
-    "bombachas",
     "Bombachas",
+    "bombachas",
     "Bombacha de campo",
     "Bombacha de gaucho",
     "Bombacha gauchesca"
@@ -2010,8 +2010,8 @@
    "english_name": "culottes",
    "vocabulary": [
     "culote",
-    "culotte",
     "Culotte",
+    "culotte",
     "culottes",
     "jupe-culotte"
    ],
@@ -2359,8 +2359,8 @@
    "qid": "Q19945950",
    "english_name": "Nábrók",
    "vocabulary": [
-    "nábrók",
     "Nábrók",
+    "nábrók",
     "necropants",
     "necrocalzones"
    ],
@@ -2760,8 +2760,8 @@
    "english_name": "zoot suit",
    "vocabulary": [
     "zazou",
-    "zoot suit",
     "Zoot suit",
+    "zoot suit",
     "zuit suit",
     "Terno zoot"
    ],
@@ -3017,8 +3017,8 @@
    "qid": "Q112053",
    "english_name": "tailcoat",
    "vocabulary": [
-    "frac",
     "Frac",
+    "frac",
     "tails",
     "casaca",
     "paletóa",
@@ -3119,8 +3119,8 @@
    "qid": "Q19887880",
    "english_name": "andarak",
    "vocabulary": [
-    "andarak",
-    "Andarak"
+    "Andarak",
+    "andarak"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3268,8 +3268,8 @@
    "qid": "Q2907091",
    "english_name": "blouza",
    "vocabulary": [
-    "blouza",
-    "Blouza"
+    "Blouza",
+    "blouza"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3321,8 +3321,8 @@
    "vocabulary": [
     "burnus",
     "burnous",
-    "albornoz",
-    "Albornoz"
+    "Albornoz",
+    "albornoz"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3407,8 +3407,8 @@
    "qid": "Q867122",
    "english_name": "churidar",
    "vocabulary": [
-    "churidar",
     "Churidar",
+    "churidar",
     "churidars",
     "churidar pyjamas",
     "Pantalon churidar",
@@ -3438,8 +3438,8 @@
    "qid": "Q1182320",
    "english_name": "deel",
    "vocabulary": [
-    "deel",
     "Deel",
+    "deel",
     "Deel (vestimenta)"
    ],
    "dzirent_category": "Cultural & Traditional",
@@ -3464,8 +3464,8 @@
    "qid": "Q850794",
    "english_name": "dhoti",
    "vocabulary": [
-    "dhoti",
     "Dhoti",
+    "dhoti",
     "Dhotî",
     "dhuti",
     "Dhotis",
@@ -3508,8 +3508,8 @@
    "qid": "Q1204334",
    "english_name": "furisode",
    "vocabulary": [
-    "furisode",
     "Furisode",
+    "furisode",
     "Hurisode",
     "Furisode Kimonos"
    ],
@@ -3590,8 +3590,8 @@
    "english_name": "handloom sari",
    "vocabulary": [
     "handloom sari",
-    "handloom saree",
-    "Handloom saree"
+    "Handloom saree",
+    "handloom saree"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3603,8 +3603,8 @@
    "qid": "Q1327357",
    "english_name": "hanfu",
    "vocabulary": [
-    "hanfu",
     "Hanfu",
+    "hanfu",
     "Han fu",
     "Hanhok",
     "Hanzhuang",
@@ -3725,8 +3725,8 @@
    "qid": "Q2384562",
    "english_name": "kadroun",
    "vocabulary": [
-    "kadroun",
-    "Kadroun"
+    "Kadroun",
+    "kadroun"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -3794,8 +3794,8 @@
     "leso",
     "Kanga",
     "kanga",
-    "khanga",
     "Khanga",
+    "khanga",
     "Kanga (vestuário)"
    ],
    "dzirent_category": "Cultural & Traditional",
@@ -3947,8 +3947,8 @@
     "'ie",
     "lavalava",
     "lava lava",
-    "lava-lava",
-    "Lava-lava"
+    "Lava-lava",
+    "lava-lava"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -4025,8 +4025,8 @@
    "qid": "Q6744520",
    "english_name": "Malong",
    "vocabulary": [
-    "malong",
-    "Malong"
+    "Malong",
+    "malong"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -4148,8 +4148,8 @@
    "qid": "Q13156645",
    "english_name": "mundu",
    "vocabulary": [
-    "mundu",
-    "Mundu"
+    "Mundu",
+    "mundu"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -4188,8 +4188,8 @@
    "english_name": "pareo",
    "vocabulary": [
     "manou",
-    "pareo",
     "Pareo",
+    "pareo",
     "paréo",
     "lavalava"
    ],
@@ -4353,8 +4353,8 @@
    "qid": "Q630573",
    "english_name": "sarafan",
    "vocabulary": [
-    "sarafan",
     "Sarafan",
+    "sarafan",
     "sarafán",
     "sarafane"
    ],
@@ -4395,8 +4395,8 @@
    "qid": "Q322781",
    "english_name": "sarong",
    "vocabulary": [
-    "sarong",
     "Sarong",
+    "sarong",
     "Sarongs",
     "sarongue"
    ],
@@ -4459,8 +4459,8 @@
    "qid": "Q4192272",
    "english_name": "Sukmana",
    "vocabulary": [
-    "sukmana",
-    "Sukmana"
+    "Sukmana",
+    "sukmana"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -4566,8 +4566,8 @@
     "tobe",
     "Thawb",
     "thobe",
-    "dishdasha",
     "Dishdasha",
+    "dishdasha",
     "Saudi thobe",
     "thawb Saudi"
    ],
@@ -4624,8 +4624,8 @@
    "qid": "Q6151535",
    "english_name": "traje de tuna",
    "vocabulary": [
-    "traje de tuna",
-    "Traje de tuna"
+    "Traje de tuna",
+    "traje de tuna"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -4745,8 +4745,8 @@
    "qid": "Q849302",
    "english_name": "yukata",
    "vocabulary": [
-    "yukata",
     "Yukata",
+    "yukata",
     "Casual Kimonos"
    ],
    "dzirent_category": "Cultural & Traditional",
@@ -4786,8 +4786,8 @@
    "vocabulary": [
     "aloha shirt",
     "palaka aloha",
-    "hawaiian shirt",
     "Hawaiian shirt",
+    "hawaiian shirt",
     "Camisa havaiana",
     "Camisa hawaiana",
     "chemise hawaïenne"
@@ -5322,8 +5322,8 @@
    "qid": "Q5590107",
    "english_name": "gowni",
    "vocabulary": [
-    "gowni",
-    "Gowni"
+    "Gowni",
+    "gowni"
    ],
    "dzirent_category": "Everyday",
    "dzirent_item_type": null,
@@ -5433,8 +5433,8 @@
    "qid": "Q5714710",
    "english_name": "henley shirt",
    "vocabulary": [
-    "henley",
     "Henley",
+    "henley",
     "henley shirt",
     "Henley (vêtement)"
    ],
@@ -5503,8 +5503,8 @@
     "JSK",
     "pichi",
     "pinny",
-    "jumper",
     "Jumper",
+    "jumper",
     "Champer",
     "pinafore",
     "jumper dress",
@@ -6636,8 +6636,8 @@
    "english_name": "blouson",
    "vocabulary": [
     "jumper",
-    "blouson",
     "Blouson",
+    "blouson",
     "blouse jacket"
    ],
    "dzirent_category": "Outerwear",
@@ -6668,8 +6668,8 @@
    "qid": "Q20716289",
    "english_name": "British Warm",
    "vocabulary": [
-    "British warm",
     "British Warm",
+    "British warm",
     "British Warm overcoat"
    ],
    "dzirent_category": "Outerwear",
@@ -6930,8 +6930,8 @@
    "qid": "Q2436707",
    "english_name": "delia",
    "vocabulary": [
-    "delia",
-    "Delia"
+    "Delia",
+    "delia"
    ],
    "dzirent_category": "Outerwear",
    "dzirent_item_type": null,
@@ -7186,8 +7186,8 @@
    "qid": "Q849964",
    "english_name": "jacket",
    "vocabulary": [
-    "saco",
     "Saco",
+    "saco",
     "veste",
     "casaca",
     "chumpa",
@@ -7244,8 +7244,8 @@
    "vocabulary": [
     "Kabic",
     "kabic",
-    "kabig",
-    "Kabig"
+    "Kabig",
+    "kabig"
    ],
    "dzirent_category": "Outerwear",
    "dzirent_item_type": null,
@@ -7258,8 +7258,8 @@
    "english_name": "kontusz",
    "vocabulary": [
     "kontush",
-    "kontusz",
-    "Kontusz"
+    "Kontusz",
+    "kontusz"
    ],
    "dzirent_category": "Outerwear",
    "dzirent_item_type": null,
@@ -7632,8 +7632,8 @@
    "qid": "Q430692",
    "english_name": "spencer",
    "vocabulary": [
-    "spencer",
-    "Spencer"
+    "Spencer",
+    "spencer"
    ],
    "dzirent_category": "Outerwear",
    "dzirent_item_type": null,
@@ -7750,8 +7750,8 @@
    "qid": "Q1354040",
    "english_name": "white coat",
    "vocabulary": [
-    "bata",
     "Bata",
+    "bata",
     "blouse",
     "jaleco",
     "lab coat",
@@ -8418,8 +8418,8 @@
    "qid": "Q5801066",
    "english_name": "decenario",
    "vocabulary": [
-    "decenario",
-    "Decenario"
+    "Decenario",
+    "decenario"
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
@@ -9284,8 +9284,8 @@
    "qid": "Q2668301",
    "english_name": "mood ring",
    "vocabulary": [
-    "mood ring",
     "Mood ring",
+    "mood ring",
     "bague d'humeur",
     "Anillo de humor",
     "Anillo del humor"
@@ -9714,8 +9714,8 @@
    "qid": "Q2103426",
    "english_name": "reticule",
    "vocabulary": [
-    "reticule",
     "Reticule",
+    "reticule",
     "Ridiculo",
     "ridículo",
     "réticule",
@@ -10503,8 +10503,8 @@
     "egal",
     "Eqal",
     "igal",
-    "iqal",
     "Iqal",
+    "iqal",
     "aggal",
     "Breem",
     "agghal"
@@ -10535,8 +10535,8 @@
    "qid": "Q4842289",
    "english_name": "bahag",
    "vocabulary": [
-    "bahag",
-    "Bahag"
+    "Bahag",
+    "bahag"
    ],
    "dzirent_category": "not_applicable",
    "dzirent_item_type": null,
@@ -10549,8 +10549,8 @@
    "english_name": "Baja hoodie",
    "vocabulary": [
     "Baja hoodie",
-    "poncho Baja",
     "Poncho Baja",
+    "poncho Baja",
     "surfer hoodie"
    ],
    "dzirent_category": "not_applicable",
@@ -10653,8 +10653,8 @@
    "qid": "Q1151995",
    "english_name": "beoseon",
    "vocabulary": [
-    "beoseon",
-    "Beoseon"
+    "Beoseon",
+    "beoseon"
    ],
    "dzirent_category": "not_applicable",
    "dzirent_item_type": null,
@@ -10796,8 +10796,8 @@
     "caleçon",
     "calzoncillo",
     "Girl boxers",
-    "boxer shorts",
     "Boxer shorts",
+    "boxer shorts",
     "loose boxers",
     "Bokser na salawal",
     "Boxer Calzoncillo",
@@ -10821,8 +10821,8 @@
    "english_name": "boyshorts",
    "vocabulary": [
     "Shorty",
-    "boyshorts",
     "Boyshorts",
+    "boyshorts",
     "Culotte garçonne"
    ],
    "dzirent_category": "not_applicable",
@@ -10859,8 +10859,8 @@
    "english_name": "bustier",
    "vocabulary": [
     "bustiê",
-    "bustier",
     "Bustier",
+    "bustier",
     "bustiere"
    ],
    "dzirent_category": "not_applicable",
@@ -10940,8 +10940,8 @@
    "qid": "Q572240",
    "english_name": "chaperon",
    "vocabulary": [
-    "chaperon",
     "Chaperon",
+    "chaperon",
     "chaperón",
     "Chaperon (headgear)"
    ],
@@ -10958,8 +10958,8 @@
     "shift",
     "smock",
     "Shalha",
-    "chemise",
-    "Chemise"
+    "Chemise",
+    "chemise"
    ],
    "dzirent_category": "not_applicable",
    "dzirent_item_type": null,
@@ -11170,8 +11170,8 @@
    "vocabulary": [
     "armador",
     "crinolina",
-    "crinoline",
     "Crinoline",
+    "crinoline",
     "mirinaque",
     "miriñaque"
    ],
@@ -11630,8 +11630,8 @@
     "hotpants",
     "Hot pants",
     "hot pants",
-    "microshort",
     "Microshort",
+    "microshort",
     "booty shorts",
     "short shorts"
    ],
@@ -11708,8 +11708,8 @@
    "vocabulary": [
     "Poweriser",
     "Powerizer",
-    "powerbocking",
     "Powerbocking",
+    "powerbocking",
     "bounce stilts",
     "spring stilts",
     "Jumping stilts",
@@ -11874,8 +11874,8 @@
    "qid": "Q3302840",
    "english_name": "maxtlatl",
    "vocabulary": [
-    "maxtlatl",
     "Maxtlatl",
+    "maxtlatl",
     "Tlalpilli"
    ],
    "dzirent_category": "not_applicable",
@@ -11994,8 +11994,8 @@
    "qid": "Q763606",
    "english_name": "nemes",
    "vocabulary": [
-    "nemes",
     "Nemes",
+    "nemes",
     "Némès",
     "nemyss"
    ],
@@ -12081,11 +12081,11 @@
     "Pantys",
     "sheers",
     "Collant",
-    "collants",
     "Collants",
+    "collants",
     "pantihose",
-    "pantyhose",
     "Pantyhose",
+    "pantyhose",
     "meia-calça",
     "Pantimedia",
     "Pantimedias",
@@ -12118,8 +12118,8 @@
     "period undies",
     "period panties",
     "Braga menstrual",
-    "period underwear",
     "Period underwear",
+    "period underwear",
     "culotte de règles",
     "menstrual panties",
     "Bombacha menstrual",
@@ -12216,8 +12216,8 @@
    "english_name": "rash guard",
    "vocabulary": [
     "rashie",
-    "rash guard",
-    "Rash guard"
+    "Rash guard",
+    "rash guard"
    ],
    "dzirent_category": "not_applicable",
    "dzirent_item_type": null,
@@ -12590,8 +12590,8 @@
    "qid": "Q1706305",
    "english_name": "tankini",
    "vocabulary": [
-    "tankini",
     "Tankini",
+    "tankini",
     "Tanquini",
     "tanquíni",
     "tank-top bikini"
@@ -12630,16 +12630,16 @@
     "tefilan",
     "tefilhn",
     "Tefilim",
-    "tefilin",
     "Tefilin",
+    "tefilin",
     "tefilín",
     "tfillin",
     "Téfilin",
     "t'fillin",
     "Teffilin",
     "Tefiline",
-    "tefillin",
     "Tefillin",
+    "tefillin",
     "Tephilin",
     "téfiline",
     "Téfillin",
@@ -12737,8 +12737,8 @@
    "qid": "Q1520055",
    "english_name": "valenki",
    "vocabulary": [
-    "valenki",
     "Valenki",
+    "valenki",
     "valenko"
    ],
    "dzirent_category": "not_applicable",
