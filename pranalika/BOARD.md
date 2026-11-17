@@ -258,9 +258,12 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 
 | Item | Status |
 | --- | --- |
-| D1 | In progress (Antigravity) |
-| D2 | To do |
-| D3 | To do |
+| D1 | Replaced by D1b (Antigravity; its list came from a wrong root, "title") |
+| D1b Clothing types rebuilt from Wikidata: every root and launch QID checked by label and description, a bounded crawl (4 levels, 2 for banned kinds), classification by the item itself. Stopped at the size gate (2,713 rows) | Done (Claude Code) |
+| D1c Cut A+B (nine non-rentable branches and "fashion accessory" cut out of clothing): 1,731 types (57 launch; 645 allowed, 167 not allowed, 919 review), `review.csv` with `needs_owner`, `vocabulary.json` (812 types for the scanner); the tooling now in `data/vision/`, CI job `vision-data` | Done (Claude Code) |
+| Owner: open `data/vision/taxonomy/review.csv` in Excel; check only the rows where needs_owner is yes (dzirent_category and allowed); save as CSV; tell the coordinator | To do |
+| D2 | To do (next) |
+| D3 | To do (next) |
 | D4 | To do |
 | V1a Color reader (Claude Code): GrabCut garment mask (OpenCV 4.14.0.94, no new model), light correction from a neutral background on the daylight locus, CIELAB clusters named from the xkcd survey's 949 names (CC0) and mapped to the apps' 15 values only, the model's "a photo of a <name> garment" prompts as a second opinion (`color_confidence`); "Checking your photos…" goes as soon as the result is in (website and apps). Sample listings: colors right 12 of 12 (old 8), sample photos 22 of 22 (old 13); verdicts, reasons, categories and non-color title words identical on all 92 photos and 12 listings. Not deployed: gcloud sign-in expired | Done (Claude Code); deploy waits for the owner's `gcloud auth login` |
 | Owner: `gcloud auth login` on this PC, then an agent redeploys `vision` with V1a (the S1 command in the V1a handoff) and confirms `/health` (`v1a.1`) and the warm scan time | To do |

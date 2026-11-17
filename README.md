@@ -85,6 +85,18 @@ Changes to the list: Dzirent uses the English list as of commit `5faf2ba`, leave
 
 Changes to the list: none; the names and values are copied as published, into `services/vision/app/color_names.json`.
 
+### Clothing types
+
+| Data | What Dzirent uses it for | License | Project |
+|---|---|---|---|
+| Wikidata (clothing and accessory classes: their names in English and 15 other languages, parent classes, countries and cultures of origin) | The list of clothing and accessory types in `data/vision/taxonomy/`: each type's Dzirent category, garment or item type, whether it can be listed, and its region. The photo check will read the names in `vocabulary.json` | CC0 1.0 | [wikidata.org](https://www.wikidata.org) |
+
+| Software | What Dzirent uses it for | License | Project |
+|---|---|---|---|
+| Requests | Fetches the Wikidata classes (`data/vision`, run on a PC, not part of any app or service) | Apache 2.0 | [psf/requests](https://github.com/psf/requests) |
+
+Changes to the data: Dzirent keeps only the types it can classify and maps them to its own categories and rules (`data/vision/README.md`); no images are downloaded (image fields are Commons file names only).
+
 ### Photo-check service
 
 | Software | What Dzirent uses it for | License | Project |

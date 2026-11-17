@@ -2,6 +2,112 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## D1c - 2026-11-16 - vision data in the repo
+
+**Before starting:** clean tree, `Preview` up to date at `361f9ef`. Read the D1b entry in `H:\DziRent\Dzirent_vision_data\HANDOFF.md` and its `taxonomy/specs.py`.
+
+**Counts** (`data/vision/taxonomy/`, from `validate.py`):
+- **Total:** 1,731 types, 57 of them launch (gate 200-2,000).
+- **By allowed:** review 919, allowed 645, not_allowed 167.
+- **By category:** Everyday 542, Accessories 452, Cultural & Traditional 277, not_applicable 167, Outerwear 147, Career & Professional 104, Occasion & Party 42.
+- **By region:** Global 719, Unknown 436, European 238, East Asian 101, South Asian 57, African 45, Southeast Asian 39, Latin American 29, North American 28, Middle Eastern 22, Oceanian 11, Central Asian 6.
+- **`vocabulary.json`:** 812 types (645 allowed, 167 not allowed), 3,311 names.
+  - Accessories in it: costume jewelry 145, watch 13, tie 12, handbag 6, sunglasses 6.
+- **`excluded.json`:** 4,721 types.
+  - No Commons category, image or English article: 1,654.
+  - Under an excluded root: 964 (D1b's roots plus cut A).
+  - Banned kind beyond its root's 15 examples: 846.
+  - Only through "fashion accessory" (cut B): 453.
+  - Banned kind more than 2 levels down: 416.
+  - No English label: 227.
+  - Label word: 161.
+
+**The cut applied (A+B, as in the D1b handoff):**
+- **Cut A: nine more exclusion roots in `specs.py`.** Each is resolved and checked by label and description like the others, and recorded in `roots.json`:
+  - costume Q1410477, uniform Q7434, mask Q161524, protective clothing Q14524031, religious clothing Q2490224;
+  - "Liturgical vestments and insignia" Q6501052, academic dress Q1349227, sportswear Q645292, professional wear Q29000407.
+  - **"costume":** two items carry that label. Q9053464 is "wardrobe and dress in general" and holds kimono, hanbok, dirndl, abaya and ball gown (482 of D1b's 2,713 rows). The one used, Q1410477, is the performer's or character's costume.
+  - **Scope "clothing":** they drop a type (P279* or P31/P279*) only when the clothing root alone brings it in. Without that, they would also have removed:
+    - **9 launch types:** kurta and huipil (religious and professional wear); trench coat and sunglasses (protective clothing); hoodie, sweatshirt, swimsuit, sports jersey and tracksuit bottoms (sportswear);
+    - **29 banned examples:** swimwear, jerseys, gym shorts, a helmet. These stay not allowed;
+    - **16 types other roots bring in:** Ray-Ban and aviator sunglasses, ecclesiastical rings, tallit.
+- **Cut B:** the clothing crawl skips "fashion accessory" (Q1065579, resolved the same way). What clothing reaches only through it is dropped unless another positive root reaches it.
+- **Removed, out of D1b's 2,713:**
+  - cut A: 529 (45 allowed, 11 not allowed, 473 review);
+  - cut B: 453 (25 allowed, 4 not allowed, 424 review).
+- **Why 1,731 and not the expected 1,674:** D1b's estimate followed one recorded path per type. The real cut reads each type's ancestors, which catches more. It also spares the launch types, banned examples and other roots' types above, which keeps more. Cut B drops only what "fashion accessory" alone brings in.
+- **Unchanged from D1b:**
+  - plural label words, the "<dress word> of/in" drops, verified countries;
+  - no origin from bare garment classes, the Central Asian region, special-purpose types to review;
+  - step 8: a type with no clear signal is "review", never "allowed" (274 such rows).
+
+**For the coordinator: what the cut costs** (all in `excluded.json` with the root that dropped them):
+- **Cut A removes 45 types the classifier had as allowed.**
+  - **Religious clothing:** abaya, djellaba, qamis, Farwah, Al-Azhar attire.
+  - **Uniform:** Mao suit, attila, ikan, changfu.
+  - **Protective clothing:** raincoat, Mackintosh, cagoule, duster, rain cape, burka.
+  - **Sportswear:** Teba jacket.
+  - **Costume:** bear and gorilla suits.
+  - **The fix, if wanted:** list the cultural ones as launch types, or let cut A send allowed types to review instead of dropping them.
+- **Cut B removes plain watches, cravats and buckles.** Watch, pocket watch, analog, mechanical and digital watches aren't under wristwatch; cravat and ascot aren't under necktie; every buckle comes only through "fashion accessory". So `vocabulary.json` has no "Belt buckle" type.
+  - **The fix, if wanted:** "watch" and "buckle" as accessory roots.
+- **Some garment names hold a city, state or brand.**
+  - **Examples:** Banarasi, Kanchipuram and Kerala saris; Norfolk and Argyll jackets; Guayaquil skirt; Poncho salteño; Hardangerbunad; Jodhpuri; Lady Dior; Ray-Ban; Air Jordan.
+  - **What they are:** Wikidata's names for the type. The origin fields hold countries only.
+  - **If the "no city or state names" rule covers type names:** D2 or D3 should drop or rename them.
+
+**What moved:**
+- **New home:** the tooling is now in `data/vision/`, with the same layout: `README.md`, `HANDOFF.md`, `requirements.txt` and `taxonomy/`.
+  - `taxonomy/` holds the five scripts, `taxonomy.json`, `roots.json`, `excluded.json`, `vocabulary.json` and `review.csv`.
+  - 14 files are tracked. The largest is `taxonomy.json` at 2.8 MB.
+- **Ignored:** `data/vision/.gitignore` keeps out `.venv/`, `taxonomy/raw/` (the Wikidata cache, 39 MB, copied here so the scripts run) and `images/`.
+- **Not copied:** the data folder's `.git`, its `.venv`, D1's stale cache files and D1's wrong outputs. The build wrote new outputs.
+- **`H:\DziRent\Dzirent_vision_data` stays in place:**
+  - a note at the top of its `HANDOFF.md` says the tooling moved, committed in that local-only repo as `edd10a1` and `0f75bee`;
+  - the owner deletes the folder later.
+
+**What changed in the tooling:**
+- **`review.csv`:**
+  - a first column `needs_owner`, yes on the 57 launch rows;
+  - the order is launch rows, then review rows, then the rest by category;
+  - the sheet's part is stored per row (`sheet_group`), so the owner's edits never break the order check.
+- **`vocabulary.json`:** for V1b. One entry per allowed or not-allowed type, never a review type or one marked keep = no.
+  - Fields: `qid`, `english_name`, `vocabulary`, `dzirent_category`, `dzirent_item_type`, `dzirent_garment_type`, `allowed`, `region`.
+- **`--apply-review`:**
+  - keep must be yes, no or blank;
+  - a type marked keep = no stays in `taxonomy.json` and the sheet, so it can be undone, and leaves `vocabulary.json`;
+  - it rewrites `vocabulary.json`;
+  - it reads Excel's plain CSV (Windows-1252) as well as CSV UTF-8.
+- **Validator without the cache:**
+  - each row carries its evidence (`ancestor_roots`, `positive_roots`, `country_evidence`), so `validate.py` runs from the committed files;
+  - `--cache` re-checks that evidence against `taxonomy/raw/fetched.json`: ancestors, the positive roots, every path step as a crawl edge, and the countries' classes.
+- **Line endings:** the JSON files are written with LF.
+- **CI:** a new `vision-data` job installs `data/vision/requirements.txt` and runs `python taxonomy/validate.py` with no network and no cache.
+- **Docs:**
+  - `README.md` open-source section: "Clothing types" (Wikidata, CC0 1.0; Requests, Apache 2.0);
+  - `BOARD.md` Vision data rows;
+  - `testing.md`: the suite, the command and the job;
+  - `data/vision/README.md` and `HANDOFF.md`.
+
+**What was run:**
+1. `fetch_wikidata.py --roots-only`: the ten new specs each resolved to exactly one item (20 requests). All 105 pass: 10 positive, 15 banned, 18 exclusion, 1 skipped, 4 country classes, 57 launch.
+2. `fetch_wikidata.py`: only the ancestor check was new (48 requests); 226 s in all. A re-run made 0 requests (2.2 s).
+3. `build_taxonomy.py`: exit 0, 1,731 rows.
+4. `validate.py` passed 8 of 8 three ways:
+   - on the repo copy;
+   - with `--cache`;
+   - on a scratch copy of only the 14 files git adds, with plain Python 3.12 and no cache (the CI case).
+5. `--apply-review` on a scratch copy, with the sheet saved as Windows-1252 the way Excel's plain CSV saves it:
+   - a keep = no row stayed in `taxonomy.json` and left `vocabulary.json`;
+   - a review row set to allowed joined it;
+   - a launch row's new category was applied;
+   - keep "maybe" was skipped and reported;
+   - the validator then passed 8 of 8.
+   - With two planted defects (a clothing-only type under uniform, and needs_owner on a non-launch row), checks 2 and 7 failed, as they should.
+6. **CI:** (added after the push).
+
+**Owner's next step:** Open data/vision/taxonomy/review.csv in Excel; check only the rows where needs_owner is yes (dzirent_category and allowed); save as CSV; tell the coordinator.
+
 ## V1a - 2026-11-15 - color reader
 
 **Before starting:** clean tree, `Preview` up to date at `8dcd49e`. I didn't touch `H:\DziRent\Dzirent_vision_data` (the other agent's folder). `H:\DziRent\vision-test\should-accept` and `should-reject` are still empty, so there were no owner photos to compare.
