@@ -57,7 +57,7 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
 1. **Wikidata:** `fetch_wikidata.py --roots-only` resolved everything: 11 positive, 15 banned, 18 exclusion, 7 instance-of, 1 skipped, 57 launch, 45 keep. Then the full fetch: 50 requests, 193 s; the watch crawl has 162 classes.
 2. **Taxonomy:** `build_taxonomy.py` exit 0, 1,745 rows. `validate.py` passed 8 of 8, with and without `--cache`, and on a copy of only the committed files.
 3. **Tests:** `pytest data/vision/tests`: 49 passed. They use recorded fixtures only: a cardigan listing from Commons with six real refused pages, and Wikidata P31 records. Any connection off the PC fails a test; a live Commons call was checked to be blocked.
-4. **CI:** [run 44194900141](https://github.com/Vivek-k24/Dzirent/actions/runs/44194900141) on `c417b6b`, green: contracts, website, android, vision, database, vision-data. The vision-data log shows "ALL 8 CHECKS PASSED" and "49 passed".
+4. **CI:** [run 44194900141](https://github.com/Vivek-k24/Dzirent/actions/runs/44194900141) on `c417b6b` (the code and docs), and [run 44205648597](https://github.com/Vivek-k24/Dzirent/actions/runs/44205648597) on `b2853ef` (with `manifest.csv`, `CREDITS.md` and this entry), both green: contracts, website, android, vision, database, vision-data. Each vision-data log shows "ALL 8 CHECKS PASSED" and "49 passed".
 5. **`fetch_commons.py --dry-run`** (every type with a target): 1,912 requests, 26 min, no 429.
    - needs_owner: 102 types, 4,678 of 8,160 available;
    - not allowed: 138 types, 3,190 of 5,520;
