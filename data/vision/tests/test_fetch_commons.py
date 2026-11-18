@@ -1,5 +1,6 @@
-"""fetch_commons.py on recorded Commons responses (fixtures/commons_cardigan.json): the license,
-format and size filters, sha1 dedupe, the manifest and credits, and resuming."""
+"""fetch_commons.py on recorded Commons responses (fixtures/commons_cardigan.json and, since D2b,
+fixtures/commons_search.json): the license, format and size filters, sha1 dedupe, the manifest and
+credits, resuming, the search source, the source column and --prune."""
 
 import copy
 import csv
@@ -224,11 +225,160 @@ def test_dry_run_downloads_nothing(tmp_path):
 def test_targets_and_only_launch():
     rows = [{**ROW, "qid": "Q1", "sheet_group": "launch", "allowed": "allowed"},
             {**ROW, "qid": "Q2", "sheet_group": "keep", "allowed": "allowed"},
+            {**ROW, "qid": "Q7", "sheet_group": "costume", "allowed": "allowed"},
             {**ROW, "qid": "Q3", "sheet_group": "other", "allowed": "not_allowed"},
             {**ROW, "qid": "Q4", "sheet_group": "other", "allowed": "allowed"},
             {**ROW, "qid": "Q5", "sheet_group": "review", "allowed": "review"},
             {**ROW, "qid": "Q6", "sheet_group": "other", "allowed": "allowed", "keep": "no"}]
     assert [(r["qid"], tier, n) for r, tier, n in fc.plan(rows)] == \
-        [("Q1", "launch", 80), ("Q2", "launch", 80), ("Q3", "not_allowed", 40), ("Q4", "allowed", 12)]
-    assert [r["qid"] for r, _, _ in fc.plan(rows, only_launch=True)] == ["Q1", "Q2"]
+        [("Q1", "launch", 80), ("Q2", "launch", 80), ("Q7", "launch", 80), ("Q3", "not_allowed", 40),
+         ("Q4", "allowed", 12)]
+    assert [r["qid"] for r, _, _ in fc.plan(rows, only_launch=True)] == ["Q1", "Q2", "Q7"]
     assert {n for _, _, n in fc.plan(rows, limit=5)} == {5}
+
+
+def test_needs_owner_groups_match_the_build():
+    import build_taxonomy
+    assert fc.NEEDS_OWNER_GROUPS == build_taxonomy.NEEDS_OWNER_GROUPS
+
+
+# --- D2b: the search source (fixtures/commons_search.json) --------------------------------------
+SEARCH = json.loads((Path(__file__).parent / "fixtures" / "commons_search.json").read_text(encoding="utf-8"))
+SROW = SEARCH["row"]  # bear suit: needs_owner = yes (keep list), no P18 and no Commons category
+
+
+class SearchSession(FakeSession):
+    """FakeSession that also answers the recorded search."""
+
+    def __init__(self, fixture=FIXTURE):
+        super().__init__(fixture)
+        self.searches = []
+
+    def route(self, p):
+        if p.get("generator") == "search":
+            self.searches.append(p)
+            return SEARCH["search"] if p["gsrsearch"] == SEARCH["query"] else {"batchcomplete": True}
+        return super().route(p)
+
+
+def search_client(tmp_path, raw="raw"):
+    session = SearchSession()
+    return fc.Commons(raw_dir=tmp_path / raw, session=session, min_interval=0, sleep=lambda s: None), session
+
+
+def ranked_search_pages():
+    return sorted(SEARCH["search"]["query"]["pages"], key=lambda p: p["index"])
+
+
+def test_search_source_fills_a_short_needs_owner_type(tmp_path):
+    client, session = search_client(tmp_path)
+    results = run(client, tmp_path, rows=(SROW,))
+    sent = session.searches[0]
+    # The request is the one that was recorded: the search module over the File namespace.
+    assert {k: sent[k] for k in SEARCH["params"]} == SEARCH["params"]
+    assert sent["generator"] == "search" and sent["gsrnamespace"] == "6" and sent["gsrsearch"] == '"bear suit" filetype:bitmap'
+    accepted = [fc.check_file(p)[0] for p in ranked_search_pages() if fc.check_file(p)[0]]
+    assert len(accepted) == 5 and results[0]["skipped"]["no machine-readable license"] == 1
+    assert results[0]["searched"] and results[0]["sources"] == {"search": 5}
+    manifest = fc.read_manifest(tmp_path / "manifest.csv")
+    assert [m["source"] for m in manifest] == ["search"] * 5
+    # Best match first ("index"), not the order Commons listed the pages in.
+    assert [m["sha1"] for m in manifest] == [c["sha1"] for c in accepted]
+    assert session.downloads == [c["url"] for c in accepted]
+
+
+def test_search_stops_at_the_cap(tmp_path):
+    client, _ = search_client(tmp_path)
+    results = run(client, tmp_path, rows=(SROW,), limit=2)  # the cap is the type's target
+    assert results[0]["added"] == 2 and len(fc.read_manifest(tmp_path / "manifest.csv")) == 2
+
+
+def test_search_only_for_needs_owner_types_under_40(tmp_path, monkeypatch):
+    negative = {**SROW, "qid": "Q2", "sheet_group": "other", "allowed": "not_allowed"}
+    client, session = search_client(tmp_path)
+    results = run(client, tmp_path, rows=(negative,))
+    assert session.searches == [] and results[0]["added"] == 0 and not results[0]["searched"]
+
+    # The cardigan's own sources give it fewer than 40, so it searches; with the bar at 2 it doesn't.
+    client, session = search_client(tmp_path, raw="raw2")
+    (tmp_path / "a").mkdir()
+    run(client, tmp_path / "a", rows=(ROW,))
+    assert [p["gsrsearch"] for p in session.searches] == ['"cardigan" filetype:bitmap']
+    monkeypatch.setattr(fc, "SEARCH_BELOW", 2)
+    client, session = search_client(tmp_path, raw="raw3")
+    (tmp_path / "b").mkdir()
+    results = run(client, tmp_path / "b", rows=(ROW,))
+    assert session.searches == [] and results[0]["added"] > 2 and not results[0]["searched"]
+
+
+def test_search_names_are_review_csv_also_called():
+    row = {"english_name": "bear suit",
+           "vocabulary": ["bear suit", "Bear Suit", 'teddy "bear" costume', "oso", "ours", "urso", "orso", "medved"]}
+    assert fc.also_called(row) == ['teddy "bear" costume', "oso", "ours", "urso", "orso"]
+    assert fc.search_names(row) == ["bear suit", "teddy bear costume", "oso", "ours", "urso", "orso"]
+    # The same names as the committed sheet's also_called column, for every type.
+    taxonomy = json.loads(fc.TAXONOMY_JSON.read_text(encoding="utf-8"))
+    import build_taxonomy
+    sheet = {r["qid"]: r["also_called"] for r in build_taxonomy.read_review_csv()[0]}
+    assert all(sheet[r["qid"]] == "; ".join(fc.also_called(r)) for r in taxonomy)
+
+
+# --- D2b: the manifest's source column ------------------------------------------------------------
+def test_manifest_records_each_source(tmp_path):
+    client, _ = client_for(tmp_path)
+    run(client, tmp_path)
+    manifest = fc.read_manifest(tmp_path / "manifest.csv")
+    p18 = fc.check_file(FIXTURE["fileinfo"]["query"]["pages"][0])[0]["sha1"]
+    by_sha1 = {m["sha1"]: m["source"] for m in manifest}
+    assert by_sha1[p18] == "p18"
+    assert {m["source"] for m in manifest} == {"p18", "category", "subcategory"}
+    category = {fc.check_file(p)[0]["sha1"] for p in FIXTURE["category"]["query"]["pages"] if fc.check_file(p)[0]}
+    assert all(by_sha1[s] == "category" for s in category - {p18})
+
+
+def test_older_manifest_gets_its_sources_from_the_cache(tmp_path):
+    client, _ = client_for(tmp_path)
+    run(client, tmp_path)
+    path = tmp_path / "manifest.csv"
+    first = fc.read_manifest(path)
+    old_columns = [c for c in fc.MANIFEST_COLUMNS if c != "source"]  # the D2 manifest
+    with open(path, "w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=old_columns, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows({c: m[c] for c in old_columns} for m in first)
+
+    client, session = client_for(tmp_path)
+    run(client, tmp_path)
+    assert session.api_calls == 0 and session.downloads == []  # the cache alone
+    assert fc.read_manifest(path) == first
+
+
+# --- D2b: --prune --------------------------------------------------------------------------------
+def test_prune_removes_files_and_rows(tmp_path):
+    client, _ = search_client(tmp_path)
+    run(client, tmp_path, rows=(ROW, SROW))
+    manifest = fc.read_manifest(tmp_path / "manifest.csv")
+    cardigan = [m for m in manifest if m["qid"] == ROW["qid"]]
+    bear = [m for m in manifest if m["qid"] == SROW["qid"]]
+    assert cardigan and bear
+    thumbs = tmp_path / "thumbs"
+    (thumbs / ROW["qid"]).mkdir(parents=True)
+    (thumbs / ROW["qid"] / f"{cardigan[0]['sha1']}.jpg").write_bytes(JPEG)
+    paths = dict(manifest_path=tmp_path / "manifest.csv", files_dir=tmp_path / "files", thumbs_dir=thumbs,
+                 credits_path=tmp_path / "CREDITS.md")
+
+    # The cardigan is marked keep = no: its photos, thumbnail and folder go; the bear suit's stay.
+    report = fc.prune([{**ROW, "keep": "no"}, SROW], **paths)
+    size = len(JPEG) * len(cardigan)
+    assert report["files"] == report["manifest_rows"] == len(cardigan) and report["bytes"] == size
+    assert report["thumbnails"] == 1 and not (tmp_path / "files" / ROW["qid"]).exists()
+    assert not (thumbs / ROW["qid"]).exists()
+    assert fc.read_manifest(tmp_path / "manifest.csv") == bear
+    assert all((tmp_path / m["file"]).exists() for m in bear)
+    credits = (tmp_path / "CREDITS.md").read_text(encoding="utf-8")
+    assert f"**{len(bear)} files:**" in credits and not any(m["commons_page_url"] in credits for m in cardigan)
+
+    # The bear suit is no longer in the taxonomy at all: it goes too.
+    report = fc.prune([], **paths)
+    assert report["files"] == len(bear) and fc.read_manifest(tmp_path / "manifest.csv") == []
+    assert not list((tmp_path / "files").rglob("*.jpg"))

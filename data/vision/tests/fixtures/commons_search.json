@@ -1,0 +1,364 @@
+{
+ "recorded": "Wikimedia Commons API, 2026-11-17: fetch_commons.search_candidates' first call for the bear suit type (no P18, no Commons category), the search module as a generator over namespace 6, trimmed to its six best matches (kept in the order Commons listed them; 'index' is the rank). One has no machine-readable license.",
+ "row": {
+  "qid": "Q48995588",
+  "english_name": "bear suit",
+  "dzirent_category": "Occasion & Party",
+  "allowed": "allowed",
+  "sheet_group": "keep",
+  "keep": "",
+  "image": null,
+  "commons_category": null,
+  "vocabulary": [
+   "bear suit"
+  ]
+ },
+ "query": "\"bear suit\" filetype:bitmap",
+ "params": {
+  "generator": "search",
+  "gsrsearch": "\"bear suit\" filetype:bitmap",
+  "gsrnamespace": "6",
+  "gsrlimit": "50",
+  "prop": "imageinfo",
+  "iiprop": "url|size|sha1|mime|extmetadata",
+  "iiurlwidth": "1280",
+  "iiextmetadatafilter": "License|LicenseShortName|LicenseUrl|Artist|Credit",
+  "iiextmetadatalanguage": "en"
+ },
+ "search": {
+  "batchcomplete": true,
+  "query": {
+   "pages": [
+    {
+     "pageid": 3004552,
+     "ns": 6,
+     "title": "File:27 Oct 2007 Seattle Demo 26.jpg",
+     "index": 4,
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 1160464,
+       "width": 2218,
+       "height": 1829,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/37/27_Oct_2007_Seattle_Demo_26.jpg/1280px-27_Oct_2007_Seattle_Demo_26.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 1056,
+       "responsiveUrls": {
+        "2": "https://upload.wikimedia.org/wikipedia/commons/3/37/27_Oct_2007_Seattle_Demo_26.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+       },
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/37/27_Oct_2007_Seattle_Demo_26.jpg/1280px-27_Oct_2007_Seattle_Demo_26.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 1056,
+        "srcset": "https://upload.wikimedia.org/wikipedia/commons/3/37/27_Oct_2007_Seattle_Demo_26.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/3/37/27_Oct_2007_Seattle_Demo_26.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:27_Oct_2007_Seattle_Demo_26.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/3004552",
+       "sha1": "88ba91d6f1396449acd3cde6f576c661b9daab3e",
+       "extmetadata": {
+        "Credit": {
+         "value": "Photo by <a href=\"//commons.wikimedia.org/wiki/User:Jmabel\" title=\"User:Jmabel\">Joe Mabel</a>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a href=\"//commons.wikimedia.org/wiki/User:Jmabel\" title=\"User:Jmabel\">Joe Mabel</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY-SA 3.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "http://creativecommons.org/licenses/by-sa/3.0/",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-sa-3.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 29450426,
+     "ns": 6,
+     "title": "File:Polar bear protest (10032082375).jpg",
+     "index": 1,
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 2095236,
+       "width": 3920,
+       "height": 2204,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Polar_bear_protest_%2810032082375%29.jpg/1280px-Polar_bear_protest_%2810032082375%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 720,
+       "responsiveUrls": {
+        "2": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Polar_bear_protest_%2810032082375%29.jpg/3840px-Polar_bear_protest_%2810032082375%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+       },
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Polar_bear_protest_%2810032082375%29.jpg/1280px-Polar_bear_protest_%2810032082375%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 720,
+        "srcset": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Polar_bear_protest_%2810032082375%29.jpg/3840px-Polar_bear_protest_%2810032082375%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail 2x"
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Polar_bear_protest_%2810032082375%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Polar_bear_protest_(10032082375).jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/29450426",
+       "sha1": "7f3020fde2198c00b0bdd7ccd54bdb9a21326cfc",
+       "extmetadata": {
+        "Credit": {
+         "value": "<p><a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/paytonc/10032082375/\">Polar bear protest</a>\n</p>\n<ul><li>Uploaded by <a href=\"//commons.wikimedia.org/wiki/User:AlbertHerring\" class=\"mw-redirect\" title=\"User:AlbertHerring\">AlbertHerring</a></li></ul>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/41813589@N00\">Payton Chung</a> from DCA, USA",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY 2.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://creativecommons.org/licenses/by/2.0",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-2.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 43584450,
+     "ns": 6,
+     "title": "File:Chess and playing cards (1898) (14598281797).jpg",
+     "index": 2,
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 501960,
+       "width": 1810,
+       "height": 1800,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f7/Chess_and_playing_cards_%281898%29_%2814598281797%29.jpg/1280px-Chess_and_playing_cards_%281898%29_%2814598281797%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 1273,
+       "responsiveUrls": {
+        "2": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Chess_and_playing_cards_%281898%29_%2814598281797%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+       },
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f7/Chess_and_playing_cards_%281898%29_%2814598281797%29.jpg/1280px-Chess_and_playing_cards_%281898%29_%2814598281797%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 1273,
+        "srcset": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Chess_and_playing_cards_%281898%29_%2814598281797%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Chess_and_playing_cards_%281898%29_%2814598281797%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Chess_and_playing_cards_(1898)_(14598281797).jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/43584450",
+       "sha1": "a71aa5a52908bd457f5b0de47cd1b3435a7d597b",
+       "extmetadata": {
+        "Credit": {
+         "value": "<p><a rel=\"nofollow\" class=\"external free\" href=\"https://www.flickr.com/photos/internetarchivebookimages/14598281797/\">https://www.flickr.com/photos/internetarchivebookimages/14598281797/</a>\n</p>\n<ul><li>Source book page: <a rel=\"nofollow\" class=\"external free\" href=\"https://archive.org/stream/chessplayingcard00culi/chessplayingcard00culi#page/n367/mode/1up\">https://archive.org/stream/chessplayingcard00culi/chessplayingcard00culi#page/n367/mode/1up</a></li></ul>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/126377022@N07\">Internet Archive Book Images</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "No restrictions",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://www.flickr.com/commons/usage/",
+         "source": "commons-desc-page"
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 53069583,
+     "ns": 6,
+     "title": "File:A fan in a bear suit poses in front of a Cubs mural outside Wrigleyville Sports. (30406890681).jpg",
+     "index": 6,
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 6088162,
+       "width": 5472,
+       "height": 3324,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6d/A_fan_in_a_bear_suit_poses_in_front_of_a_Cubs_mural_outside_Wrigleyville_Sports._%2830406890681%29.jpg/1280px-A_fan_in_a_bear_suit_poses_in_front_of_a_Cubs_mural_outside_Wrigleyville_Sports._%2830406890681%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 778,
+       "responsiveUrls": {
+        "2": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6d/A_fan_in_a_bear_suit_poses_in_front_of_a_Cubs_mural_outside_Wrigleyville_Sports._%2830406890681%29.jpg/3840px-A_fan_in_a_bear_suit_poses_in_front_of_a_Cubs_mural_outside_Wrigleyville_Sports._%2830406890681%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+       },
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6d/A_fan_in_a_bear_suit_poses_in_front_of_a_Cubs_mural_outside_Wrigleyville_Sports._%2830406890681%29.jpg/1280px-A_fan_in_a_bear_suit_poses_in_front_of_a_Cubs_mural_outside_Wrigleyville_Sports._%2830406890681%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 778,
+        "srcset": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6d/A_fan_in_a_bear_suit_poses_in_front_of_a_Cubs_mural_outside_Wrigleyville_Sports._%2830406890681%29.jpg/3840px-A_fan_in_a_bear_suit_poses_in_front_of_a_Cubs_mural_outside_Wrigleyville_Sports._%2830406890681%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail 2x"
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/6/6d/A_fan_in_a_bear_suit_poses_in_front_of_a_Cubs_mural_outside_Wrigleyville_Sports._%2830406890681%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:A_fan_in_a_bear_suit_poses_in_front_of_a_Cubs_mural_outside_Wrigleyville_Sports._(30406890681).jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/53069583",
+       "sha1": "7161848e8aba0324857e1ee4db586694af928674",
+       "extmetadata": {
+        "Credit": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/apardavila/30406890681/\">A fan in a bear suit poses in front of a Cubs mural outside Wrigleyville Sports.</a>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/63704136@N00\">Arturo Pardavila III</a> from Hoboken, NJ, USA",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC BY 2.0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "https://creativecommons.org/licenses/by/2.0",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc-by-2.0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 159846737,
+     "ns": 6,
+     "title": "File:Tesla protestor in bear suit in Berkeley California in 2025.jpg",
+     "index": 5,
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 11447467,
+       "width": 6048,
+       "height": 8064,
+       "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Tesla_protestor_in_bear_suit_in_Berkeley_California_in_2025.jpg/1280px-Tesla_protestor_in_bear_suit_in_Berkeley_California_in_2025.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+       "thumbwidth": 1280,
+       "thumbheight": 1707,
+       "responsiveUrls": {
+        "2": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Tesla_protestor_in_bear_suit_in_Berkeley_California_in_2025.jpg/3840px-Tesla_protestor_in_bear_suit_in_Berkeley_California_in_2025.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+       },
+       "thumbattribs": {
+        "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Tesla_protestor_in_bear_suit_in_Berkeley_California_in_2025.jpg/1280px-Tesla_protestor_in_bear_suit_in_Berkeley_California_in_2025.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 1707,
+        "srcset": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Tesla_protestor_in_bear_suit_in_Berkeley_California_in_2025.jpg/3840px-Tesla_protestor_in_bear_suit_in_Berkeley_California_in_2025.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail 2x"
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/5/50/Tesla_protestor_in_bear_suit_in_Berkeley_California_in_2025.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Tesla_protestor_in_bear_suit_in_Berkeley_California_in_2025.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/159846737",
+       "sha1": "5402a369822ed4a09718539656db75983ca10e13",
+       "extmetadata": {
+        "Credit": {
+         "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Revel8er&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Revel8er (page does not exist)\">Revel8er</a>",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "CC0",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "LicenseUrl": {
+         "value": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+         "source": "commons-desc-page"
+        },
+        "License": {
+         "value": "cc0",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    },
+    {
+     "pageid": 161068205,
+     "ns": 6,
+     "title": "File:B.18, f.1r, PSALTERIUM TRIPLEX, St John's College Cambridge top frame.jpg",
+     "index": 3,
+     "imagerepository": "local",
+     "imageinfo": [
+      {
+       "size": 1267647,
+       "width": 1154,
+       "height": 849,
+       "thumburl": "https://upload.wikimedia.org/wikipedia/commons/0/0e/B.18%2C_f.1r%2C_PSALTERIUM_TRIPLEX%2C_St_John%27s_College_Cambridge_top_frame.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+       "thumbwidth": 1280,
+       "thumbheight": 942,
+       "thumbattribs": {
+        "src": "https://upload.wikimedia.org/wikipedia/commons/0/0e/B.18%2C_f.1r%2C_PSALTERIUM_TRIPLEX%2C_St_John%27s_College_Cambridge_top_frame.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "decoding": "async",
+        "loading": "lazy",
+        "width": 1280,
+        "height": 942
+       },
+       "url": "https://upload.wikimedia.org/wikipedia/commons/0/0e/B.18%2C_f.1r%2C_PSALTERIUM_TRIPLEX%2C_St_John%27s_College_Cambridge_top_frame.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+       "descriptionurl": "https://commons.wikimedia.org/wiki/File:B.18,_f.1r,_PSALTERIUM_TRIPLEX,_St_John%27s_College_Cambridge_top_frame.jpg",
+       "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/161068205",
+       "sha1": "768392cdd42516f14fc1e0a10790e78bb5a66535",
+       "extmetadata": {
+        "Credit": {
+         "value": "<p>cropped Wikimedia Commons image: <a href=\"//commons.wikimedia.org/wiki/File:B.18,_f.1r,_PSALTERIUM_TRIPLEX,_St_John%27s_College_Cambridge_modified_(light_sharpen,_levels,_exposure).jpg\" title=\"File:B.18, f.1r, PSALTERIUM TRIPLEX, St John's College Cambridge modified (light sharpen, levels, exposure).jpg\">File:B.18, f.1r, PSALTERIUM TRIPLEX, St John's College Cambridge modified (light sharpen, levels, exposure).jpg</a>\n</p><p>St John's College Cambridge PSALTERIUM TRIPLEX (RHEIMS?), MS B.18 f.1r\n</p>\n<a rel=\"nofollow\" class=\"external free\" href=\"https://www.joh.cam.ac.uk/library/special_collections/manuscripts/medieval_manuscripts/medman/A/Web%20images/beast.htm\">https://www.joh.cam.ac.uk/library/special_collections/manuscripts/medieval_manuscripts/medman/A/Web%20images/beast.htm</a>",
+         "source": "commons-desc-page"
+        },
+        "Artist": {
+         "value": "unknown artist, early 12th century A.D.",
+         "source": "commons-desc-page"
+        },
+        "LicenseShortName": {
+         "value": "Public domain",
+         "source": "commons-desc-page",
+         "hidden": ""
+        },
+        "License": {
+         "value": "pd",
+         "source": "commons-templates",
+         "hidden": ""
+        }
+       },
+       "mime": "image/jpeg"
+      }
+     ]
+    }
+   ]
+  }
+ }
+}
