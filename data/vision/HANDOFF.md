@@ -1,3 +1,12 @@
+## D2+D3 - 2026-11-17 - vocabulary cleanup, Commons photos, label-check page
+
+**Result: 1,745 types (57 launch, 45 keep list; 102 with needs_owner = yes), 845 in `vocabulary.json`; `validate.py` passes 8 of 8. 4,678 Commons photos for 92 of the 102 needs_owner rows (1.72 GB, in `images/files/`, not committed); `images/manifest.csv` and `images/CREDITS.md` committed; the label-check page `images/review_server.py`.** The full entry, with the per-type counts and the open questions, is in `pranalika/handoffs/claude-code.md` (D2+D3).
+
+- **Dropped:** instances (P31 or P31/P279*) of fictional object, fictional clothing, brand, trademark, product model, model series ("product line") or archaeological artefact (55 of D1c's rows); the generic entries "clothing" and the two "gown" items (3).
+- **Added:** the watch root (Q178794; 23 rows); the keep list (the 45 allowed types cut A removed, by QID, needs_owner = yes).
+- **Photos:** CC0, CC BY, CC BY-SA or public domain only (by Commons' machine-readable code); JPEG, PNG or WebP; short side at least 300 px; one copy per sha1. Not downloaded yet: the not-allowed (40 each) and other allowed (12 each) types, 7,043 photos by the dry run.
+- **Tests:** `tests/` (49, recorded fixtures, no network), run by CI's `vision-data` job after `validate.py`.
+
 ## D1c - 2026-11-16 - cut A+B, review sheet, tooling in the repo
 
 **Result: 1,731 types (57 launch): 645 allowed, 167 not allowed, 919 review. `review.csv` and `vocabulary.json` (812 types) are written; `validate.py` passes 8 of 8.** The tooling moved here from `H:\DziRent\Dzirent_vision_data` (the D1 and D1b notes below were written there). The full entry is in `pranalika/handoffs/claude-code.md` (D1c).

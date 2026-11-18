@@ -2,6 +2,94 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## D2+D3 - 2026-11-17 - Commons photos and the label-check page
+
+**Before starting:** `Preview` up to date at `ad3275e`. The uncommitted `CLAUDE.md` from a /doctor run (one rule: read `pranalika/contract.md` by section, never whole) was reviewed and committed first as `529787d`. Read `pranalika/README.md`, the board's D2 and D3 rows, the D1c entry, and `data/vision/README.md`, `HANDOFF.md` and `taxonomy/specs.py`.
+
+**Part 0: vocabulary cleanup** (counts from `validate.py`, 8 of 8 passing):
+- **Total:** 1,745 types (D1c 1,731): 57 launch, 45 on the keep list; **needs_owner = yes on 102**.
+- **By allowed:** review 900, allowed 693, not_allowed 152.
+- **By category:** Everyday 548, Accessories 450, Cultural & Traditional 282, Outerwear 156, not_applicable 152, Career & Professional 118, Occasion & Party 39.
+- **`vocabulary.json`:** 845 types (D1c 812). **`excluded.json`:** 4,708 types.
+- **Left (58 of D1c's rows):**
+  - **instance of an excluded class: 55** (11 allowed, 26 review, 18 not allowed). For example Lady Dior, Levi's 501, Air Jordan, Ray-Ban Wayfarer and Aviator, Hermès scarf, Cartier Santos and Tank, Omega Seamaster, G-Shock, the smartwatch models (Pebble, Moto 360, Samsung Gear, LG G Watch), Belle's ball gown;
+  - **generic entries: 3**: clothing (Q11460, the root itself, with the aliases garment and apparel) and the two items labelled "gown" (Q1036729, Q1732031).
+- **Came in (72):** the keep list 45; 23 under the new watch root (17 allowed: watch, pocket, analog, digital, mechanical, skeleton, solar-powered watches and others; 6 review: stopwatch, chess clock, nurse watch and others); 4 banned examples that moved into freed slots.
+- **The seven classes** (`specs.EXCLUDE_INSTANCE_OF`), each resolved with wbsearchentities and wbgetentities, recorded in `roots.json` ("instance_of"):
+  - fictional object Q15706911; brand Q431289; trademark Q167270; product model Q10929058;
+  - **fictional clothing Q62595215:** no item is labelled "fictional item of clothing"; this one is "clothing that only exists in works of fiction";
+  - **model series Q811701:** "product line" is its English alias;
+  - **archaeological artefact Q220659:** no item is labelled "archaeological artefact type"; this is the artefact class.
+- **The rule:** P31, or P31 of a subclass (P31/P279*), never "subclass of". Six real types are filed as *subclasses* of archaeological artefact (dress fastener, kaiwa, ishi-kushiro, heart scarab and two not kept anyway), so they stay. Pebble and the other smartwatch models go through "smartwatch model", a subclass of product model.
+- **Watch root:** Q178794 ("personal time indicator, portable, used as an accessory"). Smartwatch stays a banned root; no buckle root.
+- **Keep list** (`specs.KEEP_LIST`): `build_taxonomy.classify` on the 529 cut A rows of `excluded.json` gives exactly 45 allowed, as D1c counted.
+  - Each is checked by QID and English label on every fetch (`roots.json`, "keep"), comes back past cut A only, and is classified again by the normal rules: all 45 allowed (Career & Professional 15, Everyday 14, Outerwear 11, Cultural & Traditional 5).
+  - Sheet part "keep", right after the launch rows; notes say "Keep list: back from cut A (<root>); check category and allowed."
+- **Place-derived names stay** (Banarasi sari, Norfolk jacket). No rename.
+- **Also fixed:** names differing only in case ("terno", "Terno") were ordered by Python's set order, so each rebuild reordered them. Two rebuilds are now byte-identical.
+
+**Part 1: D2 downloader, `data/vision/images/fetch_commons.py`:**
+- **Sources per type, in order:** its P18 image, the files directly in its Commons category, then the files directly in each subcategory (one level).
+- **Kept only when:**
+  - the `License` code in Commons' extmetadata is cc0, pd, cc-by-* or cc-by-sa-* (any version or port). Commons gives no code at all for licenses outside these: Attribution, GFDL, FAL, PDM-owner, KOGL, GODL-India, "Copyrighted free use", "No restrictions". Those files are skipped as "no machine-readable license";
+  - it is a JPEG, PNG or WebP;
+  - its short side, and the saved file's, are at least 300 px;
+  - its sha1 isn't taken (across all types: the first type fetched keeps it).
+- **Saved:** `files/<qid>/<sha1>.<ext>`, Commons' 1280 px rendition, or the original when that is no wider. For narrower files Commons reports a 1280 px size but serves the unscaled original, so the manifest's width and height are the saved file's own.
+- **Targets:** needs_owner = yes 80, not allowed 40, other allowed 12; review rows and keep = no get none.
+- **Polite:** User-Agent `DziRentVisionData/0.1 (Dzirent clothing photo set; support@dzirent.com)`; at most 2 requests a second; back-off on 429 and 5xx with Retry-After; one JSON per API call in `images/raw/`.
+
+**Part 2: D3 label-check page, `data/vision/images/review_server.py`** (http.server, 127.0.0.1:8765 only):
+- One type a page: name, category, allowed badge, and its photos as 256 px thumbnails (made on first view into `images/thumbs/`).
+- Click cycles keep, drop, not sure; keys `1` `2` `3` (then the next photo), arrows, `Enter` for the full photo, `N` next type, `P` previous; a "Drop whole type" button.
+- Each decision is POSTed and appended to `images/labels.csv` (sha1, qid, decision, decided_at); the latest wins; undecided counts as keep.
+- `N` saves keep for the photos left undecided, so "types checked" in the progress bar means every photo has a decision.
+- Dark page; it shows no Commons file names, descriptions or authors (they name places and brands).
+
+**Docs:**
+- `data/vision/README.md`: how to run both scripts, the license policy, the layout, committed vs ignored, the tests.
+- Root `README.md`: "Clothing photos" (Wikimedia Commons, per-file licenses in `data/vision/images/CREDITS.md`); Pillow and pytest for `data/vision`.
+- `data/vision/.gitignore`: `images/files/`, `images/thumbs/`, `images/raw/` instead of all of `images/`.
+- `requirements.txt`: Pillow 13.0.0 and pytest 8.4.2 with its dependencies, the versions `services/vision` uses.
+- `pranalika/testing.md`.
+
+**What was run:**
+1. **Wikidata:** `fetch_wikidata.py --roots-only` resolved everything: 11 positive, 15 banned, 18 exclusion, 7 instance-of, 1 skipped, 57 launch, 45 keep. Then the full fetch: 50 requests, 193 s; the watch crawl has 162 classes.
+2. **Taxonomy:** `build_taxonomy.py` exit 0, 1,745 rows. `validate.py` passed 8 of 8, with and without `--cache`, and on a copy of only the committed files.
+3. **Tests:** `pytest data/vision/tests`: 49 passed. They use recorded fixtures only: a cardigan listing from Commons with six real refused pages, and Wikidata P31 records. Any connection off the PC fails a test; a live Commons call was checked to be blocked.
+4. **CI:** [run 44194900141](https://github.com/Vivek-k24/Dzirent/actions/runs/44194900141) on `c417b6b`, green: contracts, website, android, vision, database, vision-data. The vision-data log shows "ALL 8 CHECKS PASSED" and "49 passed".
+5. **`fetch_commons.py --dry-run`** (every type with a target): 1,912 requests, 26 min, no 429.
+   - needs_owner: 102 types, 4,678 of 8,160 available;
+   - not allowed: 138 types, 3,190 of 5,520;
+   - other allowed: 605 types, 3,853 of 7,260 (104 with none).
+6. **`fetch_commons.py --only-launch`:** 4,730 requests in 55 min. 53 answers were 429 and one connection dropped; each was retried once and went through.
+   - **Downloaded:** 4,678 photos for 92 of the 102 types, **1.72 GB** on disk. Same as the dry run.
+   - **Skipped:** 344 format, 255 small, 118 no license code, 62 duplicates; 7 types have no image or category.
+   - **Licenses:** CC BY-SA 2,183 (4.0 1,365), public domain 1,201, CC BY 866, CC0 428.
+   - **A second run** made 0 requests and added nothing; `manifest.csv` and `CREDITS.md` were unchanged (same hashes).
+7. **Launch types (57, 3,489 photos):**
+   - 38 at 80;
+   - short: jumpsuit 71, kurta 66, blazer 54, sherwani 51, tracksuit bottoms 45, trench coat 31, China Poblana 28, guayabera 24, sundress 24, dinner jacket 18, dashiki 15, sheath dress 9, Anarkali salwar suit 7, Nehru jacket 4, bridesmaid's dress 1, day dress 1;
+   - **none:** débutante dress (its one file has no license code), party dress and achkan (no image or Commons category in Wikidata).
+8. **Keep list (45, 1,189 photos):**
+   - 8 at 80: Advanced Crew Escape Suit, Mao suit, speed skating suits, ikan, pinafore, racing silks, raincoat, tabard;
+   - 30 between 1 and 68 (waders 68, djellaba 61, abaya 23, burka 19 …; 12 have a single photo);
+   - **none:** bear suit, dinosaur suit, posing trunks, shaluka, track suit top, military tunic, zephyr.
+9. **`review_server.py`:** started once, decisions pointed at a scratch file (`--labels`) so the committed `labels.csv` stays header-only.
+   - `/` 302 to `/type/1` (blazer, type 1 of 92); `/type/1` 200; a thumbnail 200 (205 × 256);
+   - a POST 200 wrote one line; a reload showed it;
+   - then stopped, with nothing listening on 8765.
+
+**For the coordinator (open questions):**
+- **The full download:** 7,043 more photos by the dry run (not allowed 3,190, other allowed 3,853), roughly 2.6 GB at this run's average size and about 80 minutes. Not run.
+- **"Launch rows (needs_owner=yes)"** was read as all 102 needs_owner rows, so the keep list got the 80 target too. Several keep-list types don't look rentable: Advanced Crew Escape Suit (80 photos), positive pressure personnel suit (55), environmental and cold-protection suits, fatsuit (50), gorilla suit (43), bear, cat and dinosaur suits, posing trunks, waders, racing silks, speed skating suits, military tunic. The owner can set keep = no; drop their photos on the page.
+- **What the instance-of rule also removes:** real styles Wikidata files as trademarks or brands (Harrington jacket, Kariyushi shirt, Perfecto), or as archaeological artefacts (Skört, Mamuli, Zierscheibe, Jade burial suit), plus kakute (model series) and air-conditioned clothing (trademark). If some should stay: an exception list by QID.
+- **Brand names the rule can't reach** (no P31, or only "watch"/"smartwatch"): Rolex GMT Master II, Patek Philippe Calibre 89, The Vacheron Constantin Reference 57260, Microbrand watches (allowed); Samsung Gear S3, Ruputer (not allowed); I'm Watch (review). Name matching was ruled out, so they stay for the owner's keep = no.
+- **Unknown authors:** 255 photos have no author in Commons' metadata (219 public domain, 3 CC0, 27 CC BY or CC BY-SA). `CREDITS.md` links each one's Commons page, which carries the full credit.
+- **Who runs the page:** the owner doesn't run local commands (rule 12), so an agent has to start `review_server.py` and keep it running while the owner checks, then commit `labels.csv`.
+
+**Owner's next step:** Ask for a session that starts the label-check page, then open http://127.0.0.1:8765 and check the photos, type by type: keep the ones that clearly show the type, drop the rest (for not-allowed types, keep the ones that really show it). The review.csv check of the needs_owner = yes rows (now 102) also still stands.
+
 ## D1c - 2026-11-16 - vision data in the repo
 
 **Before starting:** clean tree, `Preview` up to date at `361f9ef`. Read the D1b entry in `H:\DziRent\Dzirent_vision_data\HANDOFF.md` and its `taxonomy/specs.py`.
