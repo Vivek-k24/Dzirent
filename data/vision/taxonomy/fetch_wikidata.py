@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
 fetch_wikidata.py (D1b; D1c added cut A's exclusion roots and cut B's skipped class; D2 added the
-watch root, the excluded instance-of classes and the keep list)
+watch root, the excluded instance-of classes and the keep list; D2b the costume and space suit
+roots, each with its own depth, the instance-of exceptions and the drop list)
 Collects Dzirent's clothing types from Wikidata in cached steps:
 
 1. Roots: every root, exclusion root, excluded instance-of class, skipped class, country class
    and launch type in specs.py is resolved by label search (wbsearchentities) and checked with
    wbgetentities; any label or description that doesn't match stops the run. D1's launch QIDs are
-   checked the same way, and each keep-list type by its QID and English label. The result is
-   recorded in taxonomy/roots.json.
+   checked the same way, and each keep-list, instance-of exception and drop-list type by its QID
+   and English label. The result is recorded in taxonomy/roots.json.
 2. Crawl: "subclass of" (P279) below each root, one SPARQL query per root with explicit hop
-   paths (wdt:P279, wdt:P279/wdt:P279, ...; never P279*): 1-4 hops below a positive root,
-   1-2 below a banned root.
+   paths (wdt:P279, wdt:P279/wdt:P279, ...; never P279*): 1-4 hops below a positive root (or
+   its own "depth": costume 2, space suit 1), 1-2 below a banned root.
 3. Details (wbgetentities) for each crawled item with a Commons category, an image or an
    English Wikipedia article, and for every launch type.
 4. Ancestors: which exclusion, banned and positive roots and excluded instance-of classes each
@@ -102,7 +103,7 @@ def resolve(client: Client, spec: dict) -> dict:
 def resolve_all(client: Client) -> dict:
     errors: list[str] = []
     out: dict = {"positive": [], "banned": [], "exclude": [], "instance_of": [], "skip": [], "country_classes": [],
-                 "launch": [], "keep": []}
+                 "launch": [], "keep": [], "instance_of_exceptions": [], "drop": []}
     groups = [("positive", specs.POSITIVE_ROOTS), ("banned", specs.BANNED_ROOTS), ("exclude", specs.EXCLUDE_ROOTS),
               ("instance_of", specs.EXCLUDE_INSTANCE_OF), ("skip", specs.SKIP_UNDER_CLOTHING),
               ("country_classes", specs.COUNTRY_CLASSES)]
@@ -110,7 +111,7 @@ def resolve_all(client: Client) -> dict:
         for spec in spec_list:
             try:
                 out[group].append({"key": spec["key"], **resolve(client, spec),
-                                   **{k: spec[k] for k in ("rule", "scope") if k in spec}})
+                                   **{k: spec[k] for k in ("rule", "scope", "depth", "costume") if k in spec}})
             except SpecError as e:
                 errors.append(str(e))
     for spec in specs.LAUNCH:
@@ -128,15 +129,18 @@ def resolve_all(client: Client) -> dict:
         if "d1_qid" in spec and d1_ok:
             errors.append(f"{spec['concept']}: D1's {d1} passes the check, so replacing it isn't needed")
         out["launch"].append(entry)
-    # The keep list (D2): each type by its QID, which must carry the English label recorded with it.
-    keep_ents = client.entities([k["qid"] for k in specs.KEEP_LIST], "labels|descriptions|aliases", "en", "verify")
-    for spec in specs.KEEP_LIST:
-        ent = keep_ents.get(spec["qid"], {})
-        label = en_text(ent, "labels")
-        if label.casefold() != spec["label"].casefold():
-            errors.append(f"keep list {spec['qid']}: English label is '{label}', expected '{spec['label']}'")
-            continue
-        out["keep"].append({"qid": spec["qid"], "label": label, "description": en_text(ent, "descriptions")})
+    # The keep list (D2), the instance-of exceptions and the drop list (D2b): each type by its QID,
+    # which must carry the English label recorded with it.
+    for group, spec_list in (("keep", specs.KEEP_LIST), ("instance_of_exceptions", specs.EXCLUDE_INSTANCE_OF_EXCEPTIONS),
+                             ("drop", specs.DROP_LIST)):
+        ents = client.entities([k["qid"] for k in spec_list], "labels|descriptions|aliases", "en", "verify")
+        for spec in spec_list:
+            ent = ents.get(spec["qid"], {})
+            label = en_text(ent, "labels")
+            if label.casefold() != spec["label"].casefold():
+                errors.append(f"{group} {spec['qid']}: English label is '{label}', expected '{spec['label']}'")
+                continue
+            out[group].append({"qid": spec["qid"], "label": label, "description": en_text(ent, "descriptions")})
     if errors:
         for e in errors:
             logger.error(e)
@@ -249,21 +253,24 @@ def main() -> None:
     ROOTS_JSON.write_text(json.dumps(roots, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     failed_d1 = [l for l in roots["launch"] if l["d1_check"] == "fail"]
     logger.info("Roots and launch types resolved: %d positive, %d banned, %d exclusion, %d instance-of, %d skipped, "
-                "%d launch (%d of D1's launch QIDs failed and were replaced), %d on the keep list.",
+                "%d launch (%d of D1's launch QIDs failed and were replaced), %d on the keep list, %d instance-of "
+                "exceptions, %d on the drop list.",
                 len(roots["positive"]), len(roots["banned"]), len(roots["exclude"]), len(roots["instance_of"]),
-                len(roots["skip"]), len(roots["launch"]), len(failed_d1), len(roots["keep"]))
+                len(roots["skip"]), len(roots["launch"]), len(failed_d1), len(roots["keep"]),
+                len(roots["instance_of_exceptions"]), len(roots["drop"]))
     if args.roots_only:
         return
 
     crawls = {}
     for root in roots["positive"]:
-        crawls[root["key"]] = crawl(client, "positive", root, specs.MAX_DEPTH)
+        crawls[root["key"]] = crawl(client, "positive", root, root.get("depth", specs.MAX_DEPTH))
     for root in roots["banned"]:
         crawls[root["key"]] = crawl(client, "banned", root, specs.BANNED_DEPTH)
 
     # The quality floor, from the crawl's flags: details are fetched only for items that pass.
     root_qids = {r["qid"] for g in ("positive", "banned") for r in roots[g]}
-    launch_qids = {l["qid"] for l in roots["launch"]} | {k["qid"] for k in roots["keep"]}
+    launch_qids = {l["qid"] for l in roots["launch"]} | {k["qid"] for g in ("keep", "instance_of_exceptions", "drop")
+                                                          for k in roots[g]}
     candidates, below_floor = set(root_qids | launch_qids), {}
     for key, c in crawls.items():
         for q, a in c["nodes"].items():

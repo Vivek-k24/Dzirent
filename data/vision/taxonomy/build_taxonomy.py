@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 build_taxonomy.py (D1b; D1c added cuts A and B, needs_owner and vocabulary.json; D2 added the
-instance-of drop, the generic-entry drop and the keep list)
+instance-of drop, the generic-entry drop and the keep list; D2b the costume roots, the instance-of
+exceptions and the drop list)
 Turns taxonomy/raw/fetched.json (written by fetch_wikidata.py) into:
 - taxonomy/taxonomy.json (every kept type, with its Wikidata fields)
 - taxonomy/review.csv (the owner's review sheet; needs_owner = yes on the launch rows)
@@ -16,6 +17,16 @@ D2: an item that is an instance of a brand, trademark, product model, product li
 object, fictional clothing or archaeological artefact (P31 or P31/P279*, with the classes resolved
 in roots.json) is dropped, and so are the generic entries in specs.GENERIC_LEAF_LABELS. The keep
 list (specs.KEEP_LIST) comes back past cut A only and gets needs_owner = yes.
+
+D2b: the costume roots (costume, 2 levels; space suit, 1) list every type they reach as a costume
+(Occasion & Party, garment type costume), and so does the clothing root for a type that is an
+instance of costume (P31/P279*, as Wikidata files "Halloween costume"). A costume is allowed when
+its own name or description gives a garment signal, and review when only its parent classes do;
+the allowed ones get needs_owner = yes. A type the costume root reaches that is also under mask,
+uniform, protective clothing or sportswear is dropped (the exclusion wins), and a subclass of
+costume more than 2 levels below it isn't brought in by the clothing root either. The types in
+specs.EXCLUDE_INSTANCE_OF_EXCEPTIONS are exempt from the instance-of drop; specs.DROP_LIST rows get
+keep = no.
 
 Classification is by the item itself: its English label, aliases, description and parent
 labels decide category, garment type and allowed. Which root an item sits under is never
@@ -57,7 +68,9 @@ MIN_ROWS, MAX_ROWS = 200, 2000
 # "not_applicable" (the policy's null category for a type that can't be listed) and "none_fits".
 CATEGORIES = ["Career & Professional", "Occasion & Party", "Cultural & Traditional", "Everyday",
               "Outerwear", "Accessories", "not_applicable"]
-GARMENT_TYPES = ["top", "trousers", "suit", "dress", "skirt", "saree", "one_size", "none_fits"]
+# "costume" (D2b, owner policy) isn't a database value yet: listings_garment_type_check allows the
+# first seven only.
+GARMENT_TYPES = ["top", "trousers", "suit", "dress", "skirt", "saree", "one_size", "none_fits", "costume"]
 ITEM_TYPES = ["Sunglasses", "Handbag", "Tie", "Watch (non-smart)", "Belt buckle", "Costume jewelry", "none_fits"]
 ALLOWED = ["allowed", "not_allowed", "review"]
 REGIONS = ["South Asian", "East Asian", "Southeast Asian", "Central Asian", "Middle Eastern", "African",
@@ -65,11 +78,12 @@ REGIONS = ["South Asian", "East Asian", "Southeast Asian", "Central Asian", "Mid
 CSV_COLUMNS = ["needs_owner", "keep", "priority", "english_name", "also_called", "region", "dzirent_category",
                "dzirent_garment_type", "allowed", "notes", "qid"]
 KEEP_VALUES = ["", "yes", "no"]
-# The sheet's four parts, in order: launch types, then the keep list (both needs_owner = yes),
-# then the types the build left for review, then the rest by category. Set by the build; the
-# owner's edits don't move a row.
-SHEET_GROUPS = ["launch", "keep", "review", "other"]
-NEEDS_OWNER_GROUPS = ("launch", "keep")
+# The sheet's five parts, in order: launch types, then the keep list, then the allowed costumes
+# (D2b; these three needs_owner = yes), then the types the build left for review, then the rest
+# by category. Set by the build; the owner's edits don't move a row.
+SHEET_GROUPS = ["launch", "keep", "costume", "review", "other"]
+NEEDS_OWNER_GROUPS = ("launch", "keep", "costume")
+COSTUME_CLASS = {"category": "Occasion & Party", "garment_type": "costume", "item_type": None, "allowed": "allowed"}
 VOCABULARY_FIELDS = ["qid", "english_name", "vocabulary", "dzirent_category", "dzirent_item_type",
                      "dzirent_garment_type", "allowed", "region"]
 
@@ -415,6 +429,12 @@ def build_taxonomy() -> int:
     exclude_qids = {r["qid"]: r["key"] for r in roots["exclude"]}
     instance_qids = {r["qid"]: r["key"] for r in roots["instance_of"]}  # D2
     keep_list = {k["qid"] for k in roots["keep"]}  # D2
+    exceptions = {k["qid"] for k in roots["instance_of_exceptions"]}  # D2b
+    drop_list = {k["qid"] for k in roots["drop"]}  # D2b
+    costume_keys = [r["key"] for r in roots["positive"] if r.get("costume")]  # D2b
+    costume_qids = {r["qid"] for r in roots["positive"] if r.get("costume")}
+    costume_root_qid = next(r["qid"] for r in roots["positive"] if r["key"] == "costume")
+    wins_qids = {r["qid"] for r in roots["exclude"] if r["key"] in specs.COSTUME_EXCLUSION_WINS}
     generic_labels = {g.casefold() for g in specs.GENERIC_LEAF_LABELS}  # D2
     clothing_scope = {r["qid"] for r in roots["exclude"] if r.get("scope") == "clothing"}  # cut A
     skip_qids = {r["qid"] for r in roots.get("skip", [])}  # cut B
@@ -479,7 +499,7 @@ def build_taxonomy() -> int:
                                                             if a in exclude_qids and a not in clothing_scope))
                 continue
         inst = excluded_instance_of(e["claims"]["P31"], anc, instance_qids)
-        if inst:
+        if inst and q not in exceptions:
             detail = ", ".join(f"{instance_qids[a]} (P31)" for a in inst)
             if is_launch:
                 logger.warning("launch type %s %s is an instance of %s; kept as a launch type", q, label, detail)
@@ -516,6 +536,16 @@ def build_taxonomy() -> int:
         cut = [a for a in anc if a in clothing_scope]
         if cut and not is_launch and q not in keep_list and reached == ["clothing"]:
             drop(q, "under an excluded root", ", ".join(f"{exclude_qids[a]} ({anc[a]})" for a in cut))
+            continue
+        # D2b: the costume root's reach doesn't save a mask, uniform, protective or sportswear type,
+        # and what lies under costume past its 2 levels doesn't come in through clothing.
+        wins = [a for a in cut if a in wins_qids]
+        if (wins and "costume" in reached and not set(reached) - {"clothing", "costume"}
+                and not is_launch and q not in keep_list):
+            drop(q, "costume under an excluded root", ", ".join(f"{exclude_qids[a]} ({anc[a]})" for a in wins))
+            continue
+        if anc.get(costume_root_qid) == "P279" and reached == ["clothing"] and not is_launch and q not in keep_list:
+            drop(q, "costume more than 2 levels below its root", "costume (P279)")
             continue
         kept[q] = {"under_banned": under_banned}
 
@@ -590,8 +620,31 @@ def build_taxonomy() -> int:
                    "item_type": cfg.get("item_type"), "allowed": cfg["allowed"], "notes": cfg.get("notes", "")}
         elif q in keep_list:
             cut_by = ", ".join(L(a) for a in anc if a in clothing_scope) or "none"
-            cls = {**cls, "notes": f"Keep list: back from cut A ({cut_by}); check category and allowed."
-                                   + (f" {cls['notes']}" if cls["notes"] else "")}
+            spec = specs.KEEP_BY_QID[q]
+            if spec.get("not_allowed"):
+                # D2b: back as a not-allowed example (owner: sportswear stays excluded).
+                cls = {**cls, "category": "not_applicable", "garment_type": spec["garment_type"], "item_type": None,
+                       "allowed": "not_allowed",
+                       "notes": f"Keep list: back from cut A ({cut_by}) as a not-allowed example. "
+                                + NOT_ALLOWED_NOTE.format(rule=spec["not_allowed"])}
+            elif any(c in anc for c in costume_qids):
+                cls = {**cls, **COSTUME_CLASS,
+                       "notes": (f"Keep list: back from cut A ({cut_by}); " if cut_by != "none" else "Keep list: ")
+                                + "a costume (owner policy, D2b)."}
+            else:
+                cls = {**cls, "notes": f"Keep list: back from cut A ({cut_by}); check category and allowed."
+                                       + (f" {cls['notes']}" if cls["notes"] else "")}
+        elif ((set(positive_keys) & set(costume_keys) or (costume_root_qid in anc and positive_keys == ["clothing"]))
+              and cls["allowed"] != "not_allowed"):
+            # D2b, owner policy: costumes rent. A banned kind (the classifier's not_allowed) stays
+            # banned, and the root alone isn't enough to allow a type (D1b's rule).
+            by = ", ".join(L(r["qid"]) for r in roots["positive"]
+                           if r.get("costume") and (r["key"] in positive_keys or r["qid"] in anc))
+            if cls["signal"] in ("name", "description"):
+                cls = {**cls, **COSTUME_CLASS, "notes": f"Costume (under {by}; owner policy, D2b); check the photos."}
+            else:
+                cls = {**cls, **COSTUME_CLASS, "allowed": "review",
+                       "notes": f"Under {by}, but its own name and description don't say it is worn; check."}
 
         # Region: origin, then the parent chain, then the item's text. A class whose English label
         # is a bare garment word ("jacket") gives no origin, to itself or below it: Wikidata's
@@ -640,6 +693,7 @@ def build_taxonomy() -> int:
         o = origin(q)
         image = e["claims"]["P18"][0] if e["claims"]["P18"] else None
         group = ("launch" if q in launch else "keep" if q in keep_list
+                 else "costume" if cls["garment_type"] == "costume" and cls["allowed"] == "allowed"
                  else "review" if cls["allowed"] == "review" else "other")
         rows.append({
             "qid": q,
@@ -665,10 +719,13 @@ def build_taxonomy() -> int:
             "region_evidence": evidence,
             "vocabulary": vocabulary,
             "priority": "launch" if q in launch else "later",
-            "keep": "yes" if q in launch else "",
-            "notes": cls["notes"],
+            "keep": "yes" if q in launch else "no" if q in drop_list else "",
+            "notes": (f"Drop list: one brand's model (D2b); keep = no. {cls['notes']}".strip() if q in drop_list
+                      else cls["notes"]),
             "launch_concept": launch[q]["concept"] if q in launch else None,
             "keep_list": q in keep_list,
+            "instance_of_exception": q in exceptions,
+            "drop_list": q in drop_list,
             "root": root_key,
             "positive_roots": positive_keys,
             "banned_root": banned_key,
@@ -728,8 +785,9 @@ def write_vocabulary(rows: list[dict]) -> int:
 
 def print_counts(rows: list[dict], excluded: list[dict]) -> None:
     print(f"rows: {len(rows)} (launch {sum(r['priority'] == 'launch' for r in rows)}, keep list "
-          f"{sum(r['sheet_group'] == 'keep' for r in rows)}, needs_owner = yes "
-          f"{sum(r['sheet_group'] in NEEDS_OWNER_GROUPS for r in rows)})")
+          f"{sum(r['sheet_group'] == 'keep' for r in rows)}, costume {sum(r['sheet_group'] == 'costume' for r in rows)}, "
+          f"needs_owner = yes {sum(r['sheet_group'] in NEEDS_OWNER_GROUPS for r in rows)}, keep = no "
+          f"{sum(r['keep'] == 'no' for r in rows)})")
     for field in ("dzirent_category", "region", "allowed", "root"):
         print(f"  by {field}: " + ", ".join(f"{k} {v}" for k, v in Counter(r[field] for r in rows).most_common()))
     print("  excluded by reason: " + ", ".join(f"{k} {v}" for k, v in Counter(x["reason"] for x in excluded).most_common()))

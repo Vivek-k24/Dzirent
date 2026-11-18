@@ -1,27 +1,35 @@
 #!/usr/bin/env python3
 """
-validate.py (D1c; D2 added the instance-of and generic-entry checks and the keep list)
+validate.py (D1c; D2 added the instance-of and generic-entry checks and the keep list; D2b the
+costume roots, the instance-of exceptions and the drop list)
 Checks taxonomy.json, review.csv and vocabulary.json against the product rules and against how
 they were built:
 
-1. Every root, excluded instance-of class, skipped class and launch type resolved to its
-   expected label and description, and every keep-list type to its QID and label (roots.json).
+1. Every root (with its depth and costume flag), excluded instance-of class, skipped class and
+   launch type resolved to its expected label and description, and every keep-list, instance-of
+   exception and drop-list type to its QID and label (roots.json).
 2. No kept type is under an excluded root (P279* or P31/P279*). Cut A's roots (scope "clothing")
    allow a launch type, a keep-list type, a banned root's example and a type another positive
    root reaches. Cut B: no path passes through a skipped class, and every other type is reached
-   by a positive root. No type other than a launch type is an instance of an excluded class
-   (brand, trademark, product model or line, fictional object or clothing, archaeological
-   artefact) or a generic entry ("clothing", "garment", "gown").
+   by a positive root. No type other than a launch type or an instance-of exception is an
+   instance of an excluded class (brand, trademark, product model or line, fictional object or
+   clothing, archaeological artefact), and none is a generic entry ("clothing", "garment",
+   "gown"). D2b: no type the costume root reaches is also under mask, uniform, protective
+   clothing or sportswear, and no subclass of costume more than 2 levels below it is in.
 3. No label names a degree, title or award (degree, doctorate, knight, duke, ...).
-4. The depth bound holds: no type more than 4 subclass-of steps below its positive root (2 below
-   a banned root), and each step of its recorded path is a subclass-of edge.
+4. The depth bound holds: no type more than 4 subclass-of steps below its positive root (its own
+   depth for costume, 2, and space suit, 1; 2 below a banned root), and each step of its
+   recorded path is a subclass-of edge.
 5. Every banned rule has a not-allowed type, and no banned root contributes more than 15.
 6. Every launch type has its QID, priority "launch", keep "yes" (or the owner's "no") and at
-   least two names; every keep-list type is in, marked as such, and nothing else is.
+   least two names; every keep-list type is in, marked as such, and nothing else is; every
+   drop-list type is in with keep "no"; every type under a costume root (and not a launch type or
+   banned) is Occasion & Party with garment type costume.
 7. Only the database's values (and none_fits / not_applicable) in category, garment type and
-   item type; known allowed and region values; no duplicate QIDs; review.csv matches
-   taxonomy.json in order and parts (launch rows, then the keep list, both with needs_owner =
-   yes, then review, then the rest); vocabulary.json holds exactly the allowed and not-allowed types not marked keep = no.
+   item type, plus the garment type costume (D2b); known allowed and region values; no duplicate
+   QIDs; review.csv matches taxonomy.json in order and parts (launch rows, then the keep list,
+   then the allowed costumes, these three with needs_owner = yes, then review, then the rest);
+   vocabulary.json holds exactly the allowed and not-allowed types not marked keep = no.
 8. Countries of origin are countries (no city, state or province), and the sheet's size is
    within the expected range.
 Then prints the counts by category, region and allowed status.
@@ -113,22 +121,25 @@ def main() -> int:
         for spec in spec_list:
             entry = by_key.get(spec["key"])
             if (not entry or not matches(entry, spec) or (spec.get("qid") and entry["qid"] != spec["qid"])
-                    or entry.get("scope") != spec.get("scope")):
+                    or any(entry.get(k) != spec.get(k) for k in ("scope", "depth", "costume"))):
                 problems.append(f"{group} {spec['key']}: {entry and (entry['qid'], entry['label'])}")
     launch_roots = {l["qid"]: l for l in roots["launch"]}
     for spec in specs.LAUNCH:
         entry = launch_roots.get(spec["qid"])
         if not entry or not matches(entry, spec):
             problems.append(f"launch {spec['concept']} {spec['qid']}")
-    keep_roots = {k["qid"]: k for k in roots.get("keep", [])}
-    for spec in specs.KEEP_LIST:
-        entry = keep_roots.get(spec["qid"])
-        if not entry or entry["label"].casefold() != spec["label"].casefold():
-            problems.append(f"keep list {spec['qid']} {spec['label']}: {entry and entry['label']}")
-    if set(keep_roots) != specs.KEEP_QIDS:
-        problems.append(f"roots.json keep list {sorted(set(keep_roots) ^ specs.KEEP_QIDS)} differs from specs.KEEP_LIST")
-    check("every root, instance-of class, skipped class, launch QID and keep-list QID resolved to its expected label "
-          "and description", problems)
+    for group, spec_list in (("keep", specs.KEEP_LIST), ("instance_of_exceptions", specs.EXCLUDE_INSTANCE_OF_EXCEPTIONS),
+                             ("drop", specs.DROP_LIST)):
+        by_qid_group = {k["qid"]: k for k in roots.get(group, [])}
+        for spec in spec_list:
+            entry = by_qid_group.get(spec["qid"])
+            if not entry or entry["label"].casefold() != spec["label"].casefold():
+                problems.append(f"{group} {spec['qid']} {spec['label']}: {entry and entry['label']}")
+        wanted = {k["qid"] for k in spec_list}
+        if set(by_qid_group) != wanted:
+            problems.append(f"roots.json {group} {sorted(set(by_qid_group) ^ wanted)} differs from specs.py")
+    check("every root, instance-of class, skipped class, launch QID, keep-list, exception and drop-list QID resolved to "
+          "its expected label and description", problems)
 
     # 2. Excluded roots (cut A) and skipped classes (cut B).
     exclude = {r["qid"]: r["key"] for r in roots["exclude"]}
@@ -136,6 +147,9 @@ def main() -> int:
     skip = {r["qid"] for r in roots["skip"]}
     instance_of = {r["qid"]: r["key"] for r in roots["instance_of"]}
     generic = {g.casefold() for g in specs.GENERIC_LEAF_LABELS}
+    costume_keys = {r["key"] for r in roots["positive"] if r.get("costume")}
+    costume_qid = next(r["qid"] for r in roots["positive"] if r["key"] == "costume")
+    wins = {r["qid"]: r["key"] for r in roots["exclude"] if r["key"] in specs.COSTUME_EXCLUSION_WINS}
     problems = []
     for r in rows:
         name = f"{r['qid']} {r['english_name']}"
@@ -143,7 +157,9 @@ def main() -> int:
         hard = [exclude[a] for a in under if a not in clothing_scope]
         if hard:
             problems.append(f"{name} under {hard}")
-        if not is_launch[r["qid"]]:
+        if r["instance_of_exception"] != (r["qid"] in specs.EXCEPTION_QIDS):
+            problems.append(f"{name}: instance-of exception flag {r['instance_of_exception']}")
+        if not is_launch[r["qid"]] and not r["instance_of_exception"]:
             inst = excluded_instance_of([c["qid"] for c in r["instance_of"]], r["ancestor_roots"], instance_of)
             if inst:
                 problems.append(f"{name} is an instance of {[instance_of[q] for q in inst]}")
@@ -153,6 +169,13 @@ def main() -> int:
                   or set(r["positive_roots"]) - {"clothing"})
         if not exempt and any(a in clothing_scope for a in under):
             problems.append(f"{name} under {[exclude[a] for a in under if a in clothing_scope]} (cut A)")
+        # D2b: the exclusion wins over the costume root, and costume is capped at 2 levels.
+        own = is_launch[r["qid"]] or r["keep_list"]
+        others = set(r["positive_roots"]) - {"clothing", "costume"}
+        if not own and "costume" in r["positive_roots"] and not others and any(a in wins for a in under):
+            problems.append(f"{name}: costume under {[wins[a] for a in under if a in wins]}")
+        if (not own and r["ancestor_roots"].get(costume_qid) == "P279" and r["positive_roots"] == ["clothing"]):
+            problems.append(f"{name}: a subclass of costume more than 2 levels below it")
         if any(p["qid"] in skip for p in r["path"]):
             problems.append(f"{name}: its path passes through a skipped class (cut B)")
         if not is_launch[r["qid"]] and not r["banned_root"] and not r["positive_roots"]:
@@ -167,15 +190,16 @@ def main() -> int:
             if r["positive_roots"] != [k for k in paths if r["qid"] in paths[k]]:
                 problems.append(f"{r['qid']} {r['english_name']}: positive roots differ from the cache's crawls")
     check("no type under an excluded root (title, award, occupation, degree, position, human, organization, military "
-          "unit, armour; cut A's nine for what only clothing reaches); none only through fashion accessory (cut B); "
-          "no instance of an excluded class and no generic entry (D2)", problems)
+          "unit, armour; cut A's eight for what only clothing reaches); none only through fashion accessory (cut B); "
+          "no instance of an excluded class and no generic entry (D2); costume: the exclusion wins, 2 levels (D2b)",
+          problems)
 
     # 3. Degree, title and award words.
     check("no label names a degree, title or award",
           [f"{r['qid']} {r['english_name']}" for r in rows if FORBIDDEN_LABEL.search(r["english_name"])])
 
     # 4. Depth bound and paths.
-    root_of = {r["key"]: (r["qid"], specs.MAX_DEPTH) for r in roots["positive"]}
+    root_of = {r["key"]: (r["qid"], r.get("depth", specs.MAX_DEPTH)) for r in roots["positive"]}
     root_of.update({r["key"]: (r["qid"], specs.BANNED_DEPTH) for r in roots["banned"]})
     edges = {k: {tuple(e) for e in c["edges"]} for k, c in fetched["crawls"].items()} if fetched else None
     problems = []
@@ -198,8 +222,8 @@ def main() -> int:
                 problems.append(f"{name}: {parent} isn't a parent class of {child}")
             if edges is not None and (child, parent) not in edges[r["root"]]:
                 problems.append(f"{name}: step {parent} -> {child} isn't an edge of the {r['root']} crawl")
-    check(f"depth bound: at most {specs.MAX_DEPTH} steps below a positive root, {specs.BANNED_DEPTH} below a "
-          f"banned root, along subclass-of edges", problems)
+    check(f"depth bound: at most {specs.MAX_DEPTH} steps below a positive root (or its own depth), "
+          f"{specs.BANNED_DEPTH} below a banned root, along subclass-of edges", problems)
 
     # 5. Banned rules and examples.
     not_allowed = [r for r in rows if r["allowed"] == "not_allowed"]
@@ -230,8 +254,26 @@ def main() -> int:
     keep_rows = {r["qid"] for r in rows if r["keep_list"]}
     problems += [f"keep list {q} missing" for q in sorted(specs.KEEP_QIDS - keep_rows)]
     problems += [f"{q} is marked keep list but isn't on it" for q in sorted(keep_rows - specs.KEEP_QIDS)]
+    for spec in specs.DROP_LIST:
+        r = by_qid.get(spec["qid"])
+        if not r or r["keep"] != "no" or not r["drop_list"]:
+            problems.append(f"drop list {spec['qid']} {spec['label']}: {r and (r['keep'], r['drop_list'])}")
+    problems += [f"{r['qid']} is marked drop list but isn't on it" for r in rows
+                 if r["drop_list"] and r["qid"] not in specs.DROP_QIDS]
+    for r in rows:
+        costume = (set(r["positive_roots"]) & costume_keys
+                   or (costume_qid in r["ancestor_roots"] and r["positive_roots"] == ["clothing"])
+                   or (r["keep_list"] and any(c in r["ancestor_roots"] for c in
+                                              {x["qid"] for x in roots["positive"] if x.get("costume")})))
+        is_costume = r["dzirent_garment_type"] == "costume"
+        if costume and not is_launch[r["qid"]] and r["allowed"] != "not_allowed":
+            if not is_costume or r["dzirent_category"] != "Occasion & Party":
+                problems.append(f"{r['qid']} {r['english_name']}: under a costume root but "
+                                f"{r['dzirent_category']} / {r['dzirent_garment_type']}")
+        elif is_costume and not costume:
+            problems.append(f"{r['qid']} {r['english_name']}: garment type costume, but under no costume root")
     check("every launch type has its QID, keep 'yes' (or the owner's 'no') and at least two names; every keep-list "
-          "type is in and marked", problems)
+          "type is in and marked; every drop-list type has keep 'no'; costumes are Occasion & Party / costume", problems)
 
     # 7. Values, duplicates, the sheet and the vocabulary.
     problems = []
@@ -247,6 +289,10 @@ def main() -> int:
             problems.append(f"{r['qid']} sheet part '{r['sheet_group']}' but launch {is_launch[r['qid']]}")
         if (r["sheet_group"] == "keep") != (r["keep_list"] and not is_launch[r["qid"]]):
             problems.append(f"{r['qid']} sheet part '{r['sheet_group']}' but keep list {r['keep_list']}")
+        costume_part = (r["dzirent_garment_type"] == "costume" and r["allowed"] == "allowed"
+                        and not is_launch[r["qid"]] and not r["keep_list"])
+        if (r["sheet_group"] == "costume") != costume_part:
+            problems.append(f"{r['qid']} sheet part '{r['sheet_group']}', allowed costume {costume_part}")
     dupes = [q for q, n in Counter(r["qid"] for r in rows).items() if n > 1]
     problems += [f"duplicate QID {q}" for q in dupes]
     parts = [SHEET_GROUPS.index(r["sheet_group"]) for r in rows if r["sheet_group"] in SHEET_GROUPS]
@@ -264,7 +310,8 @@ def main() -> int:
     vocabulary = json.loads(VOCABULARY_JSON.read_text(encoding="utf-8"))
     if vocabulary.get("entries") != vocabulary_entries(rows):
         problems.append("vocabulary.json isn't the allowed and not-allowed rows of taxonomy.json (keep = no left out)")
-    check("only database values, no duplicates; review.csv and vocabulary.json match taxonomy.json", problems)
+    check("only database values (and the garment type costume), no duplicates; review.csv and vocabulary.json match "
+          "taxonomy.json", problems)
 
     # 8. Countries and size.
     classes = {r["qid"] for r in roots["country_classes"]}
@@ -283,7 +330,9 @@ def main() -> int:
     check(f"countries of origin are countries; {MIN_ROWS}-{MAX_ROWS} rows", problems)
 
     print("\n--- Counts ---")
-    print(f"rows {len(rows)}, launch {launch_rows}, keep list {len(keep_rows)}, needs_owner = yes "
+    print(f"rows {len(rows)}, launch {launch_rows}, keep list {len(keep_rows)}, costume part "
+          f"{sum(r['sheet_group'] == 'costume' for r in rows)}, garment type costume "
+          f"{sum(r['dzirent_garment_type'] == 'costume' for r in rows)}, needs_owner = yes "
           f"{sum(r['sheet_group'] in NEEDS_OWNER_GROUPS for r in rows)}, in vocabulary.json "
           f"{len(vocabulary['entries'])}, keep = no {sum(r['keep'] == 'no' for r in rows)}")
     for field in ("dzirent_category", "region", "allowed"):

@@ -14,7 +14,7 @@ taxonomy/roots.json.
 
 LANGUAGES = ["hi", "ur", "bn", "ta", "te", "es", "pt", "fr", "ar", "zh", "ja", "ko", "yo", "sw", "tl"]
 
-# Expanded up to MAX_DEPTH levels of "subclass of" (P279).
+# Expanded up to MAX_DEPTH levels of "subclass of" (P279), or the root's own "depth".
 MAX_DEPTH = 4
 POSITIVE_ROOTS = [
     {"key": "clothing", "labels": ["clothing"], "desc": ["worn", "body"], "qid": "Q11460"},
@@ -33,7 +33,19 @@ POSITIVE_ROOTS = [
     # D2: plain watches (pocket, analog, mechanical, digital) aren't under wristwatch, and cut B
     # dropped them. Smartwatches stay not allowed: smartwatch is a banned root, which wins.
     {"key": "watch", "labels": ["watch"], "desc": ["time indicator", "accessory"]},
+    # D2b, owner policy: costumes rent (Halloween, dress-up, theatre), space suits too, as costume.
+    # "costume": every type these roots reach is listed as a costume (Occasion & Party, garment
+    # type costume, allowed). The costume item is the one cut A excluded (D1c); Q9053464, also
+    # labelled "costume", is "wardrobe and dress in general".
+    {"key": "costume", "labels": ["costume"], "desc": ["performers", "character"], "qid": "Q1410477",
+     "depth": 2, "costume": True},
+    {"key": "space_suit", "labels": ["space suit"], "desc": ["astronauts", "vacuum"], "depth": 1, "costume": True},
 ]
+# D2b: a type the costume root reaches is still dropped when it is also under one of these
+# exclusion roots: masks, uniforms, protective gear and sportswear never rent. (What the space
+# suit root reaches is protective clothing in Wikidata by definition; that root's reach saves a
+# type the way the other positive roots' reach does.)
+COSTUME_EXCLUSION_WINS = ["mask", "uniform", "protective_clothing", "sportswear"]
 
 # Banned examples: BANNED_DEPTH levels only, and at most BANNED_KEEP items per root. `rule` is
 # the policy group in services/vision/app/policy.json.
@@ -75,9 +87,7 @@ EXCLUDE_ROOTS = [
     # drop only what the clothing root brings in: launch types, a banned root's examples (a sports
     # jersey is sportswear, and still a not-allowed example) and types under one of the other
     # positive roots (sunglasses are protective clothing in Wikidata) stay.
-    # Q9053464, also labelled "costume", is "wardrobe and dress in general" (kimono, hanbok, dirndl,
-    # ball gown); this one is the performer's or character's costume.
-    {"key": "costume", "labels": ["costume"], "desc": ["performers", "character"], "qid": "Q1410477", "scope": "clothing"},
+    # D2b: costume (Q1410477) left this list; it is a positive root now (above).
     {"key": "uniform", "labels": ["uniform"], "desc": ["similar clothing", "group"], "qid": "Q7434", "scope": "clothing"},
     {"key": "mask", "labels": ["mask"], "desc": ["face covering"], "qid": "Q161524", "scope": "clothing"},
     {"key": "protective_clothing", "labels": ["protective clothing"], "desc": ["protection"], "qid": "Q14524031",
@@ -111,29 +121,51 @@ EXCLUDE_INSTANCE_OF = [
     {"key": "archaeological_artefact", "labels": ["archaeological artefact", "archaeological artifact"],
      "search": "archaeological artefact", "desc": ["archaeological interest"]},
 ]
+# D2b: real styles Wikidata files as a trademark or a brand. The instance-of rule doesn't drop
+# them; every other rule still applies, and they are classified as usual. Checked by QID and
+# English label on every fetch (roots.json, "instance_of_exceptions"). QIDs from excluded.json.
+EXCLUDE_INSTANCE_OF_EXCEPTIONS = [
+    {"qid": "Q134632", "label": "Perfecto"},  # the motorcycle jacket
+    {"qid": "Q1586189", "label": "Harrington jacket"},
+    {"qid": "Q6371145", "label": "Kariyushi shirt"},
+]
+EXCEPTION_QIDS = {entry["qid"] for entry in EXCLUDE_INSTANCE_OF_EXCEPTIONS}
+
+# D2b: one brand's watch models that no instance-of class reaches (no P31, or only "watch" or
+# "smartwatch"). They stay in taxonomy.json with keep = no (allowed unchanged), so they leave
+# vocabulary.json and get no photos. Checked like the exceptions (roots.json, "drop").
+DROP_LIST = [
+    {"qid": "Q382707", "label": "Rolex GMT Master II"},
+    {"qid": "Q7144403", "label": "Patek Philippe Calibre 89"},
+    {"qid": "Q25325320", "label": "The Vacheron Constantin Reference 57260"},
+    {"qid": "Q56291735", "label": "Microbrand watches"},
+    {"qid": "Q27890205", "label": "Samsung Gear S3"},
+    {"qid": "Q7380451", "label": "Ruputer"},
+    {"qid": "Q11682766", "label": "I'm Watch"},
+]
+DROP_QIDS = {entry["qid"] for entry in DROP_LIST}
 
 # D2: entries that name no type of their own, matched on the whole English label (never a
 # substring): the clothing root itself ("clothing", with the aliases "garment" and "apparel") and
 # the two items labelled only "gown". A launch type is never dropped by this.
 GENERIC_LEAF_LABELS = ["clothing", "garment", "gown"]
 
-# D2: the 45 types cut A removed that the classifier had as allowed (D1c; recomputed from
-# excluded.json with build_taxonomy.classify). Each is checked by QID and English label on every
+# D2: types cut A removed that come back. Each is checked by QID and English label on every
 # fetch (roots.json, "keep"), comes back past cut A only, is classified by the normal rules, and
 # gets needs_owner = yes in review.csv. Every other drop rule still applies to them.
+# D2b, owner policy: everyday, work, weather, cultural and costume items stay; protective,
+# industrial, military and sportswear items left (KEEP_LIST_REMOVED). A keep-list type under the
+# costume or space suit root is a costume (Occasion & Party, garment type costume).
+# "not_allowed": comes back as a not-allowed example (the rule named), not as a rentable type.
 KEEP_LIST = [
     {"qid": "Q15013", "label": "Advanced Crew Escape Suit"},
     {"qid": "Q118463", "label": "Mao suit"},
     {"qid": "Q182064", "label": "djellaba"},
     {"qid": "Q297424", "label": "oilskin"},
     {"qid": "Q305718", "label": "abaya"},
-    {"qid": "Q758069", "label": "attila"},
     {"qid": "Q932999", "label": "duster"},
     {"qid": "Q1000777", "label": "fatsuit"},
-    {"qid": "Q1016353", "label": "burka"},
     {"qid": "Q1663649", "label": "rain cape"},
-    {"qid": "Q1934317", "label": "waders"},
-    {"qid": "Q1988132", "label": "Tunic (military)"},
     {"qid": "Q2018769", "label": "raincoat"},
     {"qid": "Q2576557", "label": "Mackintosh"},
     {"qid": "Q2637777", "label": "simar"},
@@ -141,20 +173,14 @@ KEEP_LIST = [
     {"qid": "Q2933073", "label": "cagoule"},
     {"qid": "Q2998209", "label": "mantle"},
     {"qid": "Q3247116", "label": "pinafore"},
-    {"qid": "Q3658926", "label": "environmental suit"},
     {"qid": "Q3979915", "label": "tabard"},
-    {"qid": "Q4795383", "label": "skin suit"},
     {"qid": "Q5523301", "label": "Garibaldi shirt"},
     {"qid": "Q5586484", "label": "gorilla suit"},
-    {"qid": "Q7233286", "label": "Positive pressure personnel suit"},
-    {"qid": "Q11400500", "label": "racing silks"},
     {"qid": "Q11626363", "label": "ikan"},
-    {"qid": "Q16522478", "label": "posing trunks"},
+    {"qid": "Q16522478", "label": "posing trunks", "not_allowed": "sportswear", "garment_type": "none_fits"},
     {"qid": "Q16671745", "label": "qamis"},
-    {"qid": "Q16889336", "label": "zephyr"},
-    {"qid": "Q26877520", "label": "cold-protection suit"},
     {"qid": "Q29572363", "label": "walking suit"},
-    {"qid": "Q29655703", "label": "track suit top"},
+    {"qid": "Q29655703", "label": "track suit top", "not_allowed": "sportswear", "garment_type": "top"},
     {"qid": "Q29749328", "label": "communion clothing"},
     {"qid": "Q44222414", "label": "beach dress"},
     {"qid": "Q48767474", "label": "cat suit"},
@@ -164,11 +190,27 @@ KEEP_LIST = [
     {"qid": "Q51099841", "label": "jingle dress"},
     {"qid": "Q97618878", "label": "informal dress (changfu)"},
     {"qid": "Q105200672", "label": "shaluka"},
-    {"qid": "Q125628759", "label": "Speed skating suits"},
     {"qid": "Q131283709", "label": "Farwah"},
-    {"qid": "Q138839719", "label": "Al-Azhar attire"},
 ]
 KEEP_QIDS = {entry["qid"] for entry in KEEP_LIST}
+KEEP_BY_QID = {entry["qid"]: entry for entry in KEEP_LIST}
+# D2b: off the keep list, with the reason; cut A drops them again. (Wikidata's burka, Q1016353,
+# is a felt cloak, "rough raincoat"; the owner's call.)
+KEEP_LIST_REMOVED = [
+    {"qid": "Q758069", "label": "attila", "reason": "military: its parents are military uniform and dress uniform"},
+    {"qid": "Q1016353", "label": "burka", "reason": "owner: remove"},
+    {"qid": "Q1934317", "label": "waders", "reason": "protective: waterproof work wear for fishing"},
+    {"qid": "Q1988132", "label": "Tunic (military)", "reason": "military"},
+    {"qid": "Q3658926", "label": "environmental suit", "reason": "protective: a suit for a hostile environment"},
+    {"qid": "Q4795383", "label": "skin suit", "reason": "sportswear: speed skating"},
+    {"qid": "Q7233286", "label": "Positive pressure personnel suit", "reason": "industrial protective suit (biocontainment)"},
+    {"qid": "Q11400500", "label": "racing silks", "reason": "sportswear: jockeys"},
+    {"qid": "Q16889336", "label": "zephyr", "reason": "sportswear: competition rowing shirt"},
+    {"qid": "Q26877520", "label": "cold-protection suit", "reason": "protective"},
+    {"qid": "Q125628759", "label": "Speed skating suits", "reason": "sportswear: speed skating"},
+    {"qid": "Q138839719", "label": "Al-Azhar attire",
+     "reason": "uniform of one institution (its parents include uniform); uniforms stay excluded"},
+]
 
 # Cut B (D1c): accessories only from the accessory roots above. The clothing crawl doesn't pass
 # through these classes, so what clothing reaches only through them is dropped unless another

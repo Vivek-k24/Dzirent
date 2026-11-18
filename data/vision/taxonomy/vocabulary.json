@@ -1190,106 +1190,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q15013",
-   "english_name": "Advanced Crew Escape Suit",
-   "vocabulary": [
-    "ACES",
-    "pumpkin suit",
-    "Advanced Crew Escape Suit"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q48995588",
-   "english_name": "bear suit",
-   "vocabulary": [
-    "bear suit"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q48767474",
-   "english_name": "cat suit",
-   "vocabulary": [
-    "cat suit"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q26877520",
-   "english_name": "cold-protection suit",
-   "vocabulary": [
-    "cold-protection suit"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q48810759",
-   "english_name": "dinosaur suit",
-   "vocabulary": [
-    "dinosaur suit"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q3658926",
-   "english_name": "environmental suit",
-   "vocabulary": [
-    "environmental suit"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q1000777",
-   "english_name": "fatsuit",
-   "vocabulary": [
-    "fatsuit",
-    "fat suit",
-    "fat-suit"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q5586484",
-   "english_name": "gorilla suit",
-   "vocabulary": [
-    "gorilla suit"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q118463",
    "english_name": "Mao suit",
    "vocabulary": [
@@ -1303,78 +1203,6 @@
    "dzirent_garment_type": "suit",
    "allowed": "allowed",
    "region": "East Asian"
-  },
-  {
-   "qid": "Q16522478",
-   "english_name": "posing trunks",
-   "vocabulary": [
-    "posing suit",
-    "posing trunks"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q7233286",
-   "english_name": "Positive pressure personnel suit",
-   "vocabulary": [
-    "PPPS",
-    "Positive pressure personnel suit",
-    "positive pressure protective suits"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q4795383",
-   "english_name": "skin suit",
-   "vocabulary": [
-    "skin suit",
-    "iceskating suit",
-    "fato de patinagem",
-    "speedskating suit",
-    "ice skating costume",
-    "tenue de patin à glace",
-    "tenue  de patinage sur glace",
-    "combinaison de patinage de vitesse",
-    "indumentaria de patinaje sobre hielo"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q125628759",
-   "english_name": "Speed skating suits",
-   "vocabulary": [
-    "Speed skating suits"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "suit",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q1934317",
-   "english_name": "waders",
-   "vocabulary": [
-    "waders",
-    "Bota de pesca"
-   ],
-   "dzirent_category": "Career & Professional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "trousers",
-   "allowed": "allowed",
-   "region": "Global"
   },
   {
    "qid": "Q29572363",
@@ -1395,6 +1223,82 @@
    "region": "Global"
   },
   {
+   "qid": "Q15013",
+   "english_name": "Advanced Crew Escape Suit",
+   "vocabulary": [
+    "ACES",
+    "pumpkin suit",
+    "Advanced Crew Escape Suit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q48995588",
+   "english_name": "bear suit",
+   "vocabulary": [
+    "bear suit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q48767474",
+   "english_name": "cat suit",
+   "vocabulary": [
+    "cat suit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q48810759",
+   "english_name": "dinosaur suit",
+   "vocabulary": [
+    "dinosaur suit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q1000777",
+   "english_name": "fatsuit",
+   "vocabulary": [
+    "fatsuit",
+    "fat suit",
+    "fat-suit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q5586484",
+   "english_name": "gorilla suit",
+   "vocabulary": [
+    "gorilla suit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
    "qid": "Q305718",
    "english_name": "abaya",
    "vocabulary": [
@@ -1406,20 +1310,6 @@
     "abbaya",
     "aabaaya",
     "Abaia (roupa)"
-   ],
-   "dzirent_category": "Cultural & Traditional",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "dress",
-   "allowed": "allowed",
-   "region": "Unknown"
-  },
-  {
-   "qid": "Q138839719",
-   "english_name": "Al-Azhar attire",
-   "vocabulary": [
-    "Azhari attire",
-    "al-Azhar dress",
-    "Al-Azhar attire"
    ],
    "dzirent_category": "Cultural & Traditional",
    "dzirent_item_type": null,
@@ -1652,70 +1542,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q29655703",
-   "english_name": "track suit top",
-   "vocabulary": [
-    "hoodie",
-    "sweat-shirt",
-    "track suit top"
-   ],
-   "dzirent_category": "Everyday",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "top",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q1988132",
-   "english_name": "Tunic (military)",
-   "vocabulary": [
-    "Tunic (military)"
-   ],
-   "dzirent_category": "Everyday",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "top",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q16889336",
-   "english_name": "zephyr",
-   "vocabulary": [
-    "zephyr"
-   ],
-   "dzirent_category": "Everyday",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "top",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q758069",
-   "english_name": "attila",
-   "vocabulary": [
-    "attila",
-    "Attila (uniforme)"
-   ],
-   "dzirent_category": "Outerwear",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "top",
-   "allowed": "allowed",
-   "region": "European"
-  },
-  {
-   "qid": "Q1016353",
-   "english_name": "burka",
-   "vocabulary": [
-    "burka",
-    "Bourka"
-   ],
-   "dzirent_category": "Outerwear",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "top",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q2933073",
    "english_name": "cagoule",
    "vocabulary": [
@@ -1778,21 +1604,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q11400500",
-   "english_name": "racing silks",
-   "vocabulary": [
-    "Kasak",
-    "casaque",
-    "racing silks",
-    "racing colours"
-   ],
-   "dzirent_category": "Outerwear",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "top",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q1663649",
    "english_name": "rain cape",
    "vocabulary": [
@@ -1847,6 +1658,371 @@
    "dzirent_garment_type": "top",
    "allowed": "allowed",
    "region": "Global"
+  },
+  {
+   "qid": "Q16522478",
+   "english_name": "posing trunks",
+   "vocabulary": [
+    "posing suit",
+    "posing trunks"
+   ],
+   "dzirent_category": "not_applicable",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "none_fits",
+   "allowed": "not_allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q29655703",
+   "english_name": "track suit top",
+   "vocabulary": [
+    "hoodie",
+    "sweat-shirt",
+    "track suit top"
+   ],
+   "dzirent_category": "not_applicable",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "not_allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q286518",
+   "english_name": "Apollo/Skylab A7L",
+   "vocabulary": [
+    "A7L",
+    "Apollo suit",
+    "Apollo spacesuit",
+    "Apollo/Skylab A7L",
+    "Apollo Program A7L Suit",
+    "Apollo/Skylab spacesuit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q111200975",
+   "english_name": "ballet costume",
+   "vocabulary": [
+    "ballet costume",
+    "traje de ballet",
+    "Costume de ballet"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q2897226",
+   "english_name": "Berkut spacesuit",
+   "vocabulary": [
+    "Berkut",
+    "Berkut spacesuit",
+    "Berkut (combinaison spatiale)"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "European"
+  },
+  {
+   "qid": "Q5732675",
+   "english_name": "bortaga",
+   "vocabulary": [
+    "bortaga",
+    "Botarga (vestuario)"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q1410477",
+   "english_name": "costume",
+   "vocabulary": [
+    "costume",
+    "costumes",
+    "fantasia",
+    "vestuario",
+    "stage cloth",
+    "stage dress",
+    "stage clothes",
+    "stage dresses",
+    "Costume de scène",
+    "trajes de teatro",
+    "costume de cinéma",
+    "costume de théâtre",
+    "theatrical costume",
+    "theatrical costumes",
+    "vestuario de teatro"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q1123744",
+   "english_name": "creature suit",
+   "vocabulary": [
+    "creature suit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q2998475",
+   "english_name": "dance costume",
+   "vocabulary": [
+    "dance costume",
+    "costume de danse"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q108414928",
+   "english_name": "Dead character costume",
+   "vocabulary": [
+    "Dead character costume"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q6497468",
+   "english_name": "disguise",
+   "vocabulary": [
+    "costume",
+    "disfraz",
+    "disfarce",
+    "disguise",
+    "déguisement"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q1136458",
+   "english_name": "Feitian space suit",
+   "vocabulary": [
+    "Feitian",
+    "Feitian space suit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "East Asian"
+  },
+  {
+   "qid": "Q130644205",
+   "english_name": "film costume",
+   "vocabulary": [
+    "film costume"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q2493897",
+   "english_name": "fursuit",
+   "vocabulary": [
+    "Fursuit",
+    "fursuit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q5643122",
+   "english_name": "Halloween costume",
+   "vocabulary": [
+    "Halloween costume"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q55622267",
+   "english_name": "Mars suit",
+   "vocabulary": [
+    "Mars suit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q1141042",
+   "english_name": "Orlan space suit",
+   "vocabulary": [
+    "Orlan",
+    "Traje Orlan",
+    "Orlan space suit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "European"
+  },
+  {
+   "qid": "Q29586882",
+   "english_name": "period costume",
+   "vocabulary": [
+    "period costume",
+    "costume d'époque",
+    "historical costume",
+    "indumentaria de época (cinematográfica)"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q584811",
+   "english_name": "SK-1 spacesuit",
+   "vocabulary": [
+    "SK-1",
+    "SK-1 spacesuit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "European"
+  },
+  {
+   "qid": "Q1197668",
+   "english_name": "Sokol",
+   "vocabulary": [
+    "Sokol",
+    "Sokol IVA",
+    "Sokol space suit",
+    "Traje espacial Sokol"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "European"
+  },
+  {
+   "qid": "Q6023758",
+   "english_name": "space activity suit",
+   "vocabulary": [
+    "DCS",
+    "MCP",
+    "MCS",
+    "PPS",
+    "SAS",
+    "MCPS",
+    "space activity suit",
+    "partial pressure suit",
+    "direct compression suit",
+    "mechanical counterpressure suit"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q223571",
+   "english_name": "space suit",
+   "vocabulary": [
+    "spacesuit",
+    "space suit",
+    "space suits",
+    "roupa espacial",
+    "traje espacial",
+    "scaphandre spatial",
+    "traje de astronauta",
+    "combinaison spatiale",
+    "combinaisons spatiales"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q23035342",
+   "english_name": "theatrical costume",
+   "vocabulary": [
+    "theater costume",
+    "theatre costume",
+    "costume théâtral",
+    "costume de théätre",
+    "theatrical costume"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "Unknown"
+  },
+  {
+   "qid": "Q112672898",
+   "english_name": "Xifu",
+   "vocabulary": [
+    "Xifu",
+    "Chinese opera costume"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "East Asian"
+  },
+  {
+   "qid": "Q1578165",
+   "english_name": "Yastreb",
+   "vocabulary": [
+    "Yastreb"
+   ],
+   "dzirent_category": "Occasion & Party",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "costume",
+   "allowed": "allowed",
+   "region": "European"
   },
   {
    "qid": "Q131624805",
@@ -5519,6 +5695,19 @@
    "region": "Global"
   },
   {
+   "qid": "Q6371145",
+   "english_name": "Kariyushi shirt",
+   "vocabulary": [
+    "Kariyushi wear",
+    "Kariyushi shirt"
+   ],
+   "dzirent_category": "Everyday",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "East Asian"
+  },
+  {
    "qid": "Q151948",
    "english_name": "kilt",
    "vocabulary": [
@@ -7129,6 +7318,23 @@
    "vocabulary": [
     "greatcoat",
     "Capote largo"
+   ],
+   "dzirent_category": "Outerwear",
+   "dzirent_item_type": null,
+   "dzirent_garment_type": "top",
+   "allowed": "allowed",
+   "region": "Global"
+  },
+  {
+   "qid": "Q1586189",
+   "english_name": "Harrington jacket",
+   "vocabulary": [
+    "G9",
+    "Harrington",
+    "Baracuta jacket",
+    "Harrington Jacket",
+    "Harrington jacket",
+    "Harrington (chaqueta)"
    ],
    "dzirent_category": "Outerwear",
    "dzirent_item_type": null,
@@ -9232,19 +9438,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q56291735",
-   "english_name": "Microbrand watches",
-   "vocabulary": [
-    "Microbrand watches",
-    "relojes de micromarca"
-   ],
-   "dzirent_category": "Accessories",
-   "dzirent_item_type": "Watch (non-smart)",
-   "dzirent_garment_type": "one_size",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q6874677",
    "english_name": "Mirrored sunglasses",
    "vocabulary": [
@@ -9426,19 +9619,6 @@
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
-   "dzirent_garment_type": "one_size",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q7144403",
-   "english_name": "Patek Philippe Calibre 89",
-   "vocabulary": [
-    "Calibre 89",
-    "Patek Philippe Calibre 89"
-   ],
-   "dzirent_category": "Accessories",
-   "dzirent_item_type": "Watch (non-smart)",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Global"
@@ -9828,21 +10008,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q382707",
-   "english_name": "Rolex GMT Master II",
-   "vocabulary": [
-    "ROLEX GMT",
-    "Rolex GMT-Master",
-    "Rolex GMT Master II",
-    "Rolex Oyster Perpetual Date GMT Master"
-   ],
-   "dzirent_category": "Accessories",
-   "dzirent_item_type": "Watch (non-smart)",
-   "dzirent_garment_type": "one_size",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q28458030",
    "english_name": "Russian wedding ring",
    "vocabulary": [
@@ -10218,21 +10383,6 @@
    ],
    "dzirent_category": "Accessories",
    "dzirent_item_type": "Costume jewelry",
-   "dzirent_garment_type": "one_size",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q25325320",
-   "english_name": "The Vacheron Constantin Reference 57260",
-   "vocabulary": [
-    "Reference 57260",
-    "Vacheron Constantin 57260",
-    "Vacheron Constantin Referencia 57260",
-    "The Vacheron Constantin Reference 57260"
-   ],
-   "dzirent_category": "Accessories",
-   "dzirent_item_type": "Watch (non-smart)",
    "dzirent_garment_type": "one_size",
    "allowed": "allowed",
    "region": "Global"
@@ -12286,30 +12436,6 @@
    "dzirent_category": "not_applicable",
    "dzirent_item_type": null,
    "dzirent_garment_type": "none_fits",
-   "allowed": "not_allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q7380451",
-   "english_name": "Ruputer",
-   "vocabulary": [
-    "Ruputer"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
-   "allowed": "not_allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q27890205",
-   "english_name": "Samsung Gear S3",
-   "vocabulary": [
-    "Samsung Gear S3"
-   ],
-   "dzirent_category": "not_applicable",
-   "dzirent_item_type": "none_fits",
-   "dzirent_garment_type": "one_size",
    "allowed": "not_allowed",
    "region": "Global"
   },

@@ -56,23 +56,15 @@ yes,yes,launch,swimsuit,tog; malla; cossie; Bathers; bathers,Global,not_applicab
 yes,yes,launch,t-shirt,tee; polera; remera; Tshirt; franela,Global,not_applicable,top,not_allowed,Everyday basic; excluded per Dzirent policy.,Q131151
 yes,yes,launch,tracksuit bottoms,sweatpants; sweat pants; track pants; Calças de jogging; Pantalón sudadera,Global,not_applicable,trousers,not_allowed,Athletic sportswear / basics; excluded per Dzirent policy.,Q2426768
 yes,yes,launch,undergarment,brip; brief; briefs; underwear; kalsonsilyo,Global,not_applicable,none_fits,not_allowed,Underwear is excluded per Dzirent policy. No underwear garment_type in database.,Q198763
-yes,,later,Advanced Crew Escape Suit,ACES; pumpkin suit,Global,Career & Professional,suit,allowed,Keep list: back from cut A (protective clothing); check category and allowed.,Q15013
-yes,,later,bear suit,,Global,Career & Professional,suit,allowed,Keep list: back from cut A (costume); check category and allowed.,Q48995588
-yes,,later,cat suit,,Global,Career & Professional,suit,allowed,Keep list: back from cut A (costume); check category and allowed.,Q48767474
-yes,,later,cold-protection suit,,Global,Career & Professional,suit,allowed,Keep list: back from cut A (protective clothing); check category and allowed.,Q26877520
-yes,,later,dinosaur suit,,Global,Career & Professional,suit,allowed,Keep list: back from cut A (costume); check category and allowed.,Q48810759
-yes,,later,environmental suit,,Global,Career & Professional,suit,allowed,Keep list: back from cut A (protective clothing); check category and allowed.,Q3658926
-yes,,later,fatsuit,fat suit; fat-suit,Global,Career & Professional,suit,allowed,Keep list: back from cut A (costume); check category and allowed.,Q1000777
-yes,,later,gorilla suit,,Global,Career & Professional,suit,allowed,Keep list: back from cut A (costume); check category and allowed.,Q5586484
 yes,,later,Mao suit,Túnica Mao; uniforme Mao; Zhongshan suit,East Asian,Career & Professional,suit,allowed,Keep list: back from cut A (uniform); check category and allowed.,Q118463
-yes,,later,posing trunks,posing suit,Global,Career & Professional,suit,allowed,Keep list: back from cut A (sportswear); check category and allowed.,Q16522478
-yes,,later,Positive pressure personnel suit,PPPS; positive pressure protective suits,Global,Career & Professional,suit,allowed,"Keep list: back from cut A (protective clothing, professional wear); check category and allowed.",Q7233286
-yes,,later,skin suit,iceskating suit; fato de patinagem; speedskating suit; ice skating costume; tenue de patin à glace,Global,Career & Professional,suit,allowed,Keep list: back from cut A (sportswear); check category and allowed.,Q4795383
-yes,,later,Speed skating suits,,Global,Career & Professional,suit,allowed,Keep list: back from cut A (sportswear); check category and allowed.,Q125628759
-yes,,later,waders,Bota de pesca,Global,Career & Professional,trousers,allowed,Keep list: back from cut A (protective clothing); check category and allowed.,Q1934317
 yes,,later,walking suit,trotteur; fato de passeio; tenue de marche; vestido de paseo; fato de caminhada,Global,Career & Professional,suit,allowed,Keep list: back from cut A (sportswear); check category and allowed.,Q29572363
+yes,,later,Advanced Crew Escape Suit,ACES; pumpkin suit,Global,Occasion & Party,costume,allowed,"Keep list: back from cut A (protective clothing); a costume (owner policy, D2b).",Q15013
+yes,,later,bear suit,,Global,Occasion & Party,costume,allowed,"Keep list: a costume (owner policy, D2b).",Q48995588
+yes,,later,cat suit,,Global,Occasion & Party,costume,allowed,"Keep list: a costume (owner policy, D2b).",Q48767474
+yes,,later,dinosaur suit,,Global,Occasion & Party,costume,allowed,"Keep list: a costume (owner policy, D2b).",Q48810759
+yes,,later,fatsuit,fat suit; fat-suit,Global,Occasion & Party,costume,allowed,"Keep list: a costume (owner policy, D2b).",Q1000777
+yes,,later,gorilla suit,,Global,Occasion & Party,costume,allowed,"Keep list: a costume (owner policy, D2b).",Q5586484
 yes,,later,abaya,ëbayë; abayah; abayas; abbaya; aabaaya,Unknown,Cultural & Traditional,dress,allowed,Keep list: back from cut A (religious clothing); check category and allowed.,Q305718
-yes,,later,Al-Azhar attire,Azhari attire; al-Azhar dress,Unknown,Cultural & Traditional,dress,allowed,"Keep list: back from cut A (uniform, religious clothing); check category and allowed.",Q138839719
 yes,,later,djellaba,jelab; jelib; Darija; jelaba; jellab,African,Cultural & Traditional,dress,allowed,"Keep list: back from cut A (religious clothing, professional wear); check category and allowed.",Q182064
 yes,,later,Farwah,Farwa; Furwa; The Farwa; Farwa Saudi; Saudi Farwa,Middle Eastern,Cultural & Traditional,top,allowed,Keep list: back from cut A (protective clothing); check category and allowed.,Q131283709
 yes,,later,qamis,kameez,Middle Eastern,Cultural & Traditional,top,allowed,"Keep list: back from cut A (religious clothing, professional wear); check category and allowed.",Q16671745
@@ -87,20 +79,39 @@ yes,,later,pinafore,pichi; pinny; pintora; robe tablier,Global,Everyday,dress,al
 yes,,later,priestly tunic,Cutonet; Ketonet; Túnica do sumo sacerdote de Israel,Global,Everyday,top,allowed,"Keep list: back from cut A (religious clothing, professional wear); check category and allowed.",Q2899124
 yes,,later,shaluka,,Global,Everyday,top,allowed,"Keep list: back from cut A (religious clothing, professional wear); check category and allowed.",Q105200672
 yes,,later,simar,cimar; cymar; samare; simare; simarre,Global,Everyday,dress,allowed,"Keep list: back from cut A (professional wear, religious clothing); check category and allowed.",Q2637777
-yes,,later,track suit top,hoodie; sweat-shirt,Global,Everyday,top,allowed,Keep list: back from cut A (sportswear); check category and allowed.,Q29655703
-yes,,later,Tunic (military),,Global,Everyday,top,allowed,Keep list: back from cut A (uniform); check category and allowed.,Q1988132
-yes,,later,zephyr,,Global,Everyday,top,allowed,Keep list: back from cut A (sportswear); check category and allowed.,Q16889336
-yes,,later,attila,Attila (uniforme),European,Outerwear,top,allowed,Keep list: back from cut A (uniform); check category and allowed.,Q758069
-yes,,later,burka,Bourka,Global,Outerwear,top,allowed,Keep list: back from cut A (protective clothing); check category and allowed.,Q1016353
 yes,,later,cagoule,cagoul; kagool; kagoule,Global,Outerwear,top,allowed,Keep list: back from cut A (protective clothing); check category and allowed.,Q2933073
 yes,,later,duster,dust coat; dust wrap; cache-poussière,Global,Outerwear,top,allowed,Keep list: back from cut A (protective clothing); check category and allowed.,Q932999
 yes,,later,Mackintosh,mac; mack,Global,Outerwear,top,allowed,Keep list: back from cut A (protective clothing); check category and allowed.,Q2576557
 yes,,later,mantle,Manto; Manteau; Mantiya; clerical mantle; Manteo clerical,Global,Outerwear,top,allowed,"Keep list: back from cut A (religious clothing, professional wear); check category and allowed.",Q2998209
-yes,,later,racing silks,Kasak; casaque; racing colours,Global,Outerwear,top,allowed,Keep list: back from cut A (sportswear); check category and allowed.,Q11400500
 yes,,later,rain cape,poncho; rain poncho; poncho de pluie,Global,Outerwear,top,allowed,Keep list: back from cut A (protective clothing); check category and allowed.,Q1663649
 yes,,later,raincoat,rain coat; chubasquero; impermeable; imperméable; capa de chuva,Global,Outerwear,top,allowed,Keep list: back from cut A (protective clothing); check category and allowed.,Q2018769
 yes,,later,tabard,,Global,Outerwear,top,allowed,"Keep list: back from cut A (professional wear, religious clothing); check category and allowed.",Q3979915
 yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A (sportswear); check category and allowed.,Q48843371
+yes,,later,posing trunks,posing suit,Global,not_applicable,none_fits,not_allowed,Keep list: back from cut A (sportswear) as a not-allowed example. Not allowed: sportswear.,Q16522478
+yes,,later,track suit top,hoodie; sweat-shirt,Global,not_applicable,top,not_allowed,Keep list: back from cut A (sportswear) as a not-allowed example. Not allowed: sportswear.,Q29655703
+yes,,later,Apollo/Skylab A7L,A7L; Apollo suit; Apollo spacesuit; Apollo Program A7L Suit; Apollo/Skylab spacesuit,Global,Occasion & Party,costume,allowed,"Costume (under space suit; owner policy, D2b); check the photos.",Q286518
+yes,,later,ballet costume,traje de ballet; Costume de ballet,Unknown,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q111200975
+yes,,later,Berkut spacesuit,Berkut; Berkut (combinaison spatiale),European,Occasion & Party,costume,allowed,"Costume (under space suit; owner policy, D2b); check the photos.",Q2897226
+yes,,later,bortaga,Botarga (vestuario),Unknown,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q5732675
+yes,,later,costume,costumes; fantasia; vestuario; stage cloth; stage dress,Unknown,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q1410477
+yes,,later,creature suit,,Global,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q1123744
+yes,,later,dance costume,costume de danse,Unknown,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q2998475
+yes,,later,Dead character costume,,Unknown,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q108414928
+yes,,later,disguise,costume; disfraz; disfarce; déguisement,Unknown,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q6497468
+yes,,later,Feitian space suit,Feitian,East Asian,Occasion & Party,costume,allowed,"Costume (under space suit; owner policy, D2b); check the photos.",Q1136458
+yes,,later,film costume,,Unknown,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q130644205
+yes,,later,fursuit,,Unknown,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q2493897
+yes,,later,Halloween costume,,Unknown,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q5643122
+yes,,later,Mars suit,,Global,Occasion & Party,costume,allowed,"Costume (under space suit; owner policy, D2b); check the photos.",Q55622267
+yes,,later,Orlan space suit,Orlan; Traje Orlan,European,Occasion & Party,costume,allowed,"Costume (under space suit; owner policy, D2b); check the photos.",Q1141042
+yes,,later,period costume,costume d'époque; historical costume; indumentaria de época (cinematográfica),Unknown,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q29586882
+yes,,later,SK-1 spacesuit,SK-1,European,Occasion & Party,costume,allowed,"Costume (under space suit; owner policy, D2b); check the photos.",Q584811
+yes,,later,Sokol,Sokol IVA; Sokol space suit; Traje espacial Sokol,European,Occasion & Party,costume,allowed,"Costume (under space suit; owner policy, D2b); check the photos.",Q1197668
+yes,,later,space activity suit,DCS; MCP; MCS; PPS; SAS,Global,Occasion & Party,costume,allowed,"Costume (under space suit; owner policy, D2b); check the photos.",Q6023758
+yes,,later,space suit,spacesuit; space suits; roupa espacial; traje espacial; scaphandre spatial,Unknown,Occasion & Party,costume,allowed,"Costume (under space suit; owner policy, D2b); check the photos.",Q223571
+yes,,later,theatrical costume,theater costume; theatre costume; costume théâtral; costume de théätre,Unknown,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q23035342
+yes,,later,Xifu,Chinese opera costume,East Asian,Occasion & Party,costume,allowed,"Costume (under costume; owner policy, D2b); check the photos.",Q112672898
+yes,,later,Yastreb,,European,Occasion & Party,costume,allowed,"Costume (under space suit; owner policy, D2b); check the photos.",Q1578165
 ,,later,baby suit,ensemble (bébé),Global,Career & Professional,suit,review,Made for one purpose ('baby'); check.,Q44221839
 ,,later,blanket sleeper,Grenouillère; one-piece sleeping suit,Global,Career & Professional,suit,review,Made for one purpose ('children'); check.,Q823318
 ,,later,braies,Bragas,European,Career & Professional,trousers,review,Historical garment; check that it can be listed today.,Q2982629
@@ -136,10 +147,18 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,whipcord breeches,,Global,Career & Professional,trousers,review,Made for one purpose ('military'); check.,Q127705886
 ,,later,yoga pants,,Global,Career & Professional,trousers,review,Made for one purpose ('athletic'); check.,Q8054336
 ,,later,zubon,,Global,Career & Professional,trousers,review,Made for one purpose ('uniform'); check.,Q227581
+,,later,Babiniku,Virtual bishoujo juniku; virtual girl incarnation,Unknown,Occasion & Party,costume,review,"Under costume, but its own name and description don't say it is worn; check.",Q65241616
 ,,later,banyan,Banyan (vêtement),Unknown,Occasion & Party,dress,review,Historical garment; check that it can be listed today.,Q807017
+,,later,Big Heads,Enanos; cabezuda; cabezudo; cabezudas; cabezudos,European,Occasion & Party,costume,review,"Under costume, but its own name and description don't say it is worn; check.",Q10972966
+,,later,clown's red nose,clown nose; nez de clown; Nariz de palhaço,Unknown,Occasion & Party,costume,review,"Under costume, but its own name and description don't say it is worn; check.",Q151464
 ,,later,Coronation gown,,Global,Occasion & Party,dress,review,Made for one purpose ('coronation'); check.,Q16828046
+,,later,covert agent,couverture; encubierto; agent infiltré; Agent de pénétration; operación encubierta,Unknown,Occasion & Party,costume,review,"Under costume, but its own name and description don't say it is worn; check.",Q525394
 ,,later,gaberdine,gabardine,Unknown,Occasion & Party,dress,review,Historical garment; check that it can be listed today.,Q5515378
+,,later,Gegants from Cardona,,Unknown,Occasion & Party,costume,review,"Under costume, but its own name and description don't say it is worn; check.",Q11923914
+,,later,knaptand,,Unknown,Occasion & Party,costume,review,"Under costume, but its own name and description don't say it is worn; check.",Q13744339
 ,,later,mess jacket,chaquetilla; Eton jacket; monkey jacket; chaque militar; mess dress jacket,Global,Occasion & Party,suit,review,Made for one purpose ('military'); check.,Q4464974
+,,later,processional giant,giant; gigante; gigantes; gigantón; Gigantones,Unknown,Occasion & Party,costume,review,"Under costume, but its own name and description don't say it is worn; check.",Q340069
+,,later,Reine Tournay,,Unknown,Occasion & Party,costume,review,"Under costume, but its own name and description don't say it is worn; check.",Q113840579
 ,,later,Rekel,,Unknown,Occasion & Party,suit,review,Type taken from its parent class only; check.,Q3423977
 ,,later,robe battante,adrienne; andrienne; contouche; robe volante,Unknown,Occasion & Party,dress,review,Type taken from its parent class only; check.,Q3434320
 ,,later,round gown,round dress; capa redonda,Unknown,Occasion & Party,dress,review,Historical garment; check that it can be listed today.,Q9311315
@@ -730,6 +749,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,muleta,,Unknown,Outerwear,top,review,Type taken from its parent class only; check.,Q2723059
 ,,later,Nadiri,,South Asian,Outerwear,top,review,Type taken from its parent class only; check.,Q117859868
 ,,later,paenula,pénula,European,Outerwear,top,review,Historical garment; check that it can be listed today.,Q203224
+,,later,Perfecto,,Unknown,Outerwear,top,review,Type taken from its parent class only; check.,Q134632
 ,,later,Perfecto motorcycle jacket,Double zipper motorcycle leather jackets,Global,Outerwear,top,review,Made for one purpose ('motorcycle'); check.,Q100233994
 ,,later,riding coat,,Global,Outerwear,top,review,Made for one purpose ('riding'); check.,Q1674137
 ,,later,riding coat,morning walking coat,Global,Outerwear,top,review,Made for one purpose ('riding'); check.,Q7332948
@@ -852,7 +872,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,Heart scarab,Kovu ya moyo; scarab - amulet,African,Accessories,one_size,review,"Jewellery that isn't one of the five allowed kinds (necklace, earrings, bracelet, ring, brooch).",Q5692481
 ,,later,hijab,Hejab; Hijâb; hiyab; jimar; ħijāb,Unknown,Accessories,one_size,review,Scarf or shawl; no item type in the database.,Q172317
 ,,later,Horn-shaped jade ring,trumpet-shaped jade ring,East Asian,Accessories,one_size,review,Historical garment; check that it can be listed today.,Q122908830
-,,later,I'm Watch,,Global,Accessories,one_size,review,"Under smartwatch in Wikidata (rule: smartwatches), but its own name or description reads as watch; check.",Q11682766
+,no,later,I'm Watch,,Global,Accessories,one_size,review,"Drop list: one brand's model (D2b); keep = no. Under smartwatch in Wikidata (rule: smartwatches), but its own name or description reads as watch; check.",Q11682766
 ,,later,Inuit snow goggles,Óculos de neve; Lunettes de neige,North American,Accessories,one_size,review,Accessory that isn't in Dzirent's allowed list.,Q72751
 ,,later,Islamic clothing,Muslim veil; Islamic veil; Muslim dress; Islamic dress; habit musulman,Unknown,Accessories,one_size,review,Scarf or shawl; no item type in the database.,Q26690120
 ,,later,Islamic veil,véu islâmico; velo islámico; velo musulmán; véu muçulmano; voile musulman,Unknown,Accessories,one_size,review,Scarf or shawl; no item type in the database.,Q141916353
@@ -1261,6 +1281,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,house dress,housedress; morning dress,Global,Everyday,dress,allowed,,Q17143045
 ,,later,jacket dress,jacket and dress,Global,Everyday,dress,allowed,,Q1714819
 ,,later,jumper,JSK; pichi; pinny; Champer; pinafore,Global,Everyday,top,allowed,,Q2479458
+,,later,Kariyushi shirt,Kariyushi wear,East Asian,Everyday,top,allowed,,Q6371145
 ,,later,kilt,Kilts; Falda escocesa,European,Everyday,skirt,allowed,,Q151948
 ,,later,knitwear,knits; hosiery; tricoté; ropa de punto; roupa de malha,Global,Everyday,top,allowed,,Q20825828
 ,,later,leather skirt,,Global,Everyday,skirt,allowed,,Q12061119
@@ -1373,6 +1394,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,fur coat,furskin coat; abrigo de piel; manteau de fourrure,Global,Outerwear,top,allowed,,Q25397898
 ,,later,Goggle jacket,,Global,Outerwear,top,allowed,,Q5577361
 ,,later,greatcoat,Capote largo,Global,Outerwear,top,allowed,,Q422821
+,,later,Harrington jacket,G9; Harrington; Baracuta jacket; Harrington (chaqueta),Global,Outerwear,top,allowed,,Q1586189
 ,,later,Heuque,Heuke; Hoike; Hoyke; Huque,European,Outerwear,top,allowed,,Q20760856
 ,,later,Inverness cape,Inverness; inverness; Macfarlane; Inverness coat; Inverness cloak,Global,Outerwear,top,allowed,,Q1433816
 ,,later,Inverness coat,,Global,Outerwear,top,allowed,,Q615737
@@ -1519,7 +1541,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,locket,médaillon; guardapelo,Global,Accessories,one_size,allowed,,Q1402709
 ,,later,luxury watch,montre de luxe,Global,Accessories,one_size,allowed,,Q109339596
 ,,later,mechanical watch,reloj mecanico; reloj mecánico; montre mécanique; compositon d'une montre mecanique; compositon D'une Montre Mécanique,Global,Accessories,one_size,allowed,,Q3103207
-,,later,Microbrand watches,relojes de micromarca,Global,Accessories,one_size,allowed,,Q56291735
+,no,later,Microbrand watches,relojes de micromarca,Global,Accessories,one_size,allowed,Drop list: one brand's model (D2b); keep = no.,Q56291735
 ,,later,Mirrored sunglasses,,Global,Accessories,one_size,allowed,,Q6874677
 ,,later,mohra,,South Asian,Accessories,one_size,allowed,,Q6894314
 ,,later,monisto,,Global,Accessories,one_size,allowed,,Q27972254
@@ -1534,7 +1556,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,noisy pendants,,Global,Accessories,one_size,allowed,,Q140914334
 ,,later,Nordic crown-shaped chokers,,Global,Accessories,one_size,allowed,,Q12323012
 ,,later,Padung,padoeng,Global,Accessories,one_size,allowed,,Q25222012
-,,later,Patek Philippe Calibre 89,Calibre 89,Global,Accessories,one_size,allowed,,Q7144403
+,no,later,Patek Philippe Calibre 89,Calibre 89,Global,Accessories,one_size,allowed,Drop list: one brand's model (D2b); keep = no.,Q7144403
 ,,later,pearl necklace,pearls; colar de pérolas; collar de perlas; string of pearls; collier de perles,Global,Accessories,one_size,allowed,,Q15880515
 ,,later,penannular brooch,fermail; Fíbula celta; Celtic brooch; Broches celtas; broche celtique,European,Accessories,one_size,allowed,,Q2117448
 ,,later,pendant,Colgante; Pingente; pinjante; pendentif; pendant (jewelry),Global,Accessories,one_size,allowed,,Q2111434
@@ -1559,7 +1581,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,ring pendant,,Global,Accessories,one_size,allowed,,Q111535422
 ,,later,Ring watches,,Global,Accessories,one_size,allowed,,Q2154063
 ,,later,rivière,,Global,Accessories,one_size,allowed,,Q112340485
-,,later,Rolex GMT Master II,ROLEX GMT; Rolex GMT-Master; Rolex Oyster Perpetual Date GMT Master,Global,Accessories,one_size,allowed,,Q382707
+,no,later,Rolex GMT Master II,ROLEX GMT; Rolex GMT-Master; Rolex Oyster Perpetual Date GMT Master,Global,Accessories,one_size,allowed,Drop list: one brand's model (D2b); keep = no.,Q382707
 ,,later,Russian wedding ring,,European,Accessories,one_size,allowed,,Q28458030
 ,,later,S-shaped brooch,fibule en S; S-shaped fibula,Global,Accessories,one_size,allowed,,Q117218087
 ,,later,Sampo,,Global,Accessories,one_size,allowed,,Q111312446
@@ -1589,7 +1611,7 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,T-shaped brooch,,Global,Accessories,one_size,allowed,,Q111710846
 ,,later,tamasay,tamasai,East Asian,Accessories,one_size,allowed,,Q7680933
 ,,later,tension ring,,Global,Accessories,one_size,allowed,,Q2306975
-,,later,The Vacheron Constantin Reference 57260,Reference 57260; Vacheron Constantin 57260; Vacheron Constantin Referencia 57260,Global,Accessories,one_size,allowed,,Q25325320
+,no,later,The Vacheron Constantin Reference 57260,Reference 57260; Vacheron Constantin 57260; Vacheron Constantin Referencia 57260,Global,Accessories,one_size,allowed,Drop list: one brand's model (D2b); keep = no.,Q25325320
 ,,later,thistle brooch,rosette brooch; thistle-rosette brooch,Global,Accessories,one_size,allowed,,Q111710697
 ,,later,thumb ring,archery ring; archerer ring; Anneau d’archer; archerer's ring; thumb protector,Global,Accessories,one_size,allowed,,Q7798817
 ,,later,titanium ring,Titanium rings,Global,Accessories,one_size,allowed,,Q7809855
@@ -1719,8 +1741,8 @@ yes,,later,Teba jacket,,Global,Outerwear,top,allowed,Keep list: back from cut A 
 ,,later,ripped or torn jeans,torn jeans; Jeans troué; ripped jeans,Global,not_applicable,trousers,not_allowed,Not allowed: jeans.,Q17119191
 ,,later,rugby shirt,rugby jersey,Global,not_applicable,top,not_allowed,Not allowed: T-shirts and tank tops.,Q6120233
 ,,later,rugby sock,,Global,not_applicable,none_fits,not_allowed,Not allowed: socks.,Q7378332
-,,later,Ruputer,,Global,not_applicable,one_size,not_allowed,Not allowed: smartwatches.,Q7380451
-,,later,Samsung Gear S3,,Global,not_applicable,one_size,not_allowed,Not allowed: smartwatches.,Q27890205
+,no,later,Ruputer,,Global,not_applicable,one_size,not_allowed,Drop list: one brand's model (D2b); keep = no. Not allowed: smartwatches.,Q7380451
+,no,later,Samsung Gear S3,,Global,not_applicable,one_size,not_allowed,Drop list: one brand's model (D2b); keep = no. Not allowed: smartwatches.,Q27890205
 ,,later,shoe covers,overshoe; overshoes; shoe cover,Global,not_applicable,none_fits,not_allowed,Not allowed: shoes.,Q4189109
 ,,later,short shorts,short-shorts,Global,not_applicable,trousers,not_allowed,Not allowed: shorts.,Q50697541
 ,,later,skinny jeans,slim; skinny; gas pipes; drainpipes; jeans slim,Global,not_applicable,trousers,not_allowed,Not allowed: jeans.,Q618998

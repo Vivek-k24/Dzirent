@@ -87,6 +87,26 @@
       "description": "personal time indicator, portable, used as an accessory, usually worn on the wrist or kept in a pocket",
       "search": "watch",
       "rank": 5
+    },
+    {
+      "key": "costume",
+      "qid": "Q1410477",
+      "label": "costume",
+      "description": "clothes used by performers on stage; particular style of clothing worn to portray the wearer as a character or type of character at a social event in a theatrical performance on the stage or in film or television",
+      "search": "costume",
+      "rank": 4,
+      "depth": 2,
+      "costume": true
+    },
+    {
+      "key": "space_suit",
+      "qid": "Q223571",
+      "label": "space suit",
+      "description": "gas-tight protective suit for astronauts who are in the vacuum of space",
+      "search": "space suit",
+      "rank": 1,
+      "depth": 1,
+      "costume": true
     }
   ],
   "banned": [
@@ -298,15 +318,6 @@
       "description": "protective covering or reinforcement for objects, persons, or animals that is used to prevent damage from direct contact weapons or projectiles, usually in combat",
       "search": "armor",
       "rank": 90
-    },
-    {
-      "key": "costume",
-      "qid": "Q1410477",
-      "label": "costume",
-      "description": "clothes used by performers on stage; particular style of clothing worn to portray the wearer as a character or type of character at a social event in a theatrical performance on the stage or in film or television",
-      "search": "costume",
-      "rank": 4,
-      "scope": "clothing"
     },
     {
       "key": "uniform",
@@ -1196,11 +1207,6 @@
       "description": "simple, loose over-garment wore by humans, especially Muslim women"
     },
     {
-      "qid": "Q758069",
-      "label": "attila",
-      "description": "elaborately braided Hungarian shell-jacket"
-    },
-    {
       "qid": "Q932999",
       "label": "duster",
       "description": "light, loose-fitting long coat"
@@ -1211,24 +1217,9 @@
       "description": "bodysuit-like undergarment used to thicken the appearance of an actress or actor"
     },
     {
-      "qid": "Q1016353",
-      "label": "burka",
-      "description": "rough raincoat"
-    },
-    {
       "qid": "Q1663649",
       "label": "rain cape",
       "description": "garment"
-    },
-    {
-      "qid": "Q1934317",
-      "label": "waders",
-      "description": "waterproof garment combining high-waisted trousers and boots, worn by fishermen"
-    },
-    {
-      "qid": "Q1988132",
-      "label": "Tunic (military)",
-      "description": "type of coat or jacket"
     },
     {
       "qid": "Q2018769",
@@ -1266,19 +1257,9 @@
       "description": "sleeveless apronlike garments which have a skirt and a bodice portion and which cover the front, sides, and a portion of the back"
     },
     {
-      "qid": "Q3658926",
-      "label": "environmental suit",
-      "description": "any of various suits designed specifically for a particular environment, usually one otherwise hostile to humans"
-    },
-    {
       "qid": "Q3979915",
       "label": "tabard",
       "description": "ecclesiastical cloak, usually of wool, provided with a silk pilgrim and a velvet collar"
-    },
-    {
-      "qid": "Q4795383",
-      "label": "skin suit",
-      "description": "aerodynamic suit for speedskating"
     },
     {
       "qid": "Q5523301",
@@ -1289,16 +1270,6 @@
       "qid": "Q5586484",
       "label": "gorilla suit",
       "description": "creature suit"
-    },
-    {
-      "qid": "Q7233286",
-      "label": "Positive pressure personnel suit",
-      "description": "Totally encapsulating, industrial protection garments worn within special biocontainment or maximum containment laboratory facilities"
-    },
-    {
-      "qid": "Q11400500",
-      "label": "racing silks",
-      "description": "jacket worn by jockeys"
     },
     {
       "qid": "Q11626363",
@@ -1314,16 +1285,6 @@
       "qid": "Q16671745",
       "label": "qamis",
       "description": "long shirt or tunic worn alone or with trousers in many parts of Asia and the Middle East"
-    },
-    {
-      "qid": "Q16889336",
-      "label": "zephyr",
-      "description": "henley-style shirt worn in competition rowing, usually trimmed in team colors on the sleeve and neck binding and placket"
-    },
-    {
-      "qid": "Q26877520",
-      "label": "cold-protection suit",
-      "description": ""
     },
     {
       "qid": "Q29572363",
@@ -1381,19 +1342,63 @@
       "description": "type of tunic"
     },
     {
-      "qid": "Q125628759",
-      "label": "Speed skating suits",
-      "description": "One-piece suits used at speed skating sport competitions"
-    },
-    {
       "qid": "Q131283709",
       "label": "Farwah",
       "description": "A traditional winter coat worn across parts of the Arab world, featuring an inner lining of natural or synthetic fur or heavy felt for warmth. The farwa is loose-fitting, in colors like brown or black, sometimes with simple decorations."
+    }
+  ],
+  "instance_of_exceptions": [
+    {
+      "qid": "Q134632",
+      "label": "Perfecto",
+      "description": "line of motorcycle jackets from Schott"
     },
     {
-      "qid": "Q138839719",
-      "label": "Al-Azhar attire",
-      "description": "scholars, students, and reciters affiliated with [[Al-Azhar University|Al-Azhar]]"
+      "qid": "Q1586189",
+      "label": "Harrington jacket",
+      "description": "type of jacket"
+    },
+    {
+      "qid": "Q6371145",
+      "label": "Kariyushi shirt",
+      "description": "Dress shirt style from Okinawa, Japan, developed by the Okinawa Prefectural Tourism Federation in 1970"
+    }
+  ],
+  "drop": [
+    {
+      "qid": "Q382707",
+      "label": "Rolex GMT Master II",
+      "description": "watch by Rolex"
+    },
+    {
+      "qid": "Q7144403",
+      "label": "Patek Philippe Calibre 89",
+      "description": "watch"
+    },
+    {
+      "qid": "Q25325320",
+      "label": "The Vacheron Constantin Reference 57260",
+      "description": "Complicated mechanical pocket watch"
+    },
+    {
+      "qid": "Q56291735",
+      "label": "Microbrand watches",
+      "description": "Type of wristwatch company with low output"
+    },
+    {
+      "qid": "Q27890205",
+      "label": "Samsung Gear S3",
+      "description": "smartwatch"
+    },
+    {
+      "qid": "Q7380451",
+      "label": "Ruputer",
+      "description": "early smartwatch"
+    },
+    {
+      "qid": "Q11682766",
+      "label": "I'm Watch",
+      "description": "smart watch"
     }
   ]
 }

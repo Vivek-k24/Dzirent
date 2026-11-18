@@ -7799,6 +7799,7 @@
   "detail": "footwear",
   "roots": [
    "clothing",
+   "costume",
    "footwear"
   ]
  },
@@ -12696,6 +12697,17 @@
   ]
  },
  {
+  "qid": "Q16496152",
+  "label": "baiana costume",
+  "description": "kind of traditional costume",
+  "reason": "costume under an excluded root",
+  "detail": "protective_clothing (P279)",
+  "roots": [
+   "clothing",
+   "costume"
+  ]
+ },
+ {
   "qid": "Q11460",
   "label": "clothing",
   "description": "covering worn on the body",
@@ -12745,16 +12757,6 @@
    "clothing",
    "watch",
    "wristwatch"
-  ]
- },
- {
-  "qid": "Q134632",
-  "label": "Perfecto",
-  "description": "line of motorcycle jackets from Schott",
-  "reason": "instance of an excluded class",
-  "detail": "brand (P31)",
-  "roots": [
-   "clothing"
   ]
  },
  {
@@ -12919,16 +12921,6 @@
   ]
  },
  {
-  "qid": "Q1586189",
-  "label": "Harrington jacket",
-  "description": "type of jacket",
-  "reason": "instance of an excluded class",
-  "detail": "trademark (P31)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q1613666",
   "label": "Hermès scarf",
   "description": "square silk scarf, produced since 1937 by the French fashion company Hermès",
@@ -13028,7 +13020,8 @@
   "reason": "instance of an excluded class",
   "detail": "product_line (P31)",
   "roots": [
-   "clothing"
+   "clothing",
+   "space_suit"
   ]
  },
  {
@@ -13211,16 +13204,6 @@
   "description": "watch phone by Hyundai",
   "reason": "instance of an excluded class",
   "detail": "product_model (P31)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q6371145",
-  "label": "Kariyushi shirt",
-  "description": "Dress shirt style from Okinawa, Japan, developed by the Okinawa Prefectural Tourism Federation in 1970",
-  "reason": "instance of an excluded class",
-  "detail": "trademark (P31), brand (P31)",
   "roots": [
    "clothing"
   ]
@@ -14314,7 +14297,8 @@
   "reason": "instance of an excluded class",
   "detail": "product_model (P31)",
   "roots": [
-   "clothing"
+   "clothing",
+   "space_suit"
   ]
  },
  {
@@ -14335,7 +14319,8 @@
   "reason": "instance of an excluded class",
   "detail": "product_model (P31)",
   "roots": [
-   "clothing"
+   "clothing",
+   "space_suit"
   ]
  },
  {
@@ -15729,7 +15714,8 @@
   "reason": "label word",
   "detail": "'costumes in'",
   "roots": [
-   "clothing"
+   "clothing",
+   "costume"
   ]
  },
  {
@@ -18335,7 +18321,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "space_suit"
   ]
  },
  {
@@ -18405,7 +18392,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "space_suit"
   ]
  },
  {
@@ -18435,7 +18423,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "space_suit"
   ]
  },
  {
@@ -22787,7 +22776,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "costume"
   ]
  },
  {
@@ -23823,7 +23813,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "costume"
   ]
  },
  {
@@ -23833,7 +23824,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "costume"
   ]
  },
  {
@@ -26792,6 +26784,7 @@
   "detail": "",
   "roots": [
    "clothing",
+   "costume",
    "headgear"
   ]
  },
@@ -27792,7 +27785,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "costume"
   ]
  },
  {
@@ -31944,7 +31938,8 @@
   "reason": "no Commons category, image or English Wikipedia article",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "costume"
   ]
  },
  {
@@ -33059,7 +33054,8 @@
   "reason": "no English label",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "costume"
   ]
  },
  {
@@ -33120,7 +33116,8 @@
   "reason": "no English label",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "costume"
   ]
  },
  {
@@ -33385,7 +33382,8 @@
   "reason": "no English label",
   "detail": "",
   "roots": [
-   "clothing"
+   "clothing",
+   "costume"
   ]
  },
  {
@@ -39551,16 +39549,6 @@
   ]
  },
  {
-  "qid": "Q151464",
-  "label": "clown's red nose",
-  "description": "Disguise utensil for fun makers and clowns",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q161524",
   "label": "mask",
   "description": "any full or partial face covering, whether ceremonial, protective, decorative, or used as disguise",
@@ -39682,16 +39670,6 @@
   ]
  },
  {
-  "qid": "Q223571",
-  "label": "space suit",
-  "description": "gas-tight protective suit for astronauts who are in the vacuum of space",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q225195",
   "label": "scouting uniform",
   "description": "clothing worn by members of the scout movement",
@@ -39748,16 +39726,6 @@
   "description": "outer protective garment",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279), professional_wear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q286518",
-  "label": "Apollo/Skylab A7L",
-  "description": "space suit",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -39858,16 +39826,6 @@
   "description": "protective clothing worn by firefighters",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q340069",
-  "label": "processional giant",
-  "description": "traditional figure, used to parade during processions",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -40143,16 +40101,6 @@
   ]
  },
  {
-  "qid": "Q525394",
-  "label": "covert agent",
-  "description": "masking one's identity to allow infiltration of an organization",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q528285",
   "label": "tunicle",
   "description": "vestment resembling a dalmatic worn by subdeacons over the alb, or by bishops between the alb and dalmatic",
@@ -40248,16 +40196,6 @@
   "description": "award for persons participating in \"Bandenbekämpfung\", the Nazi security warfare in three grades and a grade with diamonds, which was probably never awarded (1944–1945)",
   "reason": "under an excluded root",
   "detail": "award (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q584811",
-  "label": "SK-1 spacesuit",
-  "description": "spacesuit that was developed specially for Yuri Gagarin",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -40600,6 +40538,16 @@
   "description": "shield used in Ancient Rome",
   "reason": "under an excluded root",
   "detail": "armour (P279)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q758069",
+  "label": "attila",
+  "description": "elaborately braided Hungarian shell-jacket",
+  "reason": "under an excluded root",
+  "detail": "uniform (P279)",
   "roots": [
    "clothing"
   ]
@@ -41038,6 +40986,16 @@
   ]
  },
  {
+  "qid": "Q1016353",
+  "label": "burka",
+  "description": "rough raincoat",
+  "reason": "under an excluded root",
+  "detail": "protective_clothing (P279)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
   "qid": "Q1025496",
   "label": "caetra",
   "description": "shield used by the Caetrati",
@@ -41201,16 +41159,6 @@
   ]
  },
  {
-  "qid": "Q1123744",
-  "label": "creature suit",
-  "description": "type of realistic costumes",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q1131342",
   "label": "kasten-brust armour",
   "description": "German form of plate armour from the first half of 15th century",
@@ -41231,29 +41179,9 @@
   ]
  },
  {
-  "qid": "Q1136458",
-  "label": "Feitian space suit",
-  "description": "Chinese space suit",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q1138314",
   "label": "evening glove",
   "description": "formal glove reaching above the elbow, worn with evening or ball gowns",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q1141042",
-  "label": "Orlan space suit",
-  "description": "series of semi-rigid one-piece space suit models from Russia",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279)",
   "roots": [
@@ -41336,16 +41264,6 @@
   "description": "standardised dress worn by members of the armed forces and paramilitaries of various nations",
   "reason": "under an excluded root",
   "detail": "uniform (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q1197668",
-  "label": "Sokol",
-  "description": "space suit used in Soyuz spacecraft",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -41586,16 +41504,6 @@
   "description": "distinctive clothing worn by Christian clergy",
   "reason": "under an excluded root",
   "detail": "professional_wear (P279), religious_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q1410477",
-  "label": "costume",
-  "description": "clothes used by performers on stage; particular style of clothing worn to portray the wearer as a character or type of character at a social event in a theatrical performance on the stage or in film or television",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -41846,16 +41754,6 @@
   "description": "Japanese helmet",
   "reason": "under an excluded root",
   "detail": "armour (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q1578165",
-  "label": "Yastreb",
-  "description": "Russian space suit",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -42334,6 +42232,16 @@
   ]
  },
  {
+  "qid": "Q1934317",
+  "label": "waders",
+  "description": "waterproof garment combining high-waisted trousers and boots, worn by fishermen",
+  "reason": "under an excluded root",
+  "detail": "protective_clothing (P279)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
   "qid": "Q1937628",
   "label": "wash mitt",
   "description": "tool used for bathing",
@@ -42380,6 +42288,16 @@
   "description": "diving mask that covers the mouth as well as the eyes and nose",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279), mask (P279)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q1988132",
+  "label": "Tunic (military)",
+  "description": "type of coat or jacket",
+  "reason": "under an excluded root",
+  "detail": "uniform (P279)",
   "roots": [
    "clothing"
   ]
@@ -42897,16 +42815,6 @@
   ]
  },
  {
-  "qid": "Q2493897",
-  "label": "fursuit",
-  "description": "Costume worn by members of the furry fandom",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q2494302",
   "label": "Bundeswehr uniforms",
   "description": "",
@@ -43057,16 +42965,6 @@
   ]
  },
  {
-  "qid": "Q2897226",
-  "label": "Berkut spacesuit",
-  "description": "space suit model",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q2903199",
   "label": "priestly sash",
   "description": "ancient Jewish religious garment",
@@ -43104,16 +43002,6 @@
   "description": "cloth covering laid over a horse or other animal for protection and decoration",
   "reason": "under an excluded root",
   "detail": "armour (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q2998475",
-  "label": "dance costume",
-  "description": "costume worn for dancing",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -43445,6 +43333,16 @@
   "description": "two types of mask worn in carnival on Italian island of Ottana",
   "reason": "under an excluded root",
   "detail": "mask (P279)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q3658926",
+  "label": "environmental suit",
+  "description": "any of various suits designed specifically for a particular environment, usually one otherwise hostile to humans",
+  "reason": "under an excluded root",
+  "detail": "protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -43951,6 +43849,16 @@
   ]
  },
  {
+  "qid": "Q4795383",
+  "label": "skin suit",
+  "description": "aerodynamic suit for speedskating",
+  "reason": "under an excluded root",
+  "detail": "sportswear (P279)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
   "qid": "Q4801255",
   "label": "artistic dress",
   "description": "medieval-inspired dress reform movement",
@@ -44423,31 +44331,11 @@
   ]
  },
  {
-  "qid": "Q5643122",
-  "label": "Halloween costume",
-  "description": "costumes worn on or around Halloween, a festival which falls on October 31",
-  "reason": "under an excluded root",
-  "detail": "costume (P31)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q5660520",
   "label": "coat armor",
   "description": "textile garments worn over metal armor or on their own, from the mid-12th century to the first quarter of the 15th century",
   "reason": "under an excluded root",
   "detail": "armour (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q5732675",
-  "label": "bortaga",
-  "description": "type of clownish fancy dress costume or outfit",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -44488,16 +44376,6 @@
   "description": "",
   "reason": "under an excluded root",
   "detail": "award (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q6023758",
-  "label": "space activity suit",
-  "description": "spacesuit which provides mechanical pressure by means of elastic garments",
-  "reason": "under an excluded root",
-  "detail": "protective_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -44608,16 +44486,6 @@
   "description": "face covering made of latex, often worn as a costume",
   "reason": "under an excluded root",
   "detail": "mask (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q6497468",
-  "label": "disguise",
-  "description": "anything which conceals or changes a person's physical appearance",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -44775,6 +44643,16 @@
   ]
  },
  {
+  "qid": "Q7233286",
+  "label": "Positive pressure personnel suit",
+  "description": "Totally encapsulating, industrial protection garments worn within special biocontainment or maximum containment laboratory facilities",
+  "reason": "under an excluded root",
+  "detail": "protective_clothing (P279), professional_wear (P279)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
   "qid": "Q7251374",
   "label": "protective gear in sports",
   "description": "gear worn during a sporting event to protect players from injury",
@@ -44871,7 +44749,7 @@
   "label": "Scapular of Our Lady of Ransom",
   "description": "Roman Catholic devotional garment",
   "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
+  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -44881,7 +44759,7 @@
   "label": "Scapular of St. Benedict",
   "description": "Christian devotional garment",
   "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
+  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -44891,7 +44769,7 @@
   "label": "Scapular of St. Joseph",
   "description": "",
   "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
+  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -44901,7 +44779,7 @@
   "label": "Scapular of St. Dominic",
   "description": "catholic devotional scapular",
   "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
+  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -44911,7 +44789,7 @@
   "label": "Scapular of St. Michael the Archangel",
   "description": "Roman Catholic devotional scapular",
   "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
+  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -44921,7 +44799,7 @@
   "label": "Scapular of the Immaculate Heart of Mary",
   "description": "",
   "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
+  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -44931,7 +44809,7 @@
   "label": "Scapular of the Most Precious Blood",
   "description": "",
   "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
+  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -44941,7 +44819,7 @@
   "label": "Scapular of the Sacred Hearts of Jesus and Mary",
   "description": "catholic devotional object",
   "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
+  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -44951,7 +44829,7 @@
   "label": "Scapular of the Sacred Heart",
   "description": "catholic devotional object",
   "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
+  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -44961,7 +44839,7 @@
   "label": "Scapular of the Seven Sorrows of Mary",
   "description": "Roman Catholic devotional garment",
   "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), professional_wear (P279)",
+  "detail": "professional_wear (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]
@@ -45378,16 +45256,6 @@
   ]
  },
  {
-  "qid": "Q10972966",
-  "label": "Big Heads",
-  "description": "costumed figure with an oversized head, traditional in Spanish festivals",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q11077681",
   "label": "keikō",
   "description": "",
@@ -45433,6 +45301,16 @@
   "description": "a type of apron worn over a kimono",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279), professional_wear (P279)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q11400500",
+  "label": "racing silks",
+  "description": "jacket worn by jockeys",
+  "reason": "under an excluded root",
+  "detail": "sportswear (P279)",
   "roots": [
    "clothing"
   ]
@@ -45608,16 +45486,6 @@
   ]
  },
  {
-  "qid": "Q11923914",
-  "label": "Gegants from Cardona",
-  "description": "",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q11939204",
   "label": "Medals by Eusebi Arnau",
   "description": "",
@@ -45753,16 +45621,6 @@
   "description": "protective clothing for working with a chainsaw",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q13744339",
-  "label": "knaptand",
-  "description": "kind of clapper in an animal costume with a wolf or dog head",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -45969,16 +45827,6 @@
   ]
  },
  {
-  "qid": "Q16496152",
-  "label": "baiana costume",
-  "description": "kind of traditional costume",
-  "reason": "under an excluded root",
-  "detail": "religious_clothing (P279), costume (P279), protective_clothing (P279), professional_wear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q16534695",
   "label": "Chasseur Alpin beret",
   "description": "oversized beret worn by the Chasseurs Alpins, an elite French military unit",
@@ -46034,6 +45882,16 @@
   "description": "honorific braided cord worn on military uniforms",
   "reason": "under an excluded root",
   "detail": "award (P279)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q16889336",
+  "label": "zephyr",
+  "description": "henley-style shirt worn in competition rowing, usually trimmed in team colors on the sleeve and neck binding and placket",
+  "reason": "under an excluded root",
+  "detail": "sportswear (P279)",
   "roots": [
    "clothing"
   ]
@@ -46512,16 +46370,6 @@
   ]
  },
  {
-  "qid": "Q23035342",
-  "label": "theatrical costume",
-  "description": "",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q23038829",
   "label": "beach pajamas",
   "description": "women's long, full trousers with matching tops worn as resort or leisure wear",
@@ -46653,6 +46501,16 @@
   ]
  },
  {
+  "qid": "Q26877520",
+  "label": "cold-protection suit",
+  "description": "",
+  "reason": "under an excluded root",
+  "detail": "protective_clothing (P279)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
   "qid": "Q26882554",
   "label": "bunker pants",
   "description": "protective overpants worn by firefighters",
@@ -46728,16 +46586,6 @@
   "description": "set of interchangeable pieces of personal armor",
   "reason": "under an excluded root",
   "detail": "armour (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q29586882",
-  "label": "period costume",
-  "description": "theatrical or film costume replicating or intended to evoke the clothing of a prior time and particular place",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -47249,16 +47097,6 @@
   "description": "mask",
   "reason": "under an excluded root",
   "detail": "mask (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q65241616",
-  "label": "Babiniku",
-  "description": "Man becoming a girl using a virtual avatar and changing his voice",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -47786,16 +47624,6 @@
   ]
  },
  {
-  "qid": "Q108414928",
-  "label": "Dead character costume",
-  "description": "Stage clothing",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q108916715",
   "label": "Citation à l'ordre",
   "description": "",
@@ -47872,16 +47700,6 @@
   "description": "eye protection for open cockpit aviators",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q111200975",
-  "label": "ballet costume",
-  "description": "costume for ballet performances",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -48009,16 +47827,6 @@
   ]
  },
  {
-  "qid": "Q112672898",
-  "label": "Xifu",
-  "description": "stage clothes used in Chinese opera",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
   "qid": "Q113530545",
   "label": "Karambalangan",
   "description": "Javanese body armor",
@@ -48034,16 +47842,6 @@
   "description": "alternate uniforms in Major League Baseball",
   "reason": "under an excluded root",
   "detail": "uniform (P279), sportswear (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q113840579",
-  "label": "Reine Tournay",
-  "description": "",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -48299,6 +48097,16 @@
   ]
  },
  {
+  "qid": "Q125628759",
+  "label": "Speed skating suits",
+  "description": "One-piece suits used at speed skating sport competitions",
+  "reason": "under an excluded root",
+  "detail": "sportswear (P31)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
   "qid": "Q125976281",
   "label": "slashed glove",
   "description": "",
@@ -48355,16 +48163,6 @@
   "description": "",
   "reason": "under an excluded root",
   "detail": "award (P279)",
-  "roots": [
-   "clothing"
-  ]
- },
- {
-  "qid": "Q130644205",
-  "label": "film costume",
-  "description": "",
-  "reason": "under an excluded root",
-  "detail": "costume (P279)",
   "roots": [
    "clothing"
   ]
@@ -48545,6 +48343,16 @@
   "description": "",
   "reason": "under an excluded root",
   "detail": "protective_clothing (P279)",
+  "roots": [
+   "clothing"
+  ]
+ },
+ {
+  "qid": "Q138839719",
+  "label": "Al-Azhar attire",
+  "description": "scholars, students, and reciters affiliated with [[Al-Azhar University|Al-Azhar]]",
+  "reason": "under an excluded root",
+  "detail": "uniform (P279), religious_clothing (P279)",
   "roots": [
    "clothing"
   ]

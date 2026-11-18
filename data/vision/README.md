@@ -71,12 +71,12 @@ python taxonomy/fetch_wikidata.py --roots-only  # only resolve and check the roo
    description. The script searches the label (`wbsearchentities`, up to 5 pages), confirms each
    candidate with `wbgetentities`, and stops with an error unless exactly one item has that label
    and those words (and, where a QID is given, is that QID). D1's launch QIDs get the same check,
-   and each keep-list type (D2) is checked by its QID and English label. The result is
-   `taxonomy/roots.json`.
+   and each keep-list type (D2), instance-of exception and drop-list type (D2b) is checked by its
+   QID and English label. The result is `taxonomy/roots.json`.
 2. **Bounded crawl.** One SPARQL query per root, with explicit hop paths (`wdt:P279`,
    `wdt:P279/wdt:P279`, ...; never `P279*`): up to 4 levels below a positive root (clothing,
    handbag, sunglasses, necktie, wristwatch, belt, jewellery, costume jewellery, scarf, shawl and,
-   since D2, watch), 2 below a banned-example root (T-shirt, sports jersey, tracksuit bottoms, shorts, jeans, hoodie,
+   since D2, watch; since D2b costume, 2 levels, and space suit, 1), 2 below a banned-example root (T-shirt, sports jersey, tracksuit bottoms, shorts, jeans, hoodie,
    sweatshirt, footwear, headgear, smartwatch, swimsuit, lingerie, undergarment, sock, hosiery).
 3. **Details** (`wbgetentities`) for every crawled type with a Commons category, an image or an
    English Wikipedia article: labels, descriptions and aliases in English and 15 languages, parent
@@ -98,19 +98,27 @@ python taxonomy/build_taxonomy.py
 - **Dropped** (into `excluded.json`, with the reason and root):
   - types under title, award, occupation, academic degree, position, human, organization,
     military unit or armour;
-  - **cut A:** types under costume (the performer's or character's), uniform, mask, protective
-    clothing, religious clothing, liturgical vestments, academic dress, sportswear or professional
-    wear, when only the clothing root brings them in. A launch type, a banned root's example and a
-    type another positive root reaches stay (sunglasses are protective clothing in Wikidata);
+  - **cut A:** types under uniform, mask, protective clothing, religious clothing, liturgical
+    vestments, academic dress, sportswear or professional wear, when only the clothing root brings
+    them in. A launch type, a banned root's example and a type another positive root reaches stay
+    (sunglasses are protective clothing in Wikidata). Costume left this list in D2b;
+  - **costume (D2b):** a type the costume root reaches that is also under mask, uniform,
+    protective clothing or sportswear (the exclusion wins), and a subclass of costume more than 2
+    levels below it;
   - **cut B:** what clothing reaches only through "fashion accessory": accessories come from their
     own roots;
   - **instance of (D2):** a type that is an instance (P31, or P31 of a subclass) of fictional
     object, fictional clothing, brand, trademark, product model, model series ("product line") or
     archaeological artefact: it names one made thing, not a garment type. Being a *subclass* of
-    one of them doesn't count (Wikidata has "dress fastener" under archaeological artefact);
+    one of them doesn't count (Wikidata has "dress fastener" under archaeological artefact).
+    Exempt (D2b, `EXCLUDE_INSTANCE_OF_EXCEPTIONS`): Harrington jacket, Perfecto and Kariyushi
+    shirt, real styles filed as trademarks or brands;
   - **generic entries (D2):** the types labelled exactly "clothing", "garment" or "gown";
-  - **the keep list (D2):** the 45 types cut A removed that were classified allowed come back past
-    cut A only (every other rule still applies) and get needs_owner = yes;
+  - **the keep list (D2; 33 since D2b):** types cut A removed that come back past cut A only (every
+    other rule still applies) and get needs_owner = yes. D2b kept the everyday, work, weather,
+    cultural and costume ones and removed the protective, industrial, military and sportswear ones
+    (`KEEP_LIST_REMOVED`, with the reasons); track suit top and posing trunks come back as
+    not-allowed examples;
   - labels with "uniform of", "costume of", "insignia", "medal", "order of" (plurals too) or a
     dress word followed by "of"/"in" ("traditional clothing of <a province>");
   - no Commons category, image or English article; banned kinds beyond their root's 15 examples
@@ -121,14 +129,21 @@ python taxonomy/build_taxonomy.py
   "review", never "allowed". A type named only through a parent, a historical one, or one made
   for a single purpose (uniform, costume, sport, clergy, children) is "review". Values are the
   database's own, "none_fits" where none fits, "not_applicable" for the category of a banned kind.
+- **Costumes (D2b):** a type the costume or space suit root reaches (or a keep-list type under
+  them, or a type Wikidata files as an instance of costume, like "Halloween costume") is Occasion &
+  Party with garment type `costume`, which isn't a database value yet. It is allowed when its own
+  name or description gives a garment signal, review when only a parent class does.
+- **Drop list (D2b):** seven brand-named watch models no instance-of class reaches (Rolex GMT
+  Master II, Samsung Gear S3, ...) stay in the sheet with keep = no.
 - **Region**: country or culture of origin first, then the parent chain (only parents that are
   culture-specific, never a bare "jacket"), then the item's own text; "Global" only for a generic
   garment with no origin evidence, "Unknown" otherwise. Regions are world regions only.
 - **Size gate**: if the sheet would have more than 2,000 or fewer than 200 rows, nothing is
   written; the script prints what dominated and exits with status 2.
 - Launch types keep D1's mapping (`specs.py`, with the D1b changes noted there).
-- **The sheet** (`review.csv`): `needs_owner` = yes on the 57 launch rows, which come first, and on
-  the 45 keep-list rows after them; then the types left for review; then the rest by category.
+- **The sheet** (`review.csv`): `needs_owner` = yes on the 57 launch rows, which come first, on
+  the 33 keep-list rows after them and on the allowed costumes after those; then the types left
+  for review; then the rest by category.
 - **The vocabulary** (`vocabulary.json`): one entry per allowed or not-allowed type (never a review
   type, never one marked keep = no): `qid`, `english_name`, `vocabulary` (its names), the three
   Dzirent fields, `allowed` and `region`.
@@ -219,6 +234,10 @@ python images/review_server.py      # then open http://127.0.0.1:8765 ; Ctrl+C s
 - **The page** listens on 127.0.0.1 only and shows nothing from Commons but the photos (no file
   names, descriptions or authors, which can name places and brands). `--labels <file>` writes
   the decisions somewhere else (for a trial run).
+
+### Item policy
+
+Costumes and replica suits are listed as costume; certified protective equipment is never a type.
 
 ### License policy
 
