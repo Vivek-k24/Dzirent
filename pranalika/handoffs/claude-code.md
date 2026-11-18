@@ -2,6 +2,112 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## D2b - 2026-11-17 - costume roots, keep list rework, search source, needs_owner photos
+
+**Before starting:** `Preview` up to date at `f673bf6`. Read `pranalika/README.md`, the board's D2 and D3 rows, the D2+D3 entry, `data/vision/README.md` and `taxonomy/specs.py`.
+
+**Part 0: roots and lists** (each resolved with wbsearchentities and wbgetentities or checked by QID and English label, recorded in `roots.json`; counts from `validate.py`, 8 of 8 passing, with and without `--cache`; two rebuilds byte-identical):
+- **Total:** 1,767 types (D2 1,745): 57 launch, 33 keep list, 23 allowed costumes; **needs_owner = yes on 113**; keep = no on 7.
+- **By allowed:** review 909, allowed 704, not_allowed 154. **By category:** Everyday 546, Accessories 450, Cultural & Traditional 281, Outerwear 155, not_applicable 154, Career & Professional 105, Occasion & Party 76.
+- **`vocabulary.json`:** 852 types. **`excluded.json`:** 4,687. Size gate (2,000) not reached.
+- **Owner policy:** costumes rent (Halloween, dress-up, theatre; space suits as costume); military, industrial and protective suits, helmets, masks and protective gear don't; sportswear stays out. `data/vision/README.md` has the one-line item policy.
+- **New positive roots:**
+  - costume Q1410477 (the one cut A excluded; out of `EXCLUDE_ROOTS`), 2 levels;
+  - space suit Q223571 ("gas-tight protective suit for astronauts"), 1 level.
+  - Both classify as Occasion & Party, garment type `costume`.
+  - Mask, uniform, protective clothing and sportswear stay in `EXCLUDE_ROOTS` and win over the costume root (`specs.COSTUME_EXCLUSION_WINS`). A subclass of costume more than 2 levels down isn't brought in through clothing.
+- **Costume rules I had to set:**
+  - A costume type is allowed when its own name or description reads as worn, and review when only a parent class does (D1b's rule). 8 are review: covert agent, Babiniku, clown's red nose, knaptand, processional giant, Big Heads, Gegants from Cardona, Reine Tournay.
+  - Halloween costume is in because Wikidata files it as an *instance* of costume (P31), which counts as under it, as P31 always has for the exclusion roots.
+  - The allowed costumes have their own sheet part, "costume", after the keep list, with needs_owner = yes.
+- **Came in (34):** 21 from the costume root (13 allowed), 10 from the space suit root (all allowed), and the 3 exceptions. **Left (12):** the 12 types off the keep list, below.
+- **Keep list 45 → 33** (`specs.KEEP_LIST`; reasons in `KEEP_LIST_REMOVED`):
+  - **Costumes (6):** Advanced Crew Escape Suit, bear suit, cat suit, dinosaur suit, fatsuit and gorilla suit are now Occasion & Party / costume (they were Career & Professional / suit).
+  - **Not-allowed examples (2):** track suit top and posing trunks (rule: sportswear).
+  - **Removed (12):**
+    - burka: owner (Wikidata's Q1016353 is a felt cloak, "rough raincoat", not the burqa);
+    - Positive pressure personnel suit: industrial protective suit;
+    - environmental suit, cold-protection suit, waders: protective;
+    - racing silks, Speed skating suits, skin suit: sportswear;
+    - Tunic (military): military;
+    - **my calls:**
+      - attila: military; its parents are military uniform and dress uniform;
+      - zephyr: sportswear; a competition rowing shirt;
+      - Al-Azhar attire: one institution's uniform; its parents include uniform.
+- **Instance-of exceptions** (`EXCLUDE_INSTANCE_OF_EXCEPTIONS`, QIDs from `excluded.json`): Perfecto Q134632 (review: named through its parent only), Harrington jacket Q1586189 (Outerwear, allowed), Kariyushi shirt Q6371145 (Everyday, allowed).
+- **Drop list** (`DROP_LIST`, keep = no, allowed unchanged): Rolex GMT Master II, Patek Philippe Calibre 89, The Vacheron Constantin Reference 57260, Microbrand watches, Samsung Gear S3, Ruputer, I'm Watch.
+- **Wikidata:** `--roots-only`, then the full fetch (3 min); a re-run made 0 requests (406 cache hits).
+
+**Part 1: `fetch_commons.py`:**
+- **`--prune`** removes from disk (and thumbnails) and from `manifest.csv` the photos of every type dropped or keep = no, and rewrites `CREDITS.md`.
+  - **Run once: 338 photos of 10 types, 94,291,004 bytes (94.3 MB).** Speed skating suits 80, racing silks 80, waders 68, Positive pressure personnel suit 55, attila 32, burka 19, and 1 each for cold-protection suit, environmental suit, skin suit and Al-Azhar attire.
+  - Afterwards the manifest and disk matched (4,340 each).
+- **`source` column** (p18, category, subcategory, search). The 4,340 existing rows got theirs by replaying each type's listings from the cache, with no request: p18 71, category 3,385, subcategory 884.
+- **Search source:** only for a needs_owner = yes type still under 40 photos after P18, category and subcategories.
+  - It runs a Commons file search: the search module as a generator over namespace 6, `"<name>" filetype:bitmap`, for the English name and then each `also_called` name (the sheet's column). It takes the first 100 results each, best match first.
+  - Same license, format, size and sha1 rules; same cap of 80; same 2 requests a second.
+
+**Part 2: `review_server.py`:**
+- `--launch-only` serves only the needs_owner = yes, priority launch types of `review.csv`, in the sheet's order: 57 types, 4,004 photos.
+- A blue "search" tag marks a photo whose source is search (515 of the 4,004).
+- After `N`, the next page opens with "Finished <type>: kept · dropped · not sure", counted from the saved decisions.
+
+**Tests and CI:**
+- `pytest data/vision/tests`: 64 passed, recorded fixtures only. New:
+  - a recorded Commons search (bear suit);
+  - a recorded slice of the Wikidata cache (eight types and the roots);
+  - what they cover: the search fallback (rank order, the under-40 bar, the cap), the source column and filling it from the cache, `--prune`, the Harrington jacket exception, the drop list's keep = no, costume classification, a costume under protective clothing (recorded) or mask (added) dropped, `--launch-only`, the tag and the finished line.
+  - The mask test fails with the rule switched off.
+- [CI run 44217926370](https://github.com/Vivek-k24/Dzirent/actions/runs/44217926370) on `1e55e87` (all code and tests) was green on all six jobs. The vision-data log shows "ALL 8 CHECKS PASSED" and "64 passed".
+
+**The runs:**
+1. **`--only-launch`, first try** (19:40-19:49): added 629 photos, all from search. Then Claude Code stopped it because the PC was critically low on memory while the session was idle. The manifest and disk were consistent (4,969 each).
+2. **`supabase stop`** (owner's call, to free Docker's memory): no container left running; the database volume is kept.
+3. **`--only-launch`, resumed** (20:07-20:38, 1,878 s): it resumed from the manifest, and no saved photo was fetched again.
+   - 2,548 requests, 146 cache hits; 11 were 429 and one connection dropped, each retried and through.
+   - **Added 2,378** (913 MB): search 1,303, category 877, subcategory 182, P18 16. Licenses CC BY-SA 986, public domain 806, CC BY 463, CC0 123.
+4. **Full run** (no flags, 20:38-20:46): **paused at 709 not-allowed photos (26 of 136 not-allowed types), resumes from manifest.** Claude Code's memory guard stopped it again (9 × 429 before that).
+   - 3.0 GB of 15.8 GB was free; Chrome was the largest user.
+   - The dry run counted about 6,300 more: not allowed about 2,480, other allowed 3,853.
+   - `CREDITS.md` was then rewritten from the manifest; a stopped run doesn't write it.
+
+**Where the photos stand:** 8,056 photos for 139 types, 3,039,881,874 bytes (3.04 GB) on this PC only; every manifest row has its file and every file its row.
+- **Licenses:** CC BY-SA 3,627, public domain 2,284, CC BY 1,484, CC0 661.
+- **Sources:** category 4,827, search 1,932, subcategory 1,191, P18 106.
+- **needs_owner = yes:** 113 types, 7,347 photos, **none at zero**, 35 short of 80; 45 types got search photos.
+- **Launch types (57, 4,004 photos; 44 at 80):**
+  - Short: jumpsuit 71, China Poblana 67 (39 from search), kurta 66, blazer 54, Sherwani 51, guayabera 48 (24), tracksuit bottoms 45, bridesmaid's dress 31 (30), dashiki 19 (4), Anarkali Salwar Suit 10 (3), Nehru jacket 9 (5), achkan 8 (8), débutante dress 5 (5).
+  - Search took these to 80: party dress (80 from search), day dress (79), sheath dress (71), dinner jacket (62), sundress (56), trench coat (49).
+- **Keep list (33, 1,765; 17 at 80):**
+  - At 80: Mao suit, walking suit (79 from search), Advanced Crew Escape Suit, abaya (57), Farwah (79), ikan, oilskin (46), pinafore, simar (68), cagoule (79), duster (71), Mackintosh (75), mantle (71), rain cape (51), raincoat, tabard, track suit top (80).
+  - Short: qamis 74 (73), djellaba 61, fatsuit 50, communion clothing 47, gorilla suit 43, beach dress 29 (28), Teba jacket 21, jingle dress 21 (4), shaluka 20 (20), bear suit 17 (17), cat suit 7 (6), informal dress (changfu) 5 (4), Garibaldi shirt 4 (3), priestly tunic 3, dinosaur suit 2 (2), posing trunks 1 (1).
+- **Costumes (23, 1,578; 17 at 80):**
+  - At 80: Apollo/Skylab A7L, ballet costume, Berkut spacesuit (65), costume, dance costume, disguise, Feitian space suit (56), film costume, fursuit, Halloween costume, Orlan space suit, period costume (79), SK-1 spacesuit (80), Sokol, space activity suit (80), space suit, theatrical costume.
+  - Short: Xifu 79 (79), creature suit 35 (34), Mars suit 34 (1), Yastreb 34 (27), bortaga 33, Dead character costume 3 (2).
+
+**For the coordinator (open questions):**
+- **Garment type `costume` isn't a database value.** `listings_garment_type_check` allows top, trousers, suit, dress, skirt, saree, one_size. `vocabulary.json` now carries `costume` for 29 allowed types, so a migration (and the apps' lists) is needed before a listing can use it.
+- **Space suit models:** at 1 level, the space suit root brought nine specific suits besides space suit itself: A7L, Berkut, Feitian, Orlan, SK-1, Sokol, Yastreb, Mars suit and space activity suit. That's 708 photos across the 10, mostly of real flight hardware. As a costume, "space suit" alone may be enough.
+- **Search precision:** 40 types have more than half their photos from search; party dress, track suit top, SK-1 and space activity suit have all 80 from it. Commons search matches words in titles and descriptions, so expect more drops there; the page tags those photos. If the owner finds them too noisy, lower the bar (for example under 20) or take fewer results per name.
+- **Keep-list calls to confirm:**
+  - My removals: attila, zephyr, Al-Azhar attire.
+  - Kept though neither list names them: the clergy dress simar, mantle ("ecclesiastical overgarment") and priestly tunic.
+  - Baiana costume is dropped because Wikidata puts it under protective clothing (the exclusion wins); an exception by QID would bring it back.
+- **The full run:** paused at 709 not-allowed photos; it resumes from the manifest. Claude Code stops background commands when memory is critically low while the session is idle, so the next session runs it in the foreground in pieces of about 9 minutes.
+
+**Owner's next step:**
+- Paste this into a plain PowerShell window (outside Claude Code, so the memory guard can't stop it), then open http://127.0.0.1:8765:
+  `& "H:\DziRent\Dzirent_dev\data\vision\.venv\Scripts\python.exe" "H:\DziRent\Dzirent_dev\data\vision\images\review_server.py" --launch-only`
+- Keys: `1` keep, `2` drop, `3` not sure, `N` next type. Look closely at photos with the blue "search" tag.
+- `Ctrl+C` in that window stops the page; decisions are already saved in `data/vision/images/labels.csv`.
+- The owner chose to start the page this way this once (rule 12 otherwise).
+- The review.csv check (now 113 needs_owner rows) still stands.
+
+**Next session:**
+- Resume the full run in foreground pieces; it resumes from the manifest and fetches nothing twice.
+- Then commit `manifest.csv`, `CREDITS.md` and the owner's `labels.csv`, with its counts.
+- `supabase start` before any database work.
+
 ## D2+D3 - 2026-11-17 - Commons photos and the label-check page
 
 **Before starting:** `Preview` up to date at `ad3275e`. The uncommitted `CLAUDE.md` from a /doctor run (one rule: read `pranalika/contract.md` by section, never whole) was reviewed and committed first as `529787d`. Read `pranalika/README.md`, the board's D2 and D3 rows, the D1c entry, and `data/vision/README.md`, `HANDOFF.md` and `taxonomy/specs.py`.
