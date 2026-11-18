@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-review_server.py (D3)
+review_server.py (D3; D2b added --launch-only, the search tag and the finished-type line)
 The label-check page for the photos fetch_commons.py downloaded: http://127.0.0.1:8765
 
 One type at a time (its name, category and whether it can be listed) with a grid of its photos.
@@ -11,13 +11,19 @@ sure (then the next photo), arrows move, Enter opens the full photo, N next type
 Every decision is POSTed here and appended to labels.csv (sha1, qid, decision, decided_at); the
 latest line for a photo wins, so a decision can be changed any time and a reload shows what is
 saved. A photo with no decision counts as keep, so an unchecked type still trains. N saves keep
-for the photos left undecided on the page, so the progress bar counts the type as checked.
+for the photos left undecided on the page, so the progress bar counts the type as checked, and
+the next page opens with a line for the type just finished: how many kept, dropped, not sure. A
+photo that came from the Commons search (manifest source "search") carries a small tag.
+
+--launch-only serves only the types with needs_owner = yes and priority = launch in
+../taxonomy/review.csv, in the sheet's order; the progress bars count those only.
 
 Standard library only (http.server), plus Pillow for the 256 px thumbnails, made on first
 request into thumbs/. Listens on 127.0.0.1 only. The page shows nothing from Commons but the
 photos: no file names, descriptions or authors (those can name places and brands).
 
-    python images/review_server.py            # then open http://127.0.0.1:8765
+    python images/review_server.py                 # then open http://127.0.0.1:8765
+    python images/review_server.py --launch-only   # the launch types only
 """
 
 import argparse
@@ -30,7 +36,7 @@ import threading
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from PIL import Image, ImageOps
 
@@ -39,6 +45,7 @@ from fetch_commons import IMAGES_DIR, MANIFEST_CSV, read_manifest
 HOST = "127.0.0.1"
 PORT = 8765
 LABELS_CSV = IMAGES_DIR / "labels.csv"
+REVIEW_CSV = IMAGES_DIR.parent / "taxonomy" / "review.csv"
 THUMBS_DIR = IMAGES_DIR / "thumbs"
 LABEL_COLUMNS = ["sha1", "qid", "decision", "decided_at"]
 DECISIONS = ("keep", "drop", "not_sure")
@@ -48,16 +55,32 @@ QID_RE = re.compile(r"Q\d+")
 SHA1_RE = re.compile(r"[0-9a-f]{40}")
 
 
+def launch_order(review_csv: Path = REVIEW_CSV) -> list[str]:
+    """The QIDs with needs_owner = yes and priority = launch in the sheet, in its order. Excel saves
+    "CSV UTF-8", or Windows-1252 as plain "CSV" (as build_taxonomy.read_review_csv reads it)."""
+    try:
+        text = review_csv.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError:
+        text = review_csv.read_text(encoding="cp1252")
+    return [r["qid"] for r in csv.DictReader(text.splitlines())
+            if (r.get("needs_owner") or "").strip().lower() == "yes" and (r.get("priority") or "").strip().lower() == "launch"]
+
+
 class Store:
-    """The manifest's photos grouped by type, and the decisions in labels.csv."""
+    """The manifest's photos grouped by type, and the decisions in labels.csv. With `only`, just
+    those types, in that order."""
 
     def __init__(self, manifest_csv: Path = MANIFEST_CSV, labels_csv: Path = LABELS_CSV,
-                 images_dir: Path = IMAGES_DIR, thumbs_dir: Path = THUMBS_DIR) -> None:
+                 images_dir: Path = IMAGES_DIR, thumbs_dir: Path = THUMBS_DIR, only: list[str] | None = None) -> None:
         self.labels_csv, self.images_dir, self.thumbs_dir = labels_csv, images_dir, thumbs_dir
         self.types: list[dict] = []
         self.files: dict[tuple[str, str], str] = {}  # (sha1, qid) -> file, relative to images_dir
+        self.sources: dict[tuple[str, str], str] = {}  # (sha1, qid) -> the manifest's source
+        wanted = None if only is None else set(only)
         index: dict[str, dict] = {}
         for m in read_manifest(manifest_csv):
+            if wanted is not None and m["qid"] not in wanted:
+                continue
             t = index.get(m["qid"])
             if t is None:
                 t = {"qid": m["qid"], "english_name": m["english_name"], "dzirent_category": m["dzirent_category"],
@@ -66,6 +89,9 @@ class Store:
                 self.types.append(t)
             t["photos"].append(m["sha1"])
             self.files[(m["sha1"], m["qid"])] = m["file"]
+            self.sources[(m["sha1"], m["qid"])] = m.get("source") or ""
+        if only is not None:
+            self.types = [index[q] for q in dict.fromkeys(only) if q in index]
         self.decisions: dict[tuple[str, str], str] = {}
         self.lock = threading.Lock()
         if labels_csv.exists():
@@ -79,6 +105,13 @@ class Store:
 
     def reviewed(self, t: dict) -> bool:
         return all((sha1, t["qid"]) in self.decisions for sha1 in t["photos"])
+
+    def counts(self, t: dict) -> dict:
+        """kept / dropped / not sure for a type; a photo with no decision counts as keep."""
+        out = {d: 0 for d in DECISIONS}
+        for sha1 in t["photos"]:
+            out[self.decisions.get((sha1, t["qid"]), "keep")] += 1
+        return out
 
     def progress(self) -> dict:
         decided = sum(1 for key in self.files if key in self.decisions)
@@ -142,7 +175,7 @@ PAGE = """<!doctype html>
 <title>Label check: __NAME__</title>
 <style>
   :root { --bg:#0e1116; --panel:#161b22; --line:#30363d; --text:#e6edf3; --muted:#8b949e;
-          --keep:#3fb950; --drop:#f85149; --unsure:#d29922; --focus:#ffffff; }
+          --keep:#3fb950; --drop:#f85149; --unsure:#d29922; --focus:#ffffff; --search:#58a6ff; }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font:15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
   header { position:sticky; top:0; z-index:2; background:var(--panel); border-bottom:1px solid var(--line); padding:12px 20px; }
@@ -171,6 +204,11 @@ PAGE = """<!doctype html>
   .card img { width:250px; height:250px; object-fit:contain; display:block; margin:0 auto; border-radius:4px; }
   .card .state { position:absolute; left:10px; bottom:6px; font-size:13px; font-weight:600; color:var(--muted); }
   .card .num { position:absolute; right:10px; bottom:6px; font-size:12px; color:var(--muted); }
+  .card .tag { position:absolute; left:14px; top:14px; background:var(--search); color:#0e1116; font-size:11px;
+               font-weight:700; padding:1px 8px; border-radius:999px; letter-spacing:.02em; }
+  .finished { margin:0 0 10px; padding:6px 12px; border-radius:8px; background:rgba(63,185,80,.12);
+              color:var(--text); font-size:14px; }
+  .finished b { font-weight:600; }
   .card.keep { border-style:solid; border-color:var(--keep); }
   .card.keep .state { color:var(--keep); }
   .card.drop { border-style:solid; border-color:var(--drop); }
@@ -186,7 +224,7 @@ PAGE = """<!doctype html>
 <body>
 <div id="error" role="alert"></div>
 <header>
-  <div class="row">
+  __FINISHED__<div class="row">
     <span class="meta">Type __POS__ of __TOTAL__</span>
     <h1>__NAME__</h1>
     <span class="meta">__CATEGORY__</span>
@@ -204,7 +242,8 @@ PAGE = """<!doctype html>
   <div class="hint">__HINT__ Click a photo to cycle keep, drop, not sure.
     <kbd>1</kbd> keep <kbd>2</kbd> drop <kbd>3</kbd> not sure <kbd>&larr;</kbd><kbd>&rarr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd> move
     <kbd>Enter</kbd> full photo <kbd>N</kbd> next type (the photos left undecided are saved as keep) <kbd>P</kbd> previous.
-    A dashed border is a photo not checked yet; it counts as keep.</div>
+    A dashed border is a photo not checked yet; it counts as keep. A <span class="badge" style="background:var(--search);color:#0e1116">search</span>
+    tag: the photo came from a Commons search, not the type's own category; check it closely.</div>
 </header>
 <main><div class="grid" id="grid"></div>__EMPTY__</main>
 <script type="application/json" id="data">__DATA__</script>
@@ -272,12 +311,14 @@ PAGE = """<!doctype html>
 
   async function nextType() {
     const rest = data.photos.map((p, i) => ({ i, decision: "keep" })).filter(it => !data.photos[it.i].decision);
-    if (await save(rest) && data.next) location.href = data.next;
+    // The next page (or this one, after the last type) says how this type came out.
+    if (await save(rest)) location.href = (data.next || location.pathname) + "?finished=" + encodeURIComponent(data.qid);
   }
 
   data.photos.forEach((p, i) => {
     const card = document.createElement("div");
-    card.innerHTML = `<img alt="photo ${i + 1}" loading="lazy" src="/thumb/${data.qid}/${p.sha1}.jpg"><span class="state"></span><span class="num">${i + 1}</span>`;
+    card.innerHTML = `<img alt="photo ${i + 1}" loading="lazy" src="/thumb/${data.qid}/${p.sha1}.jpg"><span class="state"></span><span class="num">${i + 1}</span>`
+      + (p.source === "search" ? `<span class="tag" title="from a Commons search">search</span>` : "");
     card.addEventListener("click", () => { setFocus(i); save([{ i, decision: CYCLE[p.decision || "keep"] }]); });
     card.addEventListener("dblclick", () => window.open(`/photo/${data.qid}/${p.sha1}`, "_blank"));
     grid.appendChild(card);
@@ -314,10 +355,22 @@ PAGE = """<!doctype html>
 """
 
 
-def render_type(store: Store, index: int) -> str:
+def finished_line(store: Store, qid: str | None) -> str:
+    """The line for the type just finished with N: its kept / dropped / not sure counts."""
+    i = store.type_index(qid) if qid and QID_RE.fullmatch(qid) else None
+    if i is None:
+        return ""
+    t = store.types[i]
+    c = store.counts(t)
+    return (f'<div class="finished" role="status" id="finished">Finished <b>{html.escape(t["english_name"])}</b>: '
+            f'{c["keep"]} kept · {c["drop"]} dropped · {c["not_sure"]} not sure</div>')
+
+
+def render_type(store: Store, index: int, finished: str | None = None) -> str:
     t = store.types[index]
     data = {"qid": t["qid"], "name": t["english_name"],
-            "photos": [{"sha1": s, "decision": store.decisions.get((s, t["qid"]))} for s in t["photos"]],
+            "photos": [{"sha1": s, "decision": store.decisions.get((s, t["qid"])),
+                        "source": store.sources.get((s, t["qid"]), "")} for s in t["photos"]],
             "progress": store.progress(),
             "prev": f"/type/{index}" if index > 0 else None,
             "next": f"/type/{index + 2}" if index + 1 < len(store.types) else None}
@@ -334,7 +387,7 @@ def render_type(store: Store, index: int) -> str:
         "__QID__": html.escape(t["qid"]), "__COUNT__": str(len(t["photos"])),
         "__PREV__": data["prev"] or "#", "__PREV_OFF__": "" if data["prev"] else "off",
         "__NEXT__": data["next"] or "#", "__NEXT_OFF__": "" if data["next"] else "off",
-        "__HINT__": hint, "__EMPTY__": "",
+        "__HINT__": hint, "__EMPTY__": "", "__FINISHED__": finished_line(store, finished),
         # JSON inside <script>: "</" is escaped so no value can close the tag.
         "__DATA__": json.dumps(data, ensure_ascii=False).replace("</", "<\\/"),
     }
@@ -375,7 +428,8 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, b"Not found", "text/plain; charset=utf-8")
 
     def do_GET(self) -> None:
-        path = urlsplit(self.path).path
+        parts = urlsplit(self.path)
+        path = parts.path
         store = self.store
         if path == "/":
             if not store.types:
@@ -387,7 +441,8 @@ class Handler(BaseHTTPRequestHandler):
             index = int(m.group(1)) - 1
             if not 0 <= index < len(store.types):
                 return self._not_found()
-            return self._send(200, render_type(store, index).encode("utf-8"), "text/html; charset=utf-8")
+            finished = parse_qs(parts.query).get("finished", [None])[0]
+            return self._send(200, render_type(store, index, finished).encode("utf-8"), "text/html; charset=utf-8")
         m = re.fullmatch(r"/(thumb|photo)/(Q\d+)/([0-9a-f]{40})(?:\.jpg)?", path)
         if m:
             kind, qid, sha1 = m.groups()
@@ -427,12 +482,15 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="The label-check page for the downloaded Commons photos.")
     parser.add_argument("--port", type=int, default=PORT)
     parser.add_argument("--labels", type=Path, default=LABELS_CSV, help="where decisions are appended (default labels.csv)")
+    parser.add_argument("--launch-only", action="store_true",
+                        help="only the needs_owner = yes, priority = launch types of review.csv, in its order")
     args = parser.parse_args(argv)
-    store = Store(labels_csv=args.labels)
+    store = Store(labels_csv=args.labels, only=launch_order() if args.launch_only else None)
     server = make_server(store, args.port)
     p = store.progress()
-    print(f"Label check: http://{HOST}:{server.server_address[1]}  ({p['types_total']} types, {p['photos_total']} photos, "
-          f"{p['photos_decided']} decided; decisions go to {args.labels})", flush=True)
+    print(f"Label check: http://{HOST}:{server.server_address[1]}  ({'launch types only, ' if args.launch_only else ''}"
+          f"{p['types_total']} types, {p['photos_total']} photos, {p['photos_decided']} decided; "
+          f"decisions go to {args.labels})", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

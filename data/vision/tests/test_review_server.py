@@ -1,5 +1,6 @@
 """review_server.py on a small manifest: a type page renders, a POST appends to labels.csv, a
-reload shows the saved decision, thumbnails are made once at 256 px."""
+reload shows the saved decision, thumbnails are made once at 256 px; since D2b, --launch-only's
+filter and order, the search tag and the finished-type line."""
 
 import csv
 import json
@@ -107,6 +108,47 @@ def test_post_refuses_bad_input(server):
     assert post(base + "/api/decide", {"qid": "Q172827", "decisions": [{"sha1": SHA1S[0], "decision": "maybe"}]})[0] == 400
     assert post(base + "/api/decide", {"qid": "Q172827", "decisions": [{"sha1": SHA1S[2], "decision": "keep"}]})[0] == 400
     assert not labels.exists()
+
+
+# --- D2b: --launch-only, the search tag, the finished-type line ------------------------------------
+def test_launch_only_keeps_the_sheets_launch_types_in_its_order(tmp_path, server):
+    _, images, labels = server
+    sheet = tmp_path / "review.csv"
+    sheet.write_text("﻿needs_owner,keep,priority,english_name,qid\n"
+                     "yes,yes,launch,t-shirt,Q131151\n"   # the sheet's order, not the manifest's
+                     "yes,,later,sari,Q172827\n"          # needs_owner but not launch (a keep-list row)
+                     "yes,yes,launch,party dress,Q7140985\n"  # launch, but no photos: nothing to show
+                     ",,later,cardigan,Q877140\n", encoding="utf-8")
+    assert rs.launch_order(sheet) == ["Q131151", "Q7140985"]
+    store = rs.Store(manifest_csv=images / "manifest.csv", labels_csv=labels, images_dir=images,
+                     thumbs_dir=images / "thumbs", only=rs.launch_order(sheet))
+    assert [t["qid"] for t in store.types] == ["Q131151"]
+    assert store.progress() == {"types_reviewed": 0, "types_total": 1, "photos_decided": 0, "photos_total": 1}
+    html = rs.render_type(store, 0)
+    assert "<h1>t-shirt</h1>" in html and "Type 1 of 1" in html
+
+
+def test_search_photos_carry_a_tag(server):
+    base, images, _ = server
+    manifest = fc.read_manifest(images / "manifest.csv")
+    for m, source in zip(manifest, ["category", "search", "p18"]):
+        m["source"] = source
+    fc.write_manifest(manifest, images / "manifest.csv")
+    store = rs.Store(manifest_csv=images / "manifest.csv", labels_csv=images / "labels.csv", images_dir=images,
+                     thumbs_dir=images / "thumbs")
+    data = page_data(rs.render_type(store, 0))
+    assert [p["source"] for p in data["photos"]] == ["category", "search"]
+    assert 'p.source === "search"' in rs.PAGE and 'class="tag"' in rs.PAGE  # the tag the page draws for it
+
+
+def test_finished_line_after_n(server):
+    base, _, _ = server
+    post(base + "/api/decide", {"qid": "Q172827", "decisions": [{"sha1": SHA1S[0], "decision": "drop"},
+                                                               {"sha1": SHA1S[1], "decision": "keep"}]})
+    html = get(base + "/type/2?finished=Q172827")[2].decode("utf-8")
+    assert "Finished <b>sari</b>: 1 kept · 1 dropped · 0 not sure" in html
+    assert 'id="finished"' not in get(base + "/type/2")[2].decode("utf-8")
+    assert 'id="finished"' not in get(base + "/type/2?finished=<b>x</b>")[2].decode("utf-8")  # only a known QID
 
 
 def test_thumbnail_made_once_at_256(server):
