@@ -43,9 +43,10 @@ data/vision/
     vocabulary.json      # what the photo check reads: allowed and not-allowed types only
 ```
 
-**Status (D2+D3, 2026-11-17):** 1,745 types (57 launch, 45 on the keep list; 102 with
-needs_owner = yes), 845 types in `vocabulary.json`; photos downloaded for the needs_owner = yes
-rows only so far. See HANDOFF.md and `pranalika/handoffs/claude-code.md`.
+**Status (D2b, 2026-11-17):** 1,767 types (57 launch, 33 on the keep list, 23 allowed costumes;
+113 with needs_owner = yes), 852 types in `vocabulary.json`. 8,056 photos: all needs_owner = yes
+rows (7,347) and 709 not-allowed ones; the full run is paused and resumes from the manifest. See
+HANDOFF.md and `pranalika/handoffs/claude-code.md`.
 
 ## Setup
 
@@ -183,14 +184,20 @@ listing) any line whose values aren't valid. keep is yes, no or blank; a type ma
 
 ```powershell
 python images/fetch_commons.py --dry-run        # counts only: what Commons has for each type, nothing downloaded
-python images/fetch_commons.py --only-launch    # only the needs_owner = yes rows (launch types and keep list)
+python images/fetch_commons.py --only-launch    # only the needs_owner = yes rows (launch, keep list, costumes)
 python images/fetch_commons.py                  # every type with a target
 python images/fetch_commons.py --limit-per-type 5   # at most 5 a type (below its target)
+python images/fetch_commons.py --prune          # remove the photos of types now dropped or keep = no
 ```
 
 - **Where the photos come from**, for each type in turn, until it has its target: its Wikidata
   image (P18), then the files directly in its Commons category (P373), then the files directly in
   each subcategory of that category (one level down, never deeper).
+- **Search (D2b)**, only for a needs_owner = yes type still under 40 photos after those: a Commons
+  file search (the search module over the File namespace, `filetype:bitmap`) for its English name,
+  then each of its `also_called` names (the sheet's column), each as a phrase, the first 100 results
+  each, best match first. Same license, format, size and sha1 rules, same cap of 80. Search results
+  are looser than a category, so the label-check page tags them.
 - **Targets:** 80 photos for a needs_owner = yes row, 40 for a not-allowed row (the negatives),
   12 for every other allowed row. Review rows and rows marked keep = no get none yet. A type stops
   early when Commons runs out; the shortfall is logged and kept in `images/raw/last_run.json`
@@ -202,8 +209,13 @@ python images/fetch_commons.py --limit-per-type 5   # at most 5 a type (below it
 - **Saved as** `images/files/<qid>/<sha1>.<ext>`: Commons' 1280 px wide rendition, or the
   original when that is no wider (never enlarged). Each file gets a row in `manifest.csv`:
   `qid, english_name, dzirent_category, allowed, sha1, file, width, height, license, author,
-  source_url, commons_page_url, downloaded_at` (width and height are the saved file's; `file` is
-  relative to `images/`). `CREDITS.md` is rewritten from the manifest after every run.
+  source_url, commons_page_url, downloaded_at, source` (width and height are the saved file's;
+  `file` is relative to `images/`; `source` is p18, category, subcategory or search). `CREDITS.md`
+  is rewritten from the manifest after every run. A manifest from before D2b gets its `source`
+  column from the cached listings on the next run, without a request.
+- **`--prune`** removes from disk (with their thumbnails) and from `manifest.csv` the photos of
+  every type no longer in `taxonomy.json` or marked keep = no, rewrites `CREDITS.md` and stops. A
+  normal run only warns about them; their sha1s stay taken until they are pruned.
 - **Wikimedia rules:** User-Agent `DziRentVisionData/0.1 (Dzirent clothing photo set;
   support@dzirent.com)`, at most 2 requests a second (API calls and downloads together),
   exponential back-off on 429 and 5xx (honouring Retry-After). Every API response is cached in
@@ -215,7 +227,8 @@ python images/fetch_commons.py --limit-per-type 5   # at most 5 a type (below it
 ### 6. Check the photos (D3)
 
 ```powershell
-python images/review_server.py      # then open http://127.0.0.1:8765 ; Ctrl+C stops it
+python images/review_server.py                 # then open http://127.0.0.1:8765 ; Ctrl+C stops it
+python images/review_server.py --launch-only   # only the launch types (needs_owner = yes, priority launch)
 ```
 
 - One type at a time: its name, category and whether it can be listed, then its photos as 256 px
@@ -230,7 +243,12 @@ python images/review_server.py      # then open http://127.0.0.1:8765 ; Ctrl+C s
   decided_at`); the latest line for a photo wins, so any decision can be changed later, and a
   reload shows what is saved. A photo with no decision counts as keep, so a type nobody checked
   still trains. `N` saves keep for the photos left undecided on the page, so the progress bar
-  counts the type as checked.
+  counts the type as checked, and the next page starts with a line for the type just finished:
+  how many kept, dropped and not sure.
+- **`--launch-only` (D2b)** serves only the types with needs_owner = yes and priority launch in
+  `taxonomy/review.csv`, in the sheet's order; the progress bars count those only.
+- **A "search" tag** marks a photo that came from the Commons search rather than the type's own
+  image or category.
 - **The page** listens on 127.0.0.1 only and shows nothing from Commons but the photos (no file
   names, descriptions or authors, which can name places and brands). `--labels <file>` writes
   the decisions somewhere else (for a trial run).
@@ -271,6 +289,11 @@ python -m pytest -q tests
 On recorded responses only (`tests/fixtures/`): the license, format and size filters, sha1
 dedupe, the manifest's columns and the credits, resuming (a second run makes no request and adds
 nothing), the dry run and the targets; the instance-of rule on recorded Wikidata data; and the
-label-check page (a type page renders, a POST appends to `labels.csv`, a reload shows it). Any
+label-check page (a type page renders, a POST appends to `labels.csv`, a reload shows it). D2b
+added: the search source on a recorded search (rank order, the under-40 bar, the cap), the
+`source` column and filling it from the cache, `--prune`, and the build on a recorded slice of the
+Wikidata cache (Harrington jacket kept by the exception list, the drop list's keep = no, costume
+classified Occasion & Party / costume, a costume also under protective clothing or mask dropped),
+plus `--launch-only`, the search tag and the finished-type line. Any
 connection to something other than this PC fails the test. CI's `vision-data` job runs them
 after `validate.py`.

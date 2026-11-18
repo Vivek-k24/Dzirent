@@ -1,3 +1,23 @@
+## D2b - 2026-11-17 - costume roots, keep list rework, search source
+
+**Result:**
+- **Types:** 1,767 (57 launch, 33 keep list, 23 allowed costumes; 113 with needs_owner = yes), 852 in `vocabulary.json`; `validate.py` passes 8 of 8.
+- **Photos:** 8,056 Commons photos (3.04 GB, not committed): every needs_owner row has some, 7,347 in all; plus 709 not-allowed ones. The full run is paused and resumes from the manifest.
+
+The full entry, with the per-type counts and the open questions, is in `pranalika/handoffs/claude-code.md` (D2b).
+
+- **Roots:** costume Q1410477 (2 levels; out of the exclusion roots) and space suit Q223571 (1 level) are positive roots. What they reach is Occasion & Party with garment type `costume` (not a database value yet). Mask, uniform, protective clothing and sportswear still win over costume.
+- **Lists by QID:**
+  - keep list 45 → 33 (protective, industrial, military and sportswear removed; track suit top and posing trunks now not allowed);
+  - `EXCLUDE_INSTANCE_OF_EXCEPTIONS`: Harrington jacket, Perfecto, Kariyushi shirt;
+  - `DROP_LIST`: 7 brand-named watches, keep = no.
+- **Photos:**
+  - `--prune` removed 338 photos (94.3 MB) of the 10 types that left;
+  - `manifest.csv` has a `source` column;
+  - needs_owner types under 40 also get Commons search results (1,932 so far, tagged on the page).
+- **Page:** `review_server.py --launch-only` (57 types), a "search" tag, a finished-type line.
+- **Tests:** 64.
+
 ## D2+D3 - 2026-11-17 - vocabulary cleanup, Commons photos, label-check page
 
 **Result: 1,745 types (57 launch, 45 keep list; 102 with needs_owner = yes), 845 in `vocabulary.json`; `validate.py` passes 8 of 8. 4,678 Commons photos for 92 of the 102 needs_owner rows (1.72 GB, in `images/files/`, not committed); `images/manifest.csv` and `images/CREDITS.md` committed; the label-check page `images/review_server.py`.** The full entry, with the per-type counts and the open questions, is in `pranalika/handoffs/claude-code.md` (D2+D3).
