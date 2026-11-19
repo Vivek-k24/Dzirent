@@ -1,3 +1,12 @@
+## D2d - 2026-11-18 - four owner decisions undone, decode check, Openverse (not run), --types-with-new
+
+**Result:**
+- **Labels:** hat, hoodie, jeans and cap lost their 328 owner rows (the owner had read "not allowed" as "drop") and are filter-only: kept 0 → 69, 77, 78, 79. Every other owner row is byte-identical.
+- **Photos:** 13,742, every one decodes (`--verify` removed the 2 broken ones). 10,818 kept; `split.json` 8,725 train, 2,093 test, and no photo changed sides.
+- **Openverse:** `fetch_openverse.py` is written and tested on a recorded search, but not run. Anonymous use is 20 requests a minute and 200 a day, and the 27 short launch types need up to 666 calls. It waits for the owner's registration (the steps are in `pranalika/handoffs/claude-code.md`, D2d).
+- **Page:** `review_server.py --types-with-new`.
+- **Tests:** 114.
+
 ## D2c+D4 - 2026-11-18 - full download, space suit models out, auto-filter, locked split
 
 **Result:**

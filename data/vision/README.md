@@ -22,6 +22,7 @@ data/vision/
   images/
     fetch_commons.py     # D2: downloads Commons photos for the types; writes manifest.csv and CREDITS.md
     review_server.py     # D3: the label-check page, http://127.0.0.1:8765; appends to labels.csv
+    fetch_openverse.py   # D2d: a second source (Openverse) for the launch types still short; needs a key
     auto_filter.py       # D2c: marks grayscale, sepia and page-scan photos; merges into labels.csv
     split.py             # D4: the locked train/test split of the kept photos
     manifest.csv         # one row per downloaded photo (committed)
@@ -47,11 +48,12 @@ data/vision/
     vocabulary.json      # what the photo check reads: allowed and not-allowed types only
 ```
 
-**Status (D2c+D4, 2026-11-18):** 1,758 types (57 launch, 33 on the keep list, 14 allowed
-costumes; 104 with needs_owner = yes), 843 types in `vocabulary.json`. 13,744 photos (5.09 GB, not
-committed) for 729 types: the full run is done. `auto_filter.py` marked 1,757 photos; with the
-owner's decisions, 10,515 photos are kept, and `split.json` holds them as 8,483 train and 2,032
-test. See HANDOFF.md and `pranalika/handoffs/claude-code.md`.
+**Status (D2d, 2026-11-18):** 1,758 types (57 launch, 33 on the keep list, 14 allowed costumes;
+104 with needs_owner = yes), 843 types in `vocabulary.json`. 13,742 photos (5.09 GB, not committed)
+for 729 types, all of which decode. Hat, hoodie, jeans and cap are back to filter-only (the owner
+had read "not allowed" as "drop"). 10,818 photos are kept, 8,725 train and 2,093 test in
+`split.json`. Openverse is written and tested but not run: it needs a registered key (see 5b). See
+HANDOFF.md and `pranalika/handoffs/claude-code.md`.
 
 ## Setup
 
@@ -200,6 +202,10 @@ python images/fetch_commons.py --prune          # remove the photos of types now
 python images/fetch_commons.py --max-minutes 8.5    # stop cleanly before the next photo after 8.5 minutes
 ```
 
+- **Every saved photo must decode (D2d):** Pillow opens it and reads every pixel; a file that is
+  cut short or broken is deleted and skipped as "unreadable" (a later run tries it again).
+  `--verify` checks every photo in the manifest the same way and removes the ones that fail (run
+  once in D2d: 2 of 13,744 removed).
 - **`--max-minutes` (D2c):** the run stops before its next photo once the time is up, writes
   `CREDITS.md` and its report (`"stopped_at_time_limit": true`), and the next run resumes from the
   manifest. Claude Code stops idle background commands when memory runs low, so long runs go in
@@ -239,11 +245,48 @@ python images/fetch_commons.py --max-minutes 8.5    # stop cleanly before the ne
   a file whose sha1 is in the manifest is never fetched again; listings come from the cache. A
   second run adds nothing and makes no requests. Delete `images/raw/` to see new Commons uploads.
 
+### 5b. Openverse (D2d)
+
+```powershell
+python images/fetch_openverse.py --dry-run          # the targets and the most API calls; no network
+python images/fetch_openverse.py --max-minutes 8.5  # fetch (needs the key below), in foreground pieces
+```
+
+- **Targets:** the launch types (needs_owner = yes, priority = launch) with fewer than 40 kept
+  photos (owner keep, or undecided and not auto-dropped), in the sheet's order: 27 types in D2d.
+  Each is filled up to **80 kept-or-undecided photos across all sources**.
+- **Search:** Openverse's image API (`/v1/images/`) for the English name, then each `also_called`
+  name, as a phrase, up to 5 pages of 20. Only `license` cc0, by, by-sa (any version) and pdm are
+  asked for, and each result is checked again; Wikimedia is left out (Commons is the first source);
+  nothing marked mature.
+- **Each file** comes from its source site (`url`), must decode and be a JPEG, PNG or WebP with a
+  short side of at least 300 px, and is saved at most 1280 px wide (never enlarged). Its sha1 is
+  the downloaded file's; a sha1 already in the manifest is skipped. A photo the auto-filter would
+  drop is kept on disk and in the manifest (the auto-filter marks it) but doesn't count toward 80.
+- **Records:** a manifest row with `source` = openverse (license as "CC BY 2.0", "CC0 1.0" or
+  "Public Domain Mark 1.0"; `author` = the creator; `source_url` = the file; `commons_page_url` =
+  the page where it was published), and a row in `images/openverse.csv`: sha1, Openverse id, qid,
+  title, license, license_version, license_url, creator, creator_url, source site, landing page,
+  URL. `CREDITS.md` gets an Openverse part, by license, with each file's creator and source site,
+  and the note Openverse's terms ask for (made with Openverse, not endorsed or certified by it).
+- **Then** run `auto_filter.py` (it measures only the new photos and merges) and `split.py`.
+- **Limits and the key:** anonymous use is 20 requests a minute and 200 a day (the
+  `x-ratelimit-*` headers, 2026-11-18). The 27 targets need up to 666 search calls. With
+  `OPENVERSE_CLIENT_ID` and `OPENVERSE_CLIENT_SECRET` in `H:\DziRent\secrets\providers.env` (or the
+  environment), the script gets a token and runs registered. Without them it stops before any
+  request and prints the registration steps: one PowerShell line that registers and saves the two
+  values without showing them, then the verification email. Politeness: the User-Agent above
+  (`support@dzirent.com`), one request at a time, 1 s between API calls and 0.5 s between
+  downloads, back-off on 429 and 5xx, and a clean stop when fewer than 5 calls are left today.
+  Responses are cached in `images/raw/openverse/`. Openverse's terms forbid scraping the catalog;
+  this is a bounded, targeted search within the published limits.
+
 ### 6. Check the photos (D3)
 
 ```powershell
 python images/review_server.py                 # then open http://127.0.0.1:8765 ; Ctrl+C stops it
 python images/review_server.py --launch-only   # only the launch types (needs_owner = yes, priority launch)
+python images/review_server.py --types-with-new   # only types with a photo nobody (owner or filter) decided
 ```
 
 - One type at a time: its name, category and whether it can be listed, then its photos as 256 px
@@ -262,6 +305,11 @@ python images/review_server.py --launch-only   # only the launch types (needs_ow
   how many kept, dropped and not sure.
 - **`--launch-only` (D2b)** serves only the types with needs_owner = yes and priority launch in
   `taxonomy/review.csv`, in the sheet's order; the progress bars count those only.
+- **`--types-with-new` (D2d)** serves only the types that have at least one photo with no decision
+  from any source (neither the owner nor the auto-filter), in the sheet's order. With
+  `--launch-only` as well, only the launch types among them.
+- **For a not-allowed type, keep means "this photo clearly shows the banned item"**: those
+  photos teach the check what to refuse. Drop is for a photo that doesn't show it.
 - **A "search" tag** marks a photo that came from the Commons search rather than the type's own
   image or category.
 - **The source column (D2c):** the page writes `source` = owner on every line. A drop that
@@ -278,7 +326,12 @@ python images/review_server.py --launch-only   # only the launch types (needs_ow
 python images/auto_filter.py               # measure new photos, write auto_filter.csv, merge into labels.csv, report
 python images/auto_filter.py --histogram   # also print the saturation histogram
 python images/auto_filter.py --no-merge    # write auto_filter.csv only
+python images/auto_filter.py --forget-owner Q80151,Q83363   # first remove those types' owner rows (D2d)
 ```
+
+- **`--forget-owner` (D2d)** removes the owner's rows of the named types from `labels.csv`, every
+  other line byte for byte, then merges as usual, so those types become filter-only. Used once, for
+  hat, hoodie, jeans and cap, which the owner had dropped whole reading "not allowed" as "drop".
 
 - **Measures**, on a copy at most 256 px on its long side:
   - `saturation`: the mean HSV saturation (0-1) of the pixels that are neither near-white (darkest
@@ -361,7 +414,8 @@ grouped by license, which is the attribution the CC BY and CC BY-SA licenses ask
 
 | Committed | Not committed (`.gitignore`) |
 | --- | --- |
-| `images/fetch_commons.py`, `images/review_server.py`, `images/auto_filter.py`, `images/split.py`, `tests/` | `images/files/` (the photos) |
+| `images/fetch_commons.py`, `images/fetch_openverse.py`, `images/review_server.py`, `images/auto_filter.py`, `images/split.py`, `tests/` | `images/files/` (the photos) |
+| `images/openverse.csv` (once Openverse has run) | `images/raw/openverse/` (Openverse responses and run report) |
 | `images/manifest.csv`, `images/CREDITS.md`, `images/labels.csv`, `images/auto_filter.csv`, `images/split.json` | `images/thumbs/` (the page's thumbnails) |
 | `taxonomy/` scripts and outputs | `images/raw/` (Commons API cache, run reports, the auto-filter's measures and report), `taxonomy/raw/` (Wikidata cache), `.venv/` |
 
@@ -386,5 +440,11 @@ page, sepia, small, a cut-short file, a transparent PNG); the merge (an owner ke
 owner rows unchanged, merging twice changes nothing); the review page's source column (auto drops
 shown as auto, an owner click wins, a four-column file stays four columns); and the split
 (determinism whatever the order, 80/20, at least 2 test photos from 5, thin types, kept photos
-only, the changed-sides count). Any connection to something other than this PC fails the test. CI's `vision-data` job runs them
+only, the changed-sides count). D2d added: the decode check (a cut-short download deleted and
+skipped, `--verify` removing a broken photo), `--forget-owner` (every other line byte-identical,
+through the merge too), `--types-with-new`, and `fetch_openverse.py` on a recorded Openverse search
+(`fixtures/openverse_search.json`: license acceptance with pdm, the photo checks, 80
+kept-or-undecided with auto drops not counted, the manifest, `openverse.csv` and credits rows, the
+cache, the token, the stop with the registration steps). Any connection to something other than
+this PC fails the test. CI's `vision-data` job runs them
 after `validate.py`.
