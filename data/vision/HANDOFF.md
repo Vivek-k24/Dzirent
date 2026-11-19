@@ -1,3 +1,20 @@
+## D2c+D4 - 2026-11-18 - full download, space suit models out, auto-filter, locked split
+
+**Result:**
+- **Types:** 1,758 (57 launch, 33 keep list, 14 allowed costumes; 104 with needs_owner = yes), 843 in `vocabulary.json`; `validate.py` passes 8 of 8.
+- **Photos:** 13,744 Commons photos for 729 types (5.09 GB, not committed); the full run is done, and a second run makes no request. 114 types with a target have none.
+- **Labels:** the owner's 4,146 rows (57 launch types) unchanged, plus 1,253 auto drop rows. 10,515 photos are kept.
+- **Split:** `split.json`, 704 types: 8,483 train, 2,032 test (locked), 219 thin.
+
+The full entry, with the per-type counts and the open questions, is in `pranalika/handoffs/claude-code.md` (D2c+D4).
+
+- **Space suit itself only:** `specs.ONLY_ITSELF_ROOTS`; the nine particular suits went to `excluded.json`, and `--prune` removed their 628 photos (217.8 MB).
+- **`fetch_commons.py --max-minutes`:** a clean stop before the next photo; the full run went in 10 foreground pieces of 8.5 minutes.
+- **`auto_filter.py`:** grayscale (saturation under 0.02, the histogram's spike), sepia, page scans, small and unreadable. 1,757 photos auto_drop; owner decisions always win. Writes `auto_filter.csv` and merges into `labels.csv` (new `source` column: owner or auto).
+- **`split.py`:** kept photos only; the round(20 %) lowest sha1s per type are test (at least 2 from 5 kept); fewer than 5 kept is all train (thin). The test set is never used for the gallery or the linear layer.
+- **Page:** writes `source` = owner; auto drops show as "drop (auto)".
+- **Tests:** 88.
+
 ## D2b - 2026-11-17 - costume roots, keep list rework, search source
 
 **Result:**

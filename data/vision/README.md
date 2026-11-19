@@ -22,9 +22,13 @@ data/vision/
   images/
     fetch_commons.py     # D2: downloads Commons photos for the types; writes manifest.csv and CREDITS.md
     review_server.py     # D3: the label-check page, http://127.0.0.1:8765; appends to labels.csv
+    auto_filter.py       # D2c: marks grayscale, sepia and page-scan photos; merges into labels.csv
+    split.py             # D4: the locked train/test split of the kept photos
     manifest.csv         # one row per downloaded photo (committed)
     CREDITS.md           # every photo's author, license and Commons page, by license (committed)
-    labels.csv           # the owner's keep / drop / not sure decisions (committed)
+    labels.csv           # keep / drop / not sure: the owner's rows and auto_filter's drop rows (committed)
+    auto_filter.csv      # every photo's measures and auto_drop (committed)
+    split.json           # train and test photos per type (committed; test is locked)
     files/<qid>/<sha1>.<ext>   # the photos (not committed)
     thumbs/              # 256 px thumbnails for the page (not committed)
     raw/                 # cached Commons API responses, one JSON per call, and run reports (not committed)
@@ -43,10 +47,11 @@ data/vision/
     vocabulary.json      # what the photo check reads: allowed and not-allowed types only
 ```
 
-**Status (D2b, 2026-11-17):** 1,767 types (57 launch, 33 on the keep list, 23 allowed costumes;
-113 with needs_owner = yes), 852 types in `vocabulary.json`. 8,056 photos: all needs_owner = yes
-rows (7,347) and 709 not-allowed ones; the full run is paused and resumes from the manifest. See
-HANDOFF.md and `pranalika/handoffs/claude-code.md`.
+**Status (D2c+D4, 2026-11-18):** 1,758 types (57 launch, 33 on the keep list, 14 allowed
+costumes; 104 with needs_owner = yes), 843 types in `vocabulary.json`. 13,744 photos (5.09 GB, not
+committed) for 729 types: the full run is done. `auto_filter.py` marked 1,757 photos; with the
+owner's decisions, 10,515 photos are kept, and `split.json` holds them as 8,483 train and 2,032
+test. See HANDOFF.md and `pranalika/handoffs/claude-code.md`.
 
 ## Setup
 
@@ -106,6 +111,10 @@ python taxonomy/build_taxonomy.py
   - **costume (D2b):** a type the costume root reaches that is also under mask, uniform,
     protective clothing or sportswear (the exclusion wins), and a subclass of costume more than 2
     levels below it;
+  - **space suit itself only (D2c, `specs.ONLY_ITSELF_ROOTS`):** the types below space suit are
+    particular suits (Apollo/Skylab A7L, Sokol, Orlan, Mars suit, ...), flight hardware rather than
+    something people rent; "space suit" covers them as a costume. A launch or keep-list type below
+    it stays (Advanced Crew Escape Suit);
   - **cut B:** what clothing reaches only through "fashion accessory": accessories come from their
     own roots;
   - **instance of (D2):** a type that is an instance (P31, or P31 of a subclass) of fictional
@@ -188,7 +197,13 @@ python images/fetch_commons.py --only-launch    # only the needs_owner = yes row
 python images/fetch_commons.py                  # every type with a target
 python images/fetch_commons.py --limit-per-type 5   # at most 5 a type (below its target)
 python images/fetch_commons.py --prune          # remove the photos of types now dropped or keep = no
+python images/fetch_commons.py --max-minutes 8.5    # stop cleanly before the next photo after 8.5 minutes
 ```
+
+- **`--max-minutes` (D2c):** the run stops before its next photo once the time is up, writes
+  `CREDITS.md` and its report (`"stopped_at_time_limit": true`), and the next run resumes from the
+  manifest. Claude Code stops idle background commands when memory runs low, so long runs go in
+  foreground pieces under the tool's 10-minute limit.
 
 - **Where the photos come from**, for each type in turn, until it has its target: its Wikidata
   image (P18), then the files directly in its Commons category (P373), then the files directly in
@@ -240,7 +255,7 @@ python images/review_server.py --launch-only   # only the launch types (needs_ow
 - **For a not-allowed type**, keep the photos that really show it: they teach the photo check
   what to refuse.
 - **Saved at once:** every decision is appended to `images/labels.csv` (`sha1, qid, decision,
-  decided_at`); the latest line for a photo wins, so any decision can be changed later, and a
+  decided_at, source`); the latest line for a photo wins, so any decision can be changed later, and a
   reload shows what is saved. A photo with no decision counts as keep, so a type nobody checked
   still trains. `N` saves keep for the photos left undecided on the page, so the progress bar
   counts the type as checked, and the next page starts with a line for the type just finished:
@@ -249,9 +264,79 @@ python images/review_server.py --launch-only   # only the launch types (needs_ow
   `taxonomy/review.csv`, in the sheet's order; the progress bars count those only.
 - **A "search" tag** marks a photo that came from the Commons search rather than the type's own
   image or category.
+- **The source column (D2c):** the page writes `source` = owner on every line. A drop that
+  `auto_filter.py` added shows as "drop (auto)" until the owner clicks the photo; the owner's click
+  is appended and wins. `N` leaves auto drops as they are (they count as decided). A `labels.csv`
+  from before D2c (four columns) gets four-column lines.
 - **The page** listens on 127.0.0.1 only and shows nothing from Commons but the photos (no file
   names, descriptions or authors, which can name places and brands). `--labels <file>` writes
   the decisions somewhere else (for a trial run).
+
+### 7. Auto-filter (D2c)
+
+```powershell
+python images/auto_filter.py               # measure new photos, write auto_filter.csv, merge into labels.csv, report
+python images/auto_filter.py --histogram   # also print the saturation histogram
+python images/auto_filter.py --no-merge    # write auto_filter.csv only
+```
+
+- **Measures**, on a copy at most 256 px on its long side:
+  - `saturation`: the mean HSV saturation (0-1) of the pixels that are neither near-white (darkest
+    channel 230 or more) nor near-black (brightest 25 or less), so a white background or a black
+    backdrop doesn't make a colour photo look grey;
+  - `white_frac`, `black_frac`: the share of near-white and near-black pixels;
+  - `page_score`: how many of the four borders (the outer 6 %) are at least 90 % paper: light (HSV
+    value 190 or more) and nearly colourless (saturation 0.25 or less);
+  - cached in `images/raw/auto_filter_stats.json` only: how tightly the coloured pixels share one
+    hue and which hue, how much of the photo is tinted, the border's own colour.
+- **auto_drop**, with the reason in `auto_filter.csv`:
+  - **grayscale:** saturation under 0.02;
+  - **sepia:** saturation under 0.25, at least 93 % of the pixels tinted, all on one brown-orange
+    hue (15-55°, concentration 0.98 or more);
+  - **page:** page_score 3 or more, saturation under 0.15, and the border itself tinted (border
+    saturation 0.07 or more: cream paper, not studio white or grey), on one hue (0.95 or more);
+  - **small:** a short side under 300 px (none: `fetch_commons.py` already skips them);
+  - **unreadable:** Pillow can't open the file (2: one cut short, one PNG broken as Commons
+    serves it). Measured again on every run.
+- **Why these thresholds.** The saturation histogram of the 13,744 photos (`--histogram`, bins of
+  0.02): 1,426 photos in 0.00-0.02 (1,338 of them exactly 0, no colour at all), then 194, 253,
+  272, 325 and rising to about 650 a bin at 0.20-0.30. Contact sheets of the 0.02-0.06 bins showed
+  about half black-and-white photos and half colour photos of white, black or grey things (white
+  dresses, black jackets, sunglasses on white); no measure here told them apart. So grayscale stops
+  at the spike's edge: of the 19 photos between 0.01 and 0.02 in a first check (8,279 photos), 13
+  were black-and-white or drawings and 6 colour photos of white items. One brown hue with low
+  saturation also matches colour photos of beige things, so the sepia rule asks for the tint
+  everywhere. Its cap of 0.25 is where those colour photos started in the samples; about 2 in 30
+  of what it marks are still colour photos. A paper border alone also matches product shots on
+  white, so the page rule asks for a cream border. About 1 in 10 of what it marks are museum photos
+  of garments on cream backgrounds.
+- **Merge into `labels.csv`:** the rows the review page wrote (source owner, or no source in a
+  file from before D2c) stay exactly as they are, in their order. An auto_drop photo the owner never
+  decided gets one row: decision drop, source auto, no time. **An owner decision always wins**,
+  whatever it is and whenever it was made. Auto rows are written again on every run, so a photo
+  the filter no longer marks loses its row.
+- **Kept photos** (for `split.py`): the owner's latest decision, else the auto one, else keep (as
+  on the review page). Drop and not sure are left out.
+- **Report:** what the owner kept, dropped and wasn't sure of per type, what the filter added, and
+  the 20 launch types with the fewest photos left; the full table is in
+  `images/raw/auto_filter_report.json`.
+
+### 8. The locked split (D4)
+
+```powershell
+python images/split.py          # write split.json
+python images/split.py --check  # compare with the committed split.json; write nothing
+```
+
+- **Kept photos only** (see above). Per type: the round(20 %) of its kept photos with the lowest
+  sha1 (the content hash, so the choice is deterministic and owes nothing to names or order) are
+  test, at least 2; the rest are train. A type with fewer than 5 kept photos goes entirely to train
+  and is listed under `thin`.
+- **The test set is locked. It is never used for the gallery or the linear layer**, only to measure
+  them. `split.json` (`rule`, `counts`, `thin`, and per type `english_name`, `train`, `test`) is
+  committed. Running `split.py` again after `labels.csv` or the manifest changes prints how many
+  photos changed sides against the committed file (`train_to_test`, `test_to_train`), so a photo
+  that trained never moves into test unnoticed.
 
 ### Item policy
 
@@ -276,11 +361,11 @@ grouped by license, which is the attribution the CC BY and CC BY-SA licenses ask
 
 | Committed | Not committed (`.gitignore`) |
 | --- | --- |
-| `images/fetch_commons.py`, `images/review_server.py`, `tests/` | `images/files/` (the photos) |
-| `images/manifest.csv`, `images/CREDITS.md`, `images/labels.csv` | `images/thumbs/` (the page's thumbnails) |
-| `taxonomy/` scripts and outputs | `images/raw/` (Commons API cache and run reports), `taxonomy/raw/` (Wikidata cache), `.venv/` |
+| `images/fetch_commons.py`, `images/review_server.py`, `images/auto_filter.py`, `images/split.py`, `tests/` | `images/files/` (the photos) |
+| `images/manifest.csv`, `images/CREDITS.md`, `images/labels.csv`, `images/auto_filter.csv`, `images/split.json` | `images/thumbs/` (the page's thumbnails) |
+| `taxonomy/` scripts and outputs | `images/raw/` (Commons API cache, run reports, the auto-filter's measures and report), `taxonomy/raw/` (Wikidata cache), `.venv/` |
 
-### 7. Tests
+### 9. Tests
 
 ```powershell
 python -m pytest -q tests
@@ -294,6 +379,12 @@ added: the search source on a recorded search (rank order, the under-40 bar, the
 `source` column and filling it from the cache, `--prune`, and the build on a recorded slice of the
 Wikidata cache (Harrington jacket kept by the exception list, the drop list's keep = no, costume
 classified Occasion & Party / costume, a costume also under protective clothing or mask dropped),
-plus `--launch-only`, the search tag and the finished-type line. Any
-connection to something other than this PC fails the test. CI's `vision-data` job runs them
+plus `--launch-only`, the search tag and the finished-type line. D2c and D4 added:
+`--max-minutes` (a clean stop, then a resume that fetches nothing twice); the auto-filter's rules
+on images made in the test (grayscale, colour, a cream page, a pale garment on white that isn't a
+page, sepia, small, a cut-short file, a transparent PNG); the merge (an owner keep beats auto_drop,
+owner rows unchanged, merging twice changes nothing); the review page's source column (auto drops
+shown as auto, an owner click wins, a four-column file stays four columns); and the split
+(determinism whatever the order, 80/20, at least 2 test photos from 5, thin types, kept photos
+only, the changed-sides count). Any connection to something other than this PC fails the test. CI's `vision-data` job runs them
 after `validate.py`.
