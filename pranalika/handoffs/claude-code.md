@@ -2,6 +2,149 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## D2c+D4 - 2026-11-18 - full download, space suit models out, auto-filter, locked split
+
+**Before starting:** `Preview` up to date at `6de7082`. No local Supabase container was running (nothing to stop). Read `pranalika/README.md`, the board's D2b and photo-check rows, the D2b entry and `data/vision/README.md`. The owner's `labels.csv` was committed first exactly as the review page saved it (`5fcb041`: 4,146 rows).
+
+**Part 1: the full download** (`fetch_commons.py`, no flags, in the foreground):
+- **New flag `--max-minutes`:** the run stops before its next photo once the time is up, writes `CREDITS.md` and its report, and the next run resumes from the manifest. Each piece ran with `--max-minutes 8.5`.
+- **The pieces:** 10 pieces added 770, 81, 774, 834, 708, 555, 756, 729, 758 and 351 photos, about 700 per piece.
+  - Piece 2 ended early: the connection dropped and one download gave up after 6 tries. The manifest and disk still matched (8,907 each), and the next piece resumed.
+  - Piece 10 finished the plan. A check run then made **0 requests** (816 cache hits) and added nothing.
+- **Totals: 13,744 photos for 729 types, 5,088,338,397 bytes (5.09 GB, this PC only).**
+  - Every manifest row has its file and every file its row; no sha1 twice. `CREDITS.md` lists all 13,744.
+  - **Licenses:** CC BY-SA 6,471, public domain 3,604, CC BY 2,560, CC0 1,109.
+  - **Sources:** category 9,478, subcategory 2,048, search 1,623, P18 595.
+- **By target:**
+
+  | Group | Types | Photos | Short of target | At zero |
+  | --- | --- | --- | --- | --- |
+  | needs_owner (80 each) | 104 | 6,719 | 33 | 0 |
+  | Not allowed (40 each) | 136 | 3,174 | 73 | 11 |
+  | Other allowed (12 each) | 603 | 3,851 | 333 | 103 |
+
+- **The 114 types at zero:** 72 have no Wikidata image or Commons category. For the rest, everything Commons had was too small, a duplicate, the wrong format or unlicensed.
+  - Not allowed (11): acid-washed jeans, birthing girdle, Danish time trial champion jersey, edible underwear, girdle, Kepis of the Confederate States, micro-short, Military headgear of the Confederate States, nursing bra, ringer t-shirt, trikini.
+  - Allowed (103): the full list is in `images/raw/last_run.json`, for example breeks, drape suit, dress trousers, Jodhpuri, slacks, slip dress, Bhagalpur sari.
+
+**Part 2: the nine space suit models:**
+- `specs.ONLY_ITSELF_ROOTS = ["space_suit"]`: below that root only a launch or keep-list type stays.
+  - Dropped: A7L, Berkut, Feitian, Orlan, SK-1, Sokol, Yastreb, Mars suit and space activity suit. They are in `excluded.json` as "below a root kept as itself only".
+  - Kept: space suit itself, and Advanced Crew Escape Suit (keep list).
+  - `validate.py` checks the rule. It reported exactly the nine on the old outputs, then passes 8 of 8 after the rebuild, with and without `--cache`. Two rebuilds are byte-identical.
+- **Now:** 1,758 types (57 launch, 33 keep, 14 allowed costumes), **needs_owner 104**, 843 in `vocabulary.json`, 4,696 excluded.
+- **`--prune`:** 628 photos (217.8 MB): 80 each for seven of the suits, 34 each for Mars suit and Yastreb. None had an owner label.
+
+**Part 3: `auto_filter.py`:**
+- **Measures:**
+  - saturation (mean HSV saturation of the pixels that aren't near-white or near-black);
+  - white_frac and black_frac;
+  - page_score (how many of the four borders are paper);
+  - and, cached locally only, the coloured pixels' hue, how much of the photo is tinted and the border's own colour.
+- **Thresholds:** from the histogram and hand-labelled contact sheets; the full reasoning is in `data/vision/README.md` §7.
+  - **grayscale:** saturation under 0.02. The histogram's spike is 1,426 photos in 0.00-0.02, 1,338 of them exactly 0. Then come 194, 253 and 272 a bin, rising to about 650 a bin around 0.25.
+    - The 0.02-0.06 bins are about half black-and-white photos and half colour photos of white, black or grey things, and nothing measured here separates them. So the line is at the spike's edge.
+  - **sepia:** saturation under 0.25, at least 93 % of the pixels tinted, one brown-orange hue. In the samples, about 2 in 30 of what it marks are colour photos of beige things.
+  - **page:** at least 3 paper borders, saturation under 0.15, the border itself cream (border saturation 0.07 or more), one hue. About 1 in 10 of what it marks are museum photos on cream backgrounds.
+  - **small:** a short side under 300 px. None.
+  - **unreadable:** 2 files Pillow can't open.
+    - `db797502…` (parka): a JPEG cut short, no end marker.
+    - `94b0fffe…` (Ulster): a PNG whose colour-profile chunk fails its checksum, apparently already broken on Commons.
+- **Result:** `auto_filter.csv` has 13,744 rows; **1,757 are auto_drop**: grayscale 1,426, sepia 237, page 72, sepia and page 20, unreadable 2.
+- **Merge into `labels.csv`** (new `source` column):
+  - The owner's 4,146 rows are unchanged: same values, same order (checked against the committed file), and marked owner.
+  - 504 auto_drop photos already had an owner decision, so the owner's stands.
+  - **1,253 auto rows** were added (decision drop, source auto, no time): needs_owner types 359, not allowed 338, other allowed 556. The filter touched 299 types.
+  - The review page writes `source` = owner and shows an auto drop as "drop (auto)" until the owner clicks the photo.
+- **The owner's decisions:** 4,146 rows on 3,959 photos: **keep 1,983, drop 1,908, not sure 68**. Every launch type was checked: 56 completely, undergarment 35 of 80.
+- **Most auto drops added** (needs_owner unless marked; from photos per type): tabard 37 (80), Mao suit 35, pinafore 29, ballet costume 28, Mackintosh 26, raincoat 24, disguise 21, cagoule 20, oilskin 18; not allowed: girdle 29 (40), hourglass corset 26, corselet 23, bustle 18, petticoat 18, stocking 15.
+- **Kept after both: 10,515 photos:** needs_owner 4,384, not allowed 2,836, other allowed 3,295.
+
+**Per launch type: owner keep / drop / not sure → photos left** (auto added 0 on all but undergarment):
+
+| Type | Owner k / d / n | Left | Type | Owner k / d / n | Left |
+| --- | --- | --- | --- | --- | --- |
+| blazer (54) | 45 / 9 / 0 | 45 | sari | 39 / 41 / 0 | 39 |
+| sheath dress | 18 / 62 / 0 | 18 | shalwar kameez | 38 / 42 / 0 | 38 |
+| suit | 52 / 28 / 0 | 52 | Sherwani (51) | 9 / 41 / 1 | 9 |
+| three-piece suit | 80 / 0 / 0 | 80 | blouse | 10 / 60 / 10 | 10 |
+| trousers | 22 / 58 / 0 | 22 | cardigan | 41 / 35 / 4 | 41 |
+| ball gown | 80 / 0 / 0 | 80 | day dress | 21 / 58 / 1 | 21 |
+| bridesmaid's dress (31) | 15 / 16 / 0 | 15 | skirt | 27 / 48 / 5 | 27 |
+| cocktail dress | 74 / 6 / 0 | 74 | sundress | 32 / 47 / 1 | 32 |
+| dinner jacket | 52 / 28 / 0 | 52 | down jacket | 46 / 33 / 1 | 46 |
+| débutante dress (5) | 0 / 5 / 0 | 0 | leather jacket | 55 / 23 / 2 | 55 |
+| evening dress | 3 / 76 / 1 | 3 | overcoat | 21 / 52 / 7 | 21 |
+| jumpsuit (71) | 22 / 45 / 4 | 22 | trench coat | 30 / 49 / 1 | 30 |
+| party dress | 40 / 40 / 0 | 40 | costume jewelry | 44 / 33 / 3 | 44 |
+| tuxedo | 62 / 17 / 1 | 62 | handbag | 45 / 34 / 1 | 45 |
+| achkan (8) | 0 / 8 / 0 | 0 | necktie | 4 / 75 / 1 | 4 |
+| Anarkali Salwar Suit (10) | 8 / 2 / 0 | 8 | sunglasses | 50 / 30 / 0 | 50 |
+| boubou | 56 / 24 / 0 | 56 | wristwatch | 80 / 0 / 0 | 80 |
+| cheongsam (qipao) | 52 / 28 / 0 | 52 | cap (not allowed) | 0 / 80 / 0 | 0 |
+| China Poblana (67) | 12 / 55 / 0 | 12 | hat (not allowed) | 0 / 80 / 0 | 0 |
+| dashiki (19) | 16 / 3 / 0 | 16 | hoodie (not allowed) | 0 / 80 / 0 | 0 |
+| guayabera (48) | 26 / 22 / 0 | 26 | jeans (not allowed) | 0 / 80 / 0 | 0 |
+| hanbok | 55 / 25 / 0 | 55 | lingerie (not allowed) | 19 / 60 / 1 | 19 |
+| huipil | 43 / 21 / 16 | 43 | shoe (not allowed) | 35 / 45 / 0 | 35 |
+| kurta (66) | 34 / 31 / 1 | 34 | shorts (not allowed) | 58 / 21 / 1 | 58 |
+| lehenga | 73 / 7 / 0 | 73 | smartwatch (not allowed) | 71 / 8 / 1 | 71 |
+| Nehru jacket (9) | 1 / 8 / 0 | 1 | sports jersey (not allowed) | 79 / 1 / 0 | 79 |
+| sweatshirt (not allowed) | 75 / 5 / 0 | 75 | swimsuit (not allowed) | 18 / 61 / 1 | 18 |
+| t-shirt (not allowed) | 56 / 23 / 1 | 56 | tracksuit bottoms (not allowed, 45) | 39 / 6 / 0 | 39 |
+| undergarment (not allowed) | 0 / 33 / 2 of 80; auto 1 | 44 | | | |
+
+(80 photos unless shown in brackets.)
+
+**The 20 launch types with the fewest photos left:** achkan 0, cap 0, débutante dress 0, hat 0, hoodie 0, jeans 0, Nehru jacket 1, evening dress 3, necktie 4, Anarkali Salwar Suit 8, Sherwani 9, blouse 10, China Poblana 12, bridesmaid's dress 15, dashiki 16, sheath dress 18, swimsuit 18, lingerie 19, day dress 21, overcoat 21.
+
+**Part 4: `split.py` (D4):**
+- **Kept photos only:** the owner's latest decision, else the auto one, else keep. Drop and not sure are out.
+- **Per type:** the round(20 %) with the lowest sha1 are test (at least 2 once a type has 5 kept); under 5 kept, all train and listed as thin.
+- **`split.json`: 704 types, 8,483 train, 2,032 test.**
+  - Test by group: needs_owner 873, not allowed 561, other allowed 598.
+  - **219 thin types:** 184 other allowed, 27 not allowed, and 8 needs_owner (necktie 4, Garibaldi shirt 4, evening dress 3, priestly tunic 3, Dead character costume 3, dinosaur suit 2, Nehru jacket 1, posing trunks 1).
+  - **25 types have photos but none kept:** achkan, cap, débutante dress, hat, hoodie, jeans, demob suit (12), string tie (5), and 17 types with 1 photo each.
+- **Determinism:** a second run (`--check`) moved no photo.
+- README §8: **the test set is locked, never used for the gallery or the linear layer**. A re-run prints how many photos changed sides against the committed file.
+
+**Tests and CI:**
+- `pytest data/vision/tests`: **88 passed** (64 before), no network. New:
+  - images made in the test: grayscale, colour, a cream page, a pale garment on pure white that isn't a page, sepia, small, a cut-short file, a transparent PNG;
+  - the merge: an owner keep beats auto_drop, owner rows unchanged, a second merge changes nothing;
+  - the page's source column: auto drops shown as auto, an owner click wins, a four-column file stays four columns;
+  - the split: determinism whatever the order, 80/20 (80 → 16, 12 → 2, 13 → 3), at least 2 from 5, thin under 5, kept photos only, the changed-sides count;
+  - `--max-minutes`: a stop after 3 photos, then a resume that fetches nothing twice; a passed limit makes no call.
+- **Mutation check:** the owner-wins and minimum-2 tests fail with those rules switched off.
+- `validate.py`: 8 of 8.
+- **CI** [run 44441554351](https://github.com/Vivek-k24/Dzirent/actions/runs/44441554351) on `5a0ec4f` (all code and data):
+  - vision-data green: "ALL 8 CHECKS PASSED", "88 passed";
+  - vision, website, contracts and android green;
+  - database was still running when this was written.
+- **Commits:** `5fcb041` (the owner's labels as saved), `2147735` (`--max-minutes`), `b3200d5` (space suit), `9cae3bb` (manifest and credits), `fea5702` (auto-filter and page), `4ab9eb9` (`auto_filter.csv`), `f93a3cf` (merged `labels.csv`), `1ba5c9b` (`split.py`), `5a0ec4f` (`split.json`), `9070bef` (docs), then the board and this entry.
+
+**For the coordinator (open questions):**
+- **Hat, hoodie and jeans were dropped whole and cap one by one, all 80 photos each.**
+  - Hat, hoodie and jeans were each one "Drop whole type" click: all 80 rows share one second, at 22:49:22, 22:49:28 and 22:49:32 UTC. Cap was clicked photo by photo (88 rows over a minute), ending with all 80 dropped.
+  - All four are not-allowed launch types. The page asks to keep the photos that really show a not-allowed type, because they teach the check what to refuse. As it stands these four have no training photos.
+  - If the drops meant "not allowed" rather than "bad photo", the owner should look again (a click on a photo changes it). If they meant bad photos, these types need other photos. I changed nothing.
+- **Undergarment is half checked:** 35 of 80 (33 drop, 2 not sure, no keep). The other 45 count as keep (44 after one auto drop).
+- **Launch types thin after the owner's drops:** achkan and débutante dress 0, Nehru jacket 1, evening dress 3, necktie 4. More photos would need another source (a looser search, or the owner's own photos).
+- **What the auto-filter misses:**
+  - Black-and-white photos between 0.02 and 0.06 saturation: about half of the 0.02-0.06 bins, judging by the contact sheets, so a few hundred.
+  - Line drawings on white paper that have any colour.
+  - Sepia prints whose tint isn't everywhere.
+  - A model-based check (for example "a black and white photo" against the vision model) would catch more. Not done: it's beyond simple measures and needs the model.
+- **Auto-filter false drops:** about 2 in 30 of the sepia drops and 1 in 10 of the page drops are colour photos, mostly beige things and museum photos on cream backgrounds. The owner can undo any of them on the page with one click.
+- **The 2 unreadable files** stay in the manifest and are auto-dropped.
+  - `fetch_commons.py` could check that each file opens before writing its row (a short download would then be retried).
+  - The open question is whether to add that and fetch the parka photo again.
+- **Still open from D2b:** garment type `costume` isn't a database value (`vocabulary.json` uses it for 20 types now, 29 before), search precision, and the keep-list calls.
+
+**Owner:** nothing to run. The review page shows auto drops as "drop (auto)" if the owner opens it again (same command as in the D2b entry).
+
+**Next session:** `supabase start` before any database work. The photos and caches stay on this PC (`data/vision/images/files/`, `raw/`).
+
 ## D2b - 2026-11-17 - costume roots, keep list rework, search source, needs_owner photos
 
 **Before starting:** `Preview` up to date at `f673bf6`. Read `pranalika/README.md`, the board's D2 and D3 rows, the D2+D3 entry, `data/vision/README.md` and `taxonomy/specs.py`.
