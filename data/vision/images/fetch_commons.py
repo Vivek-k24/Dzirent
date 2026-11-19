@@ -540,6 +540,10 @@ def add_sources(rows: list[dict], manifest_path: Path, raw_dir: Path) -> int:
 # ---------------------------------------------------------------------------------------------
 # The run.
 # ---------------------------------------------------------------------------------------------
+class TimeUp(Exception):
+    """--max-minutes passed: the run stops before its next photo (D2c)."""
+
+
 def tier_of(row: dict) -> str | None:
     if row.get("keep") == "no":
         return None
@@ -564,8 +568,12 @@ def plan(rows: list[dict], only_launch: bool = False, limit: int | None = None) 
 
 def run(client: Commons, rows: list[dict], *, dry_run: bool = False, only_launch: bool = False,
         limit: int | None = None, manifest_path: Path = MANIFEST_CSV, files_dir: Path = FILES_DIR,
-        credits_path: Path = CREDITS_MD, now=lambda: datetime.now(timezone.utc)) -> list[dict]:
-    """Fetches (or, with dry_run, only counts) every planned type; returns one result per type."""
+        credits_path: Path = CREDITS_MD, now=lambda: datetime.now(timezone.utc),
+        deadline: float | None = None, clock=time.monotonic) -> list[dict]:
+    """Fetches (or, with dry_run, only counts) every planned type; returns one result per type.
+    With a deadline (a clock() value), it stops cleanly before the next photo once the clock
+    passes it: the photos so far are in the manifest and the credits, and the last result has
+    "stopped"; the next run resumes from the manifest."""
     if not dry_run:
         filled = add_sources(rows, manifest_path, client.raw_dir)
         if filled:
@@ -586,12 +594,18 @@ def run(client: Commons, rows: list[dict], *, dry_run: bool = False, only_launch
         results.append(result)
         if need <= 0:
             continue
+        if deadline is not None and clock() >= deadline:
+            result["stopped"], result["short"] = True, need
+            logger.info("time limit reached; stopping before %s %s (resumes from the manifest)", qid, name)
+            break
         if not row.get("image") and not row.get("commons_category"):
             result["skipped"]["no image or Commons category"] += 1
 
         def take(stream) -> bool:
             """Adds files from the stream until the type has its target; True once it has."""
             for source, page in stream:
+                if deadline is not None and clock() >= deadline:
+                    raise TimeUp
                 cand, why = check_file(page)
                 if not cand:
                     result["skipped"][why] += 1
@@ -620,10 +634,13 @@ def run(client: Commons, rows: list[dict], *, dry_run: bool = False, only_launch
                     return True
             return False
 
-        done = take(candidates(client, row))
-        if not done and tier == "launch" and result["had"] + result["added"] < min(SEARCH_BELOW, target):
-            result["searched"] = True
-            take(search_candidates(client, row))
+        try:
+            done = take(candidates(client, row))
+            if not done and tier == "launch" and result["had"] + result["added"] < min(SEARCH_BELOW, target):
+                result["searched"] = True
+                take(search_candidates(client, row))
+        except TimeUp:
+            result["stopped"] = True
         total = result["had"] + result["added"]
         result["short"] = max(0, target - total)
         logger.info("%s %s [%s]: %d/%d%s%s%s", qid, name, tier, total, target,
@@ -631,6 +648,9 @@ def run(client: Commons, rows: list[dict], *, dry_run: bool = False, only_launch
                     f", {result['sources']['search']} from search" if result["searched"] else "",
                     (" (skipped: " + ", ".join(f"{k} {v}" for k, v in result["skipped"].most_common()) + ")")
                     if result["skipped"] else "")
+        if result.get("stopped"):
+            logger.info("time limit reached during %s %s; stopping (resumes from the manifest)", qid, name)
+            break
     for r in results:
         r.setdefault("short", max(0, r["target"] - r["had"]))
     if not dry_run and manifest:
@@ -652,7 +672,7 @@ def summarize(results: list[dict], client: Commons, dry_run: bool) -> dict:
         licenses.update(r["licenses"])
         sources.update(r["sources"])
     searched = [r for r in results if r["searched"]]
-    return {"dry_run": dry_run, "by_tier": by_tier, "licenses_added": dict(licenses.most_common()),
+    return {"dry_run": dry_run, "stopped_at_time_limit": any(r.get("stopped") for r in results), "by_tier": by_tier, "licenses_added": dict(licenses.most_common()),
             "sources_added": dict(sources.most_common()), "searched_types": len(searched),
             "added_by_search": sum(r["sources"]["search"] for r in searched),
             "requests": client.requests_made, "cache_hits": client.cache_hits,
@@ -671,9 +691,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dry-run", action="store_true", help="count what is available; download nothing")
     parser.add_argument("--prune", action="store_true",
                         help="remove the photos of types now dropped or keep = no (disk and manifest), then stop")
+    parser.add_argument("--max-minutes", type=float, metavar="M",
+                        help="stop cleanly before the next photo after M minutes (D2c: run in foreground pieces)")
     args = parser.parse_args(argv)
     if args.limit_per_type is not None and args.limit_per_type < 1:
         parser.error("--limit-per-type must be at least 1")
+    if args.max_minutes is not None and args.max_minutes <= 0:
+        parser.error("--max-minutes must be more than 0")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     if args.prune:
         report = prune(load_rows())
@@ -681,7 +705,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     started = time.time()
     client = Commons()
-    results = run(client, load_rows(), dry_run=args.dry_run, only_launch=args.only_launch, limit=args.limit_per_type)
+    deadline = time.monotonic() + 60 * args.max_minutes if args.max_minutes else None
+    results = run(client, load_rows(), dry_run=args.dry_run, only_launch=args.only_launch, limit=args.limit_per_type,
+                  deadline=deadline)
     summary = summarize(results, client, args.dry_run)
     summary["seconds"] = round(time.time() - started, 1)
     RAW_DIR.mkdir(parents=True, exist_ok=True)

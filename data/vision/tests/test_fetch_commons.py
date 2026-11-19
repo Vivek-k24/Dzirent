@@ -382,3 +382,29 @@ def test_prune_removes_files_and_rows(tmp_path):
     report = fc.prune([], **paths)
     assert report["files"] == len(bear) and fc.read_manifest(tmp_path / "manifest.csv") == []
     assert not list((tmp_path / "files").rglob("*.jpg"))
+
+
+# --- D2c: --max-minutes ----------------------------------------------------------------------------
+def test_time_limit_stops_cleanly_and_the_next_run_resumes(tmp_path):
+    full_client, _ = client_for(tmp_path / "full")
+    full = run(full_client, tmp_path / "full")[0]["added"]
+    assert full > 3
+
+    client, session = client_for(tmp_path)
+    results = run(client, tmp_path, deadline=3, clock=lambda: len(session.downloads))  # "time" = files saved
+    assert results[0]["stopped"] and results[0]["added"] == 3
+    manifest = fc.read_manifest(tmp_path / "manifest.csv")
+    assert len(manifest) == 3 and all((tmp_path / m["file"]).exists() for m in manifest)
+    assert (tmp_path / "CREDITS.md").exists()
+    assert fc.summarize(results, client, False)["stopped_at_time_limit"]
+
+    client, session = client_for(tmp_path)  # the next piece, no limit
+    again = run(client, tmp_path)
+    assert again[0]["had"] == 3 and again[0]["added"] == full - 3
+    assert not {m["source_url"] for m in manifest} & set(session.downloads)  # nothing fetched twice
+
+
+def test_time_limit_already_passed_makes_no_calls(tmp_path):
+    client, session = client_for(tmp_path)
+    results = run(client, tmp_path, deadline=0, clock=lambda: 1)
+    assert results[0]["stopped"] and results[0]["added"] == 0 and session.api_calls == 0
