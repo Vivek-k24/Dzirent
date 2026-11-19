@@ -2,6 +2,97 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## D2d - 2026-11-18 - four owner decisions undone, decode check, Openverse written (not run), --types-with-new
+
+**Before starting:** `Preview` up to date at `1416f23`. No Docker container was running, so there was no Supabase to stop. Read `pranalika/README.md`, BOARD, the D2c+D4 entry and `data/vision/README.md`.
+
+**Part 1: hat, hoodie, jeans and cap back to filter-only:**
+- `auto_filter.py --forget-owner Q80151,Q920929,Q83363,Q6147804` removed their **328 owner rows**: cap 88, hat 80, hoodie 80, jeans 80. The merge then ran as usual.
+- **Checked against the file before:** the other **3,818 owner rows are byte-identical and in order**, and all 1,253 earlier auto rows are still there. The filter added 17 auto drops for the four: hat 11, hoodie 3, jeans 2, cap 1. Nothing else in `labels.csv` changed.
+- **Kept, before → after:**
+
+  | Type | Before | After | Train / test |
+  | --- | --- | --- | --- |
+  | hat | 0 | 69 | 55 / 14 |
+  | hoodie | 0 | 77 | 62 / 15 |
+  | jeans | 0 | 78 | 62 / 16 |
+  | cap | 0 | 79 | 63 / 16 |
+
+- **`split.py`:** 303 photos new to the split; **no photo changed sides** (train→test 0, test→train 0).
+
+**Part 2: the decode check:**
+- `fetch_commons.py` now opens every saved photo with Pillow and decodes every pixel. A file that fails is deleted and skipped as "unreadable", and a later run tries it again.
+- `--verify` checks the whole manifest the same way. **Run once: 13,744 checked, 2 removed (3.3 MB):**
+  - parka, `db797502…` (`File:Amanda-Tapping.jpg`): cut short;
+  - Ulster, `94b0fffe…` (`File:The_Strand_Magazine_(Volume_2)_(page_74_crop)_(retouched).png`): its colour-profile chunk fails its checksum.
+- Their two auto rows left `labels.csv`. `split.json` didn't change, since neither photo was kept.
+- **Now:** 13,742 photos, 5,085,065,940 bytes, all decoding. **10,818 kept**; `split.json` has 708 types, 8,725 train, 2,093 test, 219 thin.
+
+**Part 3: Openverse (`fetch_openverse.py`), written and tested, not run:**
+- **The limits, checked today:**
+  - The API docs (the OpenAPI schema at `api.openverse.org/v1/schema/`) give no numbers: "Anonymous requests should be sufficient for most users… Registered users are automatically granted slightly higher limits". The numbers are in each response's headers.
+  - **One anonymous search returned `x-ratelimit-limit-anon_burst: 20/min` and `x-ratelimit-limit-anon_sustained: 200/day`.**
+  - The run needs up to **666 search calls** (27 types × their names × 5 pages, plus the token). So anonymous isn't enough.
+  - `providers.env` has no `OPENVERSE_CLIENT_ID`/`OPENVERSE_CLIENT_SECRET` (checked by name only). So I stopped there, as the prompt says. Without them the script makes no request and prints the registration steps (below).
+  - I made 3 anonymous requests in all: the header check, and the two searches recorded as the test fixture.
+- **What it does once there's a key:**
+  - **Targets:** the 27 launch types under 40 kept (below), filled up to 80 kept-or-undecided across all sources.
+  - **Searches:** the English name, then each `also_called` name, as a phrase, up to 5 pages of 20. Licenses `cc0,by,by-sa,pdm` are asked for and checked again per result. `excluded_source=wikimedia`, because Commons is the first source and its files would come back as duplicates. Nothing mature.
+  - **Files:** downloaded from the source site. Same format (JPEG, PNG, WebP), decode, size (short side ≥ 300 px, saved ≤ 1280 px wide) and sha1 rules as Commons.
+  - **Auto-filter:** run on each saved photo at once. An auto drop is kept on disk and in the manifest but doesn't count toward 80.
+  - **Records:** manifest `source` = openverse; `images/openverse.csv` holds the Openverse id, license and version, license URL, creator, creator URL, source site, landing page and URL.
+  - **Credits:** `CREDITS.md` gets an Openverse part by license (creator and source site per file). It carries the line Openverse's terms ask for: made with Openverse, not endorsed or certified by it. With no Openverse rows, `CREDITS.md` comes out byte-identical to today's.
+  - **Politeness:** the same User-Agent (`support@dzirent.com`), 1 s between API calls, 0.5 s between downloads, back-off on 429 and 5xx, a clean stop when fewer than 5 calls are left today, `--max-minutes`, and every response cached.
+- **Targets and kept-or-undecided now** (the "before"; the "after" waits for the run):
+  - **Under 20 (14 types):** débutante dress 0, achkan 0, Nehru jacket 1, evening dress 3, necktie 4, Anarkali Salwar Suit 8, Sherwani 9, blouse 10, China Poblana 12, bridesmaid's dress 15, dashiki 16, sheath dress 18, swimsuit 18, lingerie 19.
+  - **20 to 39 (13 types):** day dress 21, overcoat 21, trousers 22, jumpsuit 22, guayabera 26, skirt 27, trench coat 30, sundress 32, kurta 34, shoe 35, shalwar kameez 38, sari 39, tracksuit bottoms 39.
+- **What the recorded searches show:** expect a modest yield for niche types. "achkan" (licenses filtered, Wikimedia out) returned **0 results**. "nehru jacket" returned 16 on its first page: 7 with an accepted license (by 5, cc0 1, by-sa 1), several of them dolls.
+
+**Part 4: `review_server.py --types-with-new`:**
+- It serves only the types with at least one photo that neither the owner nor the auto-filter has decided, in `review.csv`'s order. Combined with `--launch-only`, only the launch types among them.
+- **On today's data: 658 types, 10,104 photos (8,835 undecided).**
+  - First come the five launch types cap, hat, hoodie, jeans and undergarment.
+  - Then the never-checked keep-list types (Mao suit, walking suit, …), the costumes and the other types.
+  - Once Openverse runs, its new photos make their launch types show too.
+
+**Tests and CI:**
+- `pytest data/vision/tests`: **114 passed** (88 before), no network. New:
+  - the decode check: a cut-short download deleted and skipped; `--verify` removes a broken photo, its row and its credit;
+  - `--forget-owner`: every other line byte-identical, through the merge and the CSV writer too; a file without a source column;
+  - `--types-with-new`: the order, and a type decided by owner plus filter hidden;
+  - `fetch_openverse.py` on the recorded search `tests/fixtures/openverse_search.json`:
+    - license acceptance, with pdm accepted and by-nc, by-nd, by-nc-sa, by-nc-nd, sampling+ and nc-sampling+ refused;
+    - the recorded results' verdicts, and refused licenses never downloaded;
+    - the photo checks: small, cut short, a 3000-px file saved 1280 wide;
+    - 80 kept-or-undecided, with an auto drop not counted;
+    - the manifest, `openverse.csv` and credits rows;
+    - the cache (a second run makes no call), the token, `read_env`;
+    - the stop with the registration steps and no client made.
+- **CI** [run 44448627917](https://github.com/Vivek-k24/Dzirent/actions/runs/44448627917) on `37d228e` (all D2d code and data): vision-data green ("ALL 8 CHECKS PASSED", "114 passed"); contracts and website green; android, vision and database were still running when this was written.
+- **Commits:** `c0296e4` (`--forget-owner`), `771f2e9` (the four types' labels and split), `276287e` (decode check and `--verify`), `b6f1df9` (the 2 removals), `0fed2aa` (`fetch_openverse.py` and tests), `37d228e` (`--types-with-new`), `fa8bf05` (docs), then the board and this entry.
+
+**Owner: register Openverse once** (about two minutes; it is also what `fetch_openverse.py` prints):
+1. In a plain PowerShell window, paste this one line. It registers "Dzirent vision data" and adds `OPENVERSE_CLIENT_ID` and `OPENVERSE_CLIENT_SECRET` to `H:\DziRent\secrets\providers.env` without showing them. The file has no line break at its end, so the command starts with an empty line.
+
+   `$r = Invoke-RestMethod -Method Post -Uri "https://api.openverse.org/v1/auth_tokens/register/" -ContentType "application/json" -Body '{"name": "Dzirent vision data", "description": "Finds openly licensed clothing photos to train the photo check of the Dzirent clothing rental app.", "email": "support@dzirent.com"}'; Add-Content -Path "H:\DziRent\secrets\providers.env" -Value "", "OPENVERSE_CLIENT_ID=$($r.client_id)", "OPENVERSE_CLIENT_SECRET=$($r.client_secret)"; "Saved. Now open the email Openverse sent to support@dzirent.com."`
+
+2. Click the verification link in the email Openverse sends to support@dzirent.com. Until then the key has the anonymous limits.
+3. Tell the coordinator; the next session runs `fetch_openverse.py --max-minutes 8.5` in foreground pieces, then `auto_filter.py` and `split.py`, and reports the per-type counts.
+
+**For the coordinator (open questions):**
+- **Openverse's terms forbid scraping the catalog.** This is a bounded, targeted search (27 types, at most 666 calls, within the published limits) for openly licensed photos, credited per file. Please confirm that use is acceptable before the run. The terms also reserve fees "for commercial uses … and/or for heavy usage".
+- **Yield:** Openverse looks thin for the niche types (achkan returned nothing). The types still under 20 after the run may need the owner's own photos, or a decision to launch with fewer.
+- **Wikimedia is left out of the Openverse search** to avoid fetching Commons files twice. Say if you'd rather include it.
+- **The registration uses support@dzirent.com** as Openverse's contact address. The owner can change it in the command.
+- **`--types-with-new` today shows 658 types**, since everything outside the 57 launch types has never been checked. The owner can stop after the first five (cap, hat, hoodie, jeans, undergarment), or add `--launch-only` to see only those.
+- **Still open from D2c+D4:**
+  - the auto-filter's misses (black-and-white photos between 0.02 and 0.06 saturation, line drawings, sepia that isn't everywhere);
+  - garment type `costume` isn't a database value;
+  - search precision;
+  - the keep-list calls.
+
+**Next session:** after the owner's registration, run Openverse as above; `supabase start` before any database work.
+
 ## D2c+D4 - 2026-11-18 - full download, space suit models out, auto-filter, locked split
 
 **Before starting:** `Preview` up to date at `6de7082`. No local Supabase container was running (nothing to stop). Read `pranalika/README.md`, the board's D2b and photo-check rows, the D2b entry and `data/vision/README.md`. The owner's `labels.csv` was committed first exactly as the review page saved it (`5fcb041`: 4,146 rows).
