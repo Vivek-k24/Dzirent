@@ -22,9 +22,12 @@ data/vision/
   images/
     fetch_commons.py     # D2: downloads Commons photos for the types; writes manifest.csv and CREDITS.md
     review_server.py     # D3: the label-check page, http://127.0.0.1:8765; appends to labels.csv
-    fetch_openverse.py   # D2d: a second source (Openverse) for the launch types still short; needs a key
+    fetch_openverse.py   # D2d: a second source (Openverse) for the launch types still short; run once in D2e
+    ingest_own.py        # D2e: the owner's own photos from H:\DziRent\vision-own (train only)
     auto_filter.py       # D2c: marks grayscale, sepia and page-scan photos; merges into labels.csv
-    split.py             # D4: the locked train/test split of the kept photos
+    split.py             # D4: the locked train/test split of the kept photos (sticky since D2e)
+    augment.py           # D4b: training-time augmentation, in memory; --preview for a person to look at
+    openverse.csv        # D2d: each Openverse photo's id, license, creator and source site (committed)
     manifest.csv         # one row per downloaded photo (committed)
     CREDITS.md           # every photo's author, license and Commons page, by license (committed)
     labels.csv           # keep / drop / not sure: the owner's rows and auto_filter's drop rows (committed)
@@ -32,7 +35,7 @@ data/vision/
     split.json           # train and test photos per type (committed; test is locked)
     files/<qid>/<sha1>.<ext>   # the photos (not committed)
     thumbs/              # 256 px thumbnails for the page (not committed)
-    raw/                 # cached Commons API responses, one JSON per call, and run reports (not committed)
+    raw/                 # cached Commons and Openverse responses, run reports, augment previews (not committed)
   tests/                 # pytest on recorded responses in tests/fixtures/ (no network)
   taxonomy/
     specs.py             # every root, skipped class and launch type, by English label and description words
@@ -48,12 +51,13 @@ data/vision/
     vocabulary.json      # what the photo check reads: allowed and not-allowed types only
 ```
 
-**Status (D2d, 2026-11-18):** 1,758 types (57 launch, 33 on the keep list, 14 allowed costumes;
-104 with needs_owner = yes), 843 types in `vocabulary.json`. 13,742 photos (5.09 GB, not committed)
-for 729 types, all of which decode. Hat, hoodie, jeans and cap are back to filter-only (the owner
-had read "not allowed" as "drop"). 10,818 photos are kept, 8,725 train and 2,093 test in
-`split.json`. Openverse is written and tested but not run: it needs a registered key (see 5b). See
-HANDOFF.md and `pranalika/handoffs/claude-code.md`.
+**Status (D2e+D4b, 2026-11-19):** 1,758 types (57 launch, 33 on the keep list, 14 allowed
+costumes; 104 with needs_owner = yes), 843 types in `vocabulary.json`. 15,100 photos (5.32 GB, not
+committed) for 729 types: 13,742 from Commons, 1,358 found with Openverse for 28 launch types.
+11,967 are kept, 9,639 train and 2,328 test in `split.json` (sticky: no photo changed sides).
+`ingest_own.py` (the owner's own photos) and `augment.py` (training-time augmentation) are written
+and tested; the owner's photos weren't added yet (see the D2e handoff). See HANDOFF.md and
+`pranalika/handoffs/claude-code.md`.
 
 ## Setup
 
@@ -280,6 +284,46 @@ python images/fetch_openverse.py --max-minutes 8.5  # fetch (needs the key below
   downloads, back-off on 429 and 5xx, and a clean stop when fewer than 5 calls are left today.
   Responses are cached in `images/raw/openverse/`. Openverse's terms forbid scraping the catalog;
   this is a bounded, targeted search within the published limits.
+- **Openverse was used through its API with a registered key, within its limits, as a one-time
+  targeted search; the catalogue was not crawled.**
+- **The run (D2e, 2026-11-19):** the registered key's headers reported 100 requests a minute and
+  10,000 a day (the token request itself is counted anonymously: 20 a minute, 200 a day). One run
+  in 4 foreground pieces: 122 API calls (4 of them token requests), 1,451 download requests to the
+  source sites (Flickr for most). 28 launch types; 1,358 photos kept on disk (233.9 MB).
+- **One run in pieces (D2e):** the first piece fixes the run's targets in
+  `images/raw/openverse/run_state.json`, so a type stopped halfway is still filled to 80 in the
+  next piece though it is no longer under 40. The file also keeps the finished types, the results
+  downloaded and refused (never downloaded again) and each piece's request counts. Once every
+  target is finished the script says the run is complete and makes no request; deleting the file
+  starts a new run. Between pieces, an Openverse photo the auto-filter would drop counts as dropped
+  even before `auto_filter.py` has merged it. The gap between API calls follows the burst limit the
+  latest response reports (never under 1 s). The time is checked before every download; a source
+  site gets 3 tries of 30 s.
+- **iNaturalist is excluded too (D2e):** it holds species observations only. "guayabera" brought
+  42 photos of the parrot *Amazona guayabera* and "kurta" 3 of a fish; they were removed (disk,
+  manifest, `openverse.csv`, credits) and the two types refilled with `inaturalist` excluded.
+
+### 5c. The owner's own photos (D2e)
+
+```powershell
+python images/ingest_own.py --dry-run   # what would be added, per type; writes nothing
+python images/ingest_own.py             # copy and record; then auto_filter.py and split.py
+```
+
+- **From `H:\DziRent\vision-own\<type name>\`:** each folder's name is a type's English name in
+  `taxonomy/review.csv`, matched exactly, ignoring case. A folder that matches no type (or more
+  than one) is reported and skipped, and so is a file that isn't a JPEG (`.jpg`, `.jpeg`,
+  `.jfif`), PNG or WebP or doesn't decode.
+- **Each photo** is turned upright by its EXIF orientation, converted to sRGB if it has a colour
+  profile, resized to at most 1600 px on its long side (never enlarged), and saved with no
+  metadata at all: no EXIF (so no location, device or time), no XMP, comments or colour profile.
+  Saved as `files/<qid>/<sha1>.<ext>`, the sha1 being the original file's, so a second run adds
+  nothing.
+- **Records:** a manifest row with `source` = owner, `license` = owner, `author` = Dzirent owner and
+  no URLs; a `labels.csv` row keep with `source` = owner-upload. The auto-filter treats
+  owner-upload as an owner decision (it never overrules it); `--forget-owner` leaves it alone.
+  `CREDITS.md` counts these photos in a section of their own.
+- **Train only:** `split.py` never puts a photo with source owner in test.
 
 ### 6. Check the photos (D3)
 
@@ -311,7 +355,8 @@ python images/review_server.py --types-with-new   # only types with a photo nobo
 - **For a not-allowed type, keep means "this photo clearly shows the banned item"**: those
   photos teach the check what to refuse. Drop is for a photo that doesn't show it.
 - **A "search" tag** marks a photo that came from the Commons search rather than the type's own
-  image or category.
+  image or category; since D2e an "openverse" tag marks one found with Openverse and an "own" tag
+  one the owner took.
 - **The source column (D2c):** the page writes `source` = owner on every line. A drop that
   `auto_filter.py` added shows as "drop (auto)" until the owner clicks the photo; the owner's click
   is appended and wins. `N` leaves auto drops as they are (they count as decided). A `labels.csv`
@@ -381,15 +426,43 @@ python images/split.py          # write split.json
 python images/split.py --check  # compare with the committed split.json; write nothing
 ```
 
-- **Kept photos only** (see above). Per type: the round(20 %) of its kept photos with the lowest
-  sha1 (the content hash, so the choice is deterministic and owes nothing to names or order) are
-  test, at least 2; the rest are train. A type with fewer than 5 kept photos goes entirely to train
+- **Kept photos only** (see above). Per type, round(20 %) of its kept photos are test, at least 2;
+  the rest are train. A type with fewer than 5 kept photos and no test photo goes entirely to train
   and is listed under `thin`.
+- **Sticky (D2e):** a photo already in the committed `split.json` keeps its side for as long as it
+  is kept; new photos fill the type's test share, lowest sha1 first (the content hash, so the
+  choice is deterministic and owes nothing to names or order); a type over its share after drops
+  keeps its test photos and gets no new ones. The owner's own photos (source owner) are always
+  train. Without a `split.json` this is D4's rule (the lowest sha1s are test). Under D4's rule the
+  D2e Openverse photos would have moved 39 committed photos between sides; with it, none.
+- **Oversampling (D2e):** a type with fewer than 20 train photos gets `oversample` =
+  ceil(20 / train), else 1, so each type gives at least 20 samples an epoch in `augment.py` (555
+  of 710 types in D2e, mostly the allowed types with 12 photos).
 - **The test set is locked. It is never used for the gallery or the linear layer**, only to measure
-  them. `split.json` (`rule`, `counts`, `thin`, and per type `english_name`, `train`, `test`) is
-  committed. Running `split.py` again after `labels.csv` or the manifest changes prints how many
-  photos changed sides against the committed file (`train_to_test`, `test_to_train`), so a photo
-  that trained never moves into test unnoticed.
+  them, and never augmented. `split.json` (`rule`, `counts`, `thin`, and per type `english_name`,
+  `train`, `test`, `oversample`, and `owner_train` when there are any) is committed. Running
+  `split.py` again prints how many photos changed sides against the committed file
+  (`train_to_test`, `test_to_train`: 0 by construction since D2e).
+
+### 8b. Augmentation (D4b)
+
+```powershell
+python images/augment.py --preview <sha1>   # 8 augmented samples of one train photo into images/raw/augment_preview/<sha1>/
+```
+
+- **For training only, in memory** (Albumentations 2.0.8, MIT; its successor AlbumentationsX is
+  AGPL or paid, so it isn't used). It never touches the test split: `Augmenter` refuses a test
+  photo, and `epoch()` draws train photos only, each type `oversample` times, shuffled. It never
+  writes manifest rows or files; `--preview` is the only thing that writes, into its own folder,
+  for a person to look at (a test photo is refused there too).
+- **The pipeline, in order:** rotation up to 10° either way (p 0.5, corners filled by reflection);
+  random resized crop to 224 × 224 (the vision model's input), 70-100 % of the area, aspect 3:4 to
+  4:3; horizontal flip (p 0.5); brightness and contrast up to 0.2 either way (p 0.5); hue up to
+  5° either way, saturation and value unchanged, so colours stay honest for the colour reader
+  (p 0.3; OpenCV's 8-bit hue has 2° steps, so the limit is 2.5); light gaussian blur, kernel 3-5,
+  sigma 0.1-1.0 (p 0.2); JPEG quality 60-95 (p 0.3).
+- Importing it sets `NO_ALBUMENTATIONS_UPDATE=1`: Albumentations otherwise asks PyPI for a newer
+  version on every import.
 
 ### Item policy
 
@@ -414,8 +487,8 @@ grouped by license, which is the attribution the CC BY and CC BY-SA licenses ask
 
 | Committed | Not committed (`.gitignore`) |
 | --- | --- |
-| `images/fetch_commons.py`, `images/fetch_openverse.py`, `images/review_server.py`, `images/auto_filter.py`, `images/split.py`, `tests/` | `images/files/` (the photos) |
-| `images/openverse.csv` (once Openverse has run) | `images/raw/openverse/` (Openverse responses and run report) |
+| `images/fetch_commons.py`, `images/fetch_openverse.py`, `images/ingest_own.py`, `images/review_server.py`, `images/auto_filter.py`, `images/split.py`, `images/augment.py`, `tests/` | `images/files/` (the photos, the owner's included) |
+| `images/openverse.csv` | `images/raw/openverse/` (Openverse responses, `run_state.json`, run report), `images/raw/augment_preview/` |
 | `images/manifest.csv`, `images/CREDITS.md`, `images/labels.csv`, `images/auto_filter.csv`, `images/split.json` | `images/thumbs/` (the page's thumbnails) |
 | `taxonomy/` scripts and outputs | `images/raw/` (Commons API cache, run reports, the auto-filter's measures and report), `taxonomy/raw/` (Wikidata cache), `.venv/` |
 
@@ -445,6 +518,14 @@ skipped, `--verify` removing a broken photo), `--forget-owner` (every other line
 through the merge too), `--types-with-new`, and `fetch_openverse.py` on a recorded Openverse search
 (`fixtures/openverse_search.json`: license acceptance with pdm, the photo checks, 80
 kept-or-undecided with auto drops not counted, the manifest, `openverse.csv` and credits rows, the
-cache, the token, the stop with the registration steps). Any connection to something other than
-this PC fails the test. CI's `vision-data` job runs them
-after `validate.py`.
+cache, the token, the stop with the registration steps). D2e and D4b added: Openverse's limits from
+the headers (the latest response sets the gap), a later piece keeping the run's targets, a refused
+result never downloaded again, the time checked before each download, a failing source site
+skipped, the auto-filter's drops counted between pieces; the sticky split (committed photos keep
+their side, a thin type growing, a type over its share), the owner's photos train only,
+oversampling factors; `ingest_own.py` (folder names exact ignoring case, no metadata left, upright,
+1600 px, the manifest and labels rows, a second run adding nothing, owner-upload kept by the merge
+and `--forget-owner`); `augment.py` (train photos only, a test photo refused, the factors per epoch,
+the pipeline's settings, the hue within 5°, `--preview` writing its own folder only). Any connection
+to something other than this PC fails the test. CI's `vision-data` job runs them after
+`validate.py`.

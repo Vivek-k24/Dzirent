@@ -8,7 +8,8 @@ For each target it searches Openverse's image API (https://api.openverse.org/v1/
 type's English name, then each of its also_called names (as fetch_commons.search_names gives them;
 a name of several words as a quoted phrase), up to 5 pages of 20 each, best match first:
 - licenses cc0, by, by-sa (any version) and pdm only, asked for and checked again per result;
-  Wikimedia is left out (Commons is the first source already); nothing marked mature;
+  Wikimedia is left out (Commons is the first source already), and iNaturalist (D2e: species
+  observations only); nothing marked mature;
 - the file at the result's `url` (its source site) must be a JPEG, PNG or WebP that decodes, with a
   short side of at least 300 px; it is saved at most 1280 px wide (never enlarged) as
   images/files/<qid>/<sha1>.<ext>, the sha1 being that of the downloaded file; a sha1 already in
@@ -30,6 +31,12 @@ without them it stops and prints the registration steps. Politeness: the same Us
 fetch_commons.py (support@dzirent.com), one request at a time, 1 s between API calls and 0.5 s
 between downloads, back-off on 429 (Retry-After) and 5xx, and a clean stop when the API says
 fewer than 5 requests are left today. Every API response is cached in images/raw/openverse/.
+
+D2e: the registered key's headers report 100 requests a minute and 10,000 a day; the gap
+between API calls follows the burst limit the latest response reports. One run goes in
+foreground pieces: the first fixes its targets in images/raw/openverse/run_state.json (with the
+finished types, the results refused after download and each piece's request counts), so a type
+stopped halfway is still filled to 80; once all are finished the script makes no request.
 
     python images/fetch_openverse.py --dry-run          # the targets and the most API calls, no network
     python images/fetch_openverse.py --max-minutes 8.5  # fetch, in foreground pieces like fetch_commons.py

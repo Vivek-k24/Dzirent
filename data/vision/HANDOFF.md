@@ -1,3 +1,14 @@
+## D2e+D4b - 2026-11-19 - Openverse run, sticky split, owner photos (not added), augmentation
+
+**Result:**
+- **Labels:** the owner's 352 new rows (cap, hat, hoodie, jeans, undergarment) committed as saved. Kept: cap 53, hat 51, hoodie 66, jeans 52, undergarment 33 (80 after the Openverse run).
+- **Openverse:** run once with the registered key (100 a minute, 10,000 a day): 122 API calls, 1,451 downloads from source sites, 1,358 photos for 28 launch types. 45 iNaturalist photos (parrots and fish matching "guayabera" and "kurta") were removed and iNaturalist excluded.
+- **Photos:** 15,100 (5.32 GB, not committed); 11,967 kept; `split.json` 9,639 train, 2,328 test.
+- **Split:** sticky since D2e: a committed photo keeps its side (D4's rule would have moved 39); the owner's photos are train only; `oversample` per type.
+- **Owner photos:** `ingest_own.py` written and tested, not run on `H:\DziRent\vision-own`. Its 32 files look saved from a web image search, not taken by the owner (see the D2e+D4b entry in `pranalika/handoffs/claude-code.md`).
+- **Augmentation:** `augment.py` (Albumentations 2.0.8, MIT), in memory, train photos only.
+- **Tests:** 139.
+
 ## D2d - 2026-11-18 - four owner decisions undone, decode check, Openverse (not run), --types-with-new
 
 **Result:**
