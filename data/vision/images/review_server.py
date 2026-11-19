@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-review_server.py (D3; D2b added --launch-only, the search tag and the finished-type line)
+review_server.py (D3; D2b added --launch-only, the search tag and the finished-type line; D2c
+the source column)
 The label-check page for the photos fetch_commons.py downloaded: http://127.0.0.1:8765
 
 One type at a time (its name, category and whether it can be listed) with a grid of its photos.
@@ -14,6 +15,11 @@ saved. A photo with no decision counts as keep, so an unchecked type still train
 for the photos left undecided on the page, so the progress bar counts the type as checked, and
 the next page opens with a line for the type just finished: how many kept, dropped, not sure. A
 photo that came from the Commons search (manifest source "search") carries a small tag.
+
+D2c: labels.csv has a source column. The page writes source "owner"; auto_filter.py adds "auto"
+drop rows for photos the owner never clicked. An owner decision always wins over an auto one; an
+auto decision shows as "drop (auto)" until the owner clicks the photo. A labels.csv from before
+D2c (four columns) gets four-column lines.
 
 --launch-only serves only the types with needs_owner = yes and priority = launch in
 ../taxonomy/review.csv, in the sheet's order; the progress bars count those only.
@@ -47,7 +53,7 @@ PORT = 8765
 LABELS_CSV = IMAGES_DIR / "labels.csv"
 REVIEW_CSV = IMAGES_DIR.parent / "taxonomy" / "review.csv"
 THUMBS_DIR = IMAGES_DIR / "thumbs"
-LABEL_COLUMNS = ["sha1", "qid", "decision", "decided_at"]
+LABEL_COLUMNS = ["sha1", "qid", "decision", "decided_at", "source"]
 DECISIONS = ("keep", "drop", "not_sure")
 THUMB_SIZE = 256
 CONTENT_TYPES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
@@ -93,12 +99,18 @@ class Store:
         if only is not None:
             self.types = [index[q] for q in dict.fromkeys(only) if q in index]
         self.decisions: dict[tuple[str, str], str] = {}
+        self.auto: set[tuple[str, str]] = set()  # keys whose decision is auto_filter.py's (D2c)
         self.lock = threading.Lock()
+        owner: dict[tuple[str, str], str] = {}
+        auto: dict[tuple[str, str], str] = {}
         if labels_csv.exists():
             with open(labels_csv, encoding="utf-8", newline="") as fh:
                 for line in csv.DictReader(fh):
                     if line.get("decision") in DECISIONS:
-                        self.decisions[(line.get("sha1", ""), line.get("qid", ""))] = line["decision"]
+                        key = (line.get("sha1", ""), line.get("qid", ""))
+                        (auto if line.get("source") == "auto" else owner)[key] = line["decision"]
+        self.auto = set(auto) - set(owner)
+        self.decisions = {**auto, **owner}
 
     def type_index(self, qid: str) -> int | None:
         return next((i for i, t in enumerate(self.types) if t["qid"] == qid), None)
@@ -131,13 +143,18 @@ class Store:
                          "decided_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
         with self.lock:
             new = not self.labels_csv.exists()
+            columns = LABEL_COLUMNS
+            if not new:
+                with open(self.labels_csv, encoding="utf-8", newline="") as fh:
+                    columns = next(csv.reader(fh), None) or LABEL_COLUMNS
             with open(self.labels_csv, "a", encoding="utf-8", newline="") as fh:
-                writer = csv.DictWriter(fh, fieldnames=LABEL_COLUMNS, lineterminator="\n")
+                writer = csv.DictWriter(fh, fieldnames=columns, extrasaction="ignore", lineterminator="\n")
                 if new:
                     writer.writeheader()
-                writer.writerows(rows)
+                writer.writerows({**r, "source": "owner"} for r in rows)
             for r in rows:
                 self.decisions[(r["sha1"], qid)] = r["decision"]
+                self.auto.discard((r["sha1"], qid))
             return self.progress()
 
     def photo_path(self, sha1: str, qid: str) -> Path | None:
@@ -266,7 +283,7 @@ PAGE = """<!doctype html>
   function paint(i) {
     const card = grid.children[i], d = data.photos[i].decision;
     card.className = "card" + (d ? " " + d : "") + (i === focus ? " focus" : "");
-    card.querySelector(".state").textContent = d ? LABEL[d] : "keep (not checked)";
+    card.querySelector(".state").textContent = d ? LABEL[d] + (data.photos[i].auto ? " (auto)" : "") : "keep (not checked)";
   }
 
   function setFocus(i) {
@@ -284,8 +301,8 @@ PAGE = """<!doctype html>
 
   async function save(items) {
     if (!items.length) return true;
-    const before = items.map(it => data.photos[it.i].decision);
-    items.forEach(it => { data.photos[it.i].decision = it.decision; paint(it.i); });
+    const before = items.map(it => [data.photos[it.i].decision, data.photos[it.i].auto]);
+    items.forEach(it => { data.photos[it.i].decision = it.decision; data.photos[it.i].auto = false; paint(it.i); });
     try {
       const resp = await fetch("/api/decide", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ qid: data.qid, decisions: items.map(it => ({ sha1: data.photos[it.i].sha1, decision: it.decision })) }) });
@@ -295,7 +312,7 @@ PAGE = """<!doctype html>
       document.getElementById("error").style.display = "none";
       return true;
     } catch (err) {
-      items.forEach((it, k) => { data.photos[it.i].decision = before[k]; paint(it.i); });
+      items.forEach((it, k) => { [data.photos[it.i].decision, data.photos[it.i].auto] = before[k]; paint(it.i); });
       fail(`Not saved (${err.message}). Is review_server.py still running?`);
       return false;
     }
@@ -370,6 +387,7 @@ def render_type(store: Store, index: int, finished: str | None = None) -> str:
     t = store.types[index]
     data = {"qid": t["qid"], "name": t["english_name"],
             "photos": [{"sha1": s, "decision": store.decisions.get((s, t["qid"])),
+                        "auto": (s, t["qid"]) in store.auto,
                         "source": store.sources.get((s, t["qid"]), "")} for s in t["photos"]],
             "progress": store.progress(),
             "prev": f"/type/{index}" if index > 0 else None,

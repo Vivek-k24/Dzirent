@@ -1,6 +1,7 @@
 """review_server.py on a small manifest: a type page renders, a POST appends to labels.csv, a
 reload shows the saved decision, thumbnails are made once at 256 px; since D2b, --launch-only's
-filter and order, the search tag and the finished-type line."""
+filter and order, the search tag and the finished-type line; since D2c, the source column and
+auto_filter.py's rows."""
 
 import csv
 import json
@@ -89,8 +90,9 @@ def test_post_appends_a_labels_row_and_reload_shows_it(server):
     with open(labels, encoding="utf-8", newline="") as fh:
         reader = csv.DictReader(fh)
         lines = list(reader)
-    assert reader.fieldnames == ["sha1", "qid", "decision", "decided_at"]
+    assert reader.fieldnames == ["sha1", "qid", "decision", "decided_at", "source"]
     assert len(lines) == 1 and lines[0]["sha1"] == SHA1S[0] and lines[0]["qid"] == "Q172827"
+    assert lines[0]["source"] == "owner"
     assert lines[0]["decision"] == "drop" and lines[0]["decided_at"].endswith("Z")
     data = page_data(get(base + "/type/1")[2].decode("utf-8"))
     assert data["photos"][0]["decision"] == "drop" and data["photos"][1]["decision"] is None
@@ -160,3 +162,35 @@ def test_thumbnail_made_once_at_256(server):
         assert max(im.size) == 256
     with pytest.raises(urllib.error.HTTPError):
         get(f"{base}/thumb/Q131151/{SHA1S[0]}.jpg")  # a photo of another type: not served
+
+
+# --- D2c: the source column -----------------------------------------------------------------------
+def test_auto_rows_show_as_auto_until_the_owner_clicks(server):
+    base, images, labels = server
+    lines = ["sha1,qid,decision,decided_at,source",
+             f"{SHA1S[0]},Q172827,keep,2026-11-18T03:00:00Z,owner",
+             f"{SHA1S[0]},Q172827,drop,,auto",  # can't happen after a merge; the owner still wins
+             f"{SHA1S[1]},Q172827,drop,,auto"]
+    labels.write_text("".join(line + "\n" for line in lines), encoding="utf-8")
+    store = rs.Store(manifest_csv=images / "manifest.csv", labels_csv=labels, images_dir=images,
+                     thumbs_dir=images / "thumbs")
+    assert store.decisions[(SHA1S[0], "Q172827")] == "keep" and store.auto == {(SHA1S[1], "Q172827")}
+    data = page_data(rs.render_type(store, 0))
+    assert [(p["decision"], p["auto"]) for p in data["photos"]] == [("keep", False), ("drop", True)]
+    store.decide("Q172827", [{"sha1": SHA1S[1], "decision": "keep"}])
+    assert store.auto == set() and store.decisions[(SHA1S[1], "Q172827")] == "keep"
+    with open(labels, encoding="utf-8", newline="") as fh:
+        last = list(csv.DictReader(fh))[-1]
+    assert (last["sha1"], last["decision"], last["source"]) == (SHA1S[1], "keep", "owner")
+
+
+def test_a_labels_csv_from_before_d2c_gets_four_column_lines(server):
+    base, images, labels = server
+    labels.write_text(f"sha1,qid,decision,decided_at\n{SHA1S[0]},Q172827,drop,2026-11-18T03:00:00Z\n",
+                      encoding="utf-8")
+    store = rs.Store(manifest_csv=images / "manifest.csv", labels_csv=labels, images_dir=images,
+                     thumbs_dir=images / "thumbs")
+    store.decide("Q172827", [{"sha1": SHA1S[1], "decision": "keep"}])
+    with open(labels, encoding="utf-8", newline="") as fh:
+        rows = list(csv.reader(fh))
+    assert [len(r) for r in rows] == [4, 4, 4] and rows[2][:3] == [SHA1S[1], "Q172827", "keep"]
