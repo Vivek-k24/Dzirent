@@ -117,10 +117,9 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
   - `--max-minutes`: a stop after 3 photos, then a resume that fetches nothing twice; a passed limit makes no call.
 - **Mutation check:** the owner-wins and minimum-2 tests fail with those rules switched off.
 - `validate.py`: 8 of 8.
-- **CI** [run 44441554351](https://github.com/Vivek-k24/Dzirent/actions/runs/44441554351) on `5a0ec4f` (all code and data):
-  - vision-data green: "ALL 8 CHECKS PASSED", "88 passed";
-  - vision, website, contracts and android green;
-  - database was still running when this was written.
+- **CI:**
+  - [Run 44442023554](https://github.com/Vivek-k24/Dzirent/actions/runs/44442023554) on `d4fa032` (everything below plus the board and this entry): green on all six jobs.
+  - The vision-data log on `5a0ec4f` shows "ALL 8 CHECKS PASSED" and "88 passed". That earlier run was cancelled by the newer push, after five of its six jobs had passed.
 - **Commits:** `5fcb041` (the owner's labels as saved), `2147735` (`--max-minutes`), `b3200d5` (space suit), `9cae3bb` (manifest and credits), `fea5702` (auto-filter and page), `4ab9eb9` (`auto_filter.csv`), `f93a3cf` (merged `labels.csv`), `1ba5c9b` (`split.py`), `5a0ec4f` (`split.json`), `9070bef` (docs), then the board and this entry.
 
 **For the coordinator (open questions):**
