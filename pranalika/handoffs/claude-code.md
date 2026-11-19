@@ -68,7 +68,9 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
     - the manifest, `openverse.csv` and credits rows;
     - the cache (a second run makes no call), the token, `read_env`;
     - the stop with the registration steps and no client made.
-- **CI** [run 44448627917](https://github.com/Vivek-k24/Dzirent/actions/runs/44448627917) on `37d228e` (all D2d code and data): vision-data green ("ALL 8 CHECKS PASSED", "114 passed"); contracts and website green; android, vision and database were still running when this was written.
+- **CI:**
+  - [Run 44448880898](https://github.com/Vivek-k24/Dzirent/actions/runs/44448880898) on `4b7cdbf` (everything, board and this entry included): green on all six jobs.
+  - The vision-data log on `37d228e` shows "ALL 8 CHECKS PASSED" and "114 passed".
 - **Commits:** `c0296e4` (`--forget-owner`), `771f2e9` (the four types' labels and split), `276287e` (decode check and `--verify`), `b6f1df9` (the 2 removals), `0fed2aa` (`fetch_openverse.py` and tests), `37d228e` (`--types-with-new`), `fa8bf05` (docs), then the board and this entry.
 
 **Owner: register Openverse once** (about two minutes; it is also what `fetch_openverse.py` prints):
