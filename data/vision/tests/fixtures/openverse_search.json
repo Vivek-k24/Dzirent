@@ -1,0 +1,1448 @@
+{
+ "recorded": "2026-11-18, anonymous, https://api.openverse.org/v1/images/",
+ "requests": {
+  "\"nehru jacket\"": "q=\"nehru jacket\"&excluded_source=wikimedia&page_size=20 (no license filter, so the refused licenses are in it)",
+  "achkan": "q=achkan&license=cc0,by,by-sa,pdm&excluded_source=wikimedia&page_size=20 (no results)"
+ },
+ "responses": {
+  "\"nehru jacket\"": {
+   "result_count": 23,
+   "page_count": 1,
+   "page_size": 20,
+   "page": 1,
+   "results": [
+    {
+     "id": "576f1961-4a55-4139-859e-f8aced038a26",
+     "title": "A Very Nehru Jacket Groovy Christmas 1970",
+     "indexed_on": "2019-01-30T16:39:22.504290Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/84387357@N00/190679618",
+     "url": "https://live.staticflickr.com/73/190679618_95969025b0.jpg",
+     "creator": "Whiskeygonebad",
+     "creator_url": "https://www.flickr.com/photos/84387357@N00",
+     "license": "by-nc-sa",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by-nc-sa/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [
+      {
+       "name": "1970",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "70s",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "anthony",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "aquarius",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "boropark",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "boy",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "brooklyn",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "christmastree",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "gifts",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "groovy",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "jesus",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "linoleum",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "nativity",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "nehrujacket",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "nineteenseventies",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "nostalgia",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "presents",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "seventies",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "slacks",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "style",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "teen",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "tinsel",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "tony",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "ypung",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      }
+     ],
+     "attribution": "\"A Very Nehru Jacket Groovy Christmas 1970\" by Whiskeygonebad is licensed under CC BY-NC-SA 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-sa/2.0/.",
+     "fields_matched": [
+      "title"
+     ],
+     "mature": false,
+     "height": 500,
+     "width": 382,
+     "thumbnail": "https://api.openverse.org/v1/images/576f1961-4a55-4139-859e-f8aced038a26/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/576f1961-4a55-4139-859e-f8aced038a26/",
+     "related_url": "https://api.openverse.org/v1/images/576f1961-4a55-4139-859e-f8aced038a26/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "7192e2db-1e04-4f45-9f75-d972df90aeb8",
+     "title": "vintage Barbie MOD Ken 1969 only #1431 'Guruvy Formal' nehru jacket only",
+     "indexed_on": "2020-04-15T16:43:18.938883Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/39186906@N02/5398515024",
+     "url": "https://live.staticflickr.com/5295/5398515024_72d467c18f_b.jpg",
+     "creator": "dollyhaul",
+     "creator_url": "https://www.flickr.com/photos/39186906@N02",
+     "license": "by-nc",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by-nc/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [
+      {
+       "name": "barbie",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "clothing",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "fashion",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "ken",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "mattel",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "mod",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "model",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "teenage",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "vintage",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "vinyl",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      }
+     ],
+     "attribution": "\"vintage Barbie MOD Ken 1969 only #1431 'Guruvy Formal' nehru jacket only\" by dollyhaul is licensed under CC BY-NC 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc/2.0/.",
+     "fields_matched": [
+      "title"
+     ],
+     "mature": false,
+     "height": 768,
+     "width": 1024,
+     "thumbnail": "https://api.openverse.org/v1/images/7192e2db-1e04-4f45-9f75-d972df90aeb8/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/7192e2db-1e04-4f45-9f75-d972df90aeb8/",
+     "related_url": "https://api.openverse.org/v1/images/7192e2db-1e04-4f45-9f75-d972df90aeb8/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "4e1c0027-9a6a-413c-b57f-47bd13119c38",
+     "title": "Ken Malibu in HONG KONG clone red nehru jacket",
+     "indexed_on": "2020-04-21T05:11:31.753342Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/39186906@N02/4432651687",
+     "url": "https://live.staticflickr.com/4003/4432651687_a0a4da4555_b.jpg",
+     "creator": "dollyhaul",
+     "creator_url": "https://www.flickr.com/photos/39186906@N02",
+     "license": "by-nc",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by-nc/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [
+      {
+       "name": "barbie",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "boyfriend",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "clone",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "doll",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "fashion",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "fashions",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "generic",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "ken",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "mattel",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "model",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "teenage",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      }
+     ],
+     "attribution": "\"Ken Malibu in HONG KONG clone red nehru jacket\" by dollyhaul is licensed under CC BY-NC 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc/2.0/.",
+     "fields_matched": [
+      "title"
+     ],
+     "mature": false,
+     "height": 1024,
+     "width": 768,
+     "thumbnail": "https://api.openverse.org/v1/images/4e1c0027-9a6a-413c-b57f-47bd13119c38/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/4e1c0027-9a6a-413c-b57f-47bd13119c38/",
+     "related_url": "https://api.openverse.org/v1/images/4e1c0027-9a6a-413c-b57f-47bd13119c38/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "cf2387eb-a739-4b67-b648-21a96f5811ee",
+     "title": "Nehru jacket, Minneapolis, 1995",
+     "indexed_on": "2018-11-07T20:03:57.748699Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/11828135@N00/11927843",
+     "url": "https://live.staticflickr.com/9/11927843_d4484b036d_b.jpg",
+     "creator": "Max Sparber",
+     "creator_url": "https://www.flickr.com/photos/11828135@N00",
+     "license": "by-nc",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by-nc/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [
+      {
+       "name": "blackandwhite",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "jacket",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "mall",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "minneapolis",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "nehru",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "sparber",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "subway",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      }
+     ],
+     "attribution": "\"Nehru jacket, Minneapolis, 1995\" by Max Sparber is licensed under CC BY-NC 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc/2.0/.",
+     "fields_matched": [
+      "title"
+     ],
+     "mature": false,
+     "height": 508,
+     "width": 1024,
+     "thumbnail": "https://api.openverse.org/v1/images/cf2387eb-a739-4b67-b648-21a96f5811ee/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/cf2387eb-a739-4b67-b648-21a96f5811ee/",
+     "related_url": "https://api.openverse.org/v1/images/cf2387eb-a739-4b67-b648-21a96f5811ee/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "5b219f60-056e-4e68-8fe0-77a258b73b2e",
+     "title": "'Nehru' Jacket, 1967",
+     "indexed_on": "2023-03-19T00:04:31.943098Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/11561957@N06/52755349258",
+     "url": "https://live.staticflickr.com/65535/52755349258_10f0415914_b.jpg",
+     "creator": "failing_angel",
+     "creator_url": "https://www.flickr.com/photos/11561957@N06",
+     "license": "by-nc-sa",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by-nc-sa/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": "photograph",
+     "filesize": null,
+     "filetype": "jpg",
+     "tags": [
+      {
+       "name": "281022",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "artofmenswear",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "brightyellow",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "china",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "davidhockney",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "dowagerempress",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "elite",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "emperor",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "empress",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "fashion",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "fashioningmasculinities",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "fashioningmasculinitiestheartofmenswear",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "fashionistas",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "floralmotifs",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "gracewalesbonner",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "grinlinggibbons",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "gucci",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "harrisreed",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "indiandesigns",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "indianprimeminister",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "jawaharlalnehru",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "joshuareynolds",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "kimjones",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "london",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "londonboroughofkensingtonchelsea",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "lordjohn",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "masculinewardrobe",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "masculinity",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "matthewbourne",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "needlepointlacecravat",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "nehrujacket",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "newadventures",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "omarvictordiop",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "overdressed",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "rafsimons",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "rahemurrahman",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "renaissance",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "sofonisbaanguissola",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "southkensington",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "va",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "venetian",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "victoriaalbertmuseum",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "woodencarving",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      }
+     ],
+     "attribution": "\"'Nehru' Jacket, 1967\" by failing_angel is licensed under CC BY-NC-SA 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-sa/2.0/.",
+     "fields_matched": [
+      "title"
+     ],
+     "mature": false,
+     "height": 1024,
+     "width": 768,
+     "thumbnail": "https://api.openverse.org/v1/images/5b219f60-056e-4e68-8fe0-77a258b73b2e/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/5b219f60-056e-4e68-8fe0-77a258b73b2e/",
+     "related_url": "https://api.openverse.org/v1/images/5b219f60-056e-4e68-8fe0-77a258b73b2e/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "7aca679b-e6e7-4998-b325-74d4a188f1e6",
+     "title": "Anthony in Nehru Jacket 1970",
+     "indexed_on": "2020-04-04T23:11:22.753756Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/126301893@N08/14782472160",
+     "url": "https://live.staticflickr.com/5594/14782472160_93edb7d5e9_b.jpg",
+     "creator": "tonyarch59",
+     "creator_url": "https://www.flickr.com/photos/126301893@N08",
+     "license": "by-nc-sa",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by-nc-sa/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [],
+     "attribution": "\"Anthony in Nehru Jacket 1970\" by tonyarch59 is licensed under CC BY-NC-SA 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-sa/2.0/.",
+     "fields_matched": [
+      "title"
+     ],
+     "mature": false,
+     "height": 1024,
+     "width": 673,
+     "thumbnail": "https://api.openverse.org/v1/images/7aca679b-e6e7-4998-b325-74d4a188f1e6/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/7aca679b-e6e7-4998-b325-74d4a188f1e6/",
+     "related_url": "https://api.openverse.org/v1/images/7aca679b-e6e7-4998-b325-74d4a188f1e6/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "0fb5134d-f503-481f-8ac7-9559cb7f7a03",
+     "title": "The original Nehru Jacket from Theen Moorthy bhavan, Delhi, India",
+     "indexed_on": "2023-11-01T00:50:15.230245Z",
+     "foreign_landing_url": "https://wordpress.org/photos/photo/64652402ce/",
+     "url": "https://pd.w.org/2023/10/64652402ce9c3c39.53223701-1536x2048.jpeg",
+     "creator": "Sithara Koramparambil",
+     "creator_url": "https://wordpress.org/photos/author/sitharakp/",
+     "license": "cc0",
+     "license_version": "1.0",
+     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "provider": "wordpress",
+     "source": "wordpress",
+     "category": null,
+     "filesize": 457141,
+     "filetype": "jpg",
+     "tags": [
+      {
+       "name": "dress",
+       "accuracy": null,
+       "unstable__provider": "wordpress"
+      },
+      {
+       "name": "outerwear",
+       "accuracy": null,
+       "unstable__provider": "wordpress"
+      }
+     ],
+     "attribution": "\"The original Nehru Jacket from Theen Moorthy bhavan, Delhi, India\" by Sithara Koramparambil is marked with CC0 1.0. To view the terms, visit https://creativecommons.org/publicdomain/zero/1.0/.",
+     "fields_matched": [
+      "title"
+     ],
+     "mature": false,
+     "height": 2048,
+     "width": 1536,
+     "thumbnail": "https://api.openverse.org/v1/images/0fb5134d-f503-481f-8ac7-9559cb7f7a03/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/0fb5134d-f503-481f-8ac7-9559cb7f7a03/",
+     "related_url": "https://api.openverse.org/v1/images/0fb5134d-f503-481f-8ac7-9559cb7f7a03/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "2c27b4a3-48db-4d6e-964f-19c50fba27df",
+     "title": "The completed Martian",
+     "indexed_on": "2019-01-30T16:39:22.504290Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/11828135@N00/150977599",
+     "url": "https://live.staticflickr.com/47/150977599_c82929e3d7_b.jpg",
+     "creator": "Max Sparber",
+     "creator_url": "https://www.flickr.com/photos/11828135@N00",
+     "license": "by-nc",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by-nc/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [
+      {
+       "name": "alien",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "costume",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "dicksmith",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "horror",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "makeup",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "martian",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "monster",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "nehru",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "nehrujacket",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "sciencefiction",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "scifi",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "sfx",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "specialeffects",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      }
+     ],
+     "attribution": "\"The completed Martian\" by Max Sparber is licensed under CC BY-NC 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc/2.0/.",
+     "fields_matched": [],
+     "mature": false,
+     "height": 1024,
+     "width": 739,
+     "thumbnail": "https://api.openverse.org/v1/images/2c27b4a3-48db-4d6e-964f-19c50fba27df/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/2c27b4a3-48db-4d6e-964f-19c50fba27df/",
+     "related_url": "https://api.openverse.org/v1/images/2c27b4a3-48db-4d6e-964f-19c50fba27df/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "1d2284ec-168b-44d0-9d04-ce3e61d273ee",
+     "title": "Vint Cerf, me, Joi Ito (new Director of MIT Media Lab) and Andrew Graham (Master of Balliol)",
+     "indexed_on": "2018-12-21T12:34:40.573425Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/93494586@N00/6177966488",
+     "url": "https://live.staticflickr.com/6158/6177966488_a108041c15_b.jpg",
+     "creator": "jjn1",
+     "creator_url": "https://www.flickr.com/photos/93494586@N00",
+     "license": "by-nc-nd",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by-nc-nd/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [],
+     "attribution": "\"Vint Cerf, me, Joi Ito (new Director of MIT Media Lab) and Andrew Graham (Master of Balliol)\" by jjn1 is licensed under CC BY-NC-ND 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-nd/2.0/.",
+     "fields_matched": [],
+     "mature": false,
+     "height": 683,
+     "width": 1024,
+     "thumbnail": "https://api.openverse.org/v1/images/1d2284ec-168b-44d0-9d04-ce3e61d273ee/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/1d2284ec-168b-44d0-9d04-ce3e61d273ee/",
+     "related_url": "https://api.openverse.org/v1/images/1d2284ec-168b-44d0-9d04-ce3e61d273ee/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "14d0e77b-fbc0-48df-b222-7fa4809e0ee3",
+     "title": "Học sinh trường Quốc Gia Nghĩa Tử tham dự lễ QK năm 1969 tại NTQĐ Biên Hòa",
+     "indexed_on": "2020-04-11T00:41:20.381223Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/97930879@N02/10845681553",
+     "url": "https://live.staticflickr.com/5526/10845681553_cd60cc3058_b.jpg",
+     "creator": "Tommy Japan 79",
+     "creator_url": "https://www.flickr.com/photos/97930879@N02",
+     "license": "by",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [
+      {
+       "name": "asia",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "customsandcelebrations",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "festivity",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "government",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "people",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "politicalleaders",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "prominentpersons",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "southeastasia",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "southvietnam",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "vietnam",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "adult",
+       "accuracy": 0.94495,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "crowd",
+       "accuracy": 0.94186,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "group",
+       "accuracy": 0.96963,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "man",
+       "accuracy": 0.95898,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "many",
+       "accuracy": 0.96144,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "people",
+       "accuracy": 0.98792,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "religion",
+       "accuracy": 0.91447,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "wear",
+       "accuracy": 0.94297,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "woman",
+       "accuracy": 0.97925,
+       "unstable__provider": "clarifai"
+      }
+     ],
+     "attribution": "\"Học sinh trường Quốc Gia Nghĩa Tử tham dự lễ QK năm 1969 tại NTQĐ Biên Hòa\" by Tommy Japan 79 is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/.",
+     "fields_matched": [],
+     "mature": false,
+     "height": 685,
+     "width": 1024,
+     "thumbnail": "https://api.openverse.org/v1/images/14d0e77b-fbc0-48df-b222-7fa4809e0ee3/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/14d0e77b-fbc0-48df-b222-7fa4809e0ee3/",
+     "related_url": "https://api.openverse.org/v1/images/14d0e77b-fbc0-48df-b222-7fa4809e0ee3/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "9339d622-b7d3-473d-9c55-bf6cdf2287c7",
+     "title": "08 Nov 1969, Bien Hoa, South Vietnam",
+     "indexed_on": "2020-04-11T00:41:20.381223Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/97930879@N02/10845344965",
+     "url": "https://live.staticflickr.com/3832/10845344965_e8b22e4da9_b.jpg",
+     "creator": "Tommy Japan 79",
+     "creator_url": "https://www.flickr.com/photos/97930879@N02",
+     "license": "by",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [
+      {
+       "name": "asia",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "caoky",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "customsandcelebrations",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "festivity",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "government",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "nguyenvanthieu",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "people",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "politicalleaders",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "prominentpersons",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "southeastasia",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "southvietnam",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "vietnam",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "administration",
+       "accuracy": 0.96878,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "adult",
+       "accuracy": 0.97641,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "business",
+       "accuracy": 0.90569,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "ceremony",
+       "accuracy": 0.94071,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "election",
+       "accuracy": 0.90232,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "group",
+       "accuracy": 0.95693,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "home",
+       "accuracy": 0.91488,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "leader",
+       "accuracy": 0.9835,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "man",
+       "accuracy": 0.97759,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "military",
+       "accuracy": 0.96385,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "outfit",
+       "accuracy": 0.93036,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "people",
+       "accuracy": 0.99153,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "politician",
+       "accuracy": 0.92947,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "recreation",
+       "accuracy": 0.91591,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "wear",
+       "accuracy": 0.95746,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "woman",
+       "accuracy": 0.92722,
+       "unstable__provider": "clarifai"
+      }
+     ],
+     "attribution": "\"08 Nov 1969, Bien Hoa, South Vietnam\" by Tommy Japan 79 is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/.",
+     "fields_matched": [],
+     "mature": false,
+     "height": 683,
+     "width": 1024,
+     "thumbnail": "https://api.openverse.org/v1/images/9339d622-b7d3-473d-9c55-bf6cdf2287c7/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/9339d622-b7d3-473d-9c55-bf6cdf2287c7/",
+     "related_url": "https://api.openverse.org/v1/images/9339d622-b7d3-473d-9c55-bf6cdf2287c7/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "c50a34cf-5c08-4e70-b117-4e16db5033d4",
+     "title": "Guruvy Formal (1969) #1431",
+     "indexed_on": "2018-11-09T02:22:56.756031Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/39186906@N02/9656711245",
+     "url": "https://live.staticflickr.com/7316/9656711245_cf9708869a_b.jpg",
+     "creator": "dollyhaul",
+     "creator_url": "https://www.flickr.com/photos/39186906@N02",
+     "license": "by-nc",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by-nc/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [
+      {
+       "name": "barbie",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "doll",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "ken",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "mattel",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      }
+     ],
+     "attribution": "\"Guruvy Formal (1969) #1431\" by dollyhaul is licensed under CC BY-NC 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc/2.0/.",
+     "fields_matched": [],
+     "mature": false,
+     "height": 1024,
+     "width": 768,
+     "thumbnail": "https://api.openverse.org/v1/images/c50a34cf-5c08-4e70-b117-4e16db5033d4/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/c50a34cf-5c08-4e70-b117-4e16db5033d4/",
+     "related_url": "https://api.openverse.org/v1/images/c50a34cf-5c08-4e70-b117-4e16db5033d4/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "c96a40ce-613f-459b-b612-81216771e47f",
+     "title": "U1653405",
+     "indexed_on": "2020-04-09T00:03:32.898868Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/97930879@N02/9447556541",
+     "url": "https://live.staticflickr.com/2833/9447556541_aa2a347f66.jpg",
+     "creator": "Tommy Japan 79",
+     "creator_url": "https://www.flickr.com/photos/97930879@N02",
+     "license": "by",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [
+      {
+       "name": "asia",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "caoky",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "customsandcelebrations",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "festivity",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "government",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "nguyenvanthieu",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "people",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "politicalleaders",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "prominentpersons",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "southeastasia",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "southvietnam",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "vietnam",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      }
+     ],
+     "attribution": "\"U1653405\" by Tommy Japan 79 is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/.",
+     "fields_matched": [],
+     "mature": false,
+     "height": 334,
+     "width": 500,
+     "thumbnail": "https://api.openverse.org/v1/images/c96a40ce-613f-459b-b612-81216771e47f/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/c96a40ce-613f-459b-b612-81216771e47f/",
+     "related_url": "https://api.openverse.org/v1/images/c96a40ce-613f-459b-b612-81216771e47f/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "d50615a5-cc98-4278-b504-af9ba810cb9d",
+     "title": "Baroda, 1952",
+     "indexed_on": "2020-04-22T13:06:28.458634Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/41383869@N07/4973065990",
+     "url": "https://live.staticflickr.com/4103/4973065990_a528971c29.jpg",
+     "creator": "nathanh100",
+     "creator_url": "https://www.flickr.com/photos/41383869@N07",
+     "license": "by",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [
+      {
+       "name": "adult",
+       "accuracy": 0.96142,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "ceremony",
+       "accuracy": 0.90288,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "group",
+       "accuracy": 0.98978,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "man",
+       "accuracy": 0.95261,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "religion",
+       "accuracy": 0.97791,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "woman",
+       "accuracy": 0.9542,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "festival",
+       "accuracy": 0.90994,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "people",
+       "accuracy": 0.99718,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "crowd",
+       "accuracy": 0.95181,
+       "unstable__provider": "clarifai"
+      },
+      {
+       "name": "many",
+       "accuracy": 0.96583,
+       "unstable__provider": "clarifai"
+      }
+     ],
+     "attribution": "\"Baroda, 1952\" by nathanh100 is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/.",
+     "fields_matched": [],
+     "mature": false,
+     "height": 322,
+     "width": 500,
+     "thumbnail": "https://api.openverse.org/v1/images/d50615a5-cc98-4278-b504-af9ba810cb9d/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/d50615a5-cc98-4278-b504-af9ba810cb9d/",
+     "related_url": "https://api.openverse.org/v1/images/d50615a5-cc98-4278-b504-af9ba810cb9d/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "8aaa105e-5929-4f74-9026-8937c6f3f29b",
+     "title": "U1653405-16",
+     "indexed_on": "2018-11-09T02:22:56.756031Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/97930879@N02/9450338894",
+     "url": "https://live.staticflickr.com/5460/9450338894_29c1777c4e.jpg",
+     "creator": "Tommy Japan 79",
+     "creator_url": "https://www.flickr.com/photos/97930879@N02",
+     "license": "by",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": null,
+     "filesize": null,
+     "filetype": null,
+     "tags": [
+      {
+       "name": "asia",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "customsandcelebrations",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "festivity",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "government",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "people",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "politicalleaders",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "prominentpersons",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "southeastasia",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "southvietnam",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      },
+      {
+       "name": "vietnam",
+       "accuracy": null,
+       "unstable__provider": "flickr"
+      }
+     ],
+     "attribution": "\"U1653405-16\" by Tommy Japan 79 is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/.",
+     "fields_matched": [],
+     "mature": false,
+     "height": 334,
+     "width": 500,
+     "thumbnail": "https://api.openverse.org/v1/images/8aaa105e-5929-4f74-9026-8937c6f3f29b/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/8aaa105e-5929-4f74-9026-8937c6f3f29b/",
+     "related_url": "https://api.openverse.org/v1/images/8aaa105e-5929-4f74-9026-8937c6f3f29b/related/",
+     "unstable__sensitivity": []
+    },
+    {
+     "id": "a6614789-abc1-4ff5-9bc0-55fc18f21611",
+     "title": "IMG_2660",
+     "indexed_on": "2024-01-03T00:03:09.986069Z",
+     "foreign_landing_url": "https://www.flickr.com/photos/80355549@N00/53438144515",
+     "url": "https://live.staticflickr.com/65535/53438144515_5697aa380e_b.jpg",
+     "creator": "lblanchard",
+     "creator_url": "https://www.flickr.com/photos/80355549@N00",
+     "license": "by-sa",
+     "license_version": "2.0",
+     "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+     "provider": "flickr",
+     "source": "flickr",
+     "category": "photograph",
+     "filesize": null,
+     "filetype": "jpg",
+     "tags": [],
+     "attribution": "\"IMG_2660\" by lblanchard is licensed under CC BY-SA 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/2.0/.",
+     "fields_matched": [],
+     "mature": false,
+     "height": 1024,
+     "width": 768,
+     "thumbnail": "https://api.openverse.org/v1/images/a6614789-abc1-4ff5-9bc0-55fc18f21611/thumb/",
+     "detail_url": "https://api.openverse.org/v1/images/a6614789-abc1-4ff5-9bc0-55fc18f21611/",
+     "related_url": "https://api.openverse.org/v1/images/a6614789-abc1-4ff5-9bc0-55fc18f21611/related/",
+     "unstable__sensitivity": []
+    }
+   ]
+  },
+  "achkan": {
+   "result_count": 0,
+   "page_count": 0,
+   "page_size": 20,
+   "page": 1,
+   "results": []
+  }
+ }
+}

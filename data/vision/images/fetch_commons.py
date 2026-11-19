@@ -92,6 +92,7 @@ MIN_INTERVAL = 0.5  # seconds between two requests: at most 2 a second
 MAX_TRIES = 6
 FIRST_BACKOFF = 2.0
 
+OPENVERSE_CSV = IMAGES_DIR / "openverse.csv"  # D2d: what fetch_openverse.py records per photo
 MANIFEST_COLUMNS = ["qid", "english_name", "dzirent_category", "allowed", "sha1", "file", "width", "height",
                     "license", "author", "source_url", "commons_page_url", "downloaded_at", "source"]
 SOURCES = ["p18", "category", "subcategory", "search"]
@@ -402,8 +403,12 @@ def commons_title(page_url: str) -> str:
     return unquote(page_url.rsplit("/wiki/", 1)[-1]).replace("_", " ") if "/wiki/" in page_url else page_url
 
 
-def write_credits(manifest: list[dict], path: Path = CREDITS_MD) -> None:
-    """CREDITS.md from the manifest: one section per license, one line per file."""
+def write_credits(manifest: list[dict], path: Path = CREDITS_MD, openverse_csv: Path | None = None) -> None:
+    """CREDITS.md from the manifest: one section per license, one line per file. Since D2d the
+    photos found with Openverse (source openverse) have their own part after the Commons ones,
+    crediting creator and source site from images/openverse.csv."""
+    openverse = [m for m in manifest if m.get("source") == "openverse"]
+    manifest = [m for m in manifest if m.get("source") != "openverse"]
     by_license: dict[str, list[dict]] = {}
     for m in manifest:
         by_license.setdefault(m["license"], []).append(m)
@@ -428,7 +433,48 @@ def write_credits(manifest: list[dict], path: Path = CREDITS_MD) -> None:
             title = commons_title(m["commons_page_url"]).replace("[", "(").replace("]", ")")
             author = m["author"].replace("[", "(").replace("]", ")")
             lines.append(f"- [{title}]({m['commons_page_url']}) by {author}; for {m['english_name']} ({m['qid']})")
+    if openverse:
+        lines += openverse_credits(openverse, openverse_csv or OPENVERSE_CSV)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+
+
+def openverse_credits(rows: list[dict], openverse_csv: Path) -> list[str]:
+    """The Openverse part of CREDITS.md (D2d): one section per license, crediting each file's
+    creator and source site, with the note Openverse's terms ask for."""
+    info: dict[str, dict] = {}
+    if openverse_csv.exists():
+        with open(openverse_csv, encoding="utf-8", newline="") as fh:
+            info = {r["sha1"]: r for r in csv.DictReader(fh)}
+    by_license: dict[str, list[dict]] = {}
+    for m in rows:
+        by_license.setdefault(m["license"], []).append(m)
+
+    def clean(text: str) -> str:
+        return (text or "").replace("[", "(").replace("]", ")").replace("\n", " ").strip()
+
+    lines = [
+        "",
+        "# Openverse",
+        "",
+        "These photos were found with Openverse (https://openverse.org); Dzirent is not endorsed or certified by",
+        "Openverse. `data/vision/images/fetch_openverse.py` downloads each from its source site. Each is used under",
+        "its own license, given below with its creator, its source site and the page where it was published. A file",
+        "wider than 1280 pixels is saved 1280 pixels wide; nothing else is changed.",
+        "",
+        f"**{len(rows)} files:** " + ", ".join(f"{name} {len(rs)}" for name, rs in
+                                              sorted(by_license.items(), key=lambda kv: (-len(kv[1]), kv[0]))) + ".",
+    ]
+    for name in sorted(by_license, key=lambda n: (-len(by_license[n]), n)):
+        group = sorted(by_license[name], key=lambda m: (m["english_name"].lower(), m["qid"], m["sha1"]))
+        url = next((info[m["sha1"]]["license_url"] for m in group if info.get(m["sha1"], {}).get("license_url")), "")
+        lines += ["", f"## {name}" + (f" ({url})" if url else ""), ""]
+        for m in group:
+            ov = info.get(m["sha1"], {})
+            title = clean(ov.get("title")) or "untitled"
+            site = clean(ov.get("source_site")) or "unknown site"
+            lines.append(f"- [{title}]({m['commons_page_url']}) by {clean(m['author'])}, on {site}; "
+                         f"for {m['english_name']} ({m['qid']})")
+    return lines
 
 
 # ---------------------------------------------------------------------------------------------
