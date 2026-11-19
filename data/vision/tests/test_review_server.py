@@ -194,3 +194,27 @@ def test_a_labels_csv_from_before_d2c_gets_four_column_lines(server):
     with open(labels, encoding="utf-8", newline="") as fh:
         rows = list(csv.reader(fh))
     assert [len(r) for r in rows] == [4, 4, 4] and rows[2][:3] == [SHA1S[1], "Q172827", "keep"]
+
+
+# --- D2d: --types-with-new -----------------------------------------------------------------------------
+def test_types_with_new_shows_only_types_with_an_undecided_photo_in_sheet_order(tmp_path, server):
+    _, images, labels = server
+    sheet = tmp_path / "review.csv"
+    sheet.write_text("needs_owner,keep,priority,english_name,qid\n"
+                     "yes,yes,launch,t-shirt,Q131151\n"
+                     ",,later,sari,Q172827\n", encoding="utf-8")
+    assert rs.sheet_order(sheet) == ["Q131151", "Q172827"]
+
+    def store():
+        return rs.Store(manifest_csv=images / "manifest.csv", labels_csv=labels, images_dir=images,
+                        thumbs_dir=images / "thumbs", only=rs.sheet_order(sheet), undecided_only=True)
+
+    assert [t["qid"] for t in store().types] == ["Q131151", "Q172827"]  # nothing decided yet: both, sheet order
+    lines = ["sha1,qid,decision,decided_at,source",
+             f"{SHA1S[0]},Q172827,keep,2026-11-18T03:00:00Z,owner",
+             f"{SHA1S[1]},Q172827,drop,,auto"]  # every sari photo decided, one by the owner, one by the filter
+    labels.write_text("".join(line + "\n" for line in lines), encoding="utf-8")
+    s = store()
+    assert [t["qid"] for t in s.types] == ["Q131151"]
+    assert s.progress() == {"types_reviewed": 0, "types_total": 1, "photos_decided": 0, "photos_total": 1}
+    assert rs.main is not None and "--types-with-new" in rs.__doc__

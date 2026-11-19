@@ -23,6 +23,9 @@ D2c (four columns) gets four-column lines.
 
 --launch-only serves only the types with needs_owner = yes and priority = launch in
 ../taxonomy/review.csv, in the sheet's order; the progress bars count those only.
+--types-with-new (D2d) serves only the types that have a photo with no decision from any source
+(neither the owner nor auto_filter.py), in the sheet's order; with --launch-only, the launch
+types among them.
 
 Standard library only (http.server), plus Pillow for the 256 px thumbnails, made on first
 request into thumbs/. Listens on 127.0.0.1 only. The page shows nothing from Commons but the
@@ -30,6 +33,7 @@ photos: no file names, descriptions or authors (those can name places and brands
 
     python images/review_server.py                 # then open http://127.0.0.1:8765
     python images/review_server.py --launch-only   # the launch types only
+    python images/review_server.py --types-with-new   # only types with photos nobody has decided
 """
 
 import argparse
@@ -61,15 +65,25 @@ QID_RE = re.compile(r"Q\d+")
 SHA1_RE = re.compile(r"[0-9a-f]{40}")
 
 
-def launch_order(review_csv: Path = REVIEW_CSV) -> list[str]:
-    """The QIDs with needs_owner = yes and priority = launch in the sheet, in its order. Excel saves
-    "CSV UTF-8", or Windows-1252 as plain "CSV" (as build_taxonomy.read_review_csv reads it)."""
+def sheet_rows(review_csv: Path = REVIEW_CSV) -> list[dict]:
+    """review.csv's rows in order. Excel saves "CSV UTF-8", or Windows-1252 as plain "CSV" (as
+    build_taxonomy.read_review_csv reads it)."""
     try:
         text = review_csv.read_text(encoding="utf-8-sig")
     except UnicodeDecodeError:
         text = review_csv.read_text(encoding="cp1252")
-    return [r["qid"] for r in csv.DictReader(text.splitlines())
+    return list(csv.DictReader(text.splitlines()))
+
+
+def launch_order(review_csv: Path = REVIEW_CSV) -> list[str]:
+    """The QIDs with needs_owner = yes and priority = launch in the sheet, in its order."""
+    return [r["qid"] for r in sheet_rows(review_csv)
             if (r.get("needs_owner") or "").strip().lower() == "yes" and (r.get("priority") or "").strip().lower() == "launch"]
+
+
+def sheet_order(review_csv: Path = REVIEW_CSV) -> list[str]:
+    """Every QID in the sheet, in its order (D2d)."""
+    return [r["qid"] for r in sheet_rows(review_csv)]
 
 
 class Store:
@@ -77,7 +91,8 @@ class Store:
     those types, in that order."""
 
     def __init__(self, manifest_csv: Path = MANIFEST_CSV, labels_csv: Path = LABELS_CSV,
-                 images_dir: Path = IMAGES_DIR, thumbs_dir: Path = THUMBS_DIR, only: list[str] | None = None) -> None:
+                 images_dir: Path = IMAGES_DIR, thumbs_dir: Path = THUMBS_DIR, only: list[str] | None = None,
+                 undecided_only: bool = False) -> None:
         self.labels_csv, self.images_dir, self.thumbs_dir = labels_csv, images_dir, thumbs_dir
         self.types: list[dict] = []
         self.files: dict[tuple[str, str], str] = {}  # (sha1, qid) -> file, relative to images_dir
@@ -111,6 +126,11 @@ class Store:
                         (auto if line.get("source") == "auto" else owner)[key] = line["decision"]
         self.auto = set(auto) - set(owner)
         self.decisions = {**auto, **owner}
+        if undecided_only:  # D2d --types-with-new: only types with a photo nobody (owner or filter) decided
+            self.types = [t for t in self.types if any((s, t["qid"]) not in self.decisions for s in t["photos"])]
+            shown = {t["qid"] for t in self.types}
+            self.files = {k: v for k, v in self.files.items() if k[1] in shown}
+            self.sources = {k: v for k, v in self.sources.items() if k[1] in shown}
 
     def type_index(self, qid: str) -> int | None:
         return next((i for i, t in enumerate(self.types) if t["qid"] == qid), None)
@@ -502,11 +522,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--labels", type=Path, default=LABELS_CSV, help="where decisions are appended (default labels.csv)")
     parser.add_argument("--launch-only", action="store_true",
                         help="only the needs_owner = yes, priority = launch types of review.csv, in its order")
+    parser.add_argument("--types-with-new", action="store_true",
+                        help="only the types with a photo that has no decision from any source, in review.csv's order (D2d)")
     args = parser.parse_args(argv)
-    store = Store(labels_csv=args.labels, only=launch_order() if args.launch_only else None)
+    only = launch_order() if args.launch_only else sheet_order() if args.types_with_new else None
+    store = Store(labels_csv=args.labels, only=only, undecided_only=args.types_with_new)
     server = make_server(store, args.port)
     p = store.progress()
-    print(f"Label check: http://{HOST}:{server.server_address[1]}  ({'launch types only, ' if args.launch_only else ''}"
+    scope = ("launch types only, " if args.launch_only else "") + ("types with new photos, " if args.types_with_new else "")
+    print(f"Label check: http://{HOST}:{server.server_address[1]}  ({scope}"
           f"{p['types_total']} types, {p['photos_total']} photos, {p['photos_decided']} decided; "
           f"decisions go to {args.labels})", flush=True)
     try:
