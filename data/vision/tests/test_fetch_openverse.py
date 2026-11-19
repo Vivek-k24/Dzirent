@@ -94,7 +94,7 @@ def test_recorded_results_accept_by_by_sa_cc0_only_and_name_them():
 def test_a_run_saves_accepted_photos_with_their_credits(tmp_path):
     session = FakeSession()
     result = run(tmp_path, session)[0]
-    assert session.searches[0]["license"] == "by,by-sa,cc0,pdm" and session.searches[0]["excluded_source"] == "wikimedia"
+    assert session.searches[0]["license"] == "by,by-sa,cc0,pdm" and session.searches[0]["excluded_source"] == "wikimedia,inaturalist"
     assert session.searches[0]["q"] == '"nehru jacket"'
     assert result["added"] == len(ACCEPTED) == 7 and result["counted"] == 7 and result["skipped"]["license"] == 9
     assert sorted(session.downloads) == sorted(r["url"] for r in ACCEPTED)  # refused licenses never downloaded
@@ -179,6 +179,7 @@ def test_read_env_and_credentials(tmp_path, monkeypatch):
 
 def test_without_credentials_it_prints_the_steps_and_makes_no_request(monkeypatch, capsys):
     monkeypatch.setattr(fo, "credentials", lambda path=None: None)
+    monkeypatch.setattr(fo, "read_state", lambda path=None: None)  # not the real run's state
     monkeypatch.setattr(fo.fc, "load_rows", lambda: [ROW])
     monkeypatch.setattr(fo.fc, "read_manifest", lambda path=None: [])
     monkeypatch.setattr(fo.af, "read_labels", lambda path=None: [])
@@ -188,3 +189,75 @@ def test_without_credentials_it_prints_the_steps_and_makes_no_request(monkeypatc
     out = capsys.readouterr().out
     assert "api.openverse.org/v1/auth_tokens/register/" in out and "providers.env" in out
     assert "OPENVERSE_CLIENT_SECRET=$($r.client_secret)" in out
+
+
+# --- D2e: the limits the headers report, pieces of one run, rejected ids, the time check -----------
+def test_the_burst_limit_sets_the_gap_and_the_latest_response_wins(tmp_path):
+    client = fo.Openverse(raw_dir=tmp_path / "raw", session=FakeSession(), sleep=lambda s: None, api_interval=1.0)
+    client._note_limits({"X-RateLimit-Limit-anon_burst": "20/min", "X-RateLimit-Limit-anon_sustained": "200/day",
+                         "X-RateLimit-Available-anon_sustained": "199"})
+    assert client.intervals["api"] == 3.0 and client.left_today == 199  # 20 a minute: one every 3 s
+    client._note_limits({"x-ratelimit-limit-oauth2_client_credentials_burst": "100/min",
+                         "x-ratelimit-available-oauth2_client_credentials_sustained": "9950"})
+    assert client.intervals["api"] == 1.0 and client.left_today == 9950  # 0.6 s allowed, never under the 1 s floor
+    assert client.limits["x-ratelimit-limit-anon_burst"] == "20/min"
+
+
+def test_a_later_piece_keeps_the_runs_targets(tmp_path):
+    rows = [{**ROW, "qid": q, "english_name": q} for q in ("Q1", "Q2", "Q3")]
+    manifest = [{"sha1": f"{q}{i:038d}", "qid": q, "english_name": q} for q, n in (("Q1", 55), ("Q2", 80), ("Q3", 10))
+                for i in range(n)]
+    state = {"targets": ["Q1", "Q2", "Q3"], "done": ["Q3"]}
+    # Q1 stopped halfway on 55 (no longer under 40) is still a target; Q2 is full; Q3 is finished
+    assert [(r["qid"], have) for r, have in fo.resume_targets(state, rows, manifest, [])] == [("Q1", 55)]
+
+
+def test_a_refused_result_is_not_downloaded_again_and_finished_types_are_reported(tmp_path):
+    small = [r["url"] for r in ACCEPTED[:2]]
+    session = FakeSession(files={u: jpeg(1, size=(200, 150)) for u in small})
+    tried, done = {}, []
+    result = fo.run(client_for(tmp_path, session), [(ROW, 0)], manifest_path=tmp_path / "manifest.csv",
+                    files_dir=tmp_path / "files", openverse_csv=tmp_path / "openverse.csv",
+                    credits_path=tmp_path / "CREDITS.md", tried=tried, on_done=done.append)[0]
+    assert result["skipped"]["small"] == 2 and set(tried.values()) == {"small"} and len(tried) == 2 and done == ["Q1"]
+    again = FakeSession()
+    result = fo.run(client_for(tmp_path, again), [(ROW, 0)], manifest_path=tmp_path / "manifest.csv",
+                    files_dir=tmp_path / "files", openverse_csv=tmp_path / "openverse.csv",
+                    credits_path=tmp_path / "CREDITS.md", tried=tried)[0]
+    assert not set(small) & set(again.downloads) and result["skipped"]["small"] == 2
+
+
+def test_the_time_is_checked_before_each_download(tmp_path):
+    ticks = iter(range(100))
+    session = FakeSession()
+    done = []
+    result = fo.run(client_for(tmp_path, session), [(ROW, 0)], manifest_path=tmp_path / "manifest.csv",
+                    files_dir=tmp_path / "files", openverse_csv=tmp_path / "openverse.csv",
+                    credits_path=tmp_path / "CREDITS.md", deadline=3, clock=lambda: next(ticks), on_done=done.append)[0]
+    # clock 0: the search; 1 and 2: two downloads; 3: time up before the third
+    assert result["stopped"] and result["added"] == 2 and len(session.downloads) == 2 and done == []
+
+
+def test_a_source_site_that_keeps_failing_is_skipped(tmp_path):
+    class Failing(FakeSession):
+        def request(self, method, url, **kw):
+            if url not in (fo.API_URL, fo.TOKEN_URL):
+                self.downloads.append(url)
+                return FakeResponse(status=522)
+            return super().request(method, url, **kw)
+    session = Failing()
+    result = run(tmp_path, session)[0]
+    assert result["added"] == 0 and result["skipped"]["download failed"] == 7
+    assert len(session.downloads) == 7 * fo.DOWNLOAD_TRIES
+
+
+def test_openverse_photos_the_filter_would_drop_count_as_dropped_between_pieces(tmp_path):
+    files = tmp_path / "files" / "Q1"
+    files.mkdir(parents=True)
+    rows = []
+    for i, gray in enumerate([True, False]):
+        (files / f"{i}.jpg").write_bytes(jpeg(i + 3, gray=gray))
+        rows.append({"sha1": f"{i:040d}", "qid": "Q1", "file": f"files/Q1/{i}.jpg", "source": "openverse"})
+    pending = fo.pending_auto_drops(rows, [], tmp_path, tmp_path / "stats.json")
+    assert [(p["sha1"], p["decision"], p["source"]) for p in pending] == [(f"{0:040d}", "drop", "auto")]
+    assert fo.pending_auto_drops(rows, [{"sha1": f"{0:040d}"}], tmp_path, tmp_path / "stats.json") == []

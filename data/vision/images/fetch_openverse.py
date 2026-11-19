@@ -71,7 +71,9 @@ OPENVERSE_COLUMNS = ["sha1", "openverse_id", "qid", "title", "license", "license
                      "creator_url", "source_site", "foreign_landing_url", "url"]
 
 LICENSES = ("by", "by-sa", "cc0", "pdm")
-EXCLUDED_SOURCES = "wikimedia"
+# Wikimedia: Commons is the first source already. iNaturalist (D2e): species observations only;
+# "guayabera" matched 42 photos of the parrot Amazona guayabera.
+EXCLUDED_SOURCES = "wikimedia,inaturalist"
 BELOW = 40           # a launch type with fewer kept-or-undecided photos is a target
 CAP = 80             # kept-or-undecided photos per type, all sources together
 PAGE_SIZE = 20       # the anonymous maximum; registered users may ask for more
@@ -79,7 +81,11 @@ MAX_PAGES = 5
 API_INTERVAL = 1.0
 DOWNLOAD_INTERVAL = 0.5
 MAX_TRIES = 6
+DOWNLOAD_TRIES = 3   # a source site that fails three times is skipped (the next run tries it again)
+API_TIMEOUT, DOWNLOAD_TIMEOUT = 60, 30
 FIRST_BACKOFF = 2.0
+STATE_JSON = RAW_DIR / "run_state.json"   # D2e: one run's targets, finished types and rejected ids, across pieces
+PER_SECONDS = {"sec": 1, "second": 1, "min": 60, "minute": 60, "hour": 3600, "day": 86400}
 RESERVE = 5          # stop when fewer requests than this are left today
 ANON_PER_DAY = 200
 FORMATS = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}
@@ -153,10 +159,12 @@ class Openverse:
         self.session = session or requests.Session()
         self.session.headers["User-Agent"] = fc.USER_AGENT
         self.intervals = {"api": api_interval, "download": download_interval}
+        self.base_api_interval = api_interval
         self.last = {"api": float("-inf"), "download": float("-inf")}
         self.token, self.token_until = None, 0.0
-        self.requests_made = self.cache_hits = self.downloads = 0
+        self.requests_made = self.cache_hits = self.downloads = self.download_requests = 0
         self.left_today: int | None = None
+        self.limits: dict[str, str] = {}   # the x-ratelimit-limit-* headers Openverse last sent
 
     def _wait(self, kind: str) -> None:
         gap = self.last[kind] + self.intervals[kind] - self.clock()
@@ -166,30 +174,52 @@ class Openverse:
 
     def _request(self, kind: str, method: str, url: str, **kw):
         delay = FIRST_BACKOFF
-        for attempt in range(1, MAX_TRIES + 1):
+        tries = MAX_TRIES if kind == "api" else DOWNLOAD_TRIES
+        for attempt in range(1, tries + 1):
             self._wait(kind)
             try:
-                resp = self.session.request(method, url, timeout=60, **kw)
+                resp = self.session.request(method, url, timeout=API_TIMEOUT if kind == "api" else DOWNLOAD_TIMEOUT, **kw)
             except requests.RequestException as exc:
                 logger.warning("%s %s: %s (try %d)", method, url, exc, attempt)
             else:
                 if kind == "api":
                     self.requests_made += 1
                     self._note_limits(resp.headers)
+                else:
+                    self.download_requests += 1
                 if resp.status_code != 429 and resp.status_code < 500:
                     return resp
                 retry = resp.headers.get("Retry-After")
                 delay = max(delay, float(retry)) if retry and retry.isdigit() else delay
                 logger.warning("%s %s: HTTP %d (try %d)", method, url, resp.status_code, attempt)
-            self.sleep(delay)
-            delay *= 2
+            if attempt < tries:
+                self.sleep(delay)
+                delay *= 2
+        if kind == "download":
+            return None
         raise RuntimeError(f"gave up after {MAX_TRIES} tries: {url}")
 
     def _note_limits(self, headers) -> None:
+        """Follows what Openverse's headers report: the requests left in the sustained (daily)
+        window, and a burst limit such as "20/min" widens the gap between API calls to match. Each
+        response reports the tier it was counted in (the token request is anonymous, searches with
+        the token are not), so the latest response sets the gap."""
+        available, gaps = [], []
         for key, value in headers.items():
-            k = key.lower()
-            if k.startswith("x-ratelimit-available-") and "sustained" in k and str(value).isdigit():
-                self.left_today = int(value)
+            k, value = key.lower(), str(value).strip()
+            if k.startswith("x-ratelimit-available-") and "sustained" in k and value.isdigit():
+                available.append(int(value))
+            elif k.startswith("x-ratelimit-limit-"):
+                if self.limits.get(k) != value:
+                    logger.info("Openverse limit %s: %s", k, value)
+                self.limits[k] = value
+                m = re.fullmatch(r"(\d+)\s*/\s*([a-z]+)", value)
+                if "burst" in k and m and int(m.group(1)) > 0 and m.group(2) in PER_SECONDS:
+                    gaps.append(PER_SECONDS[m.group(2)] / int(m.group(1)))
+        if gaps:
+            self.intervals["api"] = max([self.base_api_interval] + gaps)
+        if available:
+            self.left_today = min(available)
 
     def _auth_header(self) -> dict:
         if not self.creds:
@@ -224,7 +254,7 @@ class Openverse:
 
     def download(self, url: str) -> bytes | None:
         resp = self._request("download", "GET", url)
-        if resp.status_code != 200 or not resp.content:
+        if resp is None or resp.status_code != 200 or not resp.content:
             return None
         self.downloads += 1
         return resp.content
@@ -307,85 +337,141 @@ def most_calls(targets: list[tuple[dict, int]]) -> int:
     return sum(len(fc.search_names(row)) * MAX_PAGES for row, _ in targets) + 1
 
 
+def pending_auto_drops(manifest: list[dict], labels: list[dict], images_dir: Path = IMAGES_DIR,
+                       stats_path: Path = af.STATS_JSON) -> list[dict]:
+    """Openverse photos with no row in labels.csv yet that the auto-filter would drop, as the auto
+    rows auto_filter.py will merge: so a later piece of the same run counts them as it will."""
+    decided = {r["sha1"] for r in labels}
+    todo = [m for m in manifest if m.get("source") == "openverse" and m["sha1"] not in decided]
+    if not todo:
+        return []
+    stats = af.measure_all(todo, images_dir, stats_path, workers=1)
+    qid_of = {m["sha1"]: m["qid"] for m in todo}
+    return [{"sha1": a["sha1"], "qid": qid_of[a["sha1"]], "decision": "drop", "decided_at": "", "source": "auto"}
+            for a in af.auto_rows(todo, stats) if a["auto_drop"] == "yes"]
+
+
+def read_state(path: Path = STATE_JSON) -> dict | None:
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+
+def write_state(state: dict, path: Path = STATE_JSON) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
+    tmp.replace(path)
+
+
+def resume_targets(state: dict, rows: list[dict], manifest: list[dict], labels: list[dict]) -> list[tuple[dict, int]]:
+    """The run's own targets (fixed when its first piece started) that aren't finished: a type
+    stopped halfway on 50 photos is still filled to 80, though it is no longer under 40."""
+    by_qid = {r["qid"]: r for r in rows}
+    have = kept_or_undecided(manifest, labels)
+    return [(by_qid[q], have[q]) for q in state["targets"] if q in by_qid and q not in state["done"] and have[q] < CAP]
+
+
 # ---------------------------------------------------------------------------------------------
 # The run.
 # ---------------------------------------------------------------------------------------------
+class Stop(Exception):
+    """The time is up, or fewer than RESERVE requests are left today."""
+
+
 def run(client: Openverse, targets: list[tuple[dict, int]], *, manifest_path: Path = fc.MANIFEST_CSV,
         files_dir: Path = fc.FILES_DIR, openverse_csv: Path = OPENVERSE_CSV, credits_path: Path = fc.CREDITS_MD,
-        deadline: float | None = None, clock=time.monotonic, now=lambda: datetime.now(timezone.utc)) -> list[dict]:
+        deadline: float | None = None, clock=time.monotonic, now=lambda: datetime.now(timezone.utc),
+        tried: dict[str, str] | None = None, on_done=None) -> list[dict]:
+    """Fills each target in turn. `tried` (Openverse id -> reason) holds the results downloaded and
+    refused in an earlier piece, so they are not downloaded again; `on_done(qid)` is called for each
+    type finished (filled, or every search used up)."""
     manifest = fc.read_manifest(manifest_path) if manifest_path.exists() else []
     taken = {m["sha1"] for m in manifest}
     seen_ids = {r["openverse_id"] for r in read_openverse(openverse_csv)}
+    tried = {} if tried is None else tried
     results = []
-    stopped = False
+
+    def time_up() -> bool:
+        return deadline is not None and clock() >= deadline
+
     for row, have in targets:
         qid, name = row["qid"], row["english_name"]
         need = CAP - have
         result = {"qid": qid, "english_name": name, "before": have, "added": 0, "counted": 0, "auto_drop": 0,
                   "skipped": Counter(), "licenses": Counter(), "searches": 0}
         results.append(result)
-        for term in fc.search_names(row):
-            if result["counted"] >= need or stopped:
-                break
-            for page in range(1, MAX_PAGES + 1):
-                if (deadline is not None and clock() >= deadline) or not client.budget_left():
-                    stopped = result["stopped"] = True
+        try:
+            for term in fc.search_names(row):
+                if result["counted"] >= need:
                     break
-                data = client.search(query(term), page)
-                result["searches"] += 1
-                for r in data.get("results", []):
-                    ok, why = accepted(r)
-                    if not ok:
-                        result["skipped"][why] += 1
-                        continue
-                    if r["id"] in seen_ids:
-                        result["skipped"]["duplicate"] += 1
-                        continue
-                    content = client.download(r["url"])
-                    if not content:
-                        result["skipped"]["download failed"] += 1
-                        continue
-                    sha1 = hashlib.sha1(content).hexdigest()
-                    if sha1 in taken:
-                        result["skipped"]["duplicate"] += 1
-                        continue
-                    saved, why, (w, h) = save_photo(content, files_dir / qid / sha1)
-                    if not saved:
-                        result["skipped"][why] += 1
-                        continue
-                    lic = license_name(r["license"], r.get("license_version"))
-                    entry = {"qid": qid, "english_name": name, "dzirent_category": row["dzirent_category"],
-                             "allowed": row["allowed"], "sha1": sha1, "file": saved.relative_to(files_dir.parent).as_posix(),
-                             "width": w, "height": h, "license": lic, "author": r.get("creator") or "unknown",
-                             "source_url": r["url"], "commons_page_url": r.get("foreign_landing_url") or "",
-                             "downloaded_at": now().strftime("%Y-%m-%dT%H:%M:%SZ"), "source": "openverse"}
-                    fc.append_manifest(entry, manifest_path)
-                    append_openverse({"sha1": sha1, "openverse_id": r["id"], "qid": qid, "title": r.get("title") or "",
-                                      "license": r["license"], "license_version": r.get("license_version") or "",
-                                      "license_url": r.get("license_url") or "", "creator": r.get("creator") or "",
-                                      "creator_url": r.get("creator_url") or "", "source_site": r.get("source") or "",
-                                      "foreign_landing_url": r.get("foreign_landing_url") or "", "url": r["url"]},
-                                     openverse_csv)
-                    manifest.append(entry)
-                    taken.add(sha1)
-                    seen_ids.add(r["id"])
-                    result["added"] += 1
-                    result["licenses"][lic] += 1
-                    if af.classify(af.measure(saved)):
-                        result["auto_drop"] += 1
-                    else:
-                        result["counted"] += 1
-                    if result["counted"] >= need:
+                for page in range(1, MAX_PAGES + 1):
+                    if time_up() or not client.budget_left():
+                        raise Stop
+                    data = client.search(query(term), page)
+                    result["searches"] += 1
+                    for r in data.get("results", []):
+                        ok, why = accepted(r)
+                        if not ok:
+                            result["skipped"][why] += 1
+                            continue
+                        if r["id"] in seen_ids:
+                            result["skipped"]["duplicate"] += 1
+                            continue
+                        if r["id"] in tried:
+                            result["skipped"][tried[r["id"]]] += 1
+                            continue
+                        if time_up():
+                            raise Stop
+                        content = client.download(r["url"])
+                        if not content:
+                            result["skipped"]["download failed"] += 1  # not remembered: tried again next run
+                            continue
+                        sha1 = hashlib.sha1(content).hexdigest()
+                        if sha1 in taken:
+                            result["skipped"]["duplicate"] += 1
+                            tried[r["id"]] = "duplicate"
+                            continue
+                        saved, why, (w, h) = save_photo(content, files_dir / qid / sha1)
+                        if not saved:
+                            result["skipped"][why] += 1
+                            tried[r["id"]] = why
+                            continue
+                        lic = license_name(r["license"], r.get("license_version"))
+                        entry = {"qid": qid, "english_name": name, "dzirent_category": row["dzirent_category"],
+                                 "allowed": row["allowed"], "sha1": sha1,
+                                 "file": saved.relative_to(files_dir.parent).as_posix(),
+                                 "width": w, "height": h, "license": lic, "author": r.get("creator") or "unknown",
+                                 "source_url": r["url"], "commons_page_url": r.get("foreign_landing_url") or "",
+                                 "downloaded_at": now().strftime("%Y-%m-%dT%H:%M:%SZ"), "source": "openverse"}
+                        fc.append_manifest(entry, manifest_path)
+                        append_openverse({"sha1": sha1, "openverse_id": r["id"], "qid": qid,
+                                          "title": r.get("title") or "", "license": r["license"],
+                                          "license_version": r.get("license_version") or "",
+                                          "license_url": r.get("license_url") or "", "creator": r.get("creator") or "",
+                                          "creator_url": r.get("creator_url") or "", "source_site": r.get("source") or "",
+                                          "foreign_landing_url": r.get("foreign_landing_url") or "", "url": r["url"]},
+                                         openverse_csv)
+                        manifest.append(entry)
+                        taken.add(sha1)
+                        seen_ids.add(r["id"])
+                        result["added"] += 1
+                        result["licenses"][lic] += 1
+                        if af.classify(af.measure(saved)):
+                            result["auto_drop"] += 1
+                        else:
+                            result["counted"] += 1
+                        if result["counted"] >= need:
+                            break
+                    if result["counted"] >= need or page >= int(data.get("page_count") or 0):
                         break
-                if result["counted"] >= need or page >= int(data.get("page_count") or 0):
-                    break
-            if stopped:
-                break
+        except Stop:
+            result["stopped"] = True
         result["after"] = have + result["counted"]
         logger.info("%s %s: %d -> %d kept or undecided (%d added, %d auto_drop)%s", qid, name, have, result["after"],
                     result["added"], result["auto_drop"], " (stopped)" if result.get("stopped") else "")
-        if stopped:
+        if result.get("stopped"):
             break
+        if on_done:
+            on_done(qid)
     if any(r["added"] for r in results) and manifest:
         fc.write_credits(manifest, credits_path, openverse_csv)
     return results
@@ -401,24 +487,54 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     rows = fc.load_rows()
     manifest = fc.read_manifest()
-    targets = plan(rows, launch_order(), manifest, af.read_labels())
+    labels = af.read_labels()
+    labels = labels + pending_auto_drops(manifest, labels)
+    state = read_state()
+    targets = resume_targets(state, rows, manifest, labels) if state else plan(rows, launch_order(), manifest, labels)
     calls = most_calls(targets)
     print(json.dumps({"targets": [{"qid": r["qid"], "english_name": r["english_name"], "kept_or_undecided": have,
                                    "names": fc.search_names(r)} for r, have in targets],
-                      "types": len(targets), "most_api_calls": calls}, ensure_ascii=False, indent=1))
+                      "types": len(targets), "most_api_calls": calls,
+                      "resuming": bool(state)}, ensure_ascii=False, indent=1))
     if args.dry_run:
+        return 0
+    if state and not targets:
+        print(f"This Openverse run is complete ({STATE_JSON.relative_to(IMAGES_DIR).as_posix()}); "
+              "delete that file to start a new one.")
         return 0
     creds = credentials()
     if not creds and not (args.anonymous and calls <= ANON_PER_DAY - RESERVE):
         print(REGISTRATION_STEPS.format(calls=calls))
         return 2
+    if not state:
+        state = {"started_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                 "targets": [r["qid"] for r, _ in targets], "before": {r["qid"]: have for r, have in targets},
+                 "done": [], "tried": {}, "pieces": []}
+        write_state(state)
     deadline = time.monotonic() + 60 * args.max_minutes if args.max_minutes else None
     client = Openverse(creds=creds)
-    results = run(client, targets, deadline=deadline)
+
+    def done(qid: str) -> None:
+        state["done"].append(qid)
+        write_state(state)
+
+    results = []
+    try:
+        results = run(client, targets, deadline=deadline, tried=state["tried"], on_done=done)
+    finally:
+        state["pieces"].append({"ended_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                                "api_requests": client.requests_made, "cache_hits": client.cache_hits,
+                                "download_requests": client.download_requests, "downloads": client.downloads,
+                                "left_today": client.left_today, "limits": client.limits,
+                                "added": sum(r["added"] for r in results)})
+        write_state(state)
     summary = {"types": len(results), "added": sum(r["added"] for r in results),
                "counted": sum(r["counted"] for r in results), "auto_drop": sum(r["auto_drop"] for r in results),
-               "requests": client.requests_made, "cache_hits": client.cache_hits, "downloads": client.downloads,
-               "left_today": client.left_today, "stopped": any(r.get("stopped") for r in results),
+               "requests": client.requests_made, "cache_hits": client.cache_hits,
+               "download_requests": client.download_requests, "downloads": client.downloads,
+               "left_today": client.left_today, "limits": client.limits,
+               "stopped": any(r.get("stopped") for r in results),
+               "types_done": len(state["done"]), "types_in_run": len(state["targets"]),
                "under_20_after": [r["english_name"] for r in results if r["after"] < 20]}
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     (RAW_DIR / "last_run.json").write_text(json.dumps({"summary": summary, "types": [
