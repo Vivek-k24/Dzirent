@@ -31,6 +31,7 @@ the fewest photos left.
     python images/auto_filter.py               # measure (new photos only), write, merge, report
     python images/auto_filter.py --histogram   # also print the saturation histogram
     python images/auto_filter.py --no-merge    # write auto_filter.csv only
+    python images/auto_filter.py --forget-owner Q80151,Q83363   # drop those types' owner rows, then merge (D2d)
 """
 from __future__ import annotations
 
@@ -251,6 +252,26 @@ def read_labels(path: Path = LABELS_CSV) -> list[dict]:
         return list(csv.DictReader(fh))
 
 
+def forget_owner(labels_text: str, qids: set[str]) -> tuple[str, Counter]:
+    """D2d: labels.csv's text without the owner rows of these types; every other line stays byte
+    for byte. Returns the text and the rows removed per type."""
+    lines = labels_text.splitlines(keepends=True)
+    if not lines:
+        return labels_text, Counter()
+    header = next(csv.reader([lines[0]]))
+    qi = header.index("qid")
+    si = header.index("source") if "source" in header else None
+    out, removed = [lines[0]], Counter()
+    for line in lines[1:]:
+        row = next(csv.reader([line]), [])
+        source = row[si] if si is not None and si < len(row) else ""
+        if len(row) > qi and row[qi] in qids and source in ("", "owner"):
+            removed[row[qi]] += 1
+            continue
+        out.append(line)
+    return "".join(out), removed
+
+
 def is_owner(row: dict) -> bool:
     """A row the review page wrote: source owner, or no source (a file from before D2c)."""
     return (row.get("source") or "owner") == "owner"
@@ -334,7 +355,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--workers", type=int, default=4, help="processes for measuring (default 4)")
     parser.add_argument("--report", type=Path, default=IMAGES_DIR / "raw" / "auto_filter_report.json",
                         help="where the full per-type report goes (default images/raw/)")
+    parser.add_argument("--forget-owner", metavar="QID[,QID...]",
+                        help="first remove the owner's rows for these types from labels.csv (D2d); nothing else changes")
     args = parser.parse_args(argv)
+    if args.forget_owner:
+        qids = {q.strip() for q in args.forget_owner.split(",") if q.strip()}
+        with open(LABELS_CSV, encoding="utf-8", newline="") as fh:
+            text, removed = forget_owner(fh.read(), qids)
+        with open(LABELS_CSV, "w", encoding="utf-8", newline="") as fh:
+            fh.write(text)
+        print(json.dumps({"owner_rows_removed": dict(removed)}))
     manifest = read_manifest()
     stats = measure_all(manifest, workers=args.workers)
     if args.histogram:

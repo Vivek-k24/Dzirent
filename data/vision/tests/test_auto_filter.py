@@ -149,3 +149,29 @@ def test_labels_csv_round_trip(tmp_path):
 def test_histogram_bins(value, bin_count):
     text = af.histogram({"x": {"saturation": value}})
     assert sum(1 for line in text.splitlines() if line.split()[1] == "1") == bin_count
+
+
+# --- D2d: forgetting the owner's rows for some types -------------------------------------------------
+def test_forget_owner_leaves_every_other_line_byte_identical(tmp_path):
+    a, b, c = (m["sha1"] for m in MANIFEST)
+    lines = ["sha1,qid,decision,decided_at,source",
+             f"{a},Q1,drop,2026-11-18T22:49:22Z,owner",
+             f"{b},Q2,keep,2026-11-18T03:24:02Z,owner",
+             f"{c},Q1,drop,,auto",
+             f"{c},Q3,not_sure,2026-11-18T03:25:00Z,owner"]
+    text = "".join(line + "\n" for line in lines)
+    out, removed = af.forget_owner(text, {"Q1", "Q3"})
+    assert removed == {"Q1": 1, "Q3": 1}
+    assert out == "".join(line + "\n" for line in (lines[0], lines[2], lines[3]))  # Q1's auto row stays
+    # Through the merge and the CSV writer, the other owner row is still byte for byte the same.
+    path = tmp_path / "labels.csv"
+    path.write_bytes(out.encode("utf-8"))
+    merged = af.merge(af.read_labels(path), autos(a), MANIFEST)
+    af.write_csv(merged, af.LABEL_COLUMNS, path)
+    written = path.read_text(encoding="utf-8").splitlines()
+    assert written[1] == lines[2] and written[2] == f"{a},Q1,drop,,auto"
+
+
+def test_forget_owner_reads_a_file_without_source():
+    text = "sha1,qid,decision,decided_at\nx,Q1,drop,t\ny,Q2,keep,t\n"
+    assert af.forget_owner(text, {"Q1"}) == ("sha1,qid,decision,decided_at\ny,Q2,keep,t\n", {"Q1": 1})
