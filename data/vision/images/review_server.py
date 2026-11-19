@@ -14,7 +14,8 @@ latest line for a photo wins, so a decision can be changed any time and a reload
 saved. A photo with no decision counts as keep, so an unchecked type still trains. N saves keep
 for the photos left undecided on the page, so the progress bar counts the type as checked, and
 the next page opens with a line for the type just finished: how many kept, dropped, not sure. A
-photo that came from the Commons search (manifest source "search") carries a small tag.
+photo that came from the Commons search (manifest source "search") carries a small tag; since
+D2e so does one found with Openverse ("openverse") and one the owner took ("own").
 
 D2c: labels.csv has a source column. The page writes source "owner"; auto_filter.py adds "auto"
 drop rows for photos the owner never clicked. An owner decision always wins over an auto one; an
@@ -352,10 +353,13 @@ PAGE = """<!doctype html>
     if (await save(rest)) location.href = (data.next || location.pathname) + "?finished=" + encodeURIComponent(data.qid);
   }
 
+  // D2b search; D2e Openverse and the owner's own photos
+  const TAGS = { search: ["search", "from a Commons search"], openverse: ["openverse", "found with Openverse"],
+                 owner: ["own", "the owner's own photo (train only)"] };
   data.photos.forEach((p, i) => {
     const card = document.createElement("div");
     card.innerHTML = `<img alt="photo ${i + 1}" loading="lazy" src="/thumb/${data.qid}/${p.sha1}.jpg"><span class="state"></span><span class="num">${i + 1}</span>`
-      + (p.source === "search" ? `<span class="tag" title="from a Commons search">search</span>` : "");
+      + (TAGS[p.source] ? `<span class="tag" title="${TAGS[p.source][1]}">${TAGS[p.source][0]}</span>` : "");
     card.addEventListener("click", () => { setFocus(i); save([{ i, decision: CYCLE[p.decision || "keep"] }]); });
     card.addEventListener("dblclick", () => window.open(`/photo/${data.qid}/${p.sha1}`, "_blank"));
     grid.appendChild(card);

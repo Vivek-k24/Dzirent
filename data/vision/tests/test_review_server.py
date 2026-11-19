@@ -140,7 +140,9 @@ def test_search_photos_carry_a_tag(server):
                      thumbs_dir=images / "thumbs")
     data = page_data(rs.render_type(store, 0))
     assert [p["source"] for p in data["photos"]] == ["category", "search"]
-    assert 'p.source === "search"' in rs.PAGE and 'class="tag"' in rs.PAGE  # the tag the page draws for it
+    assert 'search: ["search"' in rs.PAGE and 'class="tag"' in rs.PAGE  # the tag the page draws for it
+    # D2e: Openverse photos and the owner's own photos are tagged too
+    assert 'openverse: ["openverse"' in rs.PAGE and 'owner: ["own"' in rs.PAGE
 
 
 def test_finished_line_after_n(server):
