@@ -7,7 +7,7 @@ Commons' 1280-pixel-wide rendition, or the original when that is no wider; nothi
 
 Written by `fetch_commons.py` from `manifest.csv`; don't edit by hand.
 
-**13744 files:** Public domain 3604, CC BY-SA 4.0 3329, CC BY-SA 3.0 1771, CC BY 2.0 1386, CC0 1109, CC BY-SA 2.0 1077, CC BY 4.0 606, CC BY 3.0 481, CC BY-SA 3.0 de 151, CC BY-SA 2.5 85, CC BY 2.5 61, CC BY-SA 2.0 fr 12, CC BY-SA 2.0 de 9, CC BY 3.0 de 8, CC BY-SA 3.0 at 8, CC BY-SA 3.0 nl 7, CC BY 3.0 br 6, CC BY-SA 2.0 uk 6, CC BY-SA 1.0 5, CC BY 2.0 br 4, CC BY-SA 2.0 kr 4, CC BY 2.0 de 2, CC BY 2.5 ar 2, CC BY-SA 3.0 au 2, CC BY-SA 3.0 rs 2, CC BY 1.0 1, CC BY 2.0 fr 1, CC BY 2.5 ch 1, CC BY 3.0 no 1, CC BY-SA 3.0 cz 1, CC BY-SA 3.0 es 1, CC BY-SA 3.0 pl 1.
+**13742 files:** Public domain 3602, CC BY-SA 4.0 3329, CC BY-SA 3.0 1771, CC BY 2.0 1386, CC0 1109, CC BY-SA 2.0 1077, CC BY 4.0 606, CC BY 3.0 481, CC BY-SA 3.0 de 151, CC BY-SA 2.5 85, CC BY 2.5 61, CC BY-SA 2.0 fr 12, CC BY-SA 2.0 de 9, CC BY 3.0 de 8, CC BY-SA 3.0 at 8, CC BY-SA 3.0 nl 7, CC BY 3.0 br 6, CC BY-SA 2.0 uk 6, CC BY-SA 1.0 5, CC BY 2.0 br 4, CC BY-SA 2.0 kr 4, CC BY 2.0 de 2, CC BY 2.5 ar 2, CC BY-SA 3.0 au 2, CC BY-SA 3.0 rs 2, CC BY 1.0 1, CC BY 2.0 fr 1, CC BY 2.5 ch 1, CC BY 3.0 no 1, CC BY-SA 3.0 cz 1, CC BY-SA 3.0 es 1, CC BY-SA 3.0 pl 1.
 
 ## Public domain
 
@@ -2437,7 +2437,6 @@ Written by `fetch_commons.py` from `manifest.csv`; don't edit by hand.
 - [File:Rimatara girl.jpg](https://commons.wikimedia.org/wiki/File:Rimatara_girl.jpg) by various; for pareo (Q1949237)
 - [File:"Take the belt, old sport! We can't any of us talk in your class" - L.M. Glackens. LCCN2011647510.jpg](https://commons.wikimedia.org/wiki/File:%22Take_the_belt,_old_sport!_We_can%27t_any_of_us_talk_in_your_class%22_-_L.M._Glackens._LCCN2011647510.jpg) by Glackens, L. M. (Louis M.), 1866-1933, artist; for parka (Q9300679)
 - [File:A coldness between them - L.M. Glackens. LCCN2011647508.jpg](https://commons.wikimedia.org/wiki/File:A_coldness_between_them_-_L.M._Glackens._LCCN2011647508.jpg) by Glackens, L. M. (Louis M.), 1866-1933, artist; for parka (Q9300679)
-- [File:Amanda-Tapping.jpg](https://commons.wikimedia.org/wiki/File:Amanda-Tapping.jpg) by Jeff Gossett, Arctic Submarine Laboratory; for parka (Q9300679)
 - [File:Bergensbanen - no-nb digifoto 20150205 00025 NB MIT FNR 15618.jpg](https://commons.wikimedia.org/wiki/File:Bergensbanen_-_no-nb_digifoto_20150205_00025_NB_MIT_FNR_15618.jpg) by Unknown authorUnknown author; for parka (Q9300679)
 - [File:CW Scarborough in front of the schooner TEDDY BEAR with his photographic equipment, Siberian Coast, 1922 (AL+CA 4928).jpg](https://commons.wikimedia.org/wiki/File:CW_Scarborough_in_front_of_the_schooner_TEDDY_BEAR_with_his_photographic_equipment,_Siberian_Coast,_1922_(AL%2BCA_4928).jpg) by Unknown authorUnknown author; for parka (Q9300679)
 - [File:DustyRoyParka.jpg](https://commons.wikimedia.org/wiki/File:DustyRoyParka.jpg) by Dusty Roy; for parka (Q9300679)
@@ -3469,7 +3468,6 @@ Written by `fetch_commons.py` from `manifest.csv`; don't edit by hand.
 - [File:Lanpher Furs Sheep lined ulsters 11 21.jpg](https://commons.wikimedia.org/wiki/File:Lanpher_Furs_Sheep_lined_ulsters_11_21.jpg) by unknown/--Kuerschner 20:07, 2 February 2008 (UTC); for Ulster (Q2477533)
 - [File:Mens Coats 1872 Fashion Plate.jpg](https://commons.wikimedia.org/wiki/File:Mens_Coats_1872_Fashion_Plate.jpg) by Unknown authorUnknown author; for Ulster (Q2477533)
 - [File:Rathbone as Holmes - F&R.png](https://commons.wikimedia.org/wiki/File:Rathbone_as_Holmes_-_F%26R.png) by Employee(s) of Universal Studios; for Ulster (Q2477533)
-- [File:The Strand Magazine (Volume 2) (page 74 crop) (retouched).png](https://commons.wikimedia.org/wiki/File:The_Strand_Magazine_(Volume_2)_(page_74_crop)_(retouched).png) by Internet Archive identifier: strand-1891-v-2; for Ulster (Q2477533)
 - [File:Ulsterovercoat jan1903.jpg](https://commons.wikimedia.org/wiki/File:Ulsterovercoat_jan1903.jpg) by Unknown authorUnknown author; for Ulster (Q2477533)
 - [File:Victorian Men.jpg](https://commons.wikimedia.org/wiki/File:Victorian_Men.jpg) by Il Gionale dei Sarti; for Ulster (Q2477533)
 - [File:Al Brule - Forced Landing - 1963.jpg](https://commons.wikimedia.org/wiki/File:Al_Brule_-_Forced_Landing_-_1963.jpg) by Al Brule; for undergarment (Q198763)
