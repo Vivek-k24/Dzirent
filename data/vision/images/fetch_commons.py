@@ -59,6 +59,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit, urlunsplit
 
 import requests
+from PIL import Image
 
 IMAGES_DIR = Path(__file__).resolve().parent
 TAXONOMY_JSON = IMAGES_DIR.parent / "taxonomy" / "taxonomy.json"
@@ -444,7 +445,37 @@ def prune(rows: list[dict], manifest_path: Path = MANIFEST_CSV, files_dir: Path 
     """Removes those photos (and their thumbnails) from disk and from the manifest, then rewrites
     CREDITS.md. Returns what was removed."""
     manifest = read_manifest(manifest_path)
-    gone = prunable(rows, manifest)
+    return remove_photos(manifest, prunable(rows, manifest), manifest_path, files_dir, thumbs_dir, credits_path)
+
+
+def decodes(path: Path) -> bool:
+    """D2d: True when Pillow opens the file and decodes every pixel (a file cut short, or one that
+    is broken as served, fails)."""
+    try:
+        with Image.open(path) as im:
+            im.load()
+        return True
+    except Exception:  # Pillow raises many kinds; any of them means the photo can't be used
+        return False
+
+
+def verify(manifest_path: Path = MANIFEST_CSV, files_dir: Path = FILES_DIR, thumbs_dir: Path = THUMBS_DIR,
+           credits_path: Path = CREDITS_MD) -> dict:
+    """D2d: checks that every photo in the manifest decodes; one that doesn't (or is missing) is
+    removed from disk and from the manifest, and CREDITS.md is rewritten."""
+    manifest = read_manifest(manifest_path)
+    bad = [m for m in manifest if not decodes(files_dir.parent / m["file"])]
+    report = remove_photos(manifest, bad, manifest_path, files_dir, thumbs_dir, credits_path)
+    report["checked"] = len(manifest)
+    report["removed"] = [{"qid": m["qid"], "english_name": m["english_name"], "sha1": m["sha1"],
+                          "commons_page_url": m["commons_page_url"]} for m in bad]
+    return report
+
+
+def remove_photos(manifest: list[dict], gone: list[dict], manifest_path: Path, files_dir: Path, thumbs_dir: Path,
+                  credits_path: Path) -> dict:
+    """Removes these manifest rows' photos (and thumbnails) from disk and their rows from the
+    manifest, then rewrites CREDITS.md. Returns what was removed."""
     gone_keys = {(m["qid"], m["sha1"]) for m in gone}
     files_root = files_dir.resolve()
     removed_files, removed_bytes, thumbs = 0, 0, 0
@@ -618,6 +649,10 @@ def run(client: Commons, rows: list[dict], *, dry_run: bool = False, only_launch
                     if not saved:
                         result["skipped"]["download failed"] += 1
                         continue
+                    if not decodes(saved):  # D2d: cut short or broken; tried again on a later run
+                        saved.unlink(missing_ok=True)
+                        result["skipped"]["unreadable"] += 1
+                        continue
                     entry = {"qid": qid, "english_name": name, "dzirent_category": row["dzirent_category"],
                              "allowed": row["allowed"], "sha1": cand["sha1"],
                              "file": saved.relative_to(files_dir.parent).as_posix(), "width": cand["width"],
@@ -691,6 +726,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dry-run", action="store_true", help="count what is available; download nothing")
     parser.add_argument("--prune", action="store_true",
                         help="remove the photos of types now dropped or keep = no (disk and manifest), then stop")
+    parser.add_argument("--verify", action="store_true",
+                        help="check that every photo in the manifest decodes; remove the ones that don't, then stop (D2d)")
     parser.add_argument("--max-minutes", type=float, metavar="M",
                         help="stop cleanly before the next photo after M minutes (D2c: run in foreground pieces)")
     args = parser.parse_args(argv)
@@ -702,6 +739,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.prune:
         report = prune(load_rows())
         print(json.dumps({**report, "megabytes": round(report["bytes"] / 1e6, 1)}, ensure_ascii=False, indent=1))
+        return 0
+    if args.verify:
+        print(json.dumps(verify(), ensure_ascii=False, indent=1))
         return 0
     started = time.time()
     client = Commons()

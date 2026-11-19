@@ -408,3 +408,38 @@ def test_time_limit_already_passed_makes_no_calls(tmp_path):
     client, session = client_for(tmp_path)
     results = run(client, tmp_path, deadline=0, clock=lambda: 1)
     assert results[0]["stopped"] and results[0]["added"] == 0 and session.api_calls == 0
+
+
+# --- D2d: the decode check -------------------------------------------------------------------------
+class CutShortSession(FakeSession):
+    """Like FakeSession, but the first download comes back cut short (no end of image)."""
+
+    def get(self, url, params=None, timeout=None):
+        resp = super().get(url, params, timeout)
+        if url != fc.API_URL and len(self.downloads) == 1:
+            resp.content = JPEG[: len(JPEG) // 2]
+        return resp
+
+
+def test_a_download_that_does_not_decode_is_deleted_and_skipped(tmp_path):
+    session = CutShortSession(FIXTURE)
+    client = fc.Commons(raw_dir=tmp_path / "raw", session=session, min_interval=0, sleep=lambda s: None)
+    results = run(client, tmp_path)
+    assert results[0]["skipped"]["unreadable"] == 1
+    manifest = fc.read_manifest(tmp_path / "manifest.csv")
+    assert session.downloads[0] not in {m["source_url"] for m in manifest}
+    saved = {p.name for p in (tmp_path / "files").rglob("*") if p.is_file()}
+    assert saved == {Path(m["file"]).name for m in manifest}  # the bad file is gone from disk
+    assert all(fc.decodes(tmp_path / m["file"]) for m in manifest)
+
+
+def test_verify_removes_photos_that_do_not_decode(tmp_path):
+    client, _ = client_for(tmp_path)
+    run(client, tmp_path, limit=3)
+    manifest = fc.read_manifest(tmp_path / "manifest.csv")
+    broken = tmp_path / manifest[1]["file"]
+    broken.write_bytes(broken.read_bytes()[:40])
+    report = fc.verify(tmp_path / "manifest.csv", tmp_path / "files", tmp_path / "thumbs", tmp_path / "CREDITS.md")
+    assert report["checked"] == 3 and report["manifest_rows"] == 1 and not broken.exists()
+    assert [m["sha1"] for m in fc.read_manifest(tmp_path / "manifest.csv")] == [manifest[0]["sha1"], manifest[2]["sha1"]]
+    assert manifest[1]["commons_page_url"] not in (tmp_path / "CREDITS.md").read_text(encoding="utf-8")
