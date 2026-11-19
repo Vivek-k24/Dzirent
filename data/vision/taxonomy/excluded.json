@@ -12697,6 +12697,104 @@
   ]
  },
  {
+  "qid": "Q286518",
+  "label": "Apollo/Skylab A7L",
+  "description": "space suit",
+  "reason": "below a root kept as itself only",
+  "detail": "space suit (P279)",
+  "roots": [
+   "clothing",
+   "space_suit"
+  ]
+ },
+ {
+  "qid": "Q584811",
+  "label": "SK-1 spacesuit",
+  "description": "spacesuit that was developed specially for Yuri Gagarin",
+  "reason": "below a root kept as itself only",
+  "detail": "space suit (P279)",
+  "roots": [
+   "clothing",
+   "space_suit"
+  ]
+ },
+ {
+  "qid": "Q1136458",
+  "label": "Feitian space suit",
+  "description": "Chinese space suit",
+  "reason": "below a root kept as itself only",
+  "detail": "space suit (P279)",
+  "roots": [
+   "clothing",
+   "space_suit"
+  ]
+ },
+ {
+  "qid": "Q1141042",
+  "label": "Orlan space suit",
+  "description": "series of semi-rigid one-piece space suit models from Russia",
+  "reason": "below a root kept as itself only",
+  "detail": "space suit (P279)",
+  "roots": [
+   "clothing",
+   "space_suit"
+  ]
+ },
+ {
+  "qid": "Q1197668",
+  "label": "Sokol",
+  "description": "space suit used in Soyuz spacecraft",
+  "reason": "below a root kept as itself only",
+  "detail": "space suit (P279)",
+  "roots": [
+   "clothing",
+   "space_suit"
+  ]
+ },
+ {
+  "qid": "Q1578165",
+  "label": "Yastreb",
+  "description": "Russian space suit",
+  "reason": "below a root kept as itself only",
+  "detail": "space suit (P279)",
+  "roots": [
+   "clothing",
+   "space_suit"
+  ]
+ },
+ {
+  "qid": "Q2897226",
+  "label": "Berkut spacesuit",
+  "description": "space suit model",
+  "reason": "below a root kept as itself only",
+  "detail": "space suit (P279)",
+  "roots": [
+   "clothing",
+   "space_suit"
+  ]
+ },
+ {
+  "qid": "Q6023758",
+  "label": "space activity suit",
+  "description": "spacesuit which provides mechanical pressure by means of elastic garments",
+  "reason": "below a root kept as itself only",
+  "detail": "space suit (P279)",
+  "roots": [
+   "clothing",
+   "space_suit"
+  ]
+ },
+ {
+  "qid": "Q55622267",
+  "label": "Mars suit",
+  "description": "Space suit for the Martian surface",
+  "reason": "below a root kept as itself only",
+  "detail": "space suit (P279)",
+  "roots": [
+   "space_suit"
+  ]
+ },
+ {
   "qid": "Q16496152",
   "label": "baiana costume",
   "description": "kind of traditional costume",

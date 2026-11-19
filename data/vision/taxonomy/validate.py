@@ -15,7 +15,8 @@ they were built:
    instance of an excluded class (brand, trademark, product model or line, fictional object or
    clothing, archaeological artefact), and none is a generic entry ("clothing", "garment",
    "gown"). D2b: no type the costume root reaches is also under mask, uniform, protective
-   clothing or sportswear, and no subclass of costume more than 2 levels below it is in.
+   clothing or sportswear, and no subclass of costume more than 2 levels below it is in. D2c:
+   nothing below space suit (specs.ONLY_ITSELF_ROOTS) but a launch or keep-list type.
 3. No label names a degree, title or award (degree, doctorate, knight, duke, ...).
 4. The depth bound holds: no type more than 4 subclass-of steps below its positive root (its own
    depth for costume, 2, and space suit, 1; 2 below a banned root), and each step of its
@@ -150,6 +151,7 @@ def main() -> int:
     costume_keys = {r["key"] for r in roots["positive"] if r.get("costume")}
     costume_qid = next(r["qid"] for r in roots["positive"] if r["key"] == "costume")
     wins = {r["qid"]: r["key"] for r in roots["exclude"] if r["key"] in specs.COSTUME_EXCLUSION_WINS}
+    only_itself = {r["qid"]: r["key"] for r in roots["positive"] if r["key"] in specs.ONLY_ITSELF_ROOTS}
     problems = []
     for r in rows:
         name = f"{r['qid']} {r['english_name']}"
@@ -176,6 +178,10 @@ def main() -> int:
             problems.append(f"{name}: costume under {[wins[a] for a in under if a in wins]}")
         if (not own and r["ancestor_roots"].get(costume_qid) == "P279" and r["positive_roots"] == ["clothing"]):
             problems.append(f"{name}: a subclass of costume more than 2 levels below it")
+        # D2c: a root kept as itself only has nothing below it but launch and keep-list types.
+        below = [only_itself[a] for a in r["ancestor_roots"] if a in only_itself and a != r["qid"]]
+        if below and not own:
+            problems.append(f"{name}: below {below}, a root kept as itself only")
         if any(p["qid"] in skip for p in r["path"]):
             problems.append(f"{name}: its path passes through a skipped class (cut B)")
         if not is_launch[r["qid"]] and not r["banned_root"] and not r["positive_roots"]:
@@ -191,7 +197,8 @@ def main() -> int:
                 problems.append(f"{r['qid']} {r['english_name']}: positive roots differ from the cache's crawls")
     check("no type under an excluded root (title, award, occupation, degree, position, human, organization, military "
           "unit, armour; cut A's eight for what only clothing reaches); none only through fashion accessory (cut B); "
-          "no instance of an excluded class and no generic entry (D2); costume: the exclusion wins, 2 levels (D2b)",
+          "no instance of an excluded class and no generic entry (D2); costume: the exclusion wins, 2 levels (D2b); "
+          "space suit itself only (D2c)",
           problems)
 
     # 3. Degree, title and award words.

@@ -26,7 +26,8 @@ the allowed ones get needs_owner = yes. A type the costume root reaches that is 
 uniform, protective clothing or sportswear is dropped (the exclusion wins), and a subclass of
 costume more than 2 levels below it isn't brought in by the clothing root either. The types in
 specs.EXCLUDE_INSTANCE_OF_EXCEPTIONS are exempt from the instance-of drop; specs.DROP_LIST rows get
-keep = no.
+keep = no. D2c: a root in specs.ONLY_ITSELF_ROOTS (space suit) keeps only itself; the particular
+suits below it are dropped, except a launch or keep-list type.
 
 Classification is by the item itself: its English label, aliases, description and parent
 labels decide category, garment type and allowed. Which root an item sits under is never
@@ -435,6 +436,7 @@ def build_taxonomy() -> int:
     costume_qids = {r["qid"] for r in roots["positive"] if r.get("costume")}
     costume_root_qid = next(r["qid"] for r in roots["positive"] if r["key"] == "costume")
     wins_qids = {r["qid"] for r in roots["exclude"] if r["key"] in specs.COSTUME_EXCLUSION_WINS}
+    only_itself = {r["qid"] for r in roots["positive"] if r["key"] in specs.ONLY_ITSELF_ROOTS}  # D2c
     generic_labels = {g.casefold() for g in specs.GENERIC_LEAF_LABELS}  # D2
     clothing_scope = {r["qid"] for r in roots["exclude"] if r.get("scope") == "clothing"}  # cut A
     skip_qids = {r["qid"] for r in roots.get("skip", [])}  # cut B
@@ -546,6 +548,11 @@ def build_taxonomy() -> int:
             continue
         if anc.get(costume_root_qid) == "P279" and reached == ["clothing"] and not is_launch and q not in keep_list:
             drop(q, "costume more than 2 levels below its root", "costume (P279)")
+            continue
+        # D2c: below space suit are particular suits; space suit itself stays.
+        below = [a for a in anc if a in only_itself and a != q]
+        if below and not is_launch and q not in keep_list:
+            drop(q, "below a root kept as itself only", ", ".join(f"{L(a)} ({anc[a]})" for a in below))
             continue
         kept[q] = {"under_banned": under_banned}
 

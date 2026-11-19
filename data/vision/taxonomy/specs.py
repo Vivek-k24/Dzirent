@@ -47,6 +47,12 @@ POSITIVE_ROOTS = [
 # type the way the other positive roots' reach does.)
 COSTUME_EXCLUSION_WINS = ["mask", "uniform", "protective_clothing", "sportswear"]
 
+# D2c: these roots keep only themselves. The types below space suit are particular suits (Apollo/
+# Skylab A7L, Sokol, Orlan, Mars suit, ...), flight hardware rather than something people rent; as
+# a costume, "space suit" covers them. They are dropped; a launch or keep-list type below the root
+# stays (the keep list's Advanced Crew Escape Suit).
+ONLY_ITSELF_ROOTS = ["space_suit"]
+
 # Banned examples: BANNED_DEPTH levels only, and at most BANNED_KEEP items per root. `rule` is
 # the policy group in services/vision/app/policy.json.
 BANNED_DEPTH = 2

@@ -1687,23 +1687,6 @@
    "region": "Global"
   },
   {
-   "qid": "Q286518",
-   "english_name": "Apollo/Skylab A7L",
-   "vocabulary": [
-    "A7L",
-    "Apollo suit",
-    "Apollo spacesuit",
-    "Apollo/Skylab A7L",
-    "Apollo Program A7L Suit",
-    "Apollo/Skylab spacesuit"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "costume",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
    "qid": "Q111200975",
    "english_name": "ballet costume",
    "vocabulary": [
@@ -1716,20 +1699,6 @@
    "dzirent_garment_type": "costume",
    "allowed": "allowed",
    "region": "Unknown"
-  },
-  {
-   "qid": "Q2897226",
-   "english_name": "Berkut spacesuit",
-   "vocabulary": [
-    "Berkut",
-    "Berkut spacesuit",
-    "Berkut (combinaison spatiale)"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "costume",
-   "allowed": "allowed",
-   "region": "European"
   },
   {
    "qid": "Q5732675",
@@ -1824,19 +1793,6 @@
    "region": "Unknown"
   },
   {
-   "qid": "Q1136458",
-   "english_name": "Feitian space suit",
-   "vocabulary": [
-    "Feitian",
-    "Feitian space suit"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "costume",
-   "allowed": "allowed",
-   "region": "East Asian"
-  },
-  {
    "qid": "Q130644205",
    "english_name": "film costume",
    "vocabulary": [
@@ -1874,32 +1830,6 @@
    "region": "Unknown"
   },
   {
-   "qid": "Q55622267",
-   "english_name": "Mars suit",
-   "vocabulary": [
-    "Mars suit"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "costume",
-   "allowed": "allowed",
-   "region": "Global"
-  },
-  {
-   "qid": "Q1141042",
-   "english_name": "Orlan space suit",
-   "vocabulary": [
-    "Orlan",
-    "Traje Orlan",
-    "Orlan space suit"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "costume",
-   "allowed": "allowed",
-   "region": "European"
-  },
-  {
    "qid": "Q29586882",
    "english_name": "period costume",
    "vocabulary": [
@@ -1913,55 +1843,6 @@
    "dzirent_garment_type": "costume",
    "allowed": "allowed",
    "region": "Unknown"
-  },
-  {
-   "qid": "Q584811",
-   "english_name": "SK-1 spacesuit",
-   "vocabulary": [
-    "SK-1",
-    "SK-1 spacesuit"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "costume",
-   "allowed": "allowed",
-   "region": "European"
-  },
-  {
-   "qid": "Q1197668",
-   "english_name": "Sokol",
-   "vocabulary": [
-    "Sokol",
-    "Sokol IVA",
-    "Sokol space suit",
-    "Traje espacial Sokol"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "costume",
-   "allowed": "allowed",
-   "region": "European"
-  },
-  {
-   "qid": "Q6023758",
-   "english_name": "space activity suit",
-   "vocabulary": [
-    "DCS",
-    "MCP",
-    "MCS",
-    "PPS",
-    "SAS",
-    "MCPS",
-    "space activity suit",
-    "partial pressure suit",
-    "direct compression suit",
-    "mechanical counterpressure suit"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "costume",
-   "allowed": "allowed",
-   "region": "Global"
   },
   {
    "qid": "Q223571",
@@ -2011,18 +1892,6 @@
    "dzirent_garment_type": "costume",
    "allowed": "allowed",
    "region": "East Asian"
-  },
-  {
-   "qid": "Q1578165",
-   "english_name": "Yastreb",
-   "vocabulary": [
-    "Yastreb"
-   ],
-   "dzirent_category": "Occasion & Party",
-   "dzirent_item_type": null,
-   "dzirent_garment_type": "costume",
-   "allowed": "allowed",
-   "region": "European"
   },
   {
    "qid": "Q131624805",
