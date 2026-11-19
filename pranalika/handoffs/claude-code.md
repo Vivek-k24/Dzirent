@@ -2,6 +2,222 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## D2e+D4b - 2026-11-19 - Openverse run, sticky split, owner photos (written, not added), augmentation
+
+**Before starting:** `Preview` up to date at `8b98151`; no Docker container was running, so there was no Supabase to stop. Read `pranalika/README.md`, BOARD, the D2d entry and `data/vision/README.md`. `labels.csv` had the owner's uncommitted review session.
+
+**Part 0: the owner's labels:** committed on their own as `a22c933`: 352 owner rows appended, nothing else changed. Kept and dropped now (owner decisions; "auto" = the filter's, for photos the owner didn't click):
+
+| Type | Kept | Dropped | Not sure |
+| --- | --- | --- | --- |
+| cap | 53 | 25 + 1 auto | 1 |
+| hat | 51 | 18 + 11 auto | 0 |
+| hoodie | 66 | 11 + 3 auto | 0 |
+| jeans | 52 | 26 + 2 auto | 0 |
+| undergarment | 33 | 44 + 1 auto | 2 |
+
+**Part 1: Openverse, run once:**
+- **The key:** `OPENVERSE_CLIENT_ID` and `OPENVERSE_CLIENT_SECRET` were in `providers.env` (checked by name and length only; never printed). The token worked.
+- **The limits the headers reported:** the registered key gets `x-ratelimit-limit-oauth2_client_credentials_burst: 100/min` and `..._sustained: 10000/day`. The token request itself is counted anonymously (`anon_burst: 20/min`, `anon_sustained: 200/day`).
+  - The script now sets the gap between API calls from the latest response's burst limit, never under 1 s. In piece 1 the anonymous 20/min from the token reply held every call to 3 s; fixed before piece 2.
+- **Targets:** 28 launch types under 40 kept-or-undecided: the 27 of D2d plus undergarment, now at 33 after the owner's drops. At most 696 API calls.
+- **Requests, every one counted** (`images/raw/openverse/run_state.json`, not committed):
+
+  | Piece | API calls (1 token each) | From cache | Download requests | Files received | Saved | Left today |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | 50 | 0 | 538 | 538 | 521 | 9,951 |
+  | 2 | 44 | 2 | 555 | 555 | 539 | 9,908 |
+  | 3 | 20 | 2 | 331 | 327 | 319 | 9,889 |
+  | 4 (guayabera, kurta refill) | 8 | 0 | 27 | 27 | 24 | 9,882 |
+  | **Total** | **122** (118 searches, 4 tokens) | 4 | **1,451** | 1,447 | 1,403 | |
+
+  - Downloads went to the source sites (Flickr 1,244 of the kept files; museums, rawpixel and others), not to Openverse. 44 files were refused after download (43 too small, 1 format). 4 download requests brought no file: one museum file failed 3 times (HTTP 522) and was skipped, and one other answered without it.
+- **iNaturalist removed:** "guayabera" returned 42 photos of the parrot *Amazona guayabera* (lilac-crowned amazon), and "kurta" 3 of a fish, all from iNaturalist (species observations only).
+  - I removed those 45 (disk, manifest, `openverse.csv`, credits; 10.2 MB) and added `inaturalist` to `excluded_source` beside `wikimedia`.
+  - I reopened the two types in the same run (piece 4).
+- **Result:** **1,358 Openverse photos** (233.9 MB) for 27 of the 28 types. "Anarkali Salwar Suit" returned nothing under any of its 4 names.
+  - **Licenses:** CC BY 2.0 797, CC BY-SA 2.0 375, CC0 112, Public Domain Mark 44, CC BY 4.0 37, CC BY-SA 4.0 12, CC BY 3.0 2.
+  - `CREDITS.md` has the Openverse part with the "not endorsed or certified" note.
+- **Changes to `fetch_openverse.py` before the run**, so one run can go in foreground pieces:
+  - `run_state.json` fixes the targets at the first piece. A type stopped halfway on 61 was still filled to 80, though no longer under 40.
+  - The same file keeps the finished types, the results refused after download (never fetched again) and each piece's counts.
+  - Photos the filter would drop count as dropped between pieces.
+  - The time is checked before each download, not only each search.
+  - A source site gets 3 tries of 30 s.
+- **Auto-filter:** 117 of the Openverse photos auto-dropped (black-and-white, sepia, page), so 1,241 count as kept. The owner's 4,170 rows came through byte-identical and in order.
+  - The `labels.csv` diff looks large only because the merge writes owner rows first: the owner's 352 new lines had been appended after the auto rows, and moved up unchanged.
+- **Split: changed to sticky.** Under D4's rule ("the lowest 20 % of sha1s are test"), adding photos to a type shifts the cut. This run would have moved **23 committed train photos into test and 16 test photos into train**.
+  - Now a photo in the committed `split.json` keeps its side, and new photos fill the test share, lowest sha1 first. **Result: no photo changed sides**; 1,241 new, 92 left (dropped by the owner).
+  - A type over its share after the owner's drops keeps its test photos: jeans has 13 test of 52 kept.
+- **README:** section 5b has the line asked for: "Openverse was used through its API with a registered key, within its limits, as a one-time targeted search; the catalogue was not crawled." It also has the run and the iNaturalist exclusion.
+- **Now:** 15,100 photos (5.32 GB, not committed), **11,967 kept: 9,639 train, 2,328 test**; 710 types, 217 thin, 19 types with a target but no kept photo.
+
+**Part 2: the owner's photos (`ingest_own.py`), written and tested, NOT run:**
+- `H:\DziRent\vision-own` exists with two folders, both matching a type exactly: `Sherwani` (Q837879, 17 files) and `kurta` (Q855915, 15 files). The dry run found no other folders, nothing unreadable, and 8 files under 300 px on the short side.
+- **Why I stopped:** these don't look like photos the owner took.
+  - All 32 are named `images.jfif`, `images (1).jfif` … `images (17).jfif`. That is what a browser names an image saved from a Google Images results page.
+  - They are at search-thumbnail sizes (316 × 316, 452 × 678, 480 × 640, 258 × 387…) and carry no EXIF at all, where a phone photo has its camera data and is usually 3000+ px.
+  - All were saved within about two minutes.
+  - The prompt asks to record them as license "owner", author "Dzirent owner". For web images that would be a false provenance claim in a public repo, and they would train the photo check without a license. So nothing was copied, and `manifest.csv`, `labels.csv` and `split.json` don't have them.
+- **What the script does once there are real owner photos:**
+  - folder names matched exactly, ignoring case; a folder matching no type (or two) is reported and skipped;
+  - each photo turned upright, converted to sRGB, at most 1600 px long, saved with no metadata (no EXIF, so no location or device; no XMP, comments or colour profile);
+  - a manifest row with source owner, license owner, author Dzirent owner and no URLs, and a `labels.csv` keep with source owner-upload;
+  - always train (`split.py`), and a second run adds nothing.
+- **Fixed along the way:**
+  - `auto_filter.py`'s merge dropped any label row whose source wasn't "owner", so owner-upload rows would have vanished on the next merge. It now keeps them as owner decisions.
+  - `--forget-owner` leaves owner-upload rows alone.
+  - `CREDITS.md` counts owner photos in a section of their own.
+  - The review page tags owner photos "own" and Openverse photos "openverse".
+
+**Part 3: augmentation (`augment.py`) and oversampling:**
+- **Albumentations 2.0.8**, its last MIT release; its successor AlbumentationsX is AGPL or paid. The pipeline, in memory:
+  - rotation ±10° (p 0.5, reflect border);
+  - random resized crop 70-100 % to 224 × 224, the vision model's input;
+  - horizontal flip (p 0.5);
+  - brightness and contrast ±0.2 (p 0.5);
+  - hue ±5° only (p 0.3). OpenCV's 8-bit hue has 2° steps, so the limit is 2.5;
+  - gaussian blur kernel 3-5, sigma 0.1-1.0 (p 0.2);
+  - JPEG quality 60-95 (p 0.3).
+- **Training only:**
+  - `Augmenter` refuses a test sha1;
+  - `epoch()` draws train photos only;
+  - it writes no manifest rows and no files;
+  - `--preview <sha1>` writes the original plus 8 samples to `images/raw/augment_preview/<sha1>/` and refuses a test photo. I ran it once on a kurta photo and looked: crops, flips, slight rotations, brightness, colours unchanged.
+- Importing it turns Albumentations' PyPI update check off (`NO_ALBUMENTATIONS_UPDATE=1`).
+- **Requirements:** albumentations, albucore, PyYAML, simsimd and stringzilla are new. numpy, scipy, opencv-python-headless and pydantic are pinned at `services/vision`'s versions.
+- **Oversampling:** a type with fewer than 20 train photos gets `oversample` = ceil(20 / train) in `split.json`, so it gives at least 20 samples an epoch. **555 of 710 types** have a factor above 1, mostly the allowed types with 12 photos (9-10 train → 2-3). Factors run up to 20 for a type with one photo.
+
+**The 57 launch types** (photos by source; kept counts the owner's keeps plus photos nobody decided that the filter didn't drop):
+
+| Type | Allowed | Commons | Search | Openverse | Owner | Kept | Train | Test |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| blazer | allowed | 54 | 0 | 0 | 0 | 45 | 36 | 9 |
+| sheath dress | allowed | 9 | 71 | 66 | 0 | 80 | 64 | 16 |
+| suit | allowed | 80 | 0 | 0 | 0 | 52 | 42 | 10 |
+| three-piece suit | allowed | 80 | 0 | 0 | 0 | 80 | 64 | 16 |
+| trousers | allowed | 80 | 0 | 60 | 0 | 80 | 64 | 16 |
+| ball gown | allowed | 80 | 0 | 0 | 0 | 80 | 64 | 16 |
+| bridesmaid's dress | allowed | 1 | 30 | 30 | 0 | 42 | 34 | 8 |
+| cocktail dress | allowed | 80 | 0 | 0 | 0 | 74 | 59 | 15 |
+| dinner jacket | allowed | 18 | 62 | 0 | 0 | 52 | 42 | 10 |
+| débutante dress | allowed | 0 | 5 | 11 | 0 | 7 | 5 | 2 |
+| evening dress | allowed | 80 | 0 | 118 | 0 | 80 | 64 | 16 |
+| jumpsuit | allowed | 71 | 0 | 59 | 0 | 80 | 64 | 16 |
+| party dress | allowed | 0 | 80 | 0 | 0 | 40 | 32 | 8 |
+| tuxedo | allowed | 80 | 0 | 0 | 0 | 62 | 50 | 12 |
+| achkan | allowed | 0 | 8 | 6 | 0 | 4 | 4 | 0 |
+| Anarkali Salwar Suit | allowed | 7 | 3 | 0 | 0 | 8 | 6 | 2 |
+| boubou | allowed | 80 | 0 | 0 | 0 | 56 | 45 | 11 |
+| cheongsam (qipao) | allowed | 80 | 0 | 0 | 0 | 52 | 42 | 10 |
+| China Poblana | allowed | 28 | 39 | 69 | 0 | 80 | 64 | 16 |
+| dashiki | allowed | 15 | 4 | 19 | 0 | 35 | 28 | 7 |
+| guayabera | allowed | 24 | 24 | 32 | 0 | 58 | 46 | 12 |
+| hanbok | allowed | 80 | 0 | 0 | 0 | 55 | 44 | 11 |
+| huipil | allowed | 80 | 0 | 0 | 0 | 43 | 34 | 9 |
+| kurta | allowed | 66 | 0 | 50 | 0 | 80 | 64 | 16 |
+| lehenga | allowed | 80 | 0 | 0 | 0 | 73 | 58 | 15 |
+| Nehru jacket | allowed | 4 | 5 | 7 | 0 | 8 | 6 | 2 |
+| sari | allowed | 80 | 0 | 43 | 0 | 80 | 64 | 16 |
+| shalwar kameez | allowed | 80 | 0 | 38 | 0 | 76 | 61 | 15 |
+| Sherwani | allowed | 51 | 0 | 26 | 0 | 35 | 28 | 7 |
+| blouse | allowed | 80 | 0 | 73 | 0 | 80 | 64 | 16 |
+| cardigan | allowed | 80 | 0 | 0 | 0 | 41 | 33 | 8 |
+| day dress | allowed | 1 | 79 | 62 | 0 | 80 | 64 | 16 |
+| skirt | allowed | 80 | 0 | 55 | 0 | 80 | 64 | 16 |
+| sundress | allowed | 24 | 56 | 54 | 0 | 80 | 64 | 16 |
+| down jacket | allowed | 80 | 0 | 0 | 0 | 46 | 37 | 9 |
+| leather jacket | allowed | 80 | 0 | 0 | 0 | 55 | 44 | 11 |
+| overcoat | allowed | 80 | 0 | 69 | 0 | 80 | 64 | 16 |
+| trench coat | allowed | 31 | 49 | 56 | 0 | 80 | 64 | 16 |
+| costume jewelry | allowed | 80 | 0 | 0 | 0 | 44 | 35 | 9 |
+| handbag | allowed | 80 | 0 | 0 | 0 | 45 | 36 | 9 |
+| necktie | allowed | 80 | 0 | 79 | 0 | 80 | 64 | 16 |
+| sunglasses | allowed | 80 | 0 | 0 | 0 | 50 | 40 | 10 |
+| wristwatch | allowed | 80 | 0 | 0 | 0 | 80 | 64 | 16 |
+| cap | not_allowed | 80 | 0 | 0 | 0 | 53 | 43 | 10 |
+| hat | not_allowed | 80 | 0 | 0 | 0 | 51 | 40 | 11 |
+| hoodie | not_allowed | 80 | 0 | 0 | 0 | 66 | 52 | 14 |
+| jeans | not_allowed | 80 | 0 | 0 | 0 | 52 | 39 | 13 |
+| lingerie | not_allowed | 80 | 0 | 67 | 0 | 80 | 64 | 16 |
+| shoe | not_allowed | 80 | 0 | 46 | 0 | 80 | 64 | 16 |
+| shorts | not_allowed | 80 | 0 | 0 | 0 | 58 | 46 | 12 |
+| smartwatch | not_allowed | 80 | 0 | 0 | 0 | 71 | 57 | 14 |
+| sports jersey | not_allowed | 80 | 0 | 0 | 0 | 79 | 63 | 16 |
+| sweatshirt | not_allowed | 80 | 0 | 0 | 0 | 75 | 60 | 15 |
+| swimsuit | not_allowed | 80 | 0 | 68 | 0 | 80 | 64 | 16 |
+| t-shirt | not_allowed | 80 | 0 | 0 | 0 | 56 | 45 | 11 |
+| tracksuit bottoms | not_allowed | 45 | 0 | 41 | 0 | 80 | 64 | 16 |
+| undergarment | not_allowed | 80 | 0 | 54 | 0 | 80 | 64 | 16 |
+| **Total (57)** | | 3489 | 515 | 1358 | 0 | 3479 | 2780 | 699 |
+
+**The 14 thin types from D2d** (kept before → after; train / test now; oversample):
+- **Filled to 80:** evening dress 3, necktie 4, blouse 10, China Poblana 12, sheath dress 18, swimsuit 18, lingerie 19. Each is now 64 / 16.
+- **Better but short of 80** (Openverse ran out): bridesmaid's dress 15 → 42 (34 / 8), Sherwani 9 → 35 (28 / 7), dashiki 16 → 35 (28 / 7).
+- **Still under 20:**
+  - débutante dress 0 → 7 (5 / 2, ×4);
+  - Nehru jacket 1 → 8 (6 / 2, ×4);
+  - achkan 0 → 4 (4 / 0, thin, ×5);
+  - Anarkali Salwar Suit 8 → 8 (6 / 2, ×4; Openverse had nothing).
+- Commons and Openverse are both exhausted for these four.
+
+**Tests and CI:**
+- `pytest data/vision/tests`: **139 passed** (114 before), no network.
+- **New:**
+  - Openverse: the limits from the headers (the latest response sets the gap), a later piece keeping the run's targets, refused results not downloaded again, the time checked before each download, a failing site skipped after 3 tries, the filter's drops counted between pieces;
+  - the sticky split: committed photos keep their side (and D4's rule would have moved them), a thin type growing, a type over its share, the owner's photos train only, the oversampling factors;
+  - `ingest_own.py`:
+    - folder names exact ignoring case;
+    - EXIF with GPS, make and model gone, and turned upright;
+    - PNG text gone;
+    - 1600 px, never enlarged;
+    - the rows, LF endings, a second run adding nothing, the dry run;
+    - owner-upload kept by the merge and by `--forget-owner`;
+    - the credits count;
+  - `augment.py`: train photos only per epoch with the factors, a test photo refused, the pipeline's settings, the hue within 5° on 60 seeds, `--preview` writing its own folder only, the update check off.
+  - The recorded Openverse fixture is unchanged.
+- **CI:** run 44631808850 on `cc64529`. The vision-data job is green: the new requirements install, "ALL 8 CHECKS PASSED" and "139 passed".
+- **Commits:**
+  - `a22c933` (the owner's labels);
+  - `048e23c` (`fetch_openverse.py` in pieces, limits, iNaturalist);
+  - `e678303` (sticky split, owner train-only, oversampling);
+  - `59ab60d` (the Openverse data: manifest, `openverse.csv`, credits, auto-filter, labels, split);
+  - `0f8f898` (`ingest_own.py`);
+  - `b4c938c` (`augment.py`);
+  - `cc64529` (review page tags);
+  - `e40ebe5` (docs);
+  - then the board and this entry.
+
+**Owner:**
+1. **Say whether you took the 32 photos in `H:\DziRent\vision-own`.**
+   - If yes, the next session runs `ingest_own.py`, then `auto_filter.py` and `split.py`.
+   - If they came from a web search, please delete them and put in photos you took (any size; the script strips location and device data).
+2. **Check the Openverse photos on the label-check page**, 27 launch types, each photo tagged "openverse". Paste this into a plain PowerShell window, then open http://127.0.0.1:8765:
+
+   `& "H:\DziRent\Dzirent_dev\data\vision\.venv\Scripts\python.exe" "H:\DziRent\Dzirent_dev\data\vision\images\review_server.py" --types-with-new --launch-only`
+
+   For a not-allowed type, keep = this photo clearly shows the banned item.
+
+**For the coordinator (open questions):**
+- **The owner's photos** (Part 2): not added until the owner says they took them.
+- **Four launch types are still under 20 kept:** débutante dress 7, Nehru jacket 8, Anarkali Salwar Suit 8, achkan 4. Commons and Openverse are exhausted. Options:
+  - the owner's own photos;
+  - launching them on fewer photos;
+  - or treating achkan with Sherwani and Anarkali with shalwar kameez, which are close styles.
+- **Search precision:** some also_called names are loose. "formal" brought 21 photos to evening dress, "trench" 36 to trench coat, "sheath" 7 to sheath dress, "knee length jacket" all 6 of achkan's. The owner's check catches them; dropping one-word generic names from the searches would avoid them.
+- **Openverse's not-allowed types** (lingerie 67, swimsuit 68, undergarment 54, from Flickr with `mature=false`) need the owner's look like the others; nothing explicit was seen in the counts, but I didn't view them all.
+- **The sticky split replaces D4's rule.** Please confirm. Without it, every addition moves committed photos between train and test.
+- **Oversampling up to ×20** for one-photo types repeats a single photo 20 times an epoch. A cap (for example ×5), or leaving types under 5 train photos out of training, may be better.
+- **Openverse's terms** reserve fees for heavy commercial use. This run was 122 API calls on a 10,000-a-day key.
+- **Still open from D2c+D4 and D2d:**
+  - the auto-filter's misses (black-and-white between 0.02 and 0.06 saturation, line drawings);
+  - garment type `costume` isn't a database value;
+  - the keep-list calls.
+
+**Next session:**
+- after the owner's answer, `ingest_own.py` (if they took the photos), then `auto_filter.py` and `split.py`;
+- `supabase start` before any database work.
+
 ## D2d - 2026-11-18 - four owner decisions undone, decode check, Openverse written (not run), --types-with-new
 
 **Before starting:** `Preview` up to date at `1416f23`. No Docker container was running, so there was no Supabase to stop. Read `pranalika/README.md`, BOARD, the D2c+D4 entry and `data/vision/README.md`.
