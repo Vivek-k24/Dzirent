@@ -272,15 +272,20 @@ def forget_owner(labels_text: str, qids: set[str]) -> tuple[str, Counter]:
     return "".join(out), removed
 
 
+OWNER_SOURCES = ("owner", "owner-upload")  # D2e: owner-upload = a photo the owner took (ingest_own.py), keep
+
+
 def is_owner(row: dict) -> bool:
-    """A row the review page wrote: source owner, or no source (a file from before D2c)."""
-    return (row.get("source") or "owner") == "owner"
+    """A row the owner made: the review page's (source owner, or no source in a file from before
+    D2c) or ingest_own.py's (owner-upload)."""
+    return (row.get("source") or "owner") in OWNER_SOURCES
 
 
 def merge(labels: list[dict], autos: list[dict], manifest: list[dict]) -> list[dict]:
     """The owner's rows unchanged and in their order, then one auto row per auto_drop photo the
     owner never decided (any decision, any time)."""
-    owner = [{**{k: r.get(k, "") for k in LABEL_COLUMNS[:4]}, "source": "owner"} for r in labels if is_owner(r)]
+    owner = [{**{k: r.get(k, "") for k in LABEL_COLUMNS[:4]}, "source": r.get("source") or "owner"}
+             for r in labels if is_owner(r)]
     decided = {r["sha1"] for r in owner}
     qid_of = {m["sha1"]: m["qid"] for m in manifest}
     added = [{"sha1": a["sha1"], "qid": qid_of[a["sha1"]], "decision": "drop", "decided_at": "", "source": "auto"}

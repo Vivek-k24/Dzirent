@@ -406,9 +406,11 @@ def commons_title(page_url: str) -> str:
 def write_credits(manifest: list[dict], path: Path = CREDITS_MD, openverse_csv: Path | None = None) -> None:
     """CREDITS.md from the manifest: one section per license, one line per file. Since D2d the
     photos found with Openverse (source openverse) have their own part after the Commons ones,
-    crediting creator and source site from images/openverse.csv."""
+    crediting creator and source site from images/openverse.csv. Since D2e the owner's own photos
+    (source owner, from ingest_own.py) are only counted, at the end: no credit is owed for them."""
     openverse = [m for m in manifest if m.get("source") == "openverse"]
-    manifest = [m for m in manifest if m.get("source") != "openverse"]
+    own = [m for m in manifest if m.get("source") == "owner"]
+    manifest = [m for m in manifest if m.get("source") not in ("openverse", "owner")]
     by_license: dict[str, list[dict]] = {}
     for m in manifest:
         by_license.setdefault(m["license"], []).append(m)
@@ -435,6 +437,10 @@ def write_credits(manifest: list[dict], path: Path = CREDITS_MD, openverse_csv: 
             lines.append(f"- [{title}]({m['commons_page_url']}) by {author}; for {m['english_name']} ({m['qid']})")
     if openverse:
         lines += openverse_credits(openverse, openverse_csv or OPENVERSE_CSV)
+    if own:
+        lines += ["", "# The Dzirent owner's photos", "",
+                  f"{len(own)} photos taken by the Dzirent owner (manifest source `owner`, added by "
+                  "`data/vision/images/ingest_own.py`); no credit is owed for them."]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
