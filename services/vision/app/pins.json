@@ -1,0 +1,12 @@
+{
+ "vocabulary_version": "69eb998d7fbb42965eeeeb0fe57b4fd5a82bff67d19f39cdc43b6dcce8b2a703",
+ "vocabulary_sha256": "a9bfce2abfbdbeac3f5690310b78c867730cc18570a6d287bdbc7e54807a0dde",
+ "gallery_sha256": "920ca9d7b9f0df50dd70936c4e08598a516f8132af755c08ef61f16505760e5a",
+ "gallery_rows": 8094,
+ "gallery_types": 707,
+ "gallery_not_allowed_rows": 2880,
+ "split_sha256": "d06b7b35f70861f674e829cdcfd783bfa8142bc78efeabd4b8826bd8a9139b1e",
+ "model_revision": "c56244cc94f92419e8369fa71efdaf403b124ce8",
+ "template": "a photo of a {name}",
+ "bucket_path": "gs://dzirent-vision-data-dzirent/pins/69eb998d7fbb42965eeeeb0fe57b4fd5a82bff67d19f39cdc43b6dcce8b2a703/"
+}

@@ -14,10 +14,23 @@ The rules, strongest first:
   rejected); a photo read as a hooded garment -> review instead of allowed.
 - Photo quality never changes the verdict (quality.py only adds warnings), and neither does the
   piece being worn by a person: worn photos are fine and never produce a warning.
+
+V1b adds the type pins (pins.py) on top, when the service has them:
+- The banned gate, computed separately from the type: a whole-piece photo (or the photos
+  together) with banned_score at or above banned_min -> rejected, always, whatever the type says,
+  with the reason of the photo's closest not-allowed policy item. A size tag or close-up that
+  reaches it sends the listing to review, as a not-allowed item there always did.
+- The rules above still run: clear nudity first, then their rejections (a not-allowed policy item,
+  not clothing) and their reviews for a photo that couldn't be opened, no whole piece or photos
+  that disagree.
+- Allowed now comes from the type: an allowed type, the text and gallery pins agreeing, and
+  type confidence at or above type_min_confidence, with every whole-piece photo the same kind of
+  thing. Anything else is review. Unsure safety and a hood still turn it into review.
 """
 
 from dataclasses import dataclass
 
+from .pins import Thresholds, TypeReading
 from .vocab import NOT_CLOTHING_REASON, Vocab
 
 ALLOWED = "allowed"
@@ -54,6 +67,19 @@ REASON_PHOTO_FAILED = "We couldn't open one of the photos, so someone at Dzirent
 REASON_NOT_ALLOWED_PHOTO = "This photo isn't allowed on Dzirent."
 REASON_SAFETY_UNSURE = "Someone at Dzirent will check these photos before this listing can go live."
 REASON_HOODED = "This piece has a hood, so someone at Dzirent will check it."
+# V1b: the banned gate's reason when the photo has no not-allowed policy item to name.
+REASON_BANNED = "This item isn't allowed on Dzirent."
+# Names that are plural nouns take no article in "This looks like ...".
+_PLURAL_ENDINGS = ("trousers", "pants", "jeans", "shorts", "leggings", "tights", "chinos", "overalls", "pyjamas",
+                   "pajamas", "sunglasses", "glasses", "slacks", "breeches", "bottoms", "knickers", "jodhpurs")
+
+
+def looks_like(name: str) -> str:
+    """'a sherwani', 'an abaya', 'palazzo trousers': a type's English name after "This looks like"."""
+    n = name.strip()
+    if n.lower().endswith(_PLURAL_ENDINGS):
+        return n
+    return ("an " if n[:1].lower() in "aeiou" else "a ") + n
 
 
 @dataclass
@@ -123,6 +149,18 @@ class PhotoView:
     decision: Decision | None
     nsfw: float = 0.0    # the safety model: P(nudity or sexual content)
     hooded: float = 0.0  # the hooded-garment check: P(hooded)
+    reading: TypeReading | None = None  # V1b: what the pins say about this photo
+    banned_reason: str | None = None    # V1b: the reason the gate gives if this photo fires it
+
+
+@dataclass
+class TypeView:
+    """V1b: the listing as the pins see it. [reading] is for the averaged embedding of the
+    whole-piece photos (None when there are none)."""
+    reading: TypeReading | None
+    thresholds: Thresholds
+    banned_reason: str | None = None   # the reason for the averaged embedding
+    item_key: str | None = None        # the closest allowed policy item (for item_key in the result)
 
 
 @dataclass
@@ -132,23 +170,75 @@ class Verdict:
     item_key: str | None  # the item the reason is about, if any
 
 
-def decide_listing(photos: list[PhotoView], combined: Decision | None, vocab: Vocab) -> Verdict:
+def is_whole(p: PhotoView) -> bool:
+    """A photo of the whole piece: not a size tag or close-up slot, not read as a detail."""
+    return p.decision is not None and p.slot not in SUPPORT_SLOTS and p.decision.decision != DETAIL
+
+
+def decide_listing(photos: list[PhotoView], combined: Decision | None, vocab: Vocab,
+                   types: TypeView | None = None) -> Verdict:
     """
     [combined] is decide_photo on the averaged embedding of the whole-piece photos that are
     allowed or unsure (None when there are none). Every photo counts for content safety, size
-    tags and close-ups too.
+    tags and close-ups too. [types] (V1b) is the pins' reading; without it the rules are as
+    before V1b.
     """
     opened = [p for p in photos if p.decision is not None]
     if any(p.nsfw >= NSFW_REJECT_MIN for p in opened):
         return Verdict("rejected", REASON_NOT_ALLOWED_PHOTO, None)
+    gate = banned_gate(photos, types) if types is not None else None
+    if gate is not None and gate.verdict == "rejected":
+        return gate
     verdict = _decide_item(photos, combined, vocab)
     if verdict.verdict == "rejected":
         return verdict
     if any(p.nsfw >= NSFW_REVIEW_MIN for p in opened):
         return Verdict("review", REASON_SAFETY_UNSURE, None)
+    if gate is not None:
+        return gate
+    if types is not None:
+        verdict = _decide_type(photos, verdict, types)
     if verdict.verdict == "allowed" and any(p.hooded >= HOODED_MIN for p in opened):
         return Verdict("review", REASON_HOODED, verdict.item_key)
     return verdict
+
+
+def banned_gate(photos: list[PhotoView], types: TypeView) -> Verdict | None:
+    """V1b: rejected when a whole-piece photo or the photos together reach banned_min; review when
+    only a size tag or close-up does; None otherwise."""
+    limit = types.thresholds.banned_min
+    hits = [(p.reading.banned_score, p.banned_reason) for p in photos
+            if is_whole(p) and p.reading is not None and p.reading.banned_score >= limit]
+    if types.reading is not None and types.reading.banned_score >= limit:
+        hits.append((types.reading.banned_score, types.banned_reason))
+    if hits:
+        _, reason = max(hits, key=lambda h: h[0])
+        return Verdict("rejected", reason or REASON_BANNED, None)
+    if any(p.decision is not None and not is_whole(p) and p.reading is not None and p.reading.banned_score >= limit
+           for p in photos):
+        return Verdict("review", REASON_CONFLICT, None)
+    return None
+
+
+# The pre-V1b reviews that are about the photos themselves, not about what the piece is: they stand.
+_PHOTO_REVIEWS = (REASON_PHOTO_FAILED, REASON_NO_WHOLE_PIECE, REASON_CONFLICT)
+
+
+def _decide_type(photos: list[PhotoView], before: Verdict, types: TypeView) -> Verdict:
+    """V1b: allowed only for an allowed type the text and gallery pins agree on, confidently."""
+    if before.verdict == "review" and before.reason in _PHOTO_REVIEWS:
+        return before
+    reading, th = types.reading, types.thresholds
+    if (reading is None or reading.type is None or not reading.type.allowed or not reading.agreement
+            or reading.confidence < th.type_min_confidence):
+        return Verdict("review", REASON_UNSURE, None)
+    # A bag in one photo and a dress in another: different things, even when both are allowed.
+    kinds = {(p.reading.type.kind, p.reading.type.item_type) for p in photos
+             if is_whole(p) and p.reading is not None and p.reading.type is not None}
+    if len(kinds) > 1:
+        return Verdict("review", REASON_CONFLICT, None)
+    return Verdict("allowed", REASON_ALLOWED.format(looks_like=looks_like(reading.type.english_name)),
+                   before.item_key or types.item_key)
 
 
 def _decide_item(photos: list[PhotoView], combined: Decision | None, vocab: Vocab) -> Verdict:

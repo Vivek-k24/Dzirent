@@ -9,14 +9,16 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import config
+from . import pins as type_pins
 from .color_reader import ColorBank, PhotoColors, read_listing, read_photo
+from .pins import Pins, Thresholds, TypeReading
 from .quality import Quality, check_photo
 from .text import suggest_text
 from .verdict import (
-    ALLOWED, DETAIL, SUGGEST_MIN, SUPPORT_SLOTS, UNSURE, Decision, PhotoView, Scores,
+    ALLOWED, DETAIL, NOT_ALLOWED, SUGGEST_MIN, SUPPORT_SLOTS, UNSURE, Decision, PhotoView, Scores, TypeView,
     decide_listing, decide_photo,
 )
-from .vocab import Vocab
+from .vocab import APP_GARMENT_TYPES, Vocab
 
 PATTERN_MIN = 0.70  # the app's PATTERN_CONFIDENCE: a pattern is named at or above this
 FABRIC_MIN = 0.60   # a fabric is the title's detail (when there is no pattern) at or above this
@@ -84,6 +86,7 @@ class PhotoResult:
     hooded: float | None = None  # the hooded-garment check (verdict.HOODED_MIN)
     nsfw: float | None = None    # the safety model (verdict.NSFW_*)
     extra: dict | None = None  # pattern, style and fabric probabilities
+    reading: TypeReading | None = None  # V1b: what the type pins say (pins.read)
 
     def to_json(self) -> dict:
         if self.error:
@@ -112,22 +115,42 @@ class PhotoResult:
                 "hooded": _r(self.hooded),
                 "safety": {"nsfw": _r(self.nsfw)},
                 **{name: {k: _r(v) for k, v in probs.items()} for name, probs in self.extra.items()},
+                **({"pins": _reading_json(self.reading)} if self.reading is not None else {}),
             },
             "fingerprint": [round(float(v), 6) for v in self.embedding],
         }
 
 
-def analyze_photo(result: PhotoResult, embedding: np.ndarray, rgb: np.ndarray, banks: dict[str, TextBank],
-                  vocab: Vocab, nsfw: float = 0.0) -> None:
+def _reading_json(r: TypeReading) -> dict:
+    """One photo's pin reading, as it is kept with the photo's labels."""
+    return {"type": r.type.qid if r.type else None, "type_confidence": _r(r.confidence), "agreement": r.agreement,
+            "text": {"qid": r.text_type.qid, "score": _r(r.text_score)},
+            "gallery": {"qid": r.gallery_type.qid if r.gallery_type else None, "score": _r(r.gallery_score)},
+            "banned_score": _r(r.banned_score)}
+
+
+def banned_reason(scores: Scores, vocab: Vocab) -> str | None:
+    """The reason of the closest not-allowed policy item: what the banned gate tells the lender."""
+    key, _ = scores.top(vocab, NOT_ALLOWED)
+    return vocab.by_key[key].reason if key else None
+
+
+def analyze_photo(result: PhotoResult, embedding: np.ndarray, rgb: np.ndarray | None, banks: dict[str, TextBank],
+                  vocab: Vocab, nsfw: float = 0.0, pins: Pins | None = None,
+                  thresholds: Thresholds | None = None) -> None:
+    """[rgb] None skips the photo-quality and color checks (the local eval reads verdicts only)."""
     result.embedding = embedding
     result.scores = item_scores(embedding, banks)
     result.decision = decide_photo(result.scores, vocab)
-    result.quality = check_photo(rgb)
-    result.colors = read_photo(rgb, result.quality.region)
+    if rgb is not None:
+        result.quality = check_photo(rgb)
+        result.colors = read_photo(rgb, result.quality.region)
     result.worn = zero_shot(embedding, banks["worn"])["worn"]
     result.hooded = zero_shot(embedding, banks["hooded"])["hooded"]
     result.nsfw = nsfw
     result.extra = {name: zero_shot(embedding, banks[name]) for name in ("patterns", "styles", "fabrics")}
+    if pins is not None and thresholds is not None:
+        result.reading = type_pins.read(embedding, pins, thresholds)
 
 
 def _suggestions(combined: np.ndarray, whole: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,
@@ -163,7 +186,9 @@ def _suggestions(combined: np.ndarray, whole: list[PhotoResult], banks: dict[str
         "item_label": item.label,
         "category": item.category,
         "item_type": item.item_type,
-        "garment_type": item.garment_type,
+        # V1b: costume is a database value the apps' garment kinds don't list yet; the apps get
+        # none for it (the response's "type" carries it).
+        "garment_type": item.garment_type if item.garment_type in APP_GARMENT_TYPES else None,
         "colors": [c for c in colors if c] if not jewelry else [],
         # How sure the colors are: 0.9 the model agrees, 0.7 it settled a near tie, 0.6 pixels
         # only, 0.4 it disagreed (the pixel answer stays). Null when there are no colors.
@@ -191,17 +216,47 @@ def _quality_summary(results: list[PhotoResult]) -> dict:
     return {"summary": summary, "photos": len(results), "photos_with_warnings": len(flagged), "warnings": warnings}
 
 
-def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,
-         color_bank: ColorBank | None = None) -> dict:
-    """[results] are already analyzed (or carry an error). Returns the /scan response body.
-    [color_bank] is the model's color names (the colors' second opinion); without it, pixels only."""
-    views = [PhotoView(r.slot, None if r.error else r.decision, nsfw=r.nsfw or 0.0, hooded=r.hooded or 0.0)
+def listing_verdict(results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,
+                    pins: Pins | None = None, thresholds: Thresholds | None = None) -> dict:
+    """The verdict and the V1b type fields for analyzed photos (scan() adds the rest). The local
+    eval (eval/run_eval.py --local) calls this directly, so it judges exactly what /scan judges."""
+    views = [PhotoView(r.slot, None if r.error else r.decision, nsfw=r.nsfw or 0.0, hooded=r.hooded or 0.0,
+                       reading=None if r.error else r.reading,
+                       banned_reason=None if r.error else banned_reason(r.scores, vocab))
              for r in results]
     whole = [r for r in results if not r.error and r.slot not in SUPPORT_SLOTS and r.decision.decision != DETAIL]
     candidates = [r for r in whole if r.decision.decision in (ALLOWED, UNSURE)]
     combined = unit_mean([r.embedding for r in candidates])
     combined_decision = decide_photo(item_scores(combined, banks), vocab) if combined is not None else None
-    verdict = decide_listing(views, combined_decision, vocab)
+    types = None
+    reading = None
+    if pins is not None and thresholds is not None:
+        # The listing's type: all its whole-piece photos together, whatever the policy check said.
+        together = unit_mean([r.embedding for r in whole])
+        reading = type_pins.read(together, pins, thresholds) if together is not None else None
+        types = TypeView(reading=reading, thresholds=thresholds,
+                         banned_reason=banned_reason(item_scores(together, banks), vocab) if together is not None else None,
+                         item_key=combined_decision.item_key if combined_decision else None)
+    verdict = decide_listing(views, combined_decision, vocab, types)
+    readings = [r.reading for r in results if not r.error and r.reading is not None] + ([reading] if reading else [])
+    return {
+        "verdict": verdict, "combined": combined, "candidates": candidates,
+        "type": reading.type.to_json() if reading and reading.type else None,
+        "type_confidence": _r(reading.confidence) if reading else None,
+        "agreement": bool(reading.agreement) if reading else False,
+        "top_types": reading.top_types if reading else [],
+        "banned_score": _r(max(r.banned_score for r in readings)) if readings else None,
+        "vocabulary_version": pins.version if pins is not None else None,
+    }
+
+
+def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,
+         color_bank: ColorBank | None = None, pins: Pins | None = None, thresholds: Thresholds | None = None) -> dict:
+    """[results] are already analyzed (or carry an error). Returns the /scan response body.
+    [color_bank] is the model's color names (the colors' second opinion); without it, pixels only.
+    [pins] and [thresholds] (V1b) add the type, its confidence and the banned gate."""
+    decided = listing_verdict(results, banks, vocab, pins, thresholds)
+    verdict, combined, candidates = decided["verdict"], decided["combined"], decided["candidates"]
     suggestions = _suggestions(combined, candidates, banks, vocab, verdict.verdict, color_bank) \
         if combined is not None else None
     return {
@@ -217,4 +272,11 @@ def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank]
                          "license": config.SAFETY_MODEL_LICENSE},
         "policy_digest": vocab.digest[:16],
         "service_version": config.SERVICE_VERSION,
+        # V1b: the type the pins read for the whole-piece photos together.
+        "type": decided["type"],
+        "type_confidence": decided["type_confidence"],
+        "agreement": decided["agreement"],
+        "top_types": decided["top_types"],
+        "banned_score": decided["banned_score"],
+        "vocabulary_version": decided["vocabulary_version"],
     }

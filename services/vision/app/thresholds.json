@@ -1,0 +1,27 @@
+{
+ "_comment": "V1b: every number the type and banned rules use (app/pins.py, app/verdict.py). Chosen on the train split with leave-one-out against the gallery (eval/calibrate.py), never on the test split; the V1b handoff gives the tables. Start conservative: when in doubt the gate rejects and the type rule sends to review.",
+ "text_logit_scale": {
+  "value": 100.0,
+  "comment": "Text similarities become probabilities as softmax(100 x cosine), the model card's zero-shot recipe and the same scale the policy check uses (config.LOGIT_SCALE)."
+ },
+ "text_top": {
+  "value": 5,
+  "comment": "top_types reports the 5 most likely text pins."
+ },
+ "gallery_k": {
+  "value": 10,
+  "comment": "The 10 nearest gallery photos vote for their type, each with its cosine similarity."
+ },
+ "disagreement_factor": {
+  "value": 0.5,
+  "comment": "When the text and gallery top types differ, the higher-scoring one is kept with half its score as the confidence, and agreement is false (never allowed straight away)."
+ },
+ "type_min_confidence": {
+  "value": 0.7,
+  "comment": "Allowed needs this confidence (with agreement and an allowed type). On the train split (8,094 photos, each read without its own gallery pin) the highest confidence any not-allowed photo reached with an allowed, agreeing type was 0.667 (a smartwatch read as a watch); 0.70 is the next 0.05 above it, so no train photo leaks. Conservative: only 4.9 % of allowed train photos clear it (97 % of them with the right type); the rest go to review."
+ },
+ "banned_min": {
+  "value": 0.6,
+  "comment": "The banned gate rejects at or above this banned_score. On the train split it is the lowest value that rejects at most 5 % of allowed photos (4.6 %); it catches 77 % of not-allowed photos, and the rest can still only be allowed through the type rule above."
+ }
+}
