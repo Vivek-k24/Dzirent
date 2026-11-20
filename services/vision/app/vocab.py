@@ -26,6 +26,11 @@ KINDS = ("garment", "accessory", "other")
 SLOTS = ("front", "back", "close_up", "size_tag", "extra_1", "extra_2")
 
 NOT_CLOTHING_REASON = "This doesn't look like clothing or an accessory we list."
+NOT_CLOTHING_GROUP = "not clothing"
+# V2: the "text or poster" items of the not-clothing group (policy.json rows like every other
+# not-clothing item). A photo that reads as one of them goes to review, never allowed and never
+# rejected as not clothing: it may show the piece on a poster, a screenshot or a shop sign.
+TEXT_OR_POSTER = ("text_page", "poster", "book_cover", "shop_sign", "infographic", "screenshot")
 
 # The columns public.policy_item_types has, in order.
 POLICY_COLUMNS = (
@@ -130,6 +135,10 @@ def load() -> Vocab:
     keys = [i.key for i in items]
     if len(set(keys)) != len(keys):
         raise ValueError("policy keys must be unique")
+    by_key = {i.key: i for i in items}
+    for key in TEXT_OR_POSTER:
+        if key not in by_key or by_key[key].kind != "other" or by_key[key].policy_group != NOT_CLOTHING_GROUP:
+            raise ValueError(f"text or poster item {key} must be a not-clothing policy item")
 
     banks: dict[str, tuple[Entry, ...]] = {}
     for name in BANKS:

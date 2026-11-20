@@ -17,7 +17,7 @@ select ok(pg_catalog.pg_get_constraintdef((select oid from pg_constraint where c
 select is((select row(kind, allowed, category, item_type, garment_type, style, policy_group, reason)::text
            from public.policy_item_types where key = 'costume'),
           '(garment,t,"Occasion & Party",,costume,,,)', 'policy_item_types has the costume row, allowed, Occasion & Party');
-select is((select count(*)::int from public.policy_item_types), 115, '115 policy rows, as in policy.json');
+select ok((select count(*)::int from public.policy_item_types) >= 115, 'at least the 115 policy rows V1b set (V2 adds more; 16_v2 counts them)');
 
 -- 3. vision_finish_scan keeps the type fields ------------------------------------------------------
 create temp table v (scan_id uuid);
