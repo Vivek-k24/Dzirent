@@ -15,8 +15,9 @@ to commit `0c26ec22111b83f106d72a55f611ec35962bcb65` and built into the image un
 
 Cloud Run accepts only signed-in Google callers with `roles/run.invoker` on the service.
 
-- `GET /health`: model, revision, license, policy digest, `service_version` (`v1b.1`),
-  `vocabulary_version`, the number of type and gallery pins, start-up seconds.
+- `GET /health`: model, revision, license, policy digest, `service_version` (`v2.1`),
+  `vocabulary_version`, the number of type and gallery pins, `linear_head` (V2: its file's sha256,
+  its training set's sha256 and its number of classes), start-up seconds.
 - `POST /scan` with `{ "listing_id": "...", "photos": [{ "photo_id": "...", "url": "...", "slot": "front" }] }`
   (1-8 photos; `slot` is one of the listing slots or null). `url` is a public listing-photos
   URL (`VISION_ALLOWED_URL_PREFIXES`) or a `data:image/...;base64,` URL.
@@ -38,6 +39,16 @@ pins, each with `qid`, `english_name`, `allowed` and `score`), `banned_score` (t
 photo's and the photos' together) and `vocabulary_version`. Every earlier field is unchanged; the
 suggestions still come from `policy.json`, and their `garment_type` is never `costume` (the apps
 don't list it yet; `type.garment_type` carries it).
+
+V2 (`v2.1`) keeps every field and adds `mapping` (`category`, `garment_type`, `allowed`, `score`: the
+Dzirent mapping the decision was made on) and `linear_sha256` (the linear head that took part).
+Changed meanings: `agreement` is true when the text pins and the gallery agree on the mapping (not
+the exact type); `type_confidence` is the chosen mapping's final score (halved on disagreement);
+`type` is the best type inside that mapping; `top_types` are the 5 best types by the final score
+(text, gallery and linear together; V1b's were the text pins alone); `banned_score` combines the
+three sources' not-allowed shares (`banned_rule`). Each photo's `labels.pins` adds `linear`,
+`mapping`, `text_mapping`, `gallery_mapping` and `banned` (each source's not-allowed share), and
+`labels.text_or_poster` is the text-or-poster items' share of that photo's policy labels.
 
 ## How it decides
 
@@ -103,9 +114,39 @@ don't list it yet; `type.garment_type` carries it).
 - Policy (V1b): costumes and replica suits are the garment type `costume` (a `policy.json` row and
   a database value since `20261119120000_v1b_costume_and_scan_type.sql`); certified protective
   equipment is never a type.
+- V2 (`v2.1`), on top of V1b:
+  - **Text pins** are the English name and its English aliases (no `also_called`), and **the linear
+    head** (`app/linear.npz`, committed): a logistic-regression layer over the embedding, trained on
+    the train split only (`data/vision/embed/train_linear.py`; thin types get augmented copies).
+    `pins.json` names its sha256 and its training set's; the service won't start on a mismatch.
+  - **The final type score** is the weighted sum of the text, gallery and linear probabilities
+    (`weight_text`, `weight_gallery`, `weight_linear`).
+  - **Decisions at the Dzirent level:** every score is also summed per mapping (category, garment
+    type, allowed). Agreement means the text pins' top mapping and the gallery vote's top mapping
+    are the same; that mapping is chosen, with its final score as the confidence. Otherwise the
+    mapping with the highest final score is chosen and its confidence halved. The reported type is
+    the best type inside the chosen mapping.
+  - **The gate has two tiers.** `banned_score` combines each source's not-allowed share by
+    `banned_rule`. At `banned_hard` or more: rejected with the not-allowed reason. From `banned_min`
+    up to `banned_hard`: review, "We couldn't confirm this item is allowed; a reviewer will check."
+  - **Text or a poster:** six not-clothing policy rows (a page of text, a poster, a book cover, a
+    shop sign, an infographic, a screenshot). A whole-piece photo whose text-or-poster share reaches
+    `text_poster_min`, or that the policy check calls not clothing with one of them, goes to
+    review ("This photo looks like text or a poster, not the piece itself, …"): never allowed, and
+    never rejected as not clothing.
+  - **The verdict, strongest first:** clear nudity, rejected; the gate's hard tier, rejected; the
+    policy check's rejections; text or a poster, review; unsure safety, review; the gate's lower
+    tier, review; the policy check's photo reviews; then allowed only for an allowed mapping the text
+    and gallery agree on with `type_confidence` at `type_min_confidence` or more (every whole-piece
+    photo the same kind of thing); a hood turns that into review. Anything else is review.
+  - **Thresholds:** `app/thresholds.json` holds every weight and threshold with its reason, chosen on
+    the train split by `eval/calibrate.py` (the gallery leave-one-out, the linear head's out-of-fold
+    probabilities) so that no not-allowed train photo is allowed and at most 1 % of allowed train
+    photos are rejected outright; `eval/run_eval.py --local` measures them once on the locked test
+    split and writes `eval/report-v2.md`.
 
 Thresholds were chosen on the 12 sample listings plus a small set of openly licensed photos;
-see the Step 8A handoff for the numbers. V1b's are in `app/thresholds.json` (above).
+see the Step 8A handoff for the numbers. V1b's and V2's are in `app/thresholds.json` (above).
 
 ## Develop
 
@@ -117,7 +158,8 @@ Locally the service needs the gallery pins: `gcloud storage cp
 gs://dzirent-vision-data-dzirent/pins/<vocabulary_version>/gallery.npz services/vision/app/` (the
 version is in `app/pins.json`), or `data/vision/embed/build_pins.py gallery`.
 
-Deploy (from the repo root; V1b builds with Cloud Build, which fetches the gallery pins first):
+Deploy (from the repo root; V1b and V2 build with Cloud Build, which fetches the gallery pins first;
+the linear head is in git):
 
     gcloud builds submit services/vision --project dzirent --region us-west1 \
       --config services/vision/cloudbuild.yaml --substitutions _IMAGE=<registry>/vision:<tag>
@@ -132,7 +174,8 @@ account key instead of gcloud):
     python services/vision/eval/run_eval.py --url <service URL> --out results.json
     python services/vision/eval/run_eval.py --url <service URL> --key-file H:\DziRent\secrets\vision-invoker-key.json
 
-Evaluate on this PC (V1b; the locked test split and the two folders, no deployed service):
+Evaluate on this PC (V1b, V2; the locked test split and the two folders, no deployed service; the
+model folder needs `text_embeddings.npz` built for the current `policy.json`):
 
     services/vision/.venv/Scripts/python.exe services/vision/eval/calibrate.py        # the train split
     services/vision/.venv/Scripts/python.exe services/vision/eval/run_eval.py --local # the test split

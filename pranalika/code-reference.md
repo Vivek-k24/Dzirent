@@ -3736,16 +3736,16 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L34: `async def fetch_photo(client: httpx.AsyncClient, url: str) -> bytes:`
 - L65: `def open_image(data: bytes) -> Image.Image:`
 
-### `services/vision/app/main.py` (142 lines)
+### `services/vision/app/main.py` (145 lines)
 
 - L34: `async def lifespan(_: FastAPI):`
 - L54: `class PhotoIn(BaseModel):`
 - L67: `class ScanIn(BaseModel):`
 - L72: `@app.get("/health")`
 - L73: `async def health() -> dict:`
-- L93: `def _run(listing_id: str, photos: list[PhotoIn], payloads: list) -> dict:`
-- L117: `@app.post("/scan")`
-- L118: `async def scan_endpoint(body: ScanIn) -> dict:`
+- L96: `def _run(listing_id: str, photos: list[PhotoIn], payloads: list) -> dict:`
+- L120: `@app.post("/scan")`
+- L121: `async def scan_endpoint(body: ScanIn) -> dict:`
 
 ### `services/vision/app/model.py` (98 lines)
 
@@ -3757,19 +3757,23 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L65: `def embed_with(visual: torch.nn.Module, images: list[Image.Image]) -> np.ndarray:`
 - L72: `class Model:`
 
-### `services/vision/app/pins.py` (230 lines)
+### `services/vision/app/pins.py` (371 lines)
 
-- L42: `class PinType:`
-- L61: `class Thresholds:`
-- L85: `def _unit(m: np.ndarray) -> np.ndarray:`
-- L92: `class Pins:`
-- L113: `def _text(value) -> str | None:`
-- L118: `def _sha256(path: Path) -> str:`
-- L126: `def load(vocabulary_file: Path = VOCABULARY_PINS_FILE, gallery_file: Path = GALLERY_PINS_FILE,`
-- L156: `class TypeReading:`
-- L174: `def softmax(logits: np.ndarray) -> np.ndarray:`
-- L179: `def gallery_vote(embedding: np.ndarray, pins: Pins, k: int, exclude: np.ndarray | None = None) -> dict[int, float]:`
-- L202: `def read(embedding: np.ndarray, pins: Pins, th: Thresholds, exclude: np.ndarray | None = None) -> TypeReading:`
+- L60: `class PinType:`
+- L84: `class Thresholds:`
+- L122: `def _unit(m: np.ndarray) -> np.ndarray:`
+- L129: `class Linear:`
+- L155: `class Pins:`
+- L189: `def _text(value) -> str | None:`
+- L194: `def _sha256(path: Path) -> str:`
+- L202: `def load_linear(linear_file: Path, expected: dict, version: str, index: dict[str, int]) -> Linear:`
+- L224: `def load(vocabulary_file: Path = VOCABULARY_PINS_FILE, gallery_file: Path = GALLERY_PINS_FILE,`
+- L255: `class TypeReading:`
+- L279: `def softmax(logits: np.ndarray) -> np.ndarray:`
+- L284: `def gallery_vote(embedding: np.ndarray, pins: Pins, k: int, exclude: np.ndarray | None = None) -> dict[int, float]:`
+- L307: `def _first_max(a: np.ndarray) -> int:`
+- L311: `def combine_banned(text: float, gallery: float, linear: float, th: Thresholds) -> float:`
+- L319: `def read(embedding: np.ndarray, pins: Pins, th: Thresholds, exclude: np.ndarray | None = None,`
 
 ### `services/vision/app/quality.py` (239 lines)
 
@@ -3791,7 +3795,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L17: `def preprocess(image: Image.Image, size: int = config.SAFETY_IMAGE_SIZE) -> torch.Tensor:`
 - L30: `class SafetyModel:`
 
-### `services/vision/app/scan.py` (282 lines)
+### `services/vision/app/scan.py` (306 lines)
 
 - L31: `class TextBank:`
 - L37: `def softmax(logits: np.ndarray) -> np.ndarray:`
@@ -3801,70 +3805,79 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L67: `def _r(x: float | None, digits: int = 4) -> float | None:`
 - L71: `def _top(probs: dict[str, float], n: int) -> dict[str, float]:`
 - L76: `class PhotoResult:`
-- L124: `def _reading_json(r: TypeReading) -> dict:`
-- L132: `def banned_reason(scores: Scores, vocab: Vocab) -> str | None:`
-- L138: `def analyze_photo(result: PhotoResult, embedding: np.ndarray, rgb: np.ndarray | None, banks: dict[str, TextBank],`
-- L156: `def _suggestions(combined: np.ndarray, whole: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
-- L206: `def _quality_summary(results: list[PhotoResult]) -> dict:`
-- L219: `def listing_verdict(results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
-- L253: `def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
+- L126: `def _mapping_json(m: tuple[str, str, bool] | None, score: float | None = None) -> dict | None:`
+- L134: `def _reading_json(r: TypeReading) -> dict:`
+- L147: `def banned_reason(scores: Scores, vocab: Vocab) -> str | None:`
+- L153: `def analyze_photo(result: PhotoResult, embedding: np.ndarray, rgb: np.ndarray | None, banks: dict[str, TextBank],`
+- L172: `def _suggestions(combined: np.ndarray, whole: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
+- L222: `def _quality_summary(results: list[PhotoResult]) -> dict:`
+- L235: `def listing_verdict(results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
+- L274: `def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
 
 ### `services/vision/app/text.py` (40 lines)
 
 - L15: `def title_for(noun: str, color: str | None = None, detail: str | None = None) -> str:`
 - L27: `def suggest_text(`
 
-### `services/vision/app/verdict.py` (275 lines)
+### `services/vision/app/verdict.py` (304 lines)
 
-- L77: `def looks_like(name: str) -> str:`
-- L86: `class Scores:`
-- L111: `class Decision:`
-- L119: `def decide_photo(scores: Scores, vocab: Vocab) -> Decision:`
-- L146: `class PhotoView:`
-- L157: `class TypeView:`
-- L167: `class Verdict:`
-- L173: `def is_whole(p: PhotoView) -> bool:`
-- L178: `def decide_listing(photos: list[PhotoView], combined: Decision | None, vocab: Vocab,`
-- L206: `def banned_gate(photos: list[PhotoView], types: TypeView) -> Verdict | None:`
-- L227: `def _decide_type(photos: list[PhotoView], before: Verdict, types: TypeView) -> Verdict:`
-- L244: `def _decide_item(photos: list[PhotoView], combined: Decision | None, vocab: Vocab) -> Verdict:`
+- L91: `def looks_like(name: str) -> str:`
+- L100: `class Scores:`
+- L125: `class Decision:`
+- L133: `def decide_photo(scores: Scores, vocab: Vocab) -> Decision:`
+- L160: `class PhotoView:`
+- L172: `class TypeView:`
+- L182: `class Verdict:`
+- L188: `def is_whole(p: PhotoView) -> bool:`
+- L193: `def is_text_or_poster(p: PhotoView) -> bool:`
+- L200: `def decide_listing(photos: list[PhotoView], combined: Decision | None, vocab: Vocab,`
+- L230: `def banned_gate(photos: list[PhotoView], types: TypeView) -> Verdict | None:`
+- L254: `def _decide_type(photos: list[PhotoView], before: Verdict, types: TypeView) -> Verdict:`
+- L271: `def _decide_item(photos: list[PhotoView], combined: Decision | None, vocab: Vocab) -> Verdict:`
 
-### `services/vision/app/vocab.py` (155 lines)
+### `services/vision/app/vocab.py` (164 lines)
 
-- L38: `class Item:`
-- L62: `class Entry:`
-- L73: `class Vocab:`
-- L91: `def _check_item(row: dict) -> Item:`
-- L126: `def load() -> Vocab:`
-- L152: `def policy_rows() -> list[dict]:`
+- L43: `class Item:`
+- L67: `class Entry:`
+- L78: `class Vocab:`
+- L96: `def _check_item(row: dict) -> Item:`
+- L131: `def load() -> Vocab:`
+- L161: `def policy_rows() -> list[dict]:`
 
-### `services/vision/eval/calibrate.py` (112 lines)
+### `services/vision/eval/calibrate.py` (214 lines)
 
-- L40: `def leave_one_out(pins: type_pins.Pins, th: type_pins.Thresholds, rows: list[tuple[str, str, bool]],`
-- L60: `def table(reads: list[dict], banned_min: float) -> dict:`
-- L84: `def main(argv=None) -> int:`
+- L60: `def text_poster_shares(embeddings: np.ndarray, model_dir: Path) -> np.ndarray:`
+- L71: `def inputs(pins: type_pins.Pins, th: type_pins.Thresholds, model_dir: Path) -> dict:`
+- L106: `def evaluate(x: dict, pins: type_pins.Pins, w: tuple[float, float, float], factor: float) -> dict:`
+- L129: `def ceil_step(v: float, step: float) -> float:`
+- L133: `def choose(x: dict, r: dict, rule: str, text_poster_min: float) -> dict:`
+- L163: `def main(argv=None) -> int:`
 
-### `services/vision/eval/local_eval.py` (234 lines)
+### `services/vision/eval/local_eval.py` (371 lines)
 
-- L37: `def _pct(x: float | None) -> str:`
-- L41: `def run_local(args) -> int:`
-- L129: `def summarize(rows, entries, launch, th, pins, folders, left_out, model) -> dict:`
-- L163: `def report(s: dict) -> str:`
+- L49: `def _pct(x: float | None) -> str:`
+- L53: `def v1b_test_sha1s() -> set[str]:`
+- L59: `def v1b_report() -> dict:`
+- L79: `def _nsfw_cache_path(build_pins, config) -> Path:`
+- L83: `def run_local(args) -> int:`
+- L190: `def stats(rs: list[dict]) -> dict:`
+- L206: `def summarize(rows, entries, launch, th, pins, folders, left_out, model) -> dict:`
+- L247: `def report(s: dict) -> str:`
 
-### `services/vision/eval/run_eval.py` (266 lines)
+### `services/vision/eval/run_eval.py` (267 lines)
 
-- L46: `def load_env(path: str | None) -> None:`
-- L55: `def identity_token() -> str:`
-- L63: `def _der(data: bytes, at: int) -> tuple[int, bytes, int]:`
-- L72: `def _rsa_key(pem: str) -> tuple[int, int]:`
-- L87: `def _rs256(message: bytes, n: int, d: int) -> bytes:`
-- L95: `def key_file_token(path: str, audience: str) -> str:`
-- L116: `def post_json(url: str, body: dict | None, headers: dict, timeout: float = 150) -> tuple[int, dict | None, float]:`
-- L128: `def sample_listings() -> list[tuple[str, str]]:`
-- L134: `def sample_photos(supabase_url: str, key: str) -> list[dict]:`
-- L151: `def folder_photos(folder: Path) -> list[dict]:`
-- L162: `def passes(expected: str, verdict: str | None) -> bool:`
-- L168: `def main() -> int:`
+- L47: `def load_env(path: str | None) -> None:`
+- L56: `def identity_token() -> str:`
+- L64: `def _der(data: bytes, at: int) -> tuple[int, bytes, int]:`
+- L73: `def _rsa_key(pem: str) -> tuple[int, int]:`
+- L88: `def _rs256(message: bytes, n: int, d: int) -> bytes:`
+- L96: `def key_file_token(path: str, audience: str) -> str:`
+- L117: `def post_json(url: str, body: dict | None, headers: dict, timeout: float = 150) -> tuple[int, dict | None, float]:`
+- L129: `def sample_listings() -> list[tuple[str, str]]:`
+- L135: `def sample_photos(supabase_url: str, key: str) -> list[dict]:`
+- L152: `def folder_photos(folder: Path) -> list[dict]:`
+- L163: `def passes(expected: str, verdict: str | None) -> bool:`
+- L169: `def main() -> int:`
 
 ### `services/vision/tests/conftest.py` (9 lines)
 
@@ -3945,40 +3958,71 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L26: `def test_without_color_or_detail():`
 - L30: `def test_title_fits_the_listing_limit():`
 
-### `services/vision/tests/test_v1b.py` (307 lines)
+### `services/vision/tests/test_v1b.py` (317 lines)
 
-- L32: `def basis(i: int, noise: float = 0.0, seed: int = 0) -> np.ndarray:`
-- L40: `def make_pins(gallery_types: list[int]) -> Pins:`
-- L52: `def test_text_and_gallery_agree_confidence_is_their_mean():`
-- L60: `def test_disagreement_keeps_the_higher_score_reduced_and_never_agrees():`
-- L70: `def test_banned_score_is_the_larger_of_text_and_gallery():`
-- L80: `def test_leave_one_out_exclude_removes_rows_from_the_vote():`
-- L93: `def views_and_types(embedding, pins=SHERWANI_GALLERY, decision=UNSURE_DECISION, slot="front", **kw):`
-- L99: `def test_confident_agreeing_allowed_type_is_allowed_even_when_the_policy_check_is_unsure():`
-- L105: `def test_low_confidence_goes_to_review():`
-- L113: `def test_disagreement_goes_to_review_whatever_the_confidence():`
-- L119: `def test_the_gate_overrides_an_allowed_type():`
-- L129: `def test_the_gate_without_a_policy_item_uses_the_plain_reason():`
-- L136: `def test_a_banned_close_up_only_sends_to_review():`
-- L143: `def test_photos_of_different_kinds_go_to_review():`
-- L150: `def test_nsfw_rules_are_unchanged():`
-- L158: `def test_hood_rule_is_unchanged():`
-- L164: `def test_policy_rejections_still_stand():`
-- L171: `def test_without_pins_the_rules_are_as_before():`
-- L176: `def test_looks_like_articles():`
-- L183: `def synthetic_banks(top_item: str, axis: int = 0) -> dict[str, TextBank]:`
-- L198: `def analyzed(embedding, banks, worn=None, slot="front", pins=SHERWANI_GALLERY):`
-- L213: `def test_response_keeps_every_field_and_adds_the_type_fields():`
-- L229: `def test_worn_never_changes_the_verdict():`
-- L236: `def test_costume_never_reaches_the_apps_garment_kind():`
-- L248: `def write_pins(tmp_path, version="a" * 64, gallery_version=None, gallery_qids=("Q1", "Q1")):`
-- L265: `def test_load_reads_both_files(tmp_path):`
-- L271: `def test_load_refuses_a_gallery_pins_json_doesnt_name(tmp_path):`
-- L278: `def test_load_refuses_another_vocabulary(tmp_path):`
-- L283: `def test_load_refuses_gallery_types_without_a_text_pin(tmp_path):`
-- L288: `def test_load_refuses_a_missing_gallery(tmp_path):`
-- L295: `def test_committed_thresholds_load_and_explain_every_value():`
-- L302: `def test_committed_vocabulary_pins_match_pins_json():`
+- L36: `def basis(i: int, noise: float = 0.0, seed: int = 0) -> np.ndarray:`
+- L44: `def make_pins(gallery_types: list[int]) -> Pins:`
+- L56: `def test_text_and_gallery_agree_confidence_is_their_mean():`
+- L64: `def test_disagreement_keeps_the_higher_score_reduced_and_never_agrees():`
+- L75: `def test_banned_score_is_the_larger_of_text_and_gallery():`
+- L85: `def test_leave_one_out_exclude_removes_rows_from_the_vote():`
+- L98: `def views_and_types(embedding, pins=SHERWANI_GALLERY, decision=UNSURE_DECISION, slot="front", **kw):`
+- L104: `def test_confident_agreeing_allowed_type_is_allowed_even_when_the_policy_check_is_unsure():`
+- L110: `def test_low_confidence_goes_to_review():`
+- L118: `def test_disagreement_goes_to_review_whatever_the_confidence():`
+- L124: `def test_the_gate_overrides_an_allowed_type():`
+- L134: `def test_the_gate_without_a_policy_item_uses_the_plain_reason():`
+- L141: `def test_a_banned_close_up_only_sends_to_review():`
+- L148: `def test_photos_of_different_kinds_go_to_review():`
+- L155: `def test_nsfw_rules_are_unchanged():`
+- L163: `def test_hood_rule_is_unchanged():`
+- L169: `def test_policy_rejections_still_stand():`
+- L176: `def test_without_pins_the_rules_are_as_before():`
+- L181: `def test_looks_like_articles():`
+- L188: `def synthetic_banks(top_item: str, axis: int = 0) -> dict[str, TextBank]:`
+- L203: `def analyzed(embedding, banks, worn=None, slot="front", pins=SHERWANI_GALLERY):`
+- L218: `def test_response_keeps_every_field_and_adds_the_type_fields():`
+- L234: `def test_worn_never_changes_the_verdict():`
+- L241: `def test_costume_never_reaches_the_apps_garment_kind():`
+- L253: `def write_pins(tmp_path, version="a" * 64, gallery_version=None, gallery_qids=("Q1", "Q1")):`
+- L275: `def test_load_reads_both_files(tmp_path):`
+- L281: `def test_load_refuses_a_gallery_pins_json_doesnt_name(tmp_path):`
+- L288: `def test_load_refuses_another_vocabulary(tmp_path):`
+- L293: `def test_load_refuses_gallery_types_without_a_text_pin(tmp_path):`
+- L298: `def test_load_refuses_a_missing_gallery(tmp_path):`
+- L305: `def test_committed_thresholds_load_and_explain_every_value():`
+- L312: `def test_committed_vocabulary_pins_match_pins_json():`
+
+### `services/vision/tests/test_v2.py` (275 lines)
+
+- L35: `def linear_head(types=(0, 1, 2, 3, 4), scale=20.0) -> Linear:`
+- L41: `def make_pins(gallery_types, linear=None) -> Pins:`
+- L49: `def unit(v):`
+- L55: `def test_text_and_gallery_naming_two_types_of_one_mapping_agree():`
+- L65: `def test_different_mappings_disagree_and_halve_the_confidence():`
+- L72: `def test_mapping_agreement_allows_what_type_agreement_would_not():`
+- L84: `def test_top_types_are_per_type_by_the_final_score():`
+- L92: `def test_the_linear_head_takes_part_in_the_final_score():`
+- L101: `def test_calibration_can_replace_the_heads_probabilities():`
+- L110: `def gate_case(banned_share: float):`
+- L123: `def test_hard_tier_rejects_with_the_not_allowed_reason():`
+- L130: `def test_borderline_is_review_with_the_neutral_reason_never_allowed(share):`
+- L136: `def test_under_banned_min_the_type_decides():`
+- L141: `def test_a_borderline_close_up_only_reviews():`
+- L150: `def test_banned_rules():`
+- L158: `def test_text_or_poster_items_are_not_clothing_rows_like_the_others():`
+- L166: `def test_a_photo_flagged_text_or_poster_is_review_even_with_a_confident_allowed_type():`
+- L175: `def test_text_or_poster_is_never_rejected_as_not_clothing_but_a_phone_still_is():`
+- L183: `def test_scan_flags_text_or_poster_from_the_labels():`
+- L195: `def test_response_keeps_every_field_and_adds_the_v2_ones():`
+- L214: `def write_all(tmp_path, training="t" * 64, linear_training=None, drop_key=None):`
+- L228: `def test_load_reads_the_linear_head(tmp_path):`
+- L233: `def test_load_refuses_a_linear_head_whose_file_hash_differs(tmp_path):`
+- L240: `def test_load_refuses_a_linear_head_trained_on_another_set(tmp_path):`
+- L245: `def test_load_refuses_pins_json_without_a_linear_head(tmp_path):`
+- L250: `def test_thresholds_are_checked():`
+- L260: `def _load_from(raw):`
+- L269: `def test_committed_linear_head_matches_pins_json():`
 
 ### `services/vision/tests/test_verdict.py` (170 lines)
 
@@ -5394,3 +5438,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L18: `alter table public.policy_item_types drop constraint policy_item_types_garment_type_check;`
 - L19: `alter table public.policy_item_types add constraint policy_item_types_garment_type_check check (garment_type is null or garment_type in (`
 - L164: `CREATE OR REPLACE FUNCTION public.vision_finish_scan(p_scan_id uuid, p_photo_set_hash text, p_result jsonb)`
+
+### `supabase/migrations/20261120120000_v2_text_or_poster_policy.sql` (156 lines)
+
+- (no top-level declarations)
