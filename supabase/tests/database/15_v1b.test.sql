@@ -14,7 +14,7 @@ select ok(pg_catalog.pg_get_constraintdef((select oid from pg_constraint where c
             like '%one_size%', 'the earlier garment types are still accepted');
 
 -- 2. The costume policy row ----------------------------------------------------------------------
-select is((select pg_catalog.row(kind, allowed, category, item_type, garment_type, style, policy_group, reason)::text
+select is((select row(kind, allowed, category, item_type, garment_type, style, policy_group, reason)::text
            from public.policy_item_types where key = 'costume'),
           '(garment,t,"Occasion & Party",,costume,,,)', 'policy_item_types has the costume row, allowed, Occasion & Party');
 select is((select count(*)::int from public.policy_item_types), 115, '115 policy rows, as in policy.json');
