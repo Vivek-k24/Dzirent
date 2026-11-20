@@ -1,12 +1,12 @@
 {
- "_comment": "V1b: every number the type and banned rules use (app/pins.py, app/verdict.py). Chosen on the train split with leave-one-out against the gallery (eval/calibrate.py), never on the test split; the V1b handoff gives the tables. Start conservative: when in doubt the gate rejects and the type rule sends to review.",
+ "_comment": "V1b, V2: every number the type and banned rules use (app/pins.py, app/verdict.py). Chosen on the train split (8,827 photos: 5,830 of allowed types, 2,997 not allowed) with eval/calibrate.py: each photo read without its own gallery pin or an identical picture, and with linear-head probabilities from a cross-fitting head that never saw it. Never on the test split, which measured them once (eval/report-v2.md). The V2 handoff gives the tables.",
  "text_logit_scale": {
   "value": 100.0,
   "comment": "Text similarities become probabilities as softmax(100 x cosine), the model card's zero-shot recipe and the same scale the policy check uses (config.LOGIT_SCALE)."
  },
  "text_top": {
   "value": 5,
-  "comment": "top_types reports the 5 most likely text pins."
+  "comment": "top_types reports the 5 best types (V2: by the final score; V1b: the text pins)."
  },
  "gallery_k": {
   "value": 10,
@@ -14,14 +14,38 @@
  },
  "disagreement_factor": {
   "value": 0.5,
-  "comment": "When the text and gallery top types differ, the higher-scoring one is kept with half its score as the confidence, and agreement is false (never allowed straight away)."
+  "comment": "When the text pins and the gallery vote choose different mappings, the mapping with the highest final score is kept with half its score as the confidence, and agreement is false (never allowed)."
  },
- "type_min_confidence": {
-  "value": 0.7,
-  "comment": "Allowed needs this confidence (with agreement and an allowed type). On the train split (8,094 photos, each read without its own gallery pin) the highest confidence any not-allowed photo reached with an allowed, agreeing type was 0.667 (a smartwatch read as a watch); 0.70 is the next 0.05 above it, so no train photo leaks. Conservative: only 4.9 % of allowed train photos clear it (97 % of them with the right type); the rest go to review."
+ "weight_text": {
+  "value": 0.6,
+  "comment": "The final type score is 0.6 x text + 0.1 x gallery + 0.3 x linear head. Of the 66 weight triples (0.1 steps), this one, with banned_rule max, allows the most allowed train photos with no not-allowed one allowed: 30.6 % (1,783 of 5,830); mapping top-1 72.1 %. Without the linear head the best was 30.5 % (0.8 / 0.2 / 0) with mapping top-1 64.6 %; V1b's equal text and gallery 28.1 %."
+ },
+ "weight_gallery": {
+  "value": 0.1,
+  "comment": "See weight_text. The gallery still decides agreement: its vote's top mapping must be the text pins' top mapping."
+ },
+ "weight_linear": {
+  "value": 0.3,
+  "comment": "See weight_text. The linear head (app/linear.npz, L2 1e-6) reads the type right for 58.1 % of train photos out of fold (the text pins alone 25.3 %, the gallery 51.2 %)."
+ },
+ "banned_rule": {
+  "value": "max",
+  "comment": "banned_score is the largest of the three sources' not-allowed shares (text pins, gallery vote, linear head). 'combined' (the weighted share) allowed at most 25.7 % of allowed train photos; 'max' 30.6 %."
+ },
+ "banned_hard": {
+  "value": 0.91,
+  "comment": "At or above: rejected with the not-allowed reason. The lowest value (0.01 steps) that rejects at most 1 % of allowed train photos outright (0.70 %); it rejects 54.7 % of not-allowed train photos."
  },
  "banned_min": {
+  "value": 0.1,
+  "comment": "From here up to banned_hard: review with the neutral reason, never allowed. Chosen with type_min_confidence so that no not-allowed train photo is allowed while the most allowed ones are: this tier sends 44.8 % of not-allowed and 45.7 % of allowed train photos to review."
+ },
+ "type_min_confidence": {
   "value": 0.6,
-  "comment": "The banned gate rejects at or above this banned_score. On the train split it is the lowest value that rejects at most 5 % of allowed photos (4.6 %); it catches 77 % of not-allowed photos, and the rest can still only be allowed through the type rule above."
+  "comment": "Allowed needs this confidence (the agreed mapping's final score, an allowed mapping, banned_score under banned_min). Under banned_min, the highest confidence any not-allowed train photo reached on an agreeing allowed mapping was 0.595; 0.60 is the next 0.05 above it, so no train photo leaks. Of the allowed train photos it allows, 96.1 % have the right mapping and 64.3 % the right type."
+ },
+ "text_poster_min": {
+  "value": 0.25,
+  "comment": "A whole-piece photo whose text-or-poster labels (vocab.TEXT_OR_POSTER) reach this share of the policy labels goes to review: the lowest value (0.05 steps) at which at most 1 % of allowed train photos do (0.96 %; 1.5 % of not-allowed train photos)."
  }
 }

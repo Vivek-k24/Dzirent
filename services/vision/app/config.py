@@ -38,7 +38,7 @@ SAFETY_MODEL_FILES = ["config.json", "model.safetensors"]
 SAFETY_SUBDIR = "safety"  # under MODEL_DIR
 SAFETY_IMAGE_SIZE = 384
 
-SERVICE_VERSION = "v1b.1"  # V1b: type pins (text and gallery), the banned gate, costume; V1a's color reader included
+SERVICE_VERSION = "v2.1"  # V2: linear head, Dzirent-level agreement, two-tier gate, text or poster; (v1b.1: type pins, the banned gate, costume; V1a's color reader)
 
 # The model card's zero-shot recipe: softmax(100 * cosine similarity).
 LOGIT_SCALE = 100.0

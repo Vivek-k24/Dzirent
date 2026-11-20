@@ -18,7 +18,7 @@ from .verdict import (
     ALLOWED, DETAIL, NOT_ALLOWED, SUGGEST_MIN, SUPPORT_SLOTS, UNSURE, Decision, PhotoView, Scores, TypeView,
     decide_listing, decide_photo,
 )
-from .vocab import APP_GARMENT_TYPES, Vocab
+from .vocab import APP_GARMENT_TYPES, TEXT_OR_POSTER, Vocab
 
 PATTERN_MIN = 0.70  # the app's PATTERN_CONFIDENCE: a pattern is named at or above this
 FABRIC_MIN = 0.60   # a fabric is the title's detail (when there is no pattern) at or above this
@@ -87,6 +87,7 @@ class PhotoResult:
     nsfw: float | None = None    # the safety model (verdict.NSFW_*)
     extra: dict | None = None  # pattern, style and fabric probabilities
     reading: TypeReading | None = None  # V1b: what the type pins say (pins.read)
+    text_poster: float | None = None    # V2: the text-or-poster labels' share of the policy labels
 
     def to_json(self) -> dict:
         if self.error:
@@ -114,6 +115,7 @@ class PhotoResult:
                 "not_fashion": _r(self.scores.not_fashion),
                 "hooded": _r(self.hooded),
                 "safety": {"nsfw": _r(self.nsfw)},
+                **({"text_or_poster": _r(self.text_poster)} if self.text_poster is not None else {}),
                 **{name: {k: _r(v) for k, v in probs.items()} for name, probs in self.extra.items()},
                 **({"pins": _reading_json(self.reading)} if self.reading is not None else {}),
             },
@@ -121,12 +123,25 @@ class PhotoResult:
         }
 
 
+def _mapping_json(m: tuple[str, str, bool] | None, score: float | None = None) -> dict | None:
+    """V2: a Dzirent mapping (category, garment type, allowed), with its score when given."""
+    if m is None:
+        return None
+    out = {"category": m[0] or None, "garment_type": m[1] or None, "allowed": m[2]}
+    return {**out, "score": _r(score)} if score is not None else out
+
+
 def _reading_json(r: TypeReading) -> dict:
     """One photo's pin reading, as it is kept with the photo's labels."""
     return {"type": r.type.qid if r.type else None, "type_confidence": _r(r.confidence), "agreement": r.agreement,
             "text": {"qid": r.text_type.qid, "score": _r(r.text_score)},
             "gallery": {"qid": r.gallery_type.qid if r.gallery_type else None, "score": _r(r.gallery_score)},
-            "banned_score": _r(r.banned_score)}
+            "banned_score": _r(r.banned_score),
+            # V2: the linear head, the chosen mapping and each source's mapping and not-allowed share
+            "linear": {"qid": r.linear_type.qid if r.linear_type else None, "score": _r(r.linear_score)},
+            "mapping": _mapping_json(r.mapping, r.mapping_score),
+            "text_mapping": _mapping_json(r.text_mapping), "gallery_mapping": _mapping_json(r.gallery_mapping),
+            "banned": {"text": _r(r.banned_text), "gallery": _r(r.banned_gallery), "linear": _r(r.banned_linear)}}
 
 
 def banned_reason(scores: Scores, vocab: Vocab) -> str | None:
@@ -149,6 +164,7 @@ def analyze_photo(result: PhotoResult, embedding: np.ndarray, rgb: np.ndarray | 
     result.hooded = zero_shot(embedding, banks["hooded"])["hooded"]
     result.nsfw = nsfw
     result.extra = {name: zero_shot(embedding, banks[name]) for name in ("patterns", "styles", "fabrics")}
+    result.text_poster = sum(result.scores.items.get(k, 0.0) for k in TEXT_OR_POSTER)
     if pins is not None and thresholds is not None:
         result.reading = type_pins.read(embedding, pins, thresholds)
 
@@ -222,7 +238,9 @@ def listing_verdict(results: list[PhotoResult], banks: dict[str, TextBank], voca
     eval (eval/run_eval.py --local) calls this directly, so it judges exactly what /scan judges."""
     views = [PhotoView(r.slot, None if r.error else r.decision, nsfw=r.nsfw or 0.0, hooded=r.hooded or 0.0,
                        reading=None if r.error else r.reading,
-                       banned_reason=None if r.error else banned_reason(r.scores, vocab))
+                       banned_reason=None if r.error else banned_reason(r.scores, vocab),
+                       text_poster=bool(not r.error and thresholds is not None and r.text_poster is not None
+                                        and r.text_poster >= thresholds.text_poster_min))
              for r in results]
     whole = [r for r in results if not r.error and r.slot not in SUPPORT_SLOTS and r.decision.decision != DETAIL]
     candidates = [r for r in whole if r.decision.decision in (ALLOWED, UNSURE)]
@@ -247,6 +265,9 @@ def listing_verdict(results: list[PhotoResult], banks: dict[str, TextBank], voca
         "top_types": reading.top_types if reading else [],
         "banned_score": _r(max(r.banned_score for r in readings)) if readings else None,
         "vocabulary_version": pins.version if pins is not None else None,
+        # V2: the chosen Dzirent mapping (category, garment type, allowed) and its final score
+        "mapping": _mapping_json(reading.mapping, reading.mapping_score) if reading else None,
+        "linear_sha256": pins.linear.sha256 if pins is not None and pins.linear is not None else None,
     }
 
 
@@ -279,4 +300,7 @@ def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank]
         "top_types": decided["top_types"],
         "banned_score": decided["banned_score"],
         "vocabulary_version": decided["vocabulary_version"],
+        # V2: the mapping the decision was made on, and the linear head that took part
+        "mapping": decided["mapping"],
+        "linear_sha256": decided["linear_sha256"],
     }

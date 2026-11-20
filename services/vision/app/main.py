@@ -86,6 +86,9 @@ async def health() -> dict:
         "vocabulary_version": model.pins.version,
         "type_pins": len(model.pins.types),
         "gallery_pins": len(model.pins.gallery),
+        # V2: the linear head (its file's and its training set's sha256, as pins.json names them)
+        "linear_head": {"sha256": model.pins.linear.sha256, "training_set_sha256": model.pins.linear.training_sha256,
+                        "classes": len(model.pins.linear.bias)},
         "startup_seconds": state["startup_seconds"],
     }
 

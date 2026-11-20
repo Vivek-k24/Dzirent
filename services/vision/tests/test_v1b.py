@@ -1,4 +1,7 @@
-"""V1b: the type pins, the banned gate and the response, on synthetic pins (no model, no network)."""
+"""V1b: the type pins, the banned gate and the response, on synthetic pins (no model, no network).
+
+V2 keeps these rules when each type is its own mapping, the linear head has no weight and the gate has
+one tier (banned_hard = banned_min): TH below. tests/test_v2.py covers what V2 adds."""
 
 import hashlib
 import json
@@ -19,7 +22,8 @@ from app.vocab import APP_GARMENT_TYPES, BANKS, load
 V = load()
 DIM = 16
 TH = Thresholds(text_logit_scale=100.0, text_top=5, gallery_k=10, disagreement_factor=0.5,
-                type_min_confidence=0.6, banned_min=0.3)
+                type_min_confidence=0.6, banned_min=0.3, banned_hard=0.3, banned_rule="max",
+                weight_text=0.5, weight_gallery=0.5, weight_linear=0.0, text_poster_min=0.5)
 TYPES = (
     PinType("Q1", "sherwani", "Cultural & Traditional", None, "suit", True),
     PinType("Q2", "abaya", "Cultural & Traditional", None, "dress", True),
@@ -64,7 +68,8 @@ def test_disagreement_keeps_the_higher_score_reduced_and_never_agrees():
     assert not r.agreement
     assert r.text_type.qid == "Q1" and r.gallery_type.qid == "Q2"
     assert r.gallery_score > r.text_score
-    assert r.type.qid == "Q2" and r.confidence == pytest.approx(r.gallery_score * TH.disagreement_factor)
+    # V2: the mapping with the higher final score (text and gallery together), its score halved
+    assert r.type.qid == "Q2" and r.confidence == pytest.approx(r.mapping_score * TH.disagreement_factor)
 
 
 def test_banned_score_is_the_larger_of_text_and_gallery():
@@ -214,7 +219,7 @@ def test_response_keeps_every_field_and_adds_the_type_fields():
     banks = synthetic_banks("sherwani")
     out = scan("listing-1", [analyzed(basis(0), banks)], banks, V, None, SHERWANI_GALLERY, TH)
     assert OLD_KEYS | NEW_KEYS <= set(out)
-    assert out["service_version"] == config.SERVICE_VERSION == "v1b.1"
+    assert out["service_version"] == config.SERVICE_VERSION == "v2.1"
     assert out["type"] == {"qid": "Q1", "english_name": "sherwani", "category": "Cultural & Traditional",
                            "item_type": None, "garment_type": "suit"}
     assert isinstance(out["type_confidence"], float) and out["agreement"] is True
@@ -222,7 +227,7 @@ def test_response_keeps_every_field_and_adds_the_type_fields():
     assert isinstance(out["banned_score"], float) and out["vocabulary_version"] == "v" * 64
     photo = out["photos"][0]
     assert {"blur_score", "brightness_score", "framing_score", "worn_by_person", "labels", "fingerprint"} <= set(photo)
-    assert set(photo["labels"]["pins"]) == {"type", "type_confidence", "agreement", "text", "gallery", "banned_score"}
+    assert {"type", "type_confidence", "agreement", "text", "gallery", "banned_score"} <= set(photo["labels"]["pins"])
     json.dumps(out)  # plain JSON all the way down
 
 
@@ -255,11 +260,16 @@ def write_pins(tmp_path, version="a" * 64, gallery_version=None, gallery_qids=("
     np.savez(gallery, embeddings=np.stack([basis(0)] * len(gallery_qids)).astype(np.float16),
              sha1=np.array([f"{n:040d}" for n in range(len(gallery_qids))]), qid=np.array(list(gallery_qids)),
              allowed=np.array([True] * len(gallery_qids)), vocabulary_version=np.array(gallery_version or version))
+    linear = tmp_path / "linear.npz"  # V2: the service needs its linear head too
+    np.savez(linear, weights=np.stack([basis(0), basis(1)]).astype(np.float16), bias=np.zeros(2, np.float16),
+             qid=np.array(["Q1", "Q2"]), training_set_sha256=np.array("t" * 64), vocabulary_version=np.array(version))
     pins_json = tmp_path / "pins.json"
     pins_json.write_text(json.dumps({"vocabulary_version": version,
-                                     "gallery_sha256": hashlib.sha256(gallery.read_bytes()).hexdigest()}),
+                                     "gallery_sha256": hashlib.sha256(gallery.read_bytes()).hexdigest(),
+                                     "linear_sha256": hashlib.sha256(linear.read_bytes()).hexdigest(),
+                                     "linear_training_sha256": "t" * 64}),
                          encoding="utf-8")
-    return vocab, gallery, pins_json
+    return vocab, gallery, pins_json, linear
 
 
 def test_load_reads_both_files(tmp_path):
@@ -269,10 +279,10 @@ def test_load_reads_both_files(tmp_path):
 
 
 def test_load_refuses_a_gallery_pins_json_doesnt_name(tmp_path):
-    vocab, gallery, pins_json = write_pins(tmp_path)
+    vocab, gallery, pins_json, linear = write_pins(tmp_path)
     gallery.write_bytes(gallery.read_bytes() + b"x")
     with pytest.raises(RuntimeError, match="sha256"):
-        type_pins.load(vocab, gallery, pins_json)
+        type_pins.load(vocab, gallery, pins_json, linear)
 
 
 def test_load_refuses_another_vocabulary(tmp_path):
@@ -286,10 +296,10 @@ def test_load_refuses_gallery_types_without_a_text_pin(tmp_path):
 
 
 def test_load_refuses_a_missing_gallery(tmp_path):
-    vocab, gallery, pins_json = write_pins(tmp_path)
+    vocab, gallery, pins_json, linear = write_pins(tmp_path)
     gallery.unlink()
     with pytest.raises(RuntimeError, match="missing"):
-        type_pins.load(vocab, gallery, pins_json)
+        type_pins.load(vocab, gallery, pins_json, linear)
 
 
 def test_committed_thresholds_load_and_explain_every_value():

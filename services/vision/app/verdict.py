@@ -26,12 +26,23 @@ V1b adds the type pins (pins.py) on top, when the service has them:
 - Allowed now comes from the type: an allowed type, the text and gallery pins agreeing, and
   type confidence at or above type_min_confidence, with every whole-piece photo the same kind of
   thing. Anything else is review. Unsure safety and a hood still turn it into review.
+
+V2 (v2.1):
+- The gate has two tiers: banned_score at or above banned_hard -> rejected with the not-allowed
+  reason; at or above banned_min (and under banned_hard) -> review with a neutral reason. A size
+  tag or close-up that reaches banned_min still only sends the listing to review.
+- A whole-piece photo that reads as text or a poster (vocab.TEXT_OR_POSTER: a page of text, a
+  poster, a book cover, a shop sign, an infographic, a screenshot) -> review, never allowed, and
+  never rejected as not clothing.
+- Agreement is at the Dzirent level (pins.py): the text pins and the gallery vote agree on the
+  mapping (category, garment type, allowed); allowed needs that agreement on an allowed mapping
+  and its confidence at or above type_min_confidence.
 """
 
 from dataclasses import dataclass
 
 from .pins import Thresholds, TypeReading
-from .vocab import NOT_CLOTHING_REASON, Vocab
+from .vocab import NOT_CLOTHING_REASON, TEXT_OR_POSTER, Vocab
 
 ALLOWED = "allowed"
 NOT_ALLOWED = "not_allowed"
@@ -69,6 +80,9 @@ REASON_SAFETY_UNSURE = "Someone at Dzirent will check these photos before this l
 REASON_HOODED = "This piece has a hood, so someone at Dzirent will check it."
 # V1b: the banned gate's reason when the photo has no not-allowed policy item to name.
 REASON_BANNED = "This item isn't allowed on Dzirent."
+# V2: the gate's lower tier (banned_min up to banned_hard), and a photo of text or a poster.
+REASON_BANNED_REVIEW = "We couldn't confirm this item is allowed; a reviewer will check."
+REASON_TEXT_OR_POSTER = "This photo looks like text or a poster, not the piece itself, so someone at Dzirent will check it."
 # Names that are plural nouns take no article in "This looks like ...".
 _PLURAL_ENDINGS = ("trousers", "pants", "jeans", "shorts", "leggings", "tights", "chinos", "overalls", "pyjamas",
                    "pajamas", "sunglasses", "glasses", "slacks", "breeches", "bottoms", "knickers", "jodhpurs")
@@ -151,6 +165,7 @@ class PhotoView:
     hooded: float = 0.0  # the hooded-garment check: P(hooded)
     reading: TypeReading | None = None  # V1b: what the pins say about this photo
     banned_reason: str | None = None    # V1b: the reason the gate gives if this photo fires it
+    text_poster: bool = False           # V2: the photo reads as text or a poster
 
 
 @dataclass
@@ -175,6 +190,13 @@ def is_whole(p: PhotoView) -> bool:
     return p.decision is not None and p.slot not in SUPPORT_SLOTS and p.decision.decision != DETAIL
 
 
+def is_text_or_poster(p: PhotoView) -> bool:
+    """V2: the photo reads as text or a poster: scan.py's flag (the text-or-poster labels' share at
+    text_poster_min or more), or the policy check calling it not clothing with a text-or-poster item."""
+    return p.text_poster or (p.decision is not None and p.decision.decision == NOT_CLOTHING
+                             and p.decision.item_key in TEXT_OR_POSTER)
+
+
 def decide_listing(photos: list[PhotoView], combined: Decision | None, vocab: Vocab,
                    types: TypeView | None = None) -> Verdict:
     """
@@ -192,6 +214,8 @@ def decide_listing(photos: list[PhotoView], combined: Decision | None, vocab: Vo
     verdict = _decide_item(photos, combined, vocab)
     if verdict.verdict == "rejected":
         return verdict
+    if any(is_whole(p) and is_text_or_poster(p) for p in photos):
+        return Verdict("review", REASON_TEXT_OR_POSTER, None)
     if any(p.nsfw >= NSFW_REVIEW_MIN for p in opened):
         return Verdict("review", REASON_SAFETY_UNSURE, None)
     if gate is not None:
@@ -204,17 +228,20 @@ def decide_listing(photos: list[PhotoView], combined: Decision | None, vocab: Vo
 
 
 def banned_gate(photos: list[PhotoView], types: TypeView) -> Verdict | None:
-    """V1b: rejected when a whole-piece photo or the photos together reach banned_min; review when
-    only a size tag or close-up does; None otherwise."""
-    limit = types.thresholds.banned_min
-    hits = [(p.reading.banned_score, p.banned_reason) for p in photos
-            if is_whole(p) and p.reading is not None and p.reading.banned_score >= limit]
-    if types.reading is not None and types.reading.banned_score >= limit:
-        hits.append((types.reading.banned_score, types.banned_reason))
+    """V2, two tiers: rejected when a whole-piece photo or the photos together reach banned_hard;
+    review (neutral reason) when they reach banned_min; review when only a size tag or close-up
+    reaches banned_min; None otherwise."""
+    soft, hard = types.thresholds.banned_min, types.thresholds.banned_hard
+    scores = [(p.reading.banned_score, p.banned_reason) for p in photos if is_whole(p) and p.reading is not None]
+    if types.reading is not None:
+        scores.append((types.reading.banned_score, types.banned_reason))
+    hits = [s for s in scores if s[0] >= hard]
     if hits:
         _, reason = max(hits, key=lambda h: h[0])
         return Verdict("rejected", reason or REASON_BANNED, None)
-    if any(p.decision is not None and not is_whole(p) and p.reading is not None and p.reading.banned_score >= limit
+    if any(score >= soft for score, _ in scores):
+        return Verdict("review", REASON_BANNED_REVIEW, None)
+    if any(p.decision is not None and not is_whole(p) and p.reading is not None and p.reading.banned_score >= soft
            for p in photos):
         return Verdict("review", REASON_CONFLICT, None)
     return None
@@ -253,7 +280,9 @@ def _decide_item(photos: list[PhotoView], combined: Decision | None, vocab: Voca
     def of(kind: str) -> list[Decision]:
         return [p.decision for p in whole if p.decision.decision == kind]
 
-    allowed, banned, other, unsure = of(ALLOWED), of(NOT_ALLOWED), of(NOT_CLOTHING), of(UNSURE)
+    allowed, banned, unsure = of(ALLOWED), of(NOT_ALLOWED), of(UNSURE)
+    # V2: text or a poster is never rejected as not clothing (decide_listing sends it to review).
+    other = [d for d in of(NOT_CLOTHING) if d.item_key not in TEXT_OR_POSTER]
     if allowed and (banned or other or support_banned):
         return Verdict("review", REASON_CONFLICT, None)
     if banned:
