@@ -764,12 +764,17 @@ def build_taxonomy() -> int:
     return 0
 
 
+def also_called(row: dict) -> list[str]:
+    """The sheet's also_called: the type's first five other names (V1b's text pins use the same)."""
+    return [n for n in row["vocabulary"] if n.lower() != row["english_name"].lower()][:5]
+
+
 def write_review_csv(rows: list[dict]) -> None:
     with open(REVIEW_CSV, "w", encoding="utf-8-sig", newline="") as fh:
         writer = csv.writer(fh)
         writer.writerow(CSV_COLUMNS)
         for r in rows:
-            also = [n for n in r["vocabulary"] if n.lower() != r["english_name"].lower()][:5]
+            also = also_called(r)
             writer.writerow(["yes" if r["sheet_group"] in NEEDS_OWNER_GROUPS else "", r["keep"], r["priority"],
                              r["english_name"],
                              "; ".join(also), r["region"], r["dzirent_category"], r["dzirent_garment_type"] or "",

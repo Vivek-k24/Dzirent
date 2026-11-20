@@ -18,7 +18,10 @@ prints it):
 - page: a page scan, page_score 3 or more and saturation under PAGE_SAT_MAX;
 - small: a short side under 300 px (fetch_commons.py already skips those, so this is a check);
 - unreadable: Pillow can't open the file (cut short, or broken as Commons serves it); measured
-  again on every run.
+  again on every run;
+- model_disagrees (V1b): model_agreement.csv (written by embed/build_pins.py agree) says the
+  vision model's top 3 text pins for this Openverse or search photo don't include its own type.
+  Only photos with no owner decision are checked, and the merge below lets an owner decision win.
 
 It writes auto_filter.csv (sha1, saturation, white_frac, black_frac, page_score, auto_drop,
 reason), then merges into labels.csv: every row the review page wrote (source owner, or no source
@@ -50,6 +53,7 @@ IMAGES_DIR = Path(__file__).resolve().parent
 MANIFEST_CSV = IMAGES_DIR / "manifest.csv"
 LABELS_CSV = IMAGES_DIR / "labels.csv"
 AUTO_CSV = IMAGES_DIR / "auto_filter.csv"
+AGREEMENT_CSV = IMAGES_DIR / "model_agreement.csv"  # V1b: embed/build_pins.py agree
 STATS_JSON = IMAGES_DIR / "raw" / "auto_filter_stats.json"
 TAXONOMY_JSON = IMAGES_DIR.parent / "taxonomy" / "taxonomy.json"
 
@@ -206,7 +210,15 @@ def measure_all(manifest: list[dict], images_dir: Path = IMAGES_DIR, stats_path:
     return {**stats, **unreadable}
 
 
-def auto_rows(manifest: list[dict], stats: dict[str, dict]) -> list[dict]:
+def read_disagrees(path: Path = AGREEMENT_CSV) -> set[str]:
+    """V1b: the photos model_agreement.csv marks model_disagrees (none when there is no file)."""
+    if not path.exists():
+        return set()
+    with open(path, encoding="utf-8", newline="") as fh:
+        return {r["sha1"] for r in csv.DictReader(fh) if r.get("model_disagrees") == "yes"}
+
+
+def auto_rows(manifest: list[dict], stats: dict[str, dict], disagrees: set[str] | frozenset = frozenset()) -> list[dict]:
     out = []
     for m in manifest:
         s = stats[m["sha1"]]
@@ -215,6 +227,8 @@ def auto_rows(manifest: list[dict], stats: dict[str, dict]) -> list[dict]:
             out.append({"sha1": m["sha1"], "saturation": "", "white_frac": "", "black_frac": "", "page_score": "",
                         "auto_drop": "yes", "reason": "unreadable"})
             continue
+        if m["sha1"] in disagrees:
+            reasons.append("model_disagrees")
         out.append({"sha1": m["sha1"], "saturation": f"{s['saturation']:.3f}", "white_frac": f"{s['white_frac']:.3f}",
                     "black_frac": f"{s['black_frac']:.3f}", "page_score": page_score(s),
                     "auto_drop": "yes" if reasons else "no", "reason": "; ".join(reasons)})
@@ -374,7 +388,7 @@ def main(argv: list[str] | None = None) -> int:
     stats = measure_all(manifest, workers=args.workers)
     if args.histogram:
         print(histogram({m["sha1"]: stats[m["sha1"]] for m in manifest}))
-    autos = auto_rows(manifest, stats)
+    autos = auto_rows(manifest, stats, read_disagrees())
     write_csv(autos, AUTO_COLUMNS, AUTO_CSV)
     labels = read_labels()
     if not args.no_merge:
