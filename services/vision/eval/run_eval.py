@@ -2,10 +2,10 @@
 
     python services/vision/eval/run_eval.py --url https://vision-....run.app [--out results.json]
     python services/vision/eval/run_eval.py --url ... --key-file H:\\DziRent\\secrets\\vision-invoker-key.json
-    services/vision/.venv/Scripts/python.exe services/vision/eval/run_eval.py --local   # V1b, see local_eval.py
+    services/vision/.venv/Scripts/python.exe services/vision/eval/run_eval.py --local   # V1b, V2: see local_eval.py
 
---local (V1b) runs the locked test split and the two folders through the service's own code on this
-PC, without the deployed service, and writes eval/report-v1b.md (local_eval.py).
+--local (V1b, V2) runs the locked test split and the two folders through the service's own code on
+this PC, without the deployed service, and writes eval/report-v2.md (local_eval.py; V1b wrote report-v1b.md).
 
 Sets (photos are never copied anywhere: local files go to the service as data: URLs):
 - the 12 sample listings, read through the public shop window (get_listing): each photo on its
@@ -40,7 +40,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
 SAMPLE_SEED = REPO / "supabase" / "seed" / "sample_photos.mjs"
-IMAGE_TYPES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+# .jfif is JPEG (a browser's "save image" often names it so; V2: the owner's should-accept folder holds them).
+IMAGE_TYPES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".jfif": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
 
 
 def load_env(path: str | None) -> None:
