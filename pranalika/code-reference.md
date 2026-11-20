@@ -3853,7 +3853,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L133: `def choose(x: dict, r: dict, rule: str, text_poster_min: float) -> dict:`
 - L163: `def main(argv=None) -> int:`
 
-### `services/vision/eval/local_eval.py` (371 lines)
+### `services/vision/eval/local_eval.py` (372 lines)
 
 - L49: `def _pct(x: float | None) -> str:`
 - L53: `def v1b_test_sha1s() -> set[str]:`
