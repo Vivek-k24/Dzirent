@@ -1,3 +1,12 @@
+## V1b - 2026-11-19 - pins for the vision service, model-agreement check
+
+**Result:**
+- **Pins:** `embed/build_pins.py` embeds the photos with the vision service's own code and weights. 843 text pins (`services/vision/app/vocabulary.npz`, committed) and one gallery pin per kept train photo (`gallery.npz`, in the bucket, not in git).
+- **Model-agreement check:** 2,222 kept Openverse and search photos nobody had decided were compared with the text pins; 1,945 (1,074 Openverse, 871 search) whose own type isn't in the top 3 are `model_disagrees` (`images/model_agreement.csv`) and auto drops. The owner's rows are byte-identical and still win.
+- **Photos:** 10,022 kept; `split.json` 8,094 train, 1,928 test; no photo changed sides.
+- **Launch types under 20 kept:** 10 (4 before): achkan 0, débutante dress 2, Nehru jacket 2, Anarkali Salwar Suit 8, blouse 11, China Poblana 12, evening dress 14, Sherwani 15, sheath dress 18, dashiki 18.
+- **Tests:** 146.
+
 ## D2e+D4b - 2026-11-19 - Openverse run, sticky split, owner photos (not added), augmentation
 
 **Result:**
