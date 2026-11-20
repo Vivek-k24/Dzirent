@@ -353,8 +353,9 @@ def report(s: dict) -> str:
     lines += [f"| `{k}` | {v} |" for k, v in s["thresholds"].items()]
     lines += ["", "Each value's reason is in `services/vision/app/thresholds.json` and the V2 handoff.", "",
               "## The owner's folders", "",
-              "`H:\\DziRent\\vision-test` is a local exam: read on this PC, never copied into the dataset. Each file",
-              "went through the full scan (quality and colors included) as a one-photo listing.", ""]
+              "`H:\\DziRent\\vision-test` is a local exam: read on this PC, never copied into the dataset and never",
+              "listed by name in the repo. Files are numbered in sorted-name order. Each went through the full scan",
+              "(quality and colors included) as a one-photo listing.", ""]
     for name, f in s["folders"].items():
         if not f["results"]:
             lines.append(f"- `{name}`: no photos in `{f['folder']}`.")
@@ -362,10 +363,10 @@ def report(s: dict) -> str:
         v = Counter(r.get("verdict", "error") for r in f["results"])
         lines += [f"- `{name}`: {len(f['results'])} photos: " + ", ".join(f"{n} {k}" for k, n in v.most_common()) + ".", "",
                   "| File | Verdict | Type | Confidence | Agreement | Mapping | Reason |", "| --- | --- | --- | --- | --- | --- | --- |"]
-        for r in f["results"]:
+        for number, r in enumerate(f["results"], 1):
             m = r.get("mapping") or {}
             mapping = f"{m.get('category')} / {m.get('garment_type')}" if m else ""
-            lines.append(f"| {r['file']} | {r.get('verdict', r.get('error'))} | {r.get('type') or ''} | "
+            lines.append(f"| file {number} | {r.get('verdict', r.get('error'))} | {r.get('type') or ''} | "
                          f"{r.get('type_confidence')} | {r.get('agreement')} | {mapping} | {r.get('reason', '')} |")
         lines.append("")
     return "\n".join(lines).rstrip("\n") + "\n"

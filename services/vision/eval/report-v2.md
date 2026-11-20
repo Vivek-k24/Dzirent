@@ -169,44 +169,45 @@ Each value's reason is in `services/vision/app/thresholds.json` and the V2 hando
 
 ## The owner's folders
 
-`H:\DziRent\vision-test` is a local exam: read on this PC, never copied into the dataset. Each file
-went through the full scan (quality and colors included) as a one-photo listing.
+`H:\DziRent\vision-test` is a local exam: read on this PC, never copied into the dataset and never
+listed by name in the repo. Files are numbered in sorted-name order. Each went through the full scan
+(quality and colors included) as a one-photo listing.
 
 - `should-accept`: 32 photos: 17 review, 15 allowed.
 
 | File | Verdict | Type | Confidence | Agreement | Mapping | Reason |
 | --- | --- | --- | --- | --- | --- | --- |
-| dasf.jfif | review | kurta | 0.4755 | True | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (1).jfif | review | kurta | 0.2203 | False | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (1)11.jfif | allowed | kurta | 0.7212 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
-| images (10).jfif | allowed | Sherwani | 0.6793 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
-| images (10)wwerey.jfif | review | kurta | 0.1989 | False | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (11).jfif | allowed | Sherwani | 0.6764 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
-| images (11)qwet.jfif | review | kurta | 0.253 | False | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (12).jfif | allowed | Sherwani | 0.7465 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
-| images (13).jfif | allowed | Sherwani | 0.7425 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
-| images (13)57sdf.jfif | allowed | kurta | 0.7399 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
-| images (14).jfif | review | Sherwani | 0.1155 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (15).jfif | review | Sherwani | 0.697 | True | Cultural & Traditional / suit | This piece has a hood, so someone at Dzirent will check it. |
-| images (16).jfif | review | Sherwani | 0.3385 | True | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (17).jfif | allowed | kurta | 0.662 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
-| images (2).jfif | review | Sherwani | 0.1845 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (2)22.jfif | allowed | kurta | 0.6842 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
-| images (3).jfif | allowed | Sherwani | 0.7668 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
-| images (3)33.jfif | review | kurta | 0.2604 | False | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (4).jfif | review | Sherwani | 0.1752 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (4)34.jfif | review | kurta | 0.2086 | False | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (5).jfif | review | Sherwani | 0.0869 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (5)47.jfif | review | kurta | 0.5874 | True | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (6).jfif | review | Sherwani | 0.2198 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (6)87.jfif | review | kurta | 0.5327 | True | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (7).jfif | review | Sherwani | 0.2346 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| images (7)12.jfif | allowed | kurta | 0.679 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
-| images (8).jfif | allowed | kurta | 0.65 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
-| images (8)645.jfif | allowed | kurta | 0.6346 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
-| images (9).jfif | allowed | Sherwani | 0.7485 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
-| images (9)dsfb.jfif | allowed | kurta | 0.6473 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
-| images.jfif | review | Sherwani | 0.3049 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
-| imagessf5.jfif | allowed | kurta | 0.8997 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
+| file 1 | review | kurta | 0.4755 | True | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 2 | review | kurta | 0.2203 | False | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 3 | allowed | kurta | 0.7212 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
+| file 4 | allowed | Sherwani | 0.6793 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
+| file 5 | review | kurta | 0.1989 | False | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 6 | allowed | Sherwani | 0.6764 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
+| file 7 | review | kurta | 0.253 | False | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 8 | allowed | Sherwani | 0.7465 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
+| file 9 | allowed | Sherwani | 0.7425 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
+| file 10 | allowed | kurta | 0.7399 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
+| file 11 | review | Sherwani | 0.1155 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 12 | review | Sherwani | 0.697 | True | Cultural & Traditional / suit | This piece has a hood, so someone at Dzirent will check it. |
+| file 13 | review | Sherwani | 0.3385 | True | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 14 | allowed | kurta | 0.662 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
+| file 15 | review | Sherwani | 0.1845 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 16 | allowed | kurta | 0.6842 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
+| file 17 | allowed | Sherwani | 0.7668 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
+| file 18 | review | kurta | 0.2604 | False | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 19 | review | Sherwani | 0.1752 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 20 | review | kurta | 0.2086 | False | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 21 | review | Sherwani | 0.0869 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 22 | review | kurta | 0.5874 | True | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 23 | review | Sherwani | 0.2198 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 24 | review | kurta | 0.5327 | True | Cultural & Traditional / top | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 25 | review | Sherwani | 0.2346 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 26 | allowed | kurta | 0.679 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
+| file 27 | allowed | kurta | 0.65 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
+| file 28 | allowed | kurta | 0.6346 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
+| file 29 | allowed | Sherwani | 0.7485 | True | Cultural & Traditional / suit | This looks like a Sherwani. You can list it. |
+| file 30 | allowed | kurta | 0.6473 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
+| file 31 | review | Sherwani | 0.3049 | False | Cultural & Traditional / suit | We're not sure what this piece is, so someone at Dzirent will check the photos. |
+| file 32 | allowed | kurta | 0.8997 | True | Cultural & Traditional / top | This looks like a kurta. You can list it. |
 
 - `should-reject`: no photos in `H:\DziRent\vision-test\should-reject`.
