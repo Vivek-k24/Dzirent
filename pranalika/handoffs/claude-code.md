@@ -274,6 +274,8 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
   - `test_build_pins.py` was rewritten for V2: English aliases, the version following the prompts, the mapping rule, not-allowed types, and a run re-checking only the marked and new photos.
   - `test_train_linear.py` is new (5 tests).
 - **CI:** run 44813657094 on `2fc7080`: **success on all 6 jobs** (contracts, database, android, vision-data, vision, website). pgTAP ran 16 files, 459 tests (`16_v2` ok).
+  - Run 44816802558 on `9537883` (the report correction and this entry) failed in contracts and website. `pranalika/code-reference.md` was stale: `local_eval.py`'s line numbers had moved.
+  - I regenerated it in `cce3ffa`, and run 44817969891 then succeeded on all 6 jobs.
 
 **Build and deploy:**
 - **Cloud Build** `e0411964-7875-4cd3-84c2-f215d5b7c08e`, 12 min 48 s:
