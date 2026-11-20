@@ -196,7 +196,7 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
 - **What they do:** a whole-piece photo goes to review when its text-or-poster share of the policy labels reaches `text_poster_min`, or when the policy check calls it not clothing with one of these items. The reason is "This photo looks like text or a poster, not the piece itself, so someone at Dzirent will check it." It is never allowed and never rejected as not clothing.
 - **The migration:** `20261120120000_v2_text_or_poster_policy.sql` reseeds `policy_item_types` (121 rows) the same way V1b's did. `test_policy_sync` passes, and the **policy digest is `f2250888045a4f47`** (was `30466e8f3a812d8c`).
 - Photo `decision` values are unchanged: `photo_scans_decision_check` allows only the five old ones.
-- **This migration is not applied to `dzirent-server`**, because the prompt asked only for V1b's. Scans don't need it: no column refers to policy keys.
+- **This migration wasn't applied to `dzirent-server` during the step**, because the prompt asked only for V1b's; scans don't need it, since no column refers to policy keys. It was applied afterwards at the owner's request (see "Owner decisions").
 
 **Thresholds and why.** Every value is in `services/vision/app/thresholds.json`, each with its reason. `eval/calibrate.py` chose them on the **train** split:
 - **Photos:** 8,827: 5,830 of allowed types and 2,997 not allowed.
@@ -313,7 +313,10 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
   ```
 
 **Owner decisions:**
-- **Apply the V2 migration** (`20261120120000_v2_text_or_poster_policy.sql`, the six text-or-poster policy rows) to `dzirent-server`? I didn't, because this prompt asked only for V1b's. Scans don't need it; until it's applied, the live `policy_item_types` has 115 rows while the service's `policy.json` has 121.
+- **Apply the V2 migration** (`20261120120000_v2_text_or_poster_policy.sql`, the six text-or-poster policy rows) to `dzirent-server`? **Done later on 2026-11-20, at the owner's request.**
+  - **Before (read-only):** 115 policy rows, none of the six, last migration `20261119120000`.
+  - **Applied:** `supabase db push --linked --dry-run` listed only this file; `supabase db push --linked --yes` applied it.
+  - **After (read-only):** 121 rows, every one identical to `policy.json` (all 13 columns, in order). The six sit at positions 99-104, right after `document`, each kind `other`, not allowed, policy group "not clothing". The last migration is `20261120120000`.
 - **Look at the 930 restored photos** if you have time. They show as undecided under `review_server.py --types-with-new`, and about 4 in 10 of a random sample were wrong photos.
 
 **Open questions for the coordinator:**
