@@ -1,3 +1,13 @@
+## V2 - 2026-11-20 - English-name pins, looser model-agreement check, linear head
+
+**Result:**
+- **Pins:** text pins from the English name and its English aliases (no `also_called`): 843 pins, 1,860 prompts, vocabulary version `02fcb7ac…` (it now covers the prompts). Gallery: 8,827 train photos of 708 types (in the bucket under `pins/02fcb7ac…/`).
+- **Model-agreement check, V2 rule:** a pin of the photo's own Dzirent mapping (category, garment type) in its top 5. The 1,945 photos V1b marked were checked again: 930 kept again (608 Openverse, 322 search), 1,015 still dropped. The owner's 4,170 rows are byte-identical. A random sample of 24 of the 930: 8 right, 6 doubtful, 10 wrong.
+- **Photos:** 10,952 kept; `split.json` 8,827 train, 2,125 test; 930 new, no photo changed sides.
+- **Launch types under 20 kept:** 5 (10 in V1b): achkan 0, débutante dress 5, Anarkali Salwar Suit 8, Nehru jacket 8, Sherwani 17.
+- **Linear head:** `embed/train_linear.py`: 6,655 augmented copies of 3,035 train photos in 549 types under 20 kept; 15,482 samples, 708 classes, L2 1e-6 (out-of-fold top-1 58.1 %); `services/vision/app/linear.npz` (1,019,078 bytes) with its training set's sha256 in `pins.json`. Train split only.
+- **Tests:** 152 (`test_build_pins.py` rewritten for V2, `test_train_linear.py` new).
+
 ## V1b - 2026-11-19 - pins for the vision service, model-agreement check
 
 **Result:**
