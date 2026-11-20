@@ -33,12 +33,14 @@ data/vision/
     labels.csv           # keep / drop / not sure: the owner's rows and auto_filter's drop rows (committed)
     auto_filter.csv      # every photo's measures and auto_drop (committed)
     split.json           # train and test photos per type (committed; test is locked)
-    model_agreement.csv  # V1b: each checked Openverse and search photo's top 3 text pins (committed)
+    model_agreement.csv  # V1b, V2: each checked Openverse and search photo's top text pins and the rule's result (committed)
     files/<qid>/<sha1>.<ext>   # the photos (not committed)
     thumbs/              # 256 px thumbnails for the page (not committed)
-    raw/                 # cached Commons and Openverse responses, run reports, augment previews (not committed)
+    raw/                 # cached Commons and Openverse responses, run reports, augment previews, the
+                         # embedding caches, V2's augmented copies and cross-fitting (not committed)
   embed/
     build_pins.py        # V1b: the vision service's text and gallery pins, and the model-agreement check
+    train_linear.py      # V2: the vision service's linear head (services/vision/app/linear.npz)
   tests/                 # pytest on recorded responses in tests/fixtures/ (no network)
   taxonomy/
     specs.py             # every root, skipped class and launch type, by English label and description words
@@ -54,12 +56,14 @@ data/vision/
     vocabulary.json      # what the photo check reads: allowed and not-allowed types only
 ```
 
-**Status (V1b, 2026-11-19):** 1,758 types (57 launch, 33 on the keep list, 14 allowed
+**Status (V2, 2026-11-20):** 1,758 types (57 launch, 33 on the keep list, 14 allowed
 costumes; 104 with needs_owner = yes), 843 types in `vocabulary.json`. 15,100 photos (5.32 GB, not
 committed) for 729 types: 13,742 from Commons, 1,358 found with Openverse for 28 launch types.
-The model-agreement check (V1b) dropped 1,945 Openverse and search photos, so 10,022 are kept:
-8,094 train and 1,928 test in `split.json` (sticky: no photo changed sides). The vision service's
-pins come from here (`embed/build_pins.py`): 843 text pins and one gallery pin per kept train photo.
+The model-agreement check dropped 1,945 Openverse and search photos in V1b; V2's looser rule (a pin
+of the photo's own Dzirent mapping in its top 5) gave 930 of them back, so 10,952 are kept: 8,827
+train and 2,125 test in `split.json` (sticky: no photo changed sides). The vision service's pins
+come from here (`embed/build_pins.py`): 843 text pins and one gallery pin per kept train photo, and
+its linear head (`embed/train_linear.py`), trained on the train split only.
 `ingest_own.py` (the owner's own photos) and `augment.py` (training-time augmentation) are written
 and tested; the owner's photos weren't added (see the D2e handoff). See HANDOFF.md and
 `pranalika/handoffs/claude-code.md`.
@@ -401,9 +405,10 @@ python images/auto_filter.py --forget-owner Q80151,Q83363   # first remove those
   - **small:** a short side under 300 px (none: `fetch_commons.py` already skips them);
   - **unreadable:** Pillow can't open the file (2: one cut short, one PNG broken as Commons
     serves it). Measured again on every run;
-  - **model_disagrees (V1b):** `images/model_agreement.csv` says the vision model's top 3 text pins
-    for this Openverse or search photo don't include its own type (section 8c). Only photos nobody
-    had decided were checked, and an owner decision still wins.
+  - **model_disagrees (V1b, V2):** `images/model_agreement.csv` says the vision model's text pins
+    for this Openverse or search photo don't agree with its type (section 8c; V2's rule: no pin of
+    its own Dzirent mapping in its top 5). Only photos nobody had decided were checked, and an owner
+    decision still wins. A photo the rule no longer marks loses its auto row and is kept again.
 - **Why these thresholds.** The saturation histogram of the 13,744 photos (`--histogram`, bins of
   0.02): 1,426 photos in 0.00-0.02 (1,338 of them exactly 0, no colour at all), then 194, 253,
   272, 325 and rising to about 650 a bin at 0.20-0.30. Contact sheets of the 0.02-0.06 bins showed
@@ -472,7 +477,7 @@ python images/augment.py --preview <sha1>   # 8 augmented samples of one train p
 - Importing it sets `NO_ALBUMENTATIONS_UPDATE=1`: Albumentations otherwise asks PyPI for a newer
   version on every import.
 
-### 8c. Pins and the model-agreement check (V1b)
+### 8c. Pins and the model-agreement check (V1b, V2)
 
 Run with the vision service's Python (it has torch), from the repo root, with `VISION_MODEL_DIR`
 pointing at the pinned Marqo-FashionSigLIP files (`services/vision/app/config.py`):
@@ -491,16 +496,24 @@ services/vision/.venv/Scripts/python.exe data/vision/embed/build_pins.py gallery
   way. `embed` caches every kept photo's embedding in `images/raw/embeddings/` (not committed;
   about 3 photos a second on this PC's CPU, so it runs in pieces and resumes). `--with-owner-drops`
   also embeds the photos the owner dropped, the labelled set the check was measured on.
-- **Text pins** (`text`): one per `vocabulary.json` type, the normalized mean of "a photo of a
-  {name}" for its English name and its `also_called` names (the sheet's, at most 5). Written to
-  `services/vision/app/vocabulary.npz` (float16, committed): each row's qid, English name, category,
-  item type, garment type and allowed, and `vocabulary_version`, the sha256 of `vocabulary.json`.
-- **The model-agreement check** (`agree`, before the gallery): every kept photo from Openverse or a
-  Commons search (manifest `source` openverse or search) that nobody had decided is compared with
-  all 843 text pins; when its own type isn't among the top 3 it is `model_disagrees`. The result is
+- **Text pins** (`text`; V2): one per `vocabulary.json` type, the normalized mean of "a photo of a
+  {name}" for its English name and its English aliases: Wikidata's English aliases and D1's launch
+  fallback names, those the type's vocabulary has, at most 5 (476 of the 843 types have some; 1,860
+  prompts). V1b used the `also_called` names, mostly other languages ("Bleiser", "futal"), which
+  scored worse on the test split. Written to `services/vision/app/vocabulary.npz` (float16,
+  committed): each row's qid, English name, category, item type, garment type and allowed, and
+  `vocabulary_version`: V2's is the sha256 of `vocabulary.json`'s sha256, the pin recipe and every
+  pin's prompts, so new prompts are a new version (V1b's was the file's sha256 alone).
+- **The model-agreement check** (`agree`, before the gallery), on the kept photos from Openverse or
+  a Commons search (manifest `source` openverse or search) that nobody had decided. V2's rule: a
+  photo agrees when any text pin with the same Dzirent mapping as its own type (`dzirent_category`
+  and `dzirent_garment_type`; every not-allowed type shares the blank one) is among its top 5 text
+  pins; otherwise it is `model_disagrees` (V1b: its own type in the top 3). A run keeps every row
+  that passed before and checks again every photo the last run marked (and any new photo).
   `images/model_agreement.csv` (committed: sha1, qid, source, its own type's rank, the top 3, the
-  verdict, the vocabulary version); `auto_filter.py` turns `model_disagrees` into an auto drop, so an
-  owner decision always wins and a later run keeps it. Then `split.py` (sticky).
+  verdict, the vocabulary version, the rule, the top 5 and the rank of its mapping's best pin);
+  `auto_filter.py` turns `model_disagrees` into an auto drop, so an owner decision always wins, and a
+  photo the rule passes again loses its auto row. Then `split.py` (sticky).
 - **The run (V1b, 2026-11-19):** 2,222 photos checked (159 skipped: the owner had decided them),
   1,945 marked `model_disagrees` (1,074 of 1,241 Openverse, 871 of 981 search). Kept 11,967 ->
   10,022; split 8,094 train and 1,928 test; no photo changed sides. How sure the rule is: on the
@@ -510,10 +523,47 @@ services/vision/.venv/Scripts/python.exe data/vision/embed/build_pins.py gallery
   showed 18 wrong photos (a tank, a bust, a magazine cover, a book titled with the type's name), 4
   doubtful and 2 right (a red swimsuit, a lingerie photo). The photos it kept include some that only
   show the type's name written (an infographic, a shop sign). See the V1b handoff for the table.
+- **The run (V2, 2026-11-20):** the 1,945 photos V1b marked were checked again with V2's rule and
+  V2's text pins: **930 passed and are kept again** (608 Openverse, 322 search; no owner row is
+  written: they are kept because the filter no longer drops them), 1,015 are still
+  `model_disagrees`. The owner's 4,170 rows in `labels.csv` are byte-identical. Kept 10,022 ->
+  10,952; split 8,827 train and 2,125 test (the 930 are new to the split; no photo changed sides).
+  Launch types under 20 kept: 10 -> 5 (achkan 0, débutante dress 5, Anarkali Salwar Suit 8, Nehru
+  jacket 8, Sherwani 17); evening dress is back to 56 kept, 11 of them test. A contact sheet of 24 of
+  the 930 chosen at random: 8 right, 6 doubtful, 10 wrong (soldiers, a car named Duster, a painting,
+  two Second Life adverts, two 3D renders), so the looser rule gives back wrong photos too. See the
+  V2 handoff for the per-type table.
 - **Gallery pins** (`gallery`): one per kept TRAIN photo of a type with a text pin; the build stops
   if a test photo gets in. Written to `services/vision/app/gallery.npz` (float16, not committed:
   uploaded to the bucket under `pins/<vocabulary_version>/` and fetched by Cloud Build) and
   `services/vision/app/pins.json` (committed: both versions, the gallery's sha256 and its rows).
+
+### 8d. The linear head (V2)
+
+```powershell
+.venv/Scripts/python.exe embed/train_linear.py augment                                      # data/vision's Python
+services/vision/.venv/Scripts/python.exe data/vision/embed/train_linear.py embed --max-minutes 9   # in pieces
+services/vision/.venv/Scripts/python.exe data/vision/embed/train_linear.py train --max-minutes 9   # resumes
+```
+
+- **What it is:** a multinomial logistic-regression layer over the 768-number embeddings, one class
+  per type with train photos, written to `services/vision/app/linear.npz` (weights and bias float16,
+  committed) with its training set's sha256; `pins.json` names the file's sha256 and that training
+  set's, and the service refuses to start on a mismatch. Run after `build_pins.py gallery` (which
+  rewrites `pins.json`).
+- **Train split only:** every sample is a train photo or an augmented copy of one; a test photo
+  stops the build (asserted), and `augment.py` refuses one too.
+- **Thin types:** a type with fewer than 20 kept photos gets augmented copies of its train photos
+  (`augment.py`'s pipeline, seeded by the photo's sha1, saved as 224 x 224 PNG in
+  `images/raw/augmented/`, then embedded by the service's own code), so each photo is drawn
+  `split.json`'s `oversample` times, at most 8; any other type with `oversample` above 1 counts
+  each photo that many times (a sample weight), at most 8.
+- **Cross-fitting first:** 5 folds by photo (a photo, its copies and any train photo that is the
+  same picture, cosine 0.995 or more, share a fold), for each L2 strength; each fold's held-out
+  probabilities go to `images/raw/linear_cv/`. The strength with the lowest out-of-fold log loss is
+  chosen, then the head is trained on everything. The out-of-fold probabilities
+  (`images/raw/linear_oof.npz`) are what `services/vision/eval/calibrate.py` reads for the train
+  photos, so no photo is scored by a head that learned from it.
 
 ### Backup bucket (V1b)
 
@@ -557,6 +607,7 @@ grouped by license, which is the attribution the CC BY and CC BY-SA licenses ask
 | `images/openverse.csv` | `images/raw/openverse/` (Openverse responses, `run_state.json`, run report), `images/raw/augment_preview/` |
 | `images/manifest.csv`, `images/CREDITS.md`, `images/labels.csv`, `images/auto_filter.csv`, `images/split.json`, `images/model_agreement.csv` | `images/thumbs/` (the page's thumbnails) |
 | `embed/build_pins.py`; its text pins in `services/vision/app/vocabulary.npz` and `pins.json` | `images/raw/embeddings/` (the embedding cache); the gallery pins (`services/vision/app/gallery.npz`, in the bucket) |
+| V2: `embed/train_linear.py`; the linear head `services/vision/app/linear.npz` | `images/raw/augmented/` (the augmented copies), `images/raw/linear_cv/` and `images/raw/linear_oof.npz` (cross-fitting); a copy of the head goes to the bucket with the pins |
 | `taxonomy/` scripts and outputs | `images/raw/` (Commons API cache, run reports, the auto-filter's measures and report), `taxonomy/raw/` (Wikidata cache), `.venv/` |
 
 ### 9. Tests
@@ -598,5 +649,12 @@ the pipeline's settings, the hue within 5°, `--preview` writing its own folder 
 vocabulary version, the agreement check (only undecided kept Openverse and search photos, rank 3
 agrees and rank 4 doesn't, a type without a pin left blank), the gallery rows (train photos of
 pinned types only; a test photo stops the build), and `model_disagrees` becoming an auto drop that
-an owner keep overrules. Any connection to something other than this PC fails the test. CI's `vision-data` job runs them after
+an owner keep overrules. V2 changed `test_build_pins.py` (the pin prompts: the name and its English
+aliases the vocabulary has; the vocabulary version following the prompts; the agreement rule: a pin
+of the same mapping in the top 5 agrees and the 6th doesn't, not-allowed types agreeing with any
+not-allowed pin, a run keeping the rows that passed and checking again only the marked photos and
+new ones, an owner-decided row left alone) and added `test_train_linear.py` (augmented copies for
+types under 20 kept only, capped at 8; weights for the other oversampled types; no test photo, in
+the samples or the augmentation plan; the classes in pin order; the training set's sha256; same
+pictures sharing a fold). Any connection to something other than this PC fails the test. CI's `vision-data` job runs them after
 `validate.py`.
