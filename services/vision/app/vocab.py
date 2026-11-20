@@ -13,7 +13,10 @@ CATEGORIES = (
     "Career & Professional", "Occasion & Party", "Cultural & Traditional",
     "Everyday", "Outerwear", "Accessories",
 )
-GARMENT_TYPES = ("top", "trousers", "suit", "dress", "skirt", "saree", "one_size")
+GARMENT_TYPES = ("top", "trousers", "suit", "dress", "skirt", "saree", "one_size", "costume")
+# The garment kinds the apps offer. costume (V1b: costumes and replica suits; certified protective
+# equipment is never a type) is a database value they don't list yet, so suggestions never send it.
+APP_GARMENT_TYPES = ("top", "trousers", "suit", "dress", "skirt", "saree", "one_size")
 ITEM_TYPES = ("Sunglasses", "Handbag", "Tie", "Watch (non-smart)", "Belt buckle", "Costume jewelry")
 STYLES = (
     "South Asian", "East Asian", "Southeast Asian", "Middle Eastern", "African",

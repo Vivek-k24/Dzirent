@@ -92,6 +92,9 @@
     {"key": "folklorico_dress", "label": "Folklórico dress", "kind": "garment", "allowed": true, "category": "Cultural & Traditional", "item_type": null, "garment_type": "dress", "style": "Mexican & Latin American", "policy_group": null, "noun": "folklórico dress", "looks_like": "a folklórico dress", "reason": null,
      "prompts": ["a folklorico dress", "a mexican folklorico dress with ribbons", "a traditional mexican dance dress"]},
 
+    {"key": "costume", "label": "Costume", "kind": "garment", "allowed": true, "category": "Occasion & Party", "item_type": null, "garment_type": "costume", "style": null, "policy_group": null, "noun": "costume", "looks_like": "a costume", "reason": null,
+     "prompts": ["a costume", "a Halloween costume", "a fancy dress costume", "a theatrical stage costume", "a replica movie costume suit"]},
+
     {"key": "tie", "label": "Tie", "kind": "accessory", "allowed": true, "category": "Accessories", "item_type": "Tie", "garment_type": "one_size", "style": "Western formal", "policy_group": null, "noun": "tie", "looks_like": "a tie", "reason": null,
      "prompts": ["a necktie", "a silk tie", "a bow tie"]},
     {"key": "handbag", "label": "Handbag", "kind": "accessory", "allowed": true, "category": "Accessories", "item_type": "Handbag", "garment_type": "one_size", "style": null, "policy_group": null, "noun": "handbag", "looks_like": "a handbag", "reason": null,
