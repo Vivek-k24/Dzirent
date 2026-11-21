@@ -17,6 +17,13 @@ import io.github.jan.supabase.auth.SessionManager
 import io.github.jan.supabase.auth.SettingsCodeVerifierCache
 import io.github.jan.supabase.auth.SettingsSessionManager
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.FlowType
+import io.ktor.client.request.header
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.contentType
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.exceptions.RestException
 import io.ktor.client.plugins.HttpRequestRetry
@@ -207,6 +214,12 @@ fun createDzirentSupabaseClient(
                 }
                 ?: MemorySessionManager()
             this.codeVerifierCache = runCatching { SettingsCodeVerifierCache() }.getOrElse { MemoryCodeVerifierCache() }
+            // E1: PKCE, so the code Google sign-in sends back to dzirent://auth/callback (Custom Tabs)
+            // is useless without this app's own verifier. Email links use the website's pages with a
+            // token hash, so they work whichever flow asked for them.
+            flowType = FlowType.PKCE
+            scheme = AuthLinks.SCHEME
+            host = AuthLinks.HOST
         }
         install(Postgrest)
         install(Storage)
@@ -280,7 +293,8 @@ class DzirentRepository(
         city: UsCity?
     ): Profile? {
         try {
-            auth.signUpWith(Email) {
+            // E1: the confirmation link opens the website's callback ("You're confirmed").
+            auth.signUpWith(Email, redirectUrl = AuthLinks.confirmPage) {
                 email = emailStr
                 password = passwordStr
                 data = buildJsonObject {
@@ -367,12 +381,116 @@ class DzirentRepository(
         }
     }
 
-    suspend fun resetPassword(emailStr: String) {
-        try {
-            auth.resetPasswordForEmail(emailStr)
+    /**
+     * E1: "Forgot password?". The link opens the website's reset page in the browser (the app has
+     * none). The answer never says whether the address has an account (AuthEmails.outcome).
+     */
+    suspend fun requestPasswordReset(emailStr: String): EmailRequest {
+        AuthEmails.emailProblem(emailStr)?.let { return EmailRequest.Problem(it) }
+        return try {
+            auth.resetPasswordForEmail(emailStr.trim(), redirectUrl = AuthLinks.resetPage)
+            EmailRequest.Sent
         } catch (e: Exception) {
-            throw fail("send the reset email", e)
+            if (e is CancellationException) throw e
+            AuthEmails.outcome(authAnswer(e))
         }
+    }
+
+    /**
+     * E1: "Send the link again" on "Check your email". Auth's resend, with the website's callback as
+     * the link's return address (the library's resend can't pass one).
+     */
+    @OptIn(SupabaseInternal::class)
+    suspend fun resendConfirmation(emailStr: String): EmailRequest {
+        AuthEmails.emailProblem(emailStr)?.let { return EmailRequest.Problem(it) }
+        return try {
+            val response = client.httpClient.httpClient.post(client.supabaseHttpUrl.trimEnd('/') + "/auth/v1/resend") {
+                parameter("redirect_to", AuthLinks.confirmPage)
+                header("apikey", client.supabaseKey)
+                contentType(ContentType.Application.Json)
+                setBody(buildJsonObject {
+                    put("type", "signup")
+                    put("email", emailStr.trim())
+                }.toString())
+            }
+            if (response.status.isSuccess()) {
+                EmailRequest.Sent
+            } else {
+                val body = runCatching { Json.parseToJsonElement(response.bodyAsText()).jsonObject }.getOrNull()
+                AuthEmails.outcome(AuthAnswer(
+                    code = body?.get("error_code")?.jsonPrimitive?.contentOrNull,
+                    status = response.status.value,
+                    message = body?.get("msg")?.jsonPrimitive?.contentOrNull
+                ))
+            }
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            AuthEmails.outcome(AuthAnswer(null, null, e.message))
+        }
+    }
+
+    private fun authAnswer(e: Exception): AuthAnswer {
+        val rest = e as? RestException
+        return AuthAnswer(code = rest?.error, status = rest?.statusCode, message = rest?.message ?: e.message)
+    }
+
+    /**
+     * E1: "Continue with Google": Supabase's OAuth in Custom Tabs; Google sends the person back to
+     * dzirent://auth/callback, which MainActivity hands to [completeGoogleSignIn].
+     */
+    suspend fun signInWithGoogle() {
+        try {
+            auth.signInWith(Google, redirectUrl = AuthLinks.CALLBACK)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            throw DzirentException(ErrorCatalog.shown("DZ-E7021"))
+        }
+    }
+
+    /** E1: the code from dzirent://auth/callback, exchanged (PKCE) for a session; then my profile. */
+    suspend fun completeGoogleSignIn(code: String): Profile? {
+        try {
+            auth.exchangeCodeForSession(code)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            throw DzirentException(ErrorCatalog.shown("DZ-E7020"))
+        }
+        return getCurrentProfile()
+    }
+
+    /** E1: true when the account can sign in with a password (it has the email provider). */
+    fun hasPasswordSignIn(): Boolean {
+        val user = auth.currentUserOrNull() ?: return false
+        val providers = (user.appMetadata?.get("providers") as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.contentOrNull }.orEmpty()
+        return "email" in providers || user.identities.orEmpty().any { it.provider == "email" }
+    }
+
+    /** E1: Google's name for the signed-in account, to prefill "Finish your profile". */
+    fun googleName(): String {
+        val meta = auth.currentUserOrNull()?.userMetadata
+        fun text(key: String) = (meta?.get(key) as? JsonPrimitive)?.takeIf { it.isString }?.content
+        return FinishProfile.suggestedName(text("full_name"), text("name"))
+    }
+
+    /**
+     * E1: "Finish your profile": the 18+ tick, the name and (optional) the rough location, checked
+     * again by the database (complete_profile), which is what lets the account list, rent and message.
+     */
+    suspend fun completeProfile(displayName: String, adult: Boolean, city: UsCity?): Profile? {
+        try {
+            postgrest.rpc("complete_profile", buildJsonObject {
+                put("p_display_name", displayName.trim())
+                put("p_adult", adult)
+                if (city != null) {
+                    put("p_city", city.label)
+                    put("p_lat", city.lat)
+                    put("p_lng", city.lng)
+                }
+            })
+        } catch (e: Exception) {
+            throw fail("finish your profile", e)
+        }
+        return getCurrentProfile()
     }
 
     // =========================================================================

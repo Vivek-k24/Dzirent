@@ -49,6 +49,15 @@
                 <data android:pathPrefix="/studio/" />
             </intent-filter>
 
+            <!-- E1: back from Google sign-in (Supabase OAuth in Custom Tabs, PKCE). The same address is in
+                 the Supabase project's redirect list: dzirent://auth/callback. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="dzirent" android:host="auth" android:pathPrefix="/callback" />
+            </intent-filter>
+
         </activity>
 
         <!-- Push: send-push sends data messages and the app builds each notification itself. -->

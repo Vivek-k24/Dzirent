@@ -14,8 +14,14 @@ val generateSupabaseConfig by tasks.registering {
 
     val envUrl = providers.environmentVariable("SUPABASE_URL").orNull?.trim() ?: ""
     val envKey = providers.environmentVariable("SUPABASE_PUBLISHABLE_KEY").orNull?.trim() ?: ""
+    // E1: the website the sign-in emails' links open (the reset page, "You're confirmed"):
+    // https://dzirent.com unless DZIRENT_WEBSITE_URL says otherwise (a debug build for the preview
+    // site uses https://dzirent.vercel.app). Only https addresses are accepted.
+    val envWebsite = providers.environmentVariable("DZIRENT_WEBSITE_URL").orNull?.trim()?.trimEnd('/')
+        ?.takeIf { it.matches(Regex("^https://[a-z0-9.-]+$")) } ?: "https://dzirent.com"
     inputs.property("SUPABASE_URL", envUrl)
     inputs.property("SUPABASE_PUBLISHABLE_KEY", envKey)
+    inputs.property("DZIRENT_WEBSITE_URL", envWebsite)
 
     doLast {
         if (envUrl.isEmpty()) {
@@ -34,6 +40,7 @@ val generateSupabaseConfig by tasks.registering {
             object SupabaseBuildConfig {
                 const val SUPABASE_URL: String = "$envUrl"
                 const val SUPABASE_PUBLISHABLE_KEY: String = "$envKey"
+                const val WEBSITE_URL: String = "$envWebsite"
             }
             """.trimIndent() + "\n"
         )

@@ -22,6 +22,7 @@ import com.dzirent.shared.model.PASSWORD_MIN_LENGTH
 import com.dzirent.shared.model.Profile
 import com.dzirent.shared.model.UsCity
 import com.dzirent.shared.platform.LocalDevice
+import com.dzirent.shared.repository.DzirentException
 import com.dzirent.shared.repository.DzirentRepository
 import kotlinx.coroutines.launch
 
@@ -92,34 +93,149 @@ fun WelcomeScreen(
     }
 }
 
+/**
+ * E1: "Continue with Google" (Supabase OAuth in Custom Tabs, back through dzirent://auth/callback).
+ * Android only: the iPhone keeps password sign-in until Apple and Google sign-in come together there.
+ */
+@Composable
+fun GoogleSignInButton(repository: DzirentRepository, onError: (String) -> Unit) {
+    if (LocalDevice.current.push.platform != "android") return
+    val scope = rememberCoroutineScope()
+    var starting by remember { mutableStateOf(false) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
+    ) {
+        HorizontalDivider(modifier = Modifier.weight(1f))
+        Text("  or  ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        HorizontalDivider(modifier = Modifier.weight(1f))
+    }
+    OutlinedButton(
+        onClick = {
+            scope.launch {
+                starting = true
+                try {
+                    repository.signInWithGoogle()
+                } catch (e: Exception) {
+                    onError(e.userMessage("Google sign-in isn't available right now."))
+                }
+                starting = false
+            }
+        },
+        enabled = !starting,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
+    ) {
+        Text(if (starting) "Opening Google..." else "Continue with Google")
+    }
+}
+
+/**
+ * E1: "Forgot password?": the address (prefilled from the sign-in screen), then always the same
+ * neutral answer. The emailed link opens the website's reset page in the browser.
+ */
+@Composable
+fun ForgotPasswordScreen(
+    repository: DzirentRepository,
+    initialEmail: String,
+    onBack: () -> Unit
+) {
+    var email by remember { mutableStateOf(initialEmail) }
+    var sending by remember { mutableStateOf(false) }
+    var problem by remember { mutableStateOf<ShownError?>(null) }
+    var sent by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Forgot your password?",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.asHeading()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Enter your account's email. We'll send a link to choose a new password.",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            if (sent) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                ) {
+                    Text(
+                        text = NEUTRAL_RESET,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(16.dp).announced()
+                    )
+                }
+            }
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it; problem = null },
+                label = { Text("Email") },
+                leadingIcon = { Icon(Icons.Default.Mail, contentDescription = null) },
+                isError = problem != null,
+                supportingText = problem?.let { { Text(it.text, modifier = Modifier.announced()) } },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    scope.launch {
+                        sending = true
+                        when (val result = repository.requestPasswordReset(email)) {
+                            is EmailRequest.Sent -> sent = true
+                            is EmailRequest.Problem -> problem = result.error
+                        }
+                        sending = false
+                    }
+                },
+                enabled = !sending,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
+            ) {
+                Text(if (sending) "Sending..." else if (sent) "Send another link" else "Send the link")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(onClick = onBack, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text("Back to Log In")
+            }
+        }
+    }
+}
+
 @Composable
 fun LoginScreen(
     repository: DzirentRepository,
     onLoginSuccess: (Profile) -> Unit,
     onNavigateToSignUp: () -> Unit,
-    onNavigateToWelcome: () -> Unit
+    onNavigateToWelcome: () -> Unit,
+    onForgotPassword: (String) -> Unit = {},
+    onNeedsConfirmation: (String) -> Unit = {},
+    /** E1: a Google sign-in that came back with a refusal. */
+    initialError: String? = null,
+    onInitialErrorShown: () -> Unit = {}
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var resetSentTo by remember { mutableStateOf<String?>(null) }
-    var isSendingReset by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf(initialError) }
+    LaunchedEffect(initialError) { if (initialError != null) onInitialErrorShown() }
+    // E1: the account exists but its email isn't confirmed yet (DZ-E1005): offer the link again.
+    var unconfirmed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     if (isLoading) {
         LoadingView(message = "Signing in...")
         return
-    }
-
-    resetSentTo?.let { sentTo ->
-        AlertDialog(
-            onDismissRequest = { resetSentTo = null },
-            icon = { Icon(Icons.Default.Mail, contentDescription = null) },
-            title = { Text("Check your email", modifier = Modifier.asHeading()) },
-            text = { Text("If an account exists for $sentTo, we sent a link to reset your password.") },
-            confirmButton = { TextButton(onClick = { resetSentTo = null }) { Text("OK") } }
-        )
     }
 
     Surface(
@@ -163,13 +279,20 @@ fun LoginScreen(
                             modifier = Modifier.announced()
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        TextButton(
-                            onClick = {
-                                errorMessage = null
-                                isLoading = false
+                        Row {
+                            TextButton(
+                                onClick = {
+                                    errorMessage = null
+                                    isLoading = false
+                                }
+                            ) {
+                                Text("Retry")
                             }
-                        ) {
-                            Text("Retry")
+                            if (unconfirmed) {
+                                TextButton(onClick = { onNeedsConfirmation(email.trim()) }) {
+                                    Text("Send the link again")
+                                }
+                            }
                         }
                     }
                 }
@@ -177,7 +300,7 @@ fun LoginScreen(
 
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it; errorMessage = null },
+                onValueChange = { email = it; errorMessage = null; unconfirmed = false },
                 label = { Text("Email") },
                 leadingIcon = { Icon(Icons.Default.Mail, contentDescription = null) },
                 singleLine = true,
@@ -194,29 +317,12 @@ fun LoginScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+            // E1: its own screen with an email field and the neutral answer.
             TextButton(
-                onClick = {
-                    val trimmedEmail = email.trim()
-                    if (trimmedEmail.isBlank()) {
-                        errorMessage = "Enter your email above, then tap Forgot password."
-                        return@TextButton
-                    }
-                    scope.launch {
-                        isSendingReset = true
-                        errorMessage = null
-                        try {
-                            repository.resetPassword(trimmedEmail)
-                            resetSentTo = trimmedEmail
-                        } catch (e: Exception) {
-                            errorMessage = e.userMessage("Couldn't send the reset email. Please try again.")
-                        }
-                        isSendingReset = false
-                    }
-                },
-                enabled = !isSendingReset,
-                modifier = Modifier.align(Alignment.End)
+                onClick = { onForgotPassword(email.trim()) },
+                modifier = Modifier.align(Alignment.End).heightIn(min = 48.dp)
             ) {
-                Text(if (isSendingReset) "Sending..." else "Forgot password?")
+                Text("Forgot password?")
             }
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -240,6 +346,7 @@ fun LoginScreen(
                             }
                         } catch (e: Exception) {
                             isLoading = false
+                            unconfirmed = (e as? DzirentException)?.code == "DZ-E1005"
                             errorMessage = e.userMessage("Failed to log in. Please check your credentials.")
                         }
                     }
@@ -248,6 +355,7 @@ fun LoginScreen(
             ) {
                 Text("Log In")
             }
+            GoogleSignInButton(repository = repository, onError = { errorMessage = it })
 
             Spacer(modifier = Modifier.height(16.dp))
             Row(
@@ -299,7 +407,7 @@ fun SignUpScreen(
 
     val sentTo = confirmationSentTo
     if (sentTo != null) {
-        EmailConfirmationView(email = sentTo, onGoToLogin = onNavigateToLogin)
+        EmailConfirmationView(repository = repository, email = sentTo, onGoToLogin = onNavigateToLogin)
         return
     }
 
@@ -533,6 +641,8 @@ fun SignUpScreen(
             ) {
                 Text("Sign Up")
             }
+            // E1: a first-time Google account finishes its profile (18+, name, area, terms) next.
+            GoogleSignInButton(repository = repository, onError = { errorMessage = it })
 
             Spacer(modifier = Modifier.height(16.dp))
             Row(
@@ -552,11 +662,29 @@ fun SignUpScreen(
     }
 }
 
+/**
+ * "Check your email" after a password sign-up (Confirm email is on). The link opens the website's
+ * callback ("You're confirmed"); then the person signs in here as usual. E1: "Send the link again",
+ * once a minute, with the neutral answer.
+ */
 @Composable
 fun EmailConfirmationView(
+    repository: DzirentRepository,
     email: String,
     onGoToLogin: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+    val cooldown = remember { ResendCooldown() }
+    var secondsLeft by remember { mutableStateOf(0) }
+    var sending by remember { mutableStateOf(false) }
+    var answer by remember { mutableStateOf<String?>(null) }
+    var problem by remember { mutableStateOf<ShownError?>(null) }
+    LaunchedEffect(secondsLeft) {
+        if (secondsLeft > 0) {
+            kotlinx.coroutines.delay(1_000)
+            secondsLeft = cooldown.secondsLeft(nowMillis())
+        }
+    }
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -588,7 +716,43 @@ fun EmailConfirmationView(
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            answer?.let {
+                Text(it, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, modifier = Modifier.announced())
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            problem?.let {
+                Text(it.text, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, modifier = Modifier.announced())
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        sending = true
+                        problem = null
+                        when (val result = repository.resendConfirmation(email)) {
+                            is EmailRequest.Sent -> {
+                                answer = NEUTRAL_RESEND
+                                cooldown.sent(nowMillis())
+                                secondsLeft = cooldown.secondsLeft(nowMillis())
+                            }
+                            is EmailRequest.Problem -> problem = result.error
+                        }
+                        sending = false
+                    }
+                },
+                enabled = !sending && secondsLeft == 0,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
+            ) {
+                Text(
+                    when {
+                        sending -> "Sending..."
+                        secondsLeft > 0 -> "Send the link again in $secondsLeft s"
+                        else -> "Send the link again"
+                    }
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = onGoToLogin,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)

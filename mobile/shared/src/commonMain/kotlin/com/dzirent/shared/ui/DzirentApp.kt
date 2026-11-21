@@ -27,13 +27,16 @@ sealed class AuthScreenState {
     data class NeedsTerms(val profile: Profile) : AuthScreenState()
     /** Signed in, but the age gate blocked the account (Dzirent is 18+). */
     data class AgeBlocked(val profile: Profile) : AuthScreenState()
+    /** E1: signed in with Google for the first time: "Finish your profile" before anything else. */
+    data class NeedsProfile(val profile: Profile) : AuthScreenState()
     object Guest : AuthScreenState()
 }
 
 /**
  * Where a signed-in account goes: the age gate first (the app store's age signal, on sign-in and
- * once a day), then the terms step while the current versions aren't accepted. If the terms
- * check can't run (no connection), the app opens and asks again next time.
+ * once a day), then (E1) "Finish your profile" while it isn't finished (a first Google sign-in),
+ * then the terms step while the current versions aren't accepted. If the terms check can't run
+ * (no connection), the app opens and asks again next time.
  */
 private suspend fun signedInState(
     repository: DzirentRepository,
@@ -42,6 +45,7 @@ private suspend fun signedInState(
     onSignIn: Boolean
 ): AuthScreenState = when {
     AgeGate.check(repository, device, profile.id, onSignIn) -> AuthScreenState.AgeBlocked(profile)
+    FinishProfile.needed(profile.profileCompletedAt) -> AuthScreenState.NeedsProfile(profile)
     runCatching { repository.needsLegalAcceptance() }.getOrDefault(false) -> AuthScreenState.NeedsTerms(profile)
     else -> AuthScreenState.Authenticated(profile)
 }
@@ -59,7 +63,10 @@ fun DzirentApp(
     onOpenChatHandled: () -> Unit = {},
     /** A dzirent.com listing or studio link the phone opened in the app (P5C); waits until Home shows. */
     openLink: LinkTarget? = null,
-    onOpenLinkHandled: () -> Unit = {}
+    onOpenLinkHandled: () -> Unit = {},
+    /** E1: dzirent://auth/callback, back from Google sign-in (Custom Tabs). */
+    authCallback: String? = null,
+    onAuthCallbackHandled: () -> Unit = {}
 ) {
     var screenState by remember { mutableStateOf<AuthScreenState>(AuthScreenState.Loading) }
     var firstVisitSeen by rememberSaveable { mutableStateOf(false) }
@@ -92,6 +99,34 @@ fun DzirentApp(
         }
     }
 
+    // E1: back from Google: exchange the code (PKCE), then the usual signed-in steps (age gate,
+    // "Finish your profile" for a new account, terms). A refusal shows on the sign-in screen.
+    var googleError by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(authCallback) {
+        val link = authCallback ?: return@LaunchedEffect
+        onAuthCallbackHandled()
+        when (val callback = AuthDeepLink.parse(link)) {
+            is AuthCallback.Code -> {
+                screenState = AuthScreenState.Loading
+                screenState = try {
+                    val profile = repository.completeGoogleSignIn(callback.code)
+                    firstVisitSeen = true
+                    if (profile != null) signedInState(repository, device, profile, onSignIn = true) else AuthScreenState.Guest
+                } catch (e: Exception) {
+                    googleError = e.userMessage("Google sign-in didn't finish. Please try again.")
+                    authStartDestination = "login"
+                    AuthScreenState.AuthFlow
+                }
+            }
+            is AuthCallback.Failed -> {
+                googleError = callback.error.text
+                authStartDestination = "login"
+                screenState = AuthScreenState.AuthFlow
+            }
+            AuthCallback.NotOurs -> Unit
+        }
+    }
+
     // A guest who arrives through a shared link goes straight to it, without the first-visit sheet.
     LaunchedEffect(openLink) {
         if (openLink != null) firstVisitSeen = true
@@ -111,6 +146,8 @@ fun DzirentApp(
                         AuthNavHost(
                             repository = repository,
                             startDestination = authStartDestination,
+                            startError = googleError,
+                            onStartErrorShown = { googleError = null },
                             onLoginSuccess = { profile ->
                                 firstVisitSeen = true
                                 screenState = AuthScreenState.Loading
@@ -125,6 +162,17 @@ fun DzirentApp(
                     is AuthScreenState.AgeBlocked -> {
                         AgeBlockedScreen(
                             repository = repository,
+                            onSignedOut = { screenState = AuthScreenState.Guest }
+                        )
+                    }
+                    is AuthScreenState.NeedsProfile -> {
+                        FinishProfileScreen(
+                            repository = repository,
+                            onFinished = { finished ->
+                                screenState = AuthScreenState.Loading
+                                // The age gate runs again: the 18+ tick is now on the profile.
+                                scope.launch { screenState = signedInState(repository, device, finished, onSignIn = true) }
+                            },
                             onSignedOut = { screenState = AuthScreenState.Guest }
                         )
                     }
@@ -220,9 +268,14 @@ fun AuthNavHost(
     repository: DzirentRepository,
     startDestination: String = "welcome",
     onLoginSuccess: (Profile) -> Unit,
-    onBrowseAsGuest: () -> Unit
+    onBrowseAsGuest: () -> Unit,
+    /** E1: a Google sign-in that didn't finish, shown on the sign-in screen once. */
+    startError: String? = null,
+    onStartErrorShown: () -> Unit = {}
 ) {
     val authNavController = rememberNavController()
+    // E1: the address typed on the sign-in screen, for "Forgot password?" and "Send the link again".
+    var handoffEmail by rememberSaveable { mutableStateOf("") }
 
     PlatformNavigationBackHandler(authNavController)
     NavHost(
@@ -241,7 +294,31 @@ fun AuthNavHost(
                 repository = repository,
                 onLoginSuccess = onLoginSuccess,
                 onNavigateToSignUp = { authNavController.navigate("signup") },
-                onNavigateToWelcome = { authNavController.popBackStack("welcome", inclusive = false) }
+                onNavigateToWelcome = { authNavController.popBackStack("welcome", inclusive = false) },
+                onForgotPassword = { typed ->
+                    handoffEmail = typed
+                    authNavController.navigate("forgot")
+                },
+                onNeedsConfirmation = { typed ->
+                    handoffEmail = typed
+                    authNavController.navigate("check_email")
+                },
+                initialError = startError,
+                onInitialErrorShown = onStartErrorShown
+            )
+        }
+        composable("forgot") {
+            ForgotPasswordScreen(
+                repository = repository,
+                initialEmail = handoffEmail,
+                onBack = { authNavController.popBackStack() }
+            )
+        }
+        composable("check_email") {
+            EmailConfirmationView(
+                repository = repository,
+                email = handoffEmail,
+                onGoToLogin = { authNavController.popBackStack() }
             )
         }
         composable("signup") {
