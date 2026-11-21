@@ -240,109 +240,109 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L14: `fun isSigned(userId: String, version: Int): Boolean = prefs.getBoolean(key(userId, version), false)`
 - L16: `fun markSigned(userId: String, version: Int) {`
 
-### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/model/Models.kt` (717 lines)
+### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/model/Models.kt` (726 lines)
 
 - L16: `data class Profile(`
-- L38: `val hasLocation: Boolean get() = approxLat != null && approxLng != null`
-- L39: `val studioTitle: String get() = studioName?.ifBlank { null } ?: displayName.ifBlank { "Studio" }`
-- L42: `val suspensionNotice: String? get() = com.dzirent.shared.util.suspensionNotice(suspendedUntil, suspensionReason)`
-- L49: `data class PrivateProfile(`
-- L63: `val fit: FitProfile? get() = FitProfile.fromDb(fitProfile)`
-- L64: `val hasMeasurementsConsent: Boolean get() = measurementsConsentAt != null`
-- L66: `fun bodyCm(measurement: BodyMeasurement): Double? = when (measurement) {`
-- L78: `data class UsCity(`
-- L85: `val label: String get() = "$name, $state"`
-- L90: `data class ListingCard(`
-- L105: `data class ListingPhotoDetail(`
-- L112: `data class ListingMeasurementDetail(`
-- L119: `data class AvailabilityRange(`
-- L126: `data class ListingDetail(`
-- L155: `data class StudioDetail(`
-- L174: `data class BlockedUserItem(`
-- L184: `data class SavedListingItem(`
-- L202: `data class SavedStudioCard(`
-- L213: `data class ConversationCard(`
-- L229: `val requestedDates: DateRange? get() = parseDateRange(requestedStart, requestedEnd)`
-- L237: `data class MyVerification(`
-- L250: `data class VerificationStart(val url: String, val sessionToken: String)`
-- L254: `data class Listing(`
-- L287: `val typeLabel: String get() = itemType ?: category`
-- L291: `val priceLabel: String get() = priceUsd?.let { formatPerDay(it) } ?: priceNote`
-- L295: `data class ListingPhoto(`
-- L308: `data class ListingScan(`
-- L321: `val finished: Boolean get() = status == "done" || status == "failed"`
-- L326: `data class PhotoScanRow(`
-- L333: `data class ListingMeasurement(`
-- L342: `data class Availability(`
-- L350: `data class Conversation(`
-- L365: `val requestedDates: DateRange? get() = parseDateRange(requestedStart, requestedEnd)`
-- L366: `fun otherUserId(me: String): String = if (me == renterId) lenderId else renterId`
-- L367: `fun otherUser(me: String): Profile? = if (me == renterId) lender else renter`
-- L368: `val lastMessage: Message? get() = messages.firstOrNull()`
-- L372: `data class Message(`
-- L381: `data class Rental(`
-- L402: `data class RentalEvent(`
-- L413: `data class RentalPhoto(`
-- L426: `data class RentalView(`
-- L464: `val iAmLender: Boolean get() = yourRole == "lender"`
-- L465: `val dates: DateRange? get() = parseDateRange(startDate, endDate)`
-- L470: `data class RentalClaimView(`
-- L485: `data class RentalSettings(`
-- L497: `data class PayoutAccount(`
-- L504: `data class PaymentStart(val clientSecret: String, val publishableKey: String, val amount: Double?)`
-- L507: `data class ConversationRead(`
-- L513: `data class RentalOutcome(`
-- L521: `data class Block(`
-- L530: `data class NotificationSettings(`
-- L540: `data class Report(`
-- L550: `data class SavedListing(`
-- L560: `data class SavedStudio(`
-- L569: `data class StudioPage(`
-- L583: `data class SuggestionEvent(`
-- L590: `object Roles {`
-- L591: `const val RENTER = "renter"`
-- L592: `const val LENDER = "lender"`
-- L593: `const val BOTH = "both"`
-- L595: `fun canLend(role: String) = role == LENDER || role == BOTH`
-- L598: `object Categories {`
-- L599: `const val ACCESSORIES = "Accessories"`
-- L601: `val ALL = listOf(`
-- L620: `fun measurementSuggestions(category: String, itemType: String?): List<String> =`
-- L626: `object AccessoryTypes {`
-- L628: `const val COSTUME_JEWELRY = "Costume jewelry"`
-- L630: `val ALL = listOf("Sunglasses", "Handbag", "Tie", "Watch (non-smart)", "Belt buckle", COSTUME_JEWELRY)`
-- L632: `val SUGGESTIONS = mapOf(`
-- L642: `object ReportReasons {`
-- L643: `val ALL = listOf("Inappropriate photo", "Prohibited item", "Scam or fraud", "Harassment", "Other")`
-- L644: `const val DETAILS_MAX = 500`
-- L647: `object ListingEvents {`
-- L648: `const val VIEW = "view"`
-- L649: `const val SAVE = "save"`
-- L650: `const val MESSAGE = "message"`
-- L653: `sealed class UiState<out T> {`
-- L654: `object Loading : UiState<Nothing>()`
-- L655: `data class Error(val message: String) : UiState<Nothing>()`
-- L656: `data class Success<T>(val data: T) : UiState<T>()`
-- L659: `data class ListingValidationResult(`
-- L667: `fun validateListingForm(`
-- L672: `val trimmedTitle = title.trim()`
-- L673: `val titleError = when {`
-- L680: `val priceError = when {`
-- L687: `val mErrors = validateMeasurements(measurements)`
-- L688: `val hasMeasurementError = mErrors.any { it != null }`
-- L690: `val first = titleError ?: priceError ?: mErrors.firstOrNull { it != null }`
-- L701: `object AppLinks {`
-- L702: `const val TERMS_URL = "https://dzirent.com/terms"`
-- L703: `const val PRIVACY_URL = "https://dzirent.com/privacy"`
-- L704: `const val SUPPORT_EMAIL = "support@dzirent.com"`
-- L705: `const val HELP_URL = "https://dzirent.com/help"`
-- L706: `const val SAFETY_URL = "https://dzirent.com/safety"`
-- L707: `const val COMMUNITY_GUIDELINES_URL = "https://dzirent.com/community-guidelines"`
-- L708: `const val COPYRIGHT_URL = "https://dzirent.com/copyright"`
-- L709: `const val DELETE_ACCOUNT_URL = "https://dzirent.com/delete-account"`
-- L710: `const val SUPPORT_URL = "https://dzirent.com/support"`
-- L712: `const val DATA_EXPORT_URL = "https://dzirent.com/app/settings/preferences#privacy"`
-- L716: `const val PASSWORD_MIN_LENGTH = 8`
+- L47: `val hasLocation: Boolean get() = approxLat != null && approxLng != null`
+- L48: `val studioTitle: String get() = studioName?.ifBlank { null } ?: displayName.ifBlank { "Studio" }`
+- L51: `val suspensionNotice: String? get() = com.dzirent.shared.util.suspensionNotice(suspendedUntil, suspensionReason)`
+- L58: `data class PrivateProfile(`
+- L72: `val fit: FitProfile? get() = FitProfile.fromDb(fitProfile)`
+- L73: `val hasMeasurementsConsent: Boolean get() = measurementsConsentAt != null`
+- L75: `fun bodyCm(measurement: BodyMeasurement): Double? = when (measurement) {`
+- L87: `data class UsCity(`
+- L94: `val label: String get() = "$name, $state"`
+- L99: `data class ListingCard(`
+- L114: `data class ListingPhotoDetail(`
+- L121: `data class ListingMeasurementDetail(`
+- L128: `data class AvailabilityRange(`
+- L135: `data class ListingDetail(`
+- L164: `data class StudioDetail(`
+- L183: `data class BlockedUserItem(`
+- L193: `data class SavedListingItem(`
+- L211: `data class SavedStudioCard(`
+- L222: `data class ConversationCard(`
+- L238: `val requestedDates: DateRange? get() = parseDateRange(requestedStart, requestedEnd)`
+- L246: `data class MyVerification(`
+- L259: `data class VerificationStart(val url: String, val sessionToken: String)`
+- L263: `data class Listing(`
+- L296: `val typeLabel: String get() = itemType ?: category`
+- L300: `val priceLabel: String get() = priceUsd?.let { formatPerDay(it) } ?: priceNote`
+- L304: `data class ListingPhoto(`
+- L317: `data class ListingScan(`
+- L330: `val finished: Boolean get() = status == "done" || status == "failed"`
+- L335: `data class PhotoScanRow(`
+- L342: `data class ListingMeasurement(`
+- L351: `data class Availability(`
+- L359: `data class Conversation(`
+- L374: `val requestedDates: DateRange? get() = parseDateRange(requestedStart, requestedEnd)`
+- L375: `fun otherUserId(me: String): String = if (me == renterId) lenderId else renterId`
+- L376: `fun otherUser(me: String): Profile? = if (me == renterId) lender else renter`
+- L377: `val lastMessage: Message? get() = messages.firstOrNull()`
+- L381: `data class Message(`
+- L390: `data class Rental(`
+- L411: `data class RentalEvent(`
+- L422: `data class RentalPhoto(`
+- L435: `data class RentalView(`
+- L473: `val iAmLender: Boolean get() = yourRole == "lender"`
+- L474: `val dates: DateRange? get() = parseDateRange(startDate, endDate)`
+- L479: `data class RentalClaimView(`
+- L494: `data class RentalSettings(`
+- L506: `data class PayoutAccount(`
+- L513: `data class PaymentStart(val clientSecret: String, val publishableKey: String, val amount: Double?)`
+- L516: `data class ConversationRead(`
+- L522: `data class RentalOutcome(`
+- L530: `data class Block(`
+- L539: `data class NotificationSettings(`
+- L549: `data class Report(`
+- L559: `data class SavedListing(`
+- L569: `data class SavedStudio(`
+- L578: `data class StudioPage(`
+- L592: `data class SuggestionEvent(`
+- L599: `object Roles {`
+- L600: `const val RENTER = "renter"`
+- L601: `const val LENDER = "lender"`
+- L602: `const val BOTH = "both"`
+- L604: `fun canLend(role: String) = role == LENDER || role == BOTH`
+- L607: `object Categories {`
+- L608: `const val ACCESSORIES = "Accessories"`
+- L610: `val ALL = listOf(`
+- L629: `fun measurementSuggestions(category: String, itemType: String?): List<String> =`
+- L635: `object AccessoryTypes {`
+- L637: `const val COSTUME_JEWELRY = "Costume jewelry"`
+- L639: `val ALL = listOf("Sunglasses", "Handbag", "Tie", "Watch (non-smart)", "Belt buckle", COSTUME_JEWELRY)`
+- L641: `val SUGGESTIONS = mapOf(`
+- L651: `object ReportReasons {`
+- L652: `val ALL = listOf("Inappropriate photo", "Prohibited item", "Scam or fraud", "Harassment", "Other")`
+- L653: `const val DETAILS_MAX = 500`
+- L656: `object ListingEvents {`
+- L657: `const val VIEW = "view"`
+- L658: `const val SAVE = "save"`
+- L659: `const val MESSAGE = "message"`
+- L662: `sealed class UiState<out T> {`
+- L663: `object Loading : UiState<Nothing>()`
+- L664: `data class Error(val message: String) : UiState<Nothing>()`
+- L665: `data class Success<T>(val data: T) : UiState<T>()`
+- L668: `data class ListingValidationResult(`
+- L676: `fun validateListingForm(`
+- L681: `val trimmedTitle = title.trim()`
+- L682: `val titleError = when {`
+- L689: `val priceError = when {`
+- L696: `val mErrors = validateMeasurements(measurements)`
+- L697: `val hasMeasurementError = mErrors.any { it != null }`
+- L699: `val first = titleError ?: priceError ?: mErrors.firstOrNull { it != null }`
+- L710: `object AppLinks {`
+- L711: `const val TERMS_URL = "https://dzirent.com/terms"`
+- L712: `const val PRIVACY_URL = "https://dzirent.com/privacy"`
+- L713: `const val SUPPORT_EMAIL = "support@dzirent.com"`
+- L714: `const val HELP_URL = "https://dzirent.com/help"`
+- L715: `const val SAFETY_URL = "https://dzirent.com/safety"`
+- L716: `const val COMMUNITY_GUIDELINES_URL = "https://dzirent.com/community-guidelines"`
+- L717: `const val COPYRIGHT_URL = "https://dzirent.com/copyright"`
+- L718: `const val DELETE_ACCOUNT_URL = "https://dzirent.com/delete-account"`
+- L719: `const val SUPPORT_URL = "https://dzirent.com/support"`
+- L721: `const val DATA_EXPORT_URL = "https://dzirent.com/app/settings/preferences#privacy"`
+- L725: `const val PASSWORD_MIN_LENGTH = 8`
 
 ### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/platform/AgeSignals.kt` (45 lines)
 
@@ -1518,7 +1518,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L9: `fun isDark(systemDark: Boolean): Boolean = when (this) {`
 - L21: `data class AppSettings(`
 
-### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/util/AuthFlows.kt` (169 lines)
+### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/util/AuthFlows.kt` (172 lines)
 
 - L10: `object AuthLinks {`
 - L12: `const val SCHEME = "dzirent"`
@@ -2248,7 +2248,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L29: `fun whatIsRecorded() {`
 - L37: `fun onceADay() {`
 
-### `mobile/shared/src/commonTest/kotlin/com/dzirent/shared/AuthFlowsTest.kt` (104 lines)
+### `mobile/shared/src/commonTest/kotlin/com/dzirent/shared/AuthFlowsTest.kt` (108 lines)
 
 - L19: `class AuthFlowsTest {`
 - L21: `fun googleReturnLinkIsRecognizedAndItsCodeRead() {`
@@ -3468,11 +3468,11 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L59: `export function parseSettingInput(s: Pick<AdminSetting, "type" | "min" | "max" | "unit" | "choices">, input: string): Parsed {`
 - L91: `export function groupSettings(settings: AdminSetting[]): [string, AdminSetting[]][] {`
 
-### `apps/web/src/lib/auth-flows.test.ts` (132 lines)
+### `apps/web/src/lib/auth-flows.test.ts` (134 lines)
 
 - (no top-level declarations)
 
-### `apps/web/src/lib/auth-flows.ts` (163 lines)
+### `apps/web/src/lib/auth-flows.ts` (167 lines)
 
 - L6: `export const PASSWORD_MIN = 8;`
 - L8: `export const RESEND_COOLDOWN_SECONDS = 60;`
@@ -3492,13 +3492,13 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L86: `export function callbackStep(q: { code?: string | null; token_hash?: string | null; type?: string | null; error?: string | null }): CallbackStep {`
 - L97: `export function afterVerified(type: LinkType): { path: string; resetWindow: boolean } {`
 - L105: `export function linkFailurePath(type: string | null | undefined): string {`
-- L110: `export function needsProfile(profile: { profile_completed_at?: string | null } | null | undefined): boolean {`
-- L115: `export function finishProfileProblem(f: { name: string; adult: boolean; legal: boolean }): ShownError | null {`
-- L124: `export function suggestedName(meta: Record<string, unknown> | null | undefined): string {`
-- L130: `export function resendWait(lastSentAtMs: number | null | undefined, nowMs: number): number {`
-- L137: `export function clientAddress(get: (name: string) => string | null, onVercel: boolean): string {`
-- L144: `export function hasPasswordSignIn(user: { app_metadata?: { providers?: unknown } | null; identities?: { provider?: string }[] | null } | null | undefined): boolean {`
-- L154: `export function returnUrl(origin: string | null | undefined, path: string): string {`
+- L114: `export function needsProfile(profile: { profile_completed_at?: string | null } | null | undefined): boolean {`
+- L119: `export function finishProfileProblem(f: { name: string; adult: boolean; legal: boolean }): ShownError | null {`
+- L128: `export function suggestedName(meta: Record<string, unknown> | null | undefined): string {`
+- L134: `export function resendWait(lastSentAtMs: number | null | undefined, nowMs: number): number {`
+- L141: `export function clientAddress(get: (name: string) => string | null, onVercel: boolean): string {`
+- L148: `export function hasPasswordSignIn(user: { app_metadata?: { providers?: unknown } | null; identities?: { provider?: string }[] | null } | null | undefined): boolean {`
+- L158: `export function returnUrl(origin: string | null | undefined, path: string): string {`
 
 ### `apps/web/src/lib/data.ts` (232 lines)
 

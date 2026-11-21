@@ -106,9 +106,13 @@ export function linkFailurePath(type: string | null | undefined): string {
   return type === "recovery" ? "/auth/reset?expired=1" : "/auth/confirmed?error=DZ-E1076";
 }
 
-/** A profile without profile_completed_at needs "Finish your profile" (Google's first sign-in). */
+/**
+ * A profile whose profile_completed_at is empty (null) needs "Finish your profile" (Google's first
+ * sign-in). Only an explicit null counts: a profile row without the field at all (a database
+ * before the E1 migration) is never sent to the step.
+ */
 export function needsProfile(profile: { profile_completed_at?: string | null } | null | undefined): boolean {
-  return Boolean(profile) && !profile?.profile_completed_at;
+  return Boolean(profile) && profile?.profile_completed_at === null;
 }
 
 /** "Finish your profile": the 18+ tick and the terms are required, the name 1-80 characters. */

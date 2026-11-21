@@ -90,8 +90,12 @@ class AuthFlowsTest {
     @Test
     fun finishProfileRules() {
         assertTrue(FinishProfile.needed(null))
-        assertTrue(FinishProfile.needed(""))
         assertFalse(FinishProfile.needed("2026-11-20T10:00:00Z"))
+        // A row without the field (a database before the E1 migration) never shows the step.
+        assertFalse(FinishProfile.needed(com.dzirent.shared.model.Profile(id = "u1").profileCompletedAt))
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; coerceInputValues = true }
+        assertTrue(FinishProfile.needed(json.decodeFromString<com.dzirent.shared.model.Profile>("""{"id":"u1","profile_completed_at":null}""").profileCompletedAt))
+        assertFalse(FinishProfile.needed(json.decodeFromString<com.dzirent.shared.model.Profile>("""{"id":"u1"}""").profileCompletedAt))
         assertEquals("DZ-E1080", FinishProfile.problem(" ", adult = true, termsAccepted = true)?.code)
         assertEquals("DZ-E1080", FinishProfile.problem("x".repeat(81), adult = true, termsAccepted = true)?.code)
         assertEquals("DZ-E1079", FinishProfile.problem("Jordan", adult = false, termsAccepted = true)?.code)

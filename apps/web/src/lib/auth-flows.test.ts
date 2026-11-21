@@ -104,6 +104,8 @@ test("finish your profile: needed only while profile_completed_at is empty; its 
   assert.equal(needsProfile({ profile_completed_at: null }), true);
   assert.equal(needsProfile({ profile_completed_at: "2026-11-20T10:00:00Z" }), false);
   assert.equal(needsProfile(null), false);
+  // A row without the field (a database before the E1 migration) is never sent to the step.
+  assert.equal(needsProfile({}), false);
   assert.equal(finishProfileProblem({ name: " ", adult: true, legal: true })?.code, "DZ-E1080");
   assert.equal(finishProfileProblem({ name: "x".repeat(81), adult: true, legal: true })?.code, "DZ-E1080");
   assert.equal(finishProfileProblem({ name: "Jordan", adult: false, legal: true })?.code, "DZ-E1079");

@@ -32,9 +32,18 @@ data class Profile(
     @SerialName("suspension_reason") val suspensionReason: String? = null,
     /** C6: the "Verified" badge (ID verified once). Server-written; from the shop window for other people. */
     @SerialName("is_verified") val isVerified: Boolean = false,
-    /** E1: when the profile was finished (18+, name). Null for a Google sign-up until "Finish your profile". */
-    @SerialName("profile_completed_at") val profileCompletedAt: String? = null
+    /**
+     * E1: when the profile was finished (18+, name). Null for a Google sign-up until "Finish your
+     * profile". A row without the field (a database before the E1 migration) keeps [NOT_READ], so
+     * it is never sent to the step.
+     */
+    @SerialName("profile_completed_at") val profileCompletedAt: String? = NOT_READ
 ) {
+    companion object {
+        /** profile_completed_at wasn't in the row (an older database): treated as finished. */
+        const val NOT_READ = "not-read"
+    }
+
     val hasLocation: Boolean get() = approxLat != null && approxLng != null
     val studioTitle: String get() = studioName?.ifBlank { null } ?: displayName.ifBlank { "Studio" }
 

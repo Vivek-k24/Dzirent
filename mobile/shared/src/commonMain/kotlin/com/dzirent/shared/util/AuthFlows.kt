@@ -164,6 +164,9 @@ object FinishProfile {
     fun suggestedName(fullName: String?, name: String?): String =
         listOf(fullName, name).firstOrNull { !it.isNullOrBlank() }?.trim()?.take(80).orEmpty()
 
-    /** True while the profile isn't finished (profile_completed_at is empty). */
-    fun needed(profileCompletedAt: String?): Boolean = profileCompletedAt.isNullOrBlank()
+    /**
+     * True while the profile isn't finished: the server sent profile_completed_at as null. A row
+     * without the field (Profile.NOT_READ, a database before the E1 migration) is never sent to it.
+     */
+    fun needed(profileCompletedAt: String?): Boolean = profileCompletedAt == null
 }
