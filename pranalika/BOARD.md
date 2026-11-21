@@ -238,7 +238,7 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Mac: the iPhone payment sheet (Stripe iOS SDK PaymentSheet behind `rememberPaymentSheetLauncher`, `ui/PaymentSheet.ios.kt`) and a build check of the C5 common code, see the C5 handoff | To do |
 | Owner: phone test of C5 with payments off (nothing changes; Settings > Notifications has `Email me about rentals`), see the C5 handoff | To do |
 | Owner and agent: the Stripe test-mode rehearsal (`pranalika/stripe-rehearsal.md`) once test keys exist | To do |
-| Owner: an email provider account and the `dzirent.com` DNS records, then the email runbook (`contract.md` section 9) | To do |
+| Owner: an email provider account and the `dzirent.com` DNS records, then the email runbook (`contract.md` section 9) | Done by the owner (Resend on `mail.dzirent.com`, Supabase Auth's SMTP); the code side is E1 (Sign-in and email, below) |
 | Business owner and attorney: confirm `payment_deadline_hours` (24 h), the email record retention (30 days) and the email sender (`legal-placeholders.md` sections 10-11) | To do |
 | C6 ID verification with Didit, live: available to anyone from Settings while the Didit keys are set, `verification_required` (the gate on chats, messages and publishing, `DZ-E6001`) off. `identity_verifications` (owner reads the status only; legal name private; no images, birthdate or document data), the Verified badge in the shop window (cards, listing and studio pages, chat headers), attempts (3, a setting), the ID's 18+ result outranking store signals (a minor is declined and blocked), duplicate faces to admin review, `didit-start` / `didit-webhook` (X-Signature on the raw body, body timestamp, application id, event id once) / `didit-sync` through the outbox, 10-minute reconciliation, Didit deletion at account deletion, admin ID verification queue (approve, reject, reset attempts; logged), Settings > ID verification with the keeps/never-keeps note, website `/verify/done`, Android Didit SDK 4.9.1, privacy page. Live: both C6 migrations applied (the follow-up turns on RLS for the two closed Didit tables and C3's `rental_reminders`; pgTAP now checks every table), all 18 Edge Functions deployed on the 196-code catalog, the Didit key, webhook secret and job secret set. Live test passed 2026-11-15 (the owner's ID on a test account: verified, 18+, attempts 1, the badge in the shop window; the first starts got `DZ-E6006` until the key's Sessions access was set to Read + Write) | Done (Claude Code) |
 | Owner: the one live verification on the preview site (steps in the C6 handoff), then an agent confirms it read-only | Done 2026-11-15: verified once the Didit key's Sessions access was Read + Write; confirmed read-only by Claude Code, see the C6 handoff |
@@ -253,6 +253,19 @@ Phases from the coordinator's handoff plan. `compliance.md` section 8 maps every
 | Mac: build-check the C1 shared-code changes on iPhone (`ErrorCatalog.kt`, `ReadRetry.kt`, the Ktor `HttpRequestRetry` in `createDzirentSupabaseClient`, price per day), see the C1 handoff | To do |
 | Owner: phone test of C1 (see the C1 handoff) | To do |
 | Owner: make the CI checks required on `main` and `Preview` (branch rules), once a few runs are green | To do |
+
+## Sign-in and email
+
+| Item | Status |
+| --- | --- |
+| Done by: Claude Code (E1) | |
+| E1 (Claude Code): password reset on the website (Forgot password?, neutral answer, `/auth/reset` with the token used on submit, the same rules as sign-up, other sessions signed out) and from Android (the link opens the website); Confirm email flow (Check your email with a once-a-minute resend, `/auth/callback` "You're confirmed") on the website and Android; Google sign-in on the website and Android (PKCE, Custom Tabs, `dzirent://auth/callback`) with Finish your profile (18+, name, area, terms) enforced by the database (`DZ-E1078`); automatic linking by verified email tested; five sign-in email templates in the repo with a push script; send-email on Resend (preference check, essential reminders, plain text, List-Unsubscribe, one-click unsubscribe), email-events (signed Resend webhook, bounce and complaint flag, admin user page); error codes `DZ-E1070`-`E1084`, `DZ-E7020`-`E7033`. Local: pgTAP 497, integration 24 of 24, website 67, shared Kotlin 87 (1 skipped); CI green | Done in the repo (Claude Code); live steps waiting for the owner's go-ahead (below) |
+| Owner: say whether an agent should apply the E1 migration (`20261120200000_e1_auth_email.sql`) to `dzirent-server`, deploy the Edge Functions (`send-email`, `email-events`, `email-unsubscribe` and the rest for the new error codes), set `RESEND_API_KEY`, and push the sign-in templates with Confirm email on and the `dzirent://auth/callback` redirect (`node supabase/scripts/push_auth_emails.mjs --apply --confirm-email-on --add-redirect=dzirent://auth/callback`). The preview site already runs the E1 code; Google's "Finish your profile" and the website's limits need the migration | To do |
+| Owner: create the Resend webhook (URL `https://pwfzkyjeivadbtkfkdxr.supabase.co/functions/v1/email-events`, events `email.bounced` and `email.complained`) and save its signing secret in `providers.env` as `RESEND_WEBHOOK_SECRET`; then an agent sets the function secret | To do |
+| Owner: merge `Preview` into `main` after the live steps: until then, email links that fall back to the Site URL (`https://dzirent.com`) reach pages main doesn't have yet | To do |
+| Owner: phone test of E1 on Android (see the E1 handoff) | To do |
+| Mac: build-check the E1 shared code on iPhone (no Google button there; see the E1 handoff) | To do |
+| iPhone: Apple and Google sign-in together (needs the paid Apple account) | To do |
 
 ## Vision data
 
