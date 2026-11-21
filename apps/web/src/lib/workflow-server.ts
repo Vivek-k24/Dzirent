@@ -18,6 +18,7 @@ import type {
   SettingsData,
 } from "./workflows";
 import { IN_PROGRESS, type Range, type RentalSettings } from "./rentals";
+import { hasPasswordSignIn } from "./auth-flows";
 import type { PayoutAccount } from "./workflows";
 import type { MyVerification, VerificationData } from "./verification";
 export class WorkflowError extends Error {
@@ -325,6 +326,7 @@ export async function readSettings(): Promise<SettingsData> {
     profile: must(profile) as Profile,
     privateProfile: must(priv) as PrivateProfile | null,
     email: user.email || "",
+    hasPassword: hasPasswordSignIn(user),
     blocks: must(blocks) || [],
     activeRentals: rentals.count || 0,
     activeListings: listings.count || 0,

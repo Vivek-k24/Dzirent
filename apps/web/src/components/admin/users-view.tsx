@@ -165,7 +165,20 @@ export type AdminUserData = {
   } | null;
   /** Blocked by the age gate: only reading and deleting the account work. */
   age_blocked: boolean;
+  /** E1: null until a Google sign-up finishes its profile (it can't list, rent or message before). */
+  profile_completed_at?: string | null;
+  /** E1: the address's email flag from Resend: "ok", "bounced" or "complained". */
+  email_status?: "ok" | "bounced" | "complained";
+  email_status_at?: string | null;
 };
+
+/** E1: the email flag in plain words (non-essential emails stop while it isn't ok). */
+export function emailStatusLabel(u: Pick<AdminUserData, "email_status" | "email_status_at">) {
+  const when = u.email_status_at ? ` (${new Date(u.email_status_at).toLocaleDateString()})` : "";
+  if (u.email_status === "bounced") return `Bounced${when}: only reminders and account emails are sent`;
+  if (u.email_status === "complained") return `Marked as spam${when}: only reminders and account emails are sent`;
+  return "OK";
+}
 
 function ageCheckLabel(u: AdminUserData) {
   const c = u.age_check;
@@ -551,6 +564,18 @@ export function UsersView({ initialUsers, initialQuery }: { initialUsers: AdminU
                     <div className="muted">Age Check</div>
                     <div style={{ fontSize: "13px", marginTop: "2px", color: u.age_blocked ? "#8e44ad" : undefined }}>
                       {ageCheckLabel(u)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="muted">Email</div>
+                    <div style={{ fontSize: "13px", marginTop: "2px", color: u.email_status && u.email_status !== "ok" ? "var(--accent)" : undefined }}>
+                      {emailStatusLabel(u)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="muted">Profile</div>
+                    <div style={{ fontSize: "13px", marginTop: "2px" }}>
+                      {u.profile_completed_at === null ? "Not finished (signed up with Google)" : "Finished"}
                     </div>
                   </div>
                 </div>

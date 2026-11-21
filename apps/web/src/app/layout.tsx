@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { context } from "@/lib/data";
 import { currentUser, serverClient } from "@/lib/supabase/server";
+import { needsProfile, suggestedName } from "@/lib/auth-flows";
 import { Shell } from "@/components/shell";
 import { ADMIN_CODE_FIRST } from "@/lib/admin-code";
 import { codeOf } from "@/lib/errors";
@@ -49,6 +50,8 @@ export default async function RootLayout({
   let needsLegal = false;
   let isAdmin = false;
   let ageBlocked = false;
+  // E1: a Google sign-up's first visit: "Finish your profile", its name suggested from Google.
+  let finishProfile: { suggestedName: string } | null = null;
   if (user) {
     const client = await serverClient();
     const [{ data }, { data: needs }, { data: adminAal2 }, { data: blocked }] = await Promise.all([
@@ -61,6 +64,7 @@ export default async function RootLayout({
     userProfile = data;
     needsLegal = Boolean(needs);
     ageBlocked = blocked === true;
+    if (needsProfile(data)) finishProfile = { suggestedName: suggestedName(user.user_metadata) };
     if (adminAal2) {
       isAdmin = true;
     } else {
@@ -84,6 +88,7 @@ export default async function RootLayout({
           isAdmin={isAdmin}
           previewLabel={previewLabel}
           ageBlocked={ageBlocked}
+          finishProfile={finishProfile}
         >
           {children}
         </Shell>

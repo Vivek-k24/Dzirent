@@ -136,7 +136,7 @@ export async function POST(request: NextRequest, { params }: Params) {
           throw new WorkflowError("Type DELETE to confirm.");
         return reply(await edgeDelete("delete-account"));
       }
-      return reply(await accountMutation(path[1], body));
+      return reply(await accountMutation(path[1], body, request.nextUrl.origin));
     }
     if (path[0] === "start") {
       const id = String(body.listingId || "");
