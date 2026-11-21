@@ -1,7 +1,7 @@
 certifi==2026.10.23
 charset-normalizer==3.5.2
 idna==3.20
-requests==2.32.3
+requests==2.33.0
 urllib3==2.8.0
 # D2/D3: Pillow for the label-check page's thumbnails, pytest (with what it needs) for tests/.
 # The same versions as services/vision and its CI job.
