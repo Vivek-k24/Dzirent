@@ -196,8 +196,10 @@ async function run() {
 
     console.log("\n7. Unpaid past the payment deadline: cancelled, both told");
     const late = await rpc(u3.token, "request_rental", { p_listing_id: L1, p_start: day(45), p_end: day(46) });
-    assert.equal(sql(`select count(*)::int as n from app_private.email_messages where rental_id = '${late}' and recipient_id = '${u1.id}'`)[0].n, 0,
-      "switched off: no request email to the lender");
+    // E1: the database still queues it; send-email skips it ("turned_off", or here "not_configured"
+    // first, the key being blank). The decision itself: _shared/email.test.ts and e1_email.mjs.
+    assert.equal(sql(`select count(*)::int as n from app_private.email_messages where rental_id = '${late}' and recipient_id = '${u1.id}'`)[0].n, 1,
+      "switched off: the request email to the lender is queued for send-email to decide");
     assert.equal(await rpc(u1.token, "respond_rental", { p_rental_id: late, p_answer: "accept" }), "awaiting_payment");
     sql(`update public.rentals set payment_due_at = now() - interval '1 minute' where id = '${late}'`);
     sql("select app_private.expire_rental_requests()");

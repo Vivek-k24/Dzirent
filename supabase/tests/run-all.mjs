@@ -47,6 +47,11 @@ export const SCRIPTS = [
   // C6: ID verification, first with the Didit keys blank (local.env), then against the Didit stub.
   ["node", "c6_id_verification.mjs", { args: ["off"], local: true }],
   ["node", "c6_id_verification.mjs", { args: ["on"], local: true, functionsEnv: "local.didit-stub.env" }],
+  // E1: sign-in through the real Auth server (Mailpit for the emails, the stub's OpenID provider
+  // standing in for Google), then emails through the outbox to the stub's fake Resend, with
+  // bounces through email-events and the one-click unsubscribe.
+  ["node", "e1_auth.mjs", { local: true }],
+  ["node", "e1_email.mjs", { local: true, functionsEnv: "local.resend-fake.env" }],
 ];
 
 const args = process.argv.slice(2);

@@ -197,6 +197,9 @@ select results_eq($$select status, last_error from app_private.async_jobs where 
 select is(pg_temp.refusal($$select public.email_finish((select skipped_id from em), 'bounced')$$), 'DZ-E9016: This request isn''t valid. | ', 'only sent, skipped or failed');
 
 -- 8. The "Email me about rentals" switch -----------------------------------------------------------
+-- E1: the database queues every rental email and email_prepare passes the switch on (prefs);
+-- send-email skips the email ("turned_off") unless it is essential (rental reminders, the account
+-- email). Its own unit tests cover that decision (supabase/functions/_shared/email.test.ts).
 insert into public.notification_settings (user_id, email_rentals) values ('11111111-1111-4111-8111-111111111111', false)
   on conflict (user_id) do update set email_rentals = false;
 set local role authenticated;
@@ -204,8 +207,8 @@ select pg_temp.as_user('22222222-2222-4222-8222-222222222222');
 insert into ids select 'off', public.request_rental((select id from l where name = 'coat'), (select today + 60 from d), (select today + 61 from d));
 reset role;
 select set_config('request.jwt.claims', '', true);
-select is((select count(*)::int from app_private.email_messages where rental_id = (select id from ids where name = 'off') and recipient_id = '11111111-1111-4111-8111-111111111111'), 0,
-  'switched off: no email to the lender');
+select is((select count(*)::int from app_private.email_messages where rental_id = (select id from ids where name = 'off') and recipient_id = '11111111-1111-4111-8111-111111111111'), 1,
+  'switched off: the email to the lender is still queued (E1: send-email decides)');
 select is((select count(*)::int from app_private.async_jobs where kind = 'send_push' and payload ->> 'kind' = 'rental_request'
              and payload ->> 'recipient_id' = '11111111-1111-4111-8111-111111111111'
              and payload ->> 'conversation_id' = (select conversation_id::text from public.rentals where id = (select id from ids where name = 'off'))), 1,
@@ -217,11 +220,12 @@ reset role;
 select set_config('request.jwt.claims', '', true);
 create temp table declined as select id from app_private.email_messages where rental_id = (select id from ids where name = 'off') and template = 'request_declined';
 select is((select count(*)::int from declined), 1, 'the renter (switch on by default) gets the "request declined" email');
--- Turned off after it was queued: email_prepare skips it.
+-- Turned off after it was queued: email_prepare says so (prefs), send-email marks it skipped.
 insert into public.notification_settings (user_id, email_rentals) values ('22222222-2222-4222-8222-222222222222', false)
   on conflict (user_id) do update set email_rentals = false;
-select is(public.email_prepare((select id from declined)) ->> 'state', 'skipped', 'switched off before it went: skipped');
-select is(public.email_prepare((select id from declined)) ->> 'state', 'finished', 'and then finished (never sent later)');
+select is(public.email_prepare((select id from declined)) #>> '{prefs,email_rentals}', 'false', 'switched off before it went: email_prepare passes the switch on');
+select public.email_finish((select id from declined), 'skipped', 'turned_off');
+select is(public.email_prepare((select id from declined)) ->> 'state', 'finished', 'and once send-email skipped it, it is finished (never sent later)');
 select results_eq($$select status, skip_reason from app_private.email_messages where id = (select id from declined)$$,
   $$values ('skipped'::text, 'turned_off'::text)$$, 'the row says turned_off');
 select is((select count(*)::int from app_private.email_messages where recipient_id = '22222222-2222-4222-8222-222222222222' and status = 'queued'), 0,
@@ -236,7 +240,7 @@ select throws_ok($$select * from app_private.email_messages$$, '42501', null, 't
 reset role;
 select set_config('request.jwt.claims', '', true);
 
--- 9. Reminders send the pickup reminder email (to whoever has rental emails on) ----------------------
+-- 9. Reminders send the pickup reminder email (E1: to both people, whatever their switch) -----------
 update public.app_settings set enabled = false where key = 'payments_enabled';
 set local role authenticated;
 select pg_temp.as_user('22222222-2222-4222-8222-222222222222');
@@ -247,9 +251,9 @@ reset role;
 select set_config('request.jwt.claims', '', true);
 select app_private.queue_rental_reminders();
 select results_eq($$select recipient_id::text, details ->> 'kind' from app_private.email_messages
-                    where rental_id = (select id from ids where name = 'soon') and template = 'pickup_reminder'$$,
-  $$values ('22222222-2222-4222-8222-222222222222'::text, 'pickup_tomorrow'::text)$$,
-  'the pickup reminder email goes to the renter only (the lender turned rental emails off)');
+                    where rental_id = (select id from ids where name = 'soon') and template = 'pickup_reminder' order by recipient_id$$,
+  $$values ('11111111-1111-4111-8111-111111111111'::text, 'pickup_tomorrow'::text), ('22222222-2222-4222-8222-222222222222'::text, 'pickup_tomorrow'::text)$$,
+  'the pickup reminder email goes to both (E1: reminders are essential, even with the lender''s rental emails off)');
 
 -- 10. The account-deleted email -------------------------------------------------------------------
 set local role authenticated;

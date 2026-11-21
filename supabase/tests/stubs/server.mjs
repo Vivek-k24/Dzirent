@@ -19,7 +19,15 @@
 //                  duplicate warning, error risks) in Didit's V3 shape (plural arrays);
 //                  DELETE /v3/session/{id}/delete/ and POST /v3/users/delete/ remove them. Every call
 //                  is recorded as method, path and status only (never the key or the body).
-//   GET  /log    - what was recorded: { push: [...], scan: [...], stripe: [...], didit: [...] }.  DELETE /log clears it.
+//   POST /resend/emails - E1: a fake Resend (never Resend). Needs Authorization: Bearer <the
+//                  placeholder in supabase/functions/local.resend-fake.env>; records each email
+//                  (to, from, reply_to, subject, html, text, headers, tags, Idempotency-Key) and
+//                  answers { id }; a repeated Idempotency-Key gets the first id again, as Resend does.
+//   *    /oidc/...  - E1: a fake OpenID provider in Keycloak's shape, standing in for Google so the
+//                  local Auth server can run a real OAuth sign-in (config.toml [auth.external.keycloak]):
+//                  POST /oidc/_control/code { code, claims } says who signs in with that code;
+//                  .../openid-connect/token trades the code for a token; .../userinfo gives the claims.
+//   GET  /log    - what was recorded: { push: [...], scan: [...], stripe: [...], didit: [...], resend: [...], oidc: [...] }.  DELETE /log clears it.
 //   GET  /health - "ok".
 // Environment: SUPABASE_URL (inside the network), SERVICE_ROLE_KEY, PUSH_SECRET, SCAN_SECRET,
 // STRIPE_MOCK_URL, PORT.
@@ -32,7 +40,7 @@ const PUSH_SECRET = process.env.PUSH_SECRET ?? "local-push-secret";
 const SCAN_SECRET = process.env.SCAN_SECRET ?? "local-scan-secret";
 const STRIPE_MOCK_URL = (process.env.STRIPE_MOCK_URL ?? "http://dzirent-stripe-mock:12111").replace(/\/$/, "");
 
-const log = { push: [], scan: [], stripe: [], didit: [] };
+const log = { push: [], scan: [], stripe: [], didit: [], resend: [], oidc: [] };
 /** Idempotency key -> the first answer (Stripe replays it for 24 hours). */
 const replays = new Map();
 
@@ -165,6 +173,67 @@ async function stripe(req, res, url) {
 // time between two calls otherwise reuses a socket the server already closed (UND_ERR_SOCKET).
 const CLOSE = { "Content-Type": "application/json", Connection: "close" };
 
+// E1: the fake Resend. Ids are "fake-resend-<n>".
+const RESEND_KEY = process.env.RESEND_KEY ?? "local-fake-resend-key";
+const resendIds = new Map();
+let resendCount = 0;
+async function resend(req, res, url) {
+  if (req.method !== "POST" || url.pathname !== "/resend/emails") return send(res, 404, { statusCode: 404, name: "not_found", message: "Not found" });
+  if (req.headers.authorization !== `Bearer ${RESEND_KEY}`) {
+    return send(res, 401, { statusCode: 401, name: "validation_error", message: "API key is invalid" });
+  }
+  const b = await body(req);
+  if (!b || typeof b.from !== "string" || !Array.isArray(b.to) || typeof b.subject !== "string") {
+    return send(res, 422, { statusCode: 422, name: "validation_error", message: "Missing required fields" });
+  }
+  const key = req.headers["idempotency-key"] ?? null;
+  if (key && resendIds.has(key)) return send(res, 200, { id: resendIds.get(key) });
+  const id = `fake-resend-${++resendCount}`;
+  if (key) resendIds.set(key, id);
+  log.resend.push({
+    id, idempotency_key: key, from: b.from, to: b.to, reply_to: b.reply_to ?? null, subject: b.subject,
+    html: typeof b.html === "string" ? b.html : null, text: typeof b.text === "string" ? b.text : null,
+    headers: b.headers ?? {}, tags: b.tags ?? [], at: new Date().toISOString(),
+  });
+  return send(res, 200, { id });
+}
+
+// E1: the fake OpenID provider (Keycloak's paths under /oidc/realms/local).
+const oidcCodes = new Map();
+const oidcTokens = new Map();
+async function oidc(req, res, url) {
+  const path = url.pathname.slice("/oidc".length);
+  if (req.method === "POST" && path === "/_control/code") {
+    const b = await body(req);
+    if (!b || typeof b.code !== "string" || !b.claims) return send(res, 400, { error: "code and claims" });
+    oidcCodes.set(b.code, b.claims);
+    return send(res, 200, { ok: true });
+  }
+  if (req.method === "POST" && path === "/realms/local/protocol/openid-connect/token") {
+    const form = new URLSearchParams(await rawText(req));
+    const claims = oidcCodes.get(form.get("code") ?? "");
+    log.oidc.push({ step: "token", ok: Boolean(claims), at: new Date().toISOString() });
+    if (!claims) return send(res, 400, { error: "invalid_grant" });
+    oidcCodes.delete(form.get("code"));
+    const token = `oidc-${Math.random().toString(36).slice(2)}`;
+    oidcTokens.set(token, claims);
+    return send(res, 200, { access_token: token, token_type: "Bearer", expires_in: 300 });
+  }
+  if (req.method === "GET" && path === "/realms/local/protocol/openid-connect/userinfo") {
+    const claims = oidcTokens.get((req.headers.authorization ?? "").replace(/^Bearer /i, ""));
+    log.oidc.push({ step: "userinfo", ok: Boolean(claims), at: new Date().toISOString() });
+    if (!claims) return send(res, 401, { error: "invalid_token" });
+    return send(res, 200, claims);
+  }
+  return send(res, 404, { error: "not_found" });
+}
+
+async function rawText(req) {
+  const chunks = [];
+  for await (const c of req) chunks.push(c);
+  return Buffer.concat(chunks).toString("utf8");
+}
+
 function send(res, status, body) {
   res.writeHead(status, CLOSE);
   res.end(JSON.stringify(body));
@@ -288,10 +357,14 @@ createServer(async (req, res) => {
       log.scan.length = 0;
       log.stripe.length = 0;
       log.didit.length = 0;
+      log.resend.length = 0;
+      log.oidc.length = 0;
       return send(res, 200, { ok: true });
     }
     if (url.pathname.startsWith("/stripe/")) return await stripe(req, res, url);
     if (url.pathname.startsWith("/didit/")) return await didit(req, res, url);
+    if (url.pathname.startsWith("/resend/")) return await resend(req, res, url);
+    if (url.pathname.startsWith("/oidc/")) return await oidc(req, res, url);
     if (req.method === "POST" && url.pathname === "/push") {
       if (req.headers["x-send-push-secret"] !== PUSH_SECRET) {
         return send(res, 401, { code: "DZ-E9004", message: "This request isn't allowed." });
