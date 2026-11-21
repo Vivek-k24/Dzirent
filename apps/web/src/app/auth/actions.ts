@@ -68,14 +68,15 @@ export async function resetPassword(_: FormState, form: FormData): Promise<FormS
   if (problem) return { error: problem };
   const client = await serverClient();
   const jar = await cookies();
-  // The window opened by a link used earlier in this same reset (a refused password, tried again).
+  // The window opened by a link used earlier in this same reset (a refused password, tried again,
+  // or the page reloaded). Then the token is never sent again: it is used exactly once.
   let windowOpen = Boolean(jar.get("dzirent-reset")) && Boolean((await client.auth.getUser()).data.user);
-  if (tokenHash) {
+  if (tokenHash && !windowOpen) {
     const { data, error } = await client.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
     if (!error && data.user) {
       windowOpen = true;
       jar.set("dzirent-reset", "1", { path: "/", httpOnly: true, sameSite: "lax", secure: await secure(), maxAge: RESET_WINDOW_SECONDS });
-    } else if (!windowOpen) {
+    } else {
       return { expired: true, error: shown("DZ-E1075") };
     }
   }

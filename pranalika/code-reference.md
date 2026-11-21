@@ -2983,17 +2983,17 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L8: `export const metadata: Metadata = {`
 - L12: `export default async function SettingsPage({`
 
-### `apps/web/src/app/auth/actions.ts` (142 lines)
+### `apps/web/src/app/auth/actions.ts` (143 lines)
 
 - L26: `export type FormState = { error?: ShownError; notice?: string; expired?: boolean; done?: boolean } | null;`
 - L41: `export async function requestPasswordReset(_: FormState, form: FormData): Promise<FormState> {`
 - L63: `export async function resetPassword(_: FormState, form: FormData): Promise<FormState> {`
-- L96: `export async function resendConfirmation(_: FormState, form: FormData): Promise<FormState> {`
-- L121: `export async function finishProfile(_: FormState, form: FormData): Promise<FormState> {`
+- L97: `export async function resendConfirmation(_: FormState, form: FormData): Promise<FormState> {`
+- L122: `export async function finishProfile(_: FormState, form: FormData): Promise<FormState> {`
 
-### `apps/web/src/app/auth/callback/route.ts` (51 lines)
+### `apps/web/src/app/auth/callback/route.ts` (60 lines)
 
-- L18: `export async function GET(request: NextRequest) {`
+- L20: `export async function GET(request: NextRequest) {`
 
 ### `apps/web/src/app/auth/check-email/page.tsx` (40 lines)
 
@@ -3019,10 +3019,10 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L11: `export const metadata: Metadata = {`
 - L15: `export default async function Auth({`
 
-### `apps/web/src/app/auth/reset/page.tsx` (47 lines)
+### `apps/web/src/app/auth/reset/page.tsx` (59 lines)
 
-- L10: `export const metadata: Metadata = {`
-- L21: `export default async function ResetPassword({ searchParams }: { searchParams: Promise<Query> }) {`
+- L12: `export const metadata: Metadata = {`
+- L24: `export default async function ResetPassword({ searchParams }: { searchParams: Promise<Query> }) {`
 
 ### `apps/web/src/app/community-guidelines/page.tsx` (391 lines)
 
@@ -3468,11 +3468,11 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L59: `export function parseSettingInput(s: Pick<AdminSetting, "type" | "min" | "max" | "unit" | "choices">, input: string): Parsed {`
 - L91: `export function groupSettings(settings: AdminSetting[]): [string, AdminSetting[]][] {`
 
-### `apps/web/src/lib/auth-flows.test.ts` (134 lines)
+### `apps/web/src/lib/auth-flows.test.ts` (158 lines)
 
 - (no top-level declarations)
 
-### `apps/web/src/lib/auth-flows.ts` (167 lines)
+### `apps/web/src/lib/auth-flows.ts` (199 lines)
 
 - L6: `export const PASSWORD_MIN = 8;`
 - L8: `export const RESEND_COOLDOWN_SECONDS = 60;`
@@ -3492,13 +3492,15 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L86: `export function callbackStep(q: { code?: string | null; token_hash?: string | null; type?: string | null; error?: string | null }): CallbackStep {`
 - L97: `export function afterVerified(type: LinkType): { path: string; resetWindow: boolean } {`
 - L105: `export function linkFailurePath(type: string | null | undefined): string {`
-- L114: `export function needsProfile(profile: { profile_completed_at?: string | null } | null | undefined): boolean {`
-- L119: `export function finishProfileProblem(f: { name: string; adult: boolean; legal: boolean }): ShownError | null {`
-- L128: `export function suggestedName(meta: Record<string, unknown> | null | undefined): string {`
-- L134: `export function resendWait(lastSentAtMs: number | null | undefined, nowMs: number): number {`
-- L141: `export function clientAddress(get: (name: string) => string | null, onVercel: boolean): string {`
-- L148: `export function hasPasswordSignIn(user: { app_metadata?: { providers?: unknown } | null; identities?: { provider?: string }[] | null } | null | undefined): boolean {`
-- L158: `export function returnUrl(origin: string | null | undefined, path: string): string {`
+- L110: `export type ResetView =`
+- L129: `export function resetView(`
+- L146: `export function needsProfile(profile: { profile_completed_at?: string | null } | null | undefined): boolean {`
+- L151: `export function finishProfileProblem(f: { name: string; adult: boolean; legal: boolean }): ShownError | null {`
+- L160: `export function suggestedName(meta: Record<string, unknown> | null | undefined): string {`
+- L166: `export function resendWait(lastSentAtMs: number | null | undefined, nowMs: number): number {`
+- L173: `export function clientAddress(get: (name: string) => string | null, onVercel: boolean): string {`
+- L180: `export function hasPasswordSignIn(user: { app_metadata?: { providers?: unknown } | null; identities?: { provider?: string }[] | null } | null | undefined): boolean {`
+- L190: `export function returnUrl(origin: string | null | undefined, path: string): string {`
 
 ### `apps/web/src/lib/data.ts` (232 lines)
 

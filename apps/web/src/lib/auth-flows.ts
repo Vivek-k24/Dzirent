@@ -106,6 +106,38 @@ export function linkFailurePath(type: string | null | undefined): string {
   return type === "recovery" ? "/auth/reset?expired=1" : "/auth/confirmed?error=DZ-E1076";
 }
 
+/** What /auth/reset shows. */
+export type ResetView =
+  | { view: "form"; tokenHash: string }
+  | { view: "exchange"; code: string }
+  | { view: "expired"; code: "DZ-E1075" | "DZ-E1083" };
+
+const TOKEN = /^[\w-]{6,512}$/;
+
+/**
+ * /auth/reset: the link's token is used exactly once, when the form is sent. Once it has made a
+ * recovery session ([recoverySession]: the 15-minute reset window and a signed-in user), every
+ * later load of the page (a reload, the back button, the same email link opened again, a link
+ * Supabase answered with an error because its token is used) shows the form without the token, so
+ * it is never sent again and the page never says "expired" while that session lasts.
+ * Without the session:
+ *  - ?token_hash=&type=recovery (Dzirent's template): the form, carrying the token for the submit;
+ *  - ?code= (Supabase's default template, or a link sent before Dzirent's): exchanged once by
+ *    /auth/callback, which opens the window and comes back here without the code;
+ *  - anything else: expired (DZ-E1075 for a link that failed, DZ-E1083 without one).
+ */
+export function resetView(
+  q: { token_hash?: string | null; type?: string | null; code?: string | null; error?: string | null; expired?: string | null },
+  recoverySession: boolean,
+): ResetView {
+  if (recoverySession) return { view: "form", tokenHash: "" };
+  const failed = Boolean(q.error) || q.expired === "1";
+  const token = q.token_hash ?? "";
+  if (!failed && TOKEN.test(token) && (q.type || "recovery") === "recovery") return { view: "form", tokenHash: token };
+  if (!failed && q.code && TOKEN.test(q.code)) return { view: "exchange", code: q.code };
+  return { view: "expired", code: failed || token || q.code ? "DZ-E1075" : "DZ-E1083" };
+}
+
 /**
  * A profile whose profile_completed_at is empty (null) needs "Finish your profile" (Google's first
  * sign-in). Only an explicit null counts: a profile row without the field at all (a database

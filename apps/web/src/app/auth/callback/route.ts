@@ -7,7 +7,9 @@
 //    here, so the link works in any browser and for accounts made in the app. A confirmed sign-up
 //    shows "You're confirmed"; an invite goes to the reset page to choose a password.
 //  - A reset link goes to /auth/reset (the template sends it there); an old one sent here is
-//    passed on with its token, and the reset page uses it when the form is sent.
+//    passed on with its token, and the reset page uses it when the form is sent. A reset link
+//    Supabase answered with ?code= comes here from the reset page (flow=recovery): exchanged
+//    once, then back to /auth/reset inside the reset window.
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { serverClient } from "@/lib/supabase/server";
@@ -33,6 +35,13 @@ export async function GET(request: NextRequest) {
   const client = await serverClient();
   if (step.step === "exchange") {
     const { error } = await client.auth.exchangeCodeForSession(step.code);
+    // A reset link answered with ?code= (Supabase's default template, PKCE): exchanged once here,
+    // then the reset page without the code, inside the reset window.
+    if (q.get("flow") === "recovery") {
+      if (error) return go("/auth/reset?expired=1");
+      jar.set("dzirent-reset", "1", { path: "/", httpOnly: true, sameSite: "lax", secure: request.nextUrl.protocol === "https:", maxAge: RESET_WINDOW_SECONDS });
+      return go("/auth/reset");
+    }
     if (error) return go("/auth?mode=signin&error=" + encodeURIComponent(errorText(shown("DZ-E7020"))));
     jar.set("dzirent-welcome", "seen", { path: "/", sameSite: "lax", httpOnly: true, maxAge: 31536000, secure: request.nextUrl.protocol === "https:" });
     return go(next);

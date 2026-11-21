@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { AuthFrame } from "@/components/auth-frame";
 import { ResetPasswordForm } from "@/components/auth-forms";
 import { currentUser } from "@/lib/supabase/server";
 import { errorText, shown } from "@/lib/errors";
+import { resetView } from "@/lib/auth-flows";
 import { Query, value } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -13,22 +15,32 @@ export const metadata: Metadata = {
 };
 
 /**
- * E1: the page a reset email opens (?token_hash=&type=recovery; the token is used when the form is
- * sent), and where an invite or an old-style link lands after /auth/callback used it (the
- * dzirent-reset cookie, 15 minutes). Without either: a clear message and a way back to
- * "Forgot password?". The recovery link never lands on the home page.
+ * E1: the page a reset email opens. What it shows is resetView (lib/auth-flows.ts): the link's
+ * token is used exactly once, when the form is sent; once a recovery session exists (the
+ * dzirent-reset window and a signed-in user), every later load shows the form without the token
+ * and never "expired". A ?code= link (Supabase's default template) is exchanged once by
+ * /auth/callback, which comes back here without it. The recovery link never lands on the home page.
  */
 export default async function ResetPassword({ searchParams }: { searchParams: Promise<Query> }) {
   const q = await searchParams;
-  const tokenHash = value(q, "token_hash");
-  const usable = /^[\w-]{6,512}$/.test(tokenHash) && (value(q, "type") || "recovery") === "recovery";
+  const recoverySession = Boolean((await cookies()).get("dzirent-reset")) && Boolean(await currentUser());
+  const view = resetView(
+    {
+      token_hash: value(q, "token_hash"),
+      type: value(q, "type"),
+      code: value(q, "code"),
+      error: value(q, "error") || value(q, "error_code"),
+      expired: value(q, "expired"),
+    },
+    recoverySession,
+  );
+  if (view.view === "exchange") redirect("/auth/callback?flow=recovery&code=" + encodeURIComponent(view.code));
   const invite = value(q, "invite") === "1";
-  const windowOpen = Boolean((await cookies()).get("dzirent-reset")) && Boolean(await currentUser());
-  if (value(q, "expired") === "1" || (!usable && !windowOpen)) {
+  if (view.view === "expired") {
     return (
       <AuthFrame title="This link has expired">
         <p role="alert" className="notice error">
-          {errorText(shown(value(q, "expired") === "1" ? "DZ-E1075" : "DZ-E1083"))}
+          {errorText(shown(view.code))}
         </p>
         <p className="auth-switch">
           <Link href="/auth/forgot">Ask for a new link</Link> or <Link href="/auth?mode=signin">sign in</Link>
@@ -41,7 +53,7 @@ export default async function ResetPassword({ searchParams }: { searchParams: Pr
       title={invite ? "Choose your password" : "Choose a new password"}
       lead={invite ? "You'll sign in with your email and this password." : "After this, you're signed in here and signed out everywhere else."}
     >
-      <ResetPasswordForm tokenHash={usable ? tokenHash : ""} invite={invite} />
+      <ResetPasswordForm tokenHash={view.tokenHash} invite={invite} />
     </AuthFrame>
   );
 }

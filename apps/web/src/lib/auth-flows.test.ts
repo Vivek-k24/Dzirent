@@ -18,6 +18,7 @@ import {
   needsProfile,
   newPasswordProblem,
   resendWait,
+  resetView,
   returnUrl,
   suggestedName,
 } from "./auth-flows.ts";
@@ -89,6 +90,29 @@ test("callback: a confirmed sign-up shows You're confirmed; a reset or invite as
   // An expired reset link goes back to "Forgot password?" by way of the reset page, never home.
   assert.equal(linkFailurePath("recovery"), "/auth/reset?expired=1");
   assert.equal(linkFailurePath("email"), "/auth/confirmed?error=DZ-E1076");
+});
+
+test("reset page: the token is used once; a reload or a reopened link inside the recovery session shows the form, never expired", () => {
+  const link = { token_hash: "pkce_0123456789abcdef", type: "recovery" };
+  // First open: the form, carrying the token for the one verify (on submit).
+  assert.deepEqual(resetView(link, false), { view: "form", tokenHash: "pkce_0123456789abcdef" });
+  // The reload case: the same address again once the submit made the recovery session (a refused
+  // password, a reload, the back button): the form without the token, so it is never sent twice.
+  assert.deepEqual(resetView(link, true), { view: "form", tokenHash: "" });
+  assert.deepEqual(resetView({}, true), { view: "form", tokenHash: "" });
+  // The email link opened again after its token was used: Supabase answers with an error, or the
+  // callback with ?expired=1. With the session: still the form. Without it: expired.
+  assert.deepEqual(resetView({ error: "access_denied" }, true), { view: "form", tokenHash: "" });
+  assert.deepEqual(resetView({ expired: "1" }, true), { view: "form", tokenHash: "" });
+  assert.deepEqual(resetView({ error: "otp_expired" }, false), { view: "expired", code: "DZ-E1075" });
+  assert.deepEqual(resetView({ expired: "1" }, false), { view: "expired", code: "DZ-E1075" });
+  // Supabase's default template answers with ?code= (PKCE): exchanged once, then back without it.
+  assert.deepEqual(resetView({ code: "a1b2c3d4-e5f6" }, false), { view: "exchange", code: "a1b2c3d4-e5f6" });
+  assert.deepEqual(resetView({ code: "a1b2c3d4-e5f6" }, true), { view: "form", tokenHash: "" });
+  // No link at all.
+  assert.deepEqual(resetView({}, false), { view: "expired", code: "DZ-E1083" });
+  assert.deepEqual(resetView({ token_hash: "bad token" }, false), { view: "expired", code: "DZ-E1075" });
+  assert.deepEqual(resetView({ token_hash: "pkce_0123456789abcdef", type: "email" }, false), { view: "expired", code: "DZ-E1075" });
 });
 
 test("check your email: Send the link again waits a minute between emails", () => {
