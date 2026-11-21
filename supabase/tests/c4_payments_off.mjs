@@ -60,7 +60,7 @@ async function run() {
     assert.equal(res.status, 200, `admin-integrations: ${res.status} ${JSON.stringify(res.data)}`);
     const payments = res.data.integrations.find((i) => i.key === "payments");
     assert.deepEqual([payments.configured, payments.status], [false, "not configured"], "payments: not configured while the keys are blank");
-    assert.deepEqual(res.data.integrations.map((i) => i.key), ["payments", "id_checks", "notifications", "email", "photo_checks"]);
+    assert.deepEqual(res.data.integrations.map((i) => i.key), ["payments", "id_checks", "notifications", "email", "email_events", "photo_checks"]);
     const text = JSON.stringify(res.data);
     for (const secret of ["local-payments-secret", "local-push-secret", "local-scan-secret", "whsec_", "sk_test_"]) {
       assert.ok(!text.includes(secret), "the answer holds no secret values");

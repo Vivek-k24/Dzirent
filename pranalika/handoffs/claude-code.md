@@ -2,6 +2,1450 @@
 
 Newest entry at the top. Title every entry `## Step <number> - <date> - <short title>`.
 
+## E1 - 2026-11-20 - password reset, confirm email, Google sign-in, sign-in emails, Resend
+
+**Before starting:** clean tree, `Preview` up to date at `7eb2b46`. `providers.env` has `RESEND_API_KEY`, `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` (values never printed); no `RESEND_WEBHOOK_SECRET` yet.
+- **Live Auth settings** (Management API `GET /config/auth`, non-secret keys only):
+  - Confirm email off (`mailer_autoconfirm` true); Google on with the web client; SMTP `smtp.resend.com:465`, sender `no-reply@mail.dzirent.com` "Dzirent", 100 emails an hour.
+  - Passwords: at least 8, leaked-password check on; manual linking off; Site URL `https://dzirent.com`; the default templates.
+  - Redirect list: `https://dzirent.com/auth/callback`, `https://dzirent.vercel.app/auth/callback`, `https://*.vercel.app/**`, `https://dzirent.com/**`, `https://localhost:3000/**`. The prompt says `http://localhost:3000/**`; live has **https** (Open issues).
+- **Live accounts** (read only): 8, **0 unconfirmed**, 0 non-email providers, 0 Google identities, every profile with the 18+ tick, a name and a location. 4 are `@example.com` (the test users: no inbox).
+
+**Done** (live since 2026-11-21, see "Live"):
+- **Database** (`supabase/migrations/20261120200000_e1_auth_email.sql`):
+  - Built from the current bodies; the 7 functions it replaces are byte-identical on live (MD5 of `pg_get_functiondef` / `prosrc`, read on 2026-11-21 UTC after CI).
+  - `profiles.profile_completed_at` (every existing profile set to its `created_at`, so nobody is locked out), `email_status` (`ok` / `bounced` / `complained`), `email_status_at`. Apps can't write any of them (trigger `profiles_keep_server_fields`).
+  - `handle_new_user` finishes a profile when the sign-up gave the 18+ tick and a name. `complete_profile()` checks `DZ-E1079` (the tick), `DZ-E1080` (name 1-80) and `DZ-E1082` (location); the text filter still checks the name.
+  - **The gate:** `require_complete_profile` (`DZ-E1078`) in `terms_and_limits` (publishing, a new chat, a message) and `rental_guard` (every rental action).
+  - **Emails:**
+    - `queue_email` no longer checks the switch; `email_prepare` returns `recipient_id` and `prefs` instead of skipping.
+    - `email_event_record` (each event once; a hard bounce or complaint flags; a temporary bounce or unknown address does nothing) and `email_unsubscribe`.
+    - `app_private.email_events` (no address kept); the flag clears on an email change (trigger on `auth.users`).
+  - **Website limit:** `auth_email_allowed` (20 an hour per network address, 3 an hour per email address; SHA-256 only; two new `rate_limit_*` settings).
+  - **Admin:** `admin_find_user` adds the flag and `profile_completed_at`; the integrations log adds `email_events`.
+- **Edge Functions:**
+  - `send-email` now calls `_shared/send-email.ts`:
+    - Resend only, `RESEND_API_KEY`, from `Dzirent <no-reply@mail.dzirent.com>`, reply-to `support@dzirent.com`;
+    - a text part on every email, the email's id as `Idempotency-Key`;
+    - the preference check (`_shared/email-policy.ts`: pickup and return reminders and the account email always go; the rest are `turned_off` or `suppressed`);
+    - one-click `List-Unsubscribe` on non-essential emails.
+  - New `email-events`: Resend's Svix-signed webhook. `DZ-E7030` bad signature, `DZ-E7031` old, `DZ-E7032` no secret.
+  - New `email-unsubscribe`: POST with an HMAC token; a GET only redirects to Settings; `DZ-E7033` for a bad token.
+  - `admin-integrations` checks `RESEND_API_KEY` and adds "Email bounces and complaints". Reminders' footer says they are always sent.
+- **Sign-in emails:**
+  - `supabase/templates/` has confirmation, recovery, magic_link, email_change and invite: one button, plain words, the red "Preview only" line, `support@dzirent.com`. Subjects are in `config.toml`.
+  - **Security:** the link's host is the Site URL, or `https://dzirent.vercel.app` only when the redirect is exactly that page. It's never `{{ .RedirectTo }}`, because the live allow list's `https://*.vercel.app/**` would otherwise let any vercel.app site receive a token hash.
+  - `supabase/scripts/push_auth_emails.mjs` sets only those keys through the Management API (dry run by default; `--apply`, `--confirm-email-on`, `--add-redirect=`) and reads them back. Dashboard paste is the fallback (documented in the script and `contract.md` section 9).
+  - Dry run against live: 12 keys would change (5 subjects, 5 templates, `mailer_autoconfirm`, the redirect list).
+  - Local `config.toml`: Confirm email on, 8-character passwords, 100 emails an hour, the five templates, and `[auth.external.keycloak]` pointing at the stub's fake OpenID provider (Google's stand-in for tests).
+- **Website:**
+  - `/auth`: "Forgot password?" and "Continue with Google" (a plain link to `/auth/google`, so the strict `form-action` CSP doesn't block the redirect).
+  - `/auth/forgot`: the neutral answer.
+  - `/auth/reset`:
+    - the token is used on submit; both fields, errors under them;
+    - `signOut({ scope: "others" })`, then `/app/settings` with "Your password is changed";
+    - an expired link gets `DZ-E1075` and "Ask for a new link".
+  - `/auth/check-email`: resend once a minute; the address comes from a cookie.
+  - `/auth/callback`: Google's code, the email links, errors `DZ-E7020`/`E7022`/`E1076`. `/auth/confirmed` says "You're confirmed".
+  - **Finish your profile** is shown in place of every page except policy, help and `/auth` pages: name prefilled from Google, the site's area with Change, 18+, terms. Then `complete_profile`, `accept_legal`, `record_age_check`.
+  - Settings > Account: "Set a password" (Google-only) or "Email me a reset link".
+  - Admin user page: Email and Profile rows. The email switch's hint changed.
+  - The privacy page has three new sentences: Google sign-in, which emails can be turned off, and sign-out everywhere after a reset. **No version bump** (Open issues).
+  - Rules in `lib/auth-flows.ts`.
+- **Android (shared Kotlin):**
+  - `util/AuthFlows.kt` and `AuthFlowsTest`.
+  - Forgot password screen: the neutral answer; the link opens the website's `/auth/reset`.
+  - Check your email: resend once a minute; the link opens the website's `/auth/callback`; then the person signs in in the app.
+  - Sign-in refused with `DZ-E1005` offers "Send the link again".
+  - "Continue with Google" on Log In and Sign Up: Android only (`push.platform`), Custom Tabs, PKCE (`flowType = PKCE`), `dzirent://auth/callback` in the manifest, handled in `MainActivity` and `DzirentApp`.
+  - `FinishProfileScreen`: state `NeedsProfile` after the age gate, before terms; the age gate runs again after it.
+  - Settings: Set a password / Email me a reset link.
+  - `SupabaseBuildConfig.WEBSITE_URL` (`DZIRENT_WEBSITE_URL`, default `https://dzirent.com`). This debug build uses `https://dzirent.vercel.app`, so its links open the preview site, where the pages are.
+- **Error codes:** `DZ-E1070`-`E1084` (sign-in, profile) and `DZ-E7020`-`E7033` (Google, email); family 7 now says "integrations". 236 codes, regenerated.
+- **Docs:**
+  - `contract.md`: section 9 rewritten for E1, a new section 11 Sign-in, the function table.
+  - `decisions.md`: "Sign-in and email (2026-11-20)".
+  - `testing.md`, `security-log.md` ("Sign-in and email (E1)"), `compliance.md` gaps 19 and 36.
+  - `code-reference.md` regenerated.
+- **Fix after the first push** (`e348ddc`):
+  - **Cause:** Vercel deployed the E1 website to the preview site at 02:28 UTC, against a live database without `profile_completed_at`. The first rule (a missing value = unfinished) would have shown "Finish your profile" to every signed-in account there, and saving it would fail (no `complete_profile` on live).
+  - **Fix:** only an explicit `null` counts, on the website and in the app (`Profile.NOT_READ` when the field is absent). Deployed at 02:37 UTC, so the window was about 9 minutes. The APK was rebuilt with the fix.
+
+**What I ran:**
+1. **Local backend** from scratch (every migration including E1, then the seed). Restarted once to load the templates.
+2. **Template smoke test** (before the tests): a PKCE-started reset email in Mailpit links to `http://127.0.0.1:3000/auth/reset?token_hash=…&type=recovery` with "Preview only". Its token hash verifies once; a second use is refused (`otp_expired`).
+3. **pgTAP:** **17 files, 497 tests, PASS** (`17_e1` 38).
+   - `12_c5` was updated to the E1 rule: queued with the switch off, `email_prepare` passes the switch on, reminders to both.
+4. **Integration** (Node 22): the full run passed **22 of 24**. `c4_payments_off` expected the old integrations list (now with `email_events`). `c5_payments_email` expected no email queued with the switch off (now queued, send-email decides). After updating both expectations, those two passed; **24 of 24**.
+   - `e1_auth.mjs`:
+     - forgot password: the same 200 for an account and an unknown address; only the account gets an email;
+     - the reset link once only; weak and same passwords refused; the other device's refresh token revoked; the old password refused, the new one accepted;
+     - a PKCE sign-up gets no session; `email_not_confirmed`; resend kills the old link; the new link confirms;
+     - Google's stand-in: a new account unfinished, `DZ-E1078` on a chat, `DZ-E1079`, finished, chat works;
+     - **linking:** the same account, identities `email` + `keycloak`; an **unverified** email is refused with `provider_email_needs_verification`, never linked.
+   - `e1_email.mjs`:
+     - the fake Resend got from, reply-to, HTML, text, List-Unsubscribe and the Idempotency-Key;
+     - webhook: forged 401 `DZ-E7030`, old `DZ-E7031`; a signed bounce flagged once (then `duplicate`);
+     - the flagged lender's request email skipped `suppressed`, the pickup reminders sent to both;
+     - unsubscribe: GET 303, a wrong token 400, POST 200 (switch off).
+   - `c6` now confirms its throwaway account with the local service key.
+5. **Website** (Node 22):
+   - `npm run lint` clean; `tsc --noEmit` clean;
+   - `npm test` **67 of 67** (`auth-flows.test.ts` 10 and `_shared/email.test.ts` 7 are new);
+   - `npm run build` passed (the seven `/auth` routes listed). The first try stopped on Next.js's own security notice (Requests); the retry built.
+6. **Android** (stack stopped, no containers; JDK 21, env loaded silently, `GOOGLE_SERVICES_JSON` and `DZIRENT_WEBSITE_URL=https://dzirent.vercel.app` set): `:androidApp:assembleDebug :shared:testDebugUnitTest` **BUILD SUCCESSFUL**, **87 tests, 0 failures, 1 skipped** (`AuthFlowsTest` 6, `SmokeTest` skipped). Rebuilt after the fix: the same.
+7. **CI:**
+   - [run 44856022386](https://github.com/Vivek-k24/Dzirent/actions/runs/44856022386) on `ce18833`: **all 6 jobs green** (pgTAP `Files=17, Tests=497` PASS; integration 24 of 24).
+   - [run 44856841237](https://github.com/Vivek-k24/Dzirent/actions/runs/44856841237) on `e348ddc`: **all 6 jobs green**.
+8. **Live, read only:**
+   - the Auth settings and accounts above;
+   - the 7 function bodies identical to the ones the migration was built from;
+   - `supabase db push --linked --dry-run` listed only `20261120200000_e1_auth_email.sql`;
+   - `push_auth_emails.mjs` dry run (12 keys). No emulator, device or browser.
+
+**Follow-up (2026-11-21), the reset page** (the owner's report: in Supabase's Auth log, `POST /recover` 02:50:49 UTC, `GET /verify` at 02:51:43 succeeded, then `GET /verify` at 02:52:14 and 02:52:47 "One-time token not found", and the page showed "This link has expired (DZ-E1083)"; the same at 02:53):
+- **Cause:**
+  - Those `GET /verify` calls are Supabase's own link, not the page: the page verifies only with `POST /verify`, when the form is sent.
+  - The new templates weren't live yet, so the email used Supabase's default `{{ .ConfirmationURL }}`. Its first open used the token and sent the browser to `/auth/reset?code=…` (PKCE).
+  - The page only understood `?token_hash=`, so it showed DZ-E1083. Each later open of the same email asked Supabase to verify the used token again ("One-time token not found").
+- **Fix** (`7fc5c47`, the owner's rules):
+  - `resetView` in `lib/auth-flows.ts`. Once a recovery session exists (the `dzirent-reset` window and a signed-in user), every load of `/auth/reset` shows the form without the token, never "expired": a reload, the back button, the email opened again, Supabase's error for a used token.
+  - The action sends the token only when no such session exists, so it is used exactly once.
+  - A `?code=` link is exchanged once by `/auth/callback?flow=recovery` (which opens the window and comes back to `/auth/reset` without the code). A failed exchange shows DZ-E1075 unless the session already exists.
+  - With Dzirent's template (live since 03:09 UTC) the link is `?token_hash=` and Supabase's `GET /verify` isn't involved at all.
+- **Test:** `auth-flows.test.ts`: "reset page: the token is used once; a reload or a reopened link inside the recovery session shows the form, never expired" (the reload case, the reopened link, Supabase's error, `?code=`, no link). Website `npm test` **68 of 68**, `tsc` and `eslint` clean. CI [run 44859423857](https://github.com/Vivek-k24/Dzirent/actions/runs/44859423857) on `7fc5c47`: all 6 jobs green. Vercel deployed it to the preview site at 03:07:33 UTC.
+
+**Live (2026-11-21, the owner's go-ahead for steps 1-5, in this order):**
+1. **Migration:**
+   - `supabase db push --linked --dry-run` listed only `20261120200000_e1_auth_email.sql`; `db push` applied it.
+   - Read back: last migration `20261120200000`; **8 profiles, 0 unfinished**, 0 flagged; both gates in place (`terms_and_limits`, `rental_guard`); 2 limit settings, 2 triggers.
+   - Privileges: `auth_email_allowed` for guests; `complete_profile` signed-in only; `email_event_record` server key only.
+   - `email_events` and `auth_email_counters` have RLS and no grants to `anon`, `authenticated` or `service_role`.
+2. **Edge Functions:** all 20 deployed (`supabase functions deploy <name> --no-verify-jwt --use-api`). `functions list`: 20 **ACTIVE**, `verify_jwt` false; `email-events` and `email-unsubscribe` at v1, `send-email` v5.
+3. **`RESEND_API_KEY`:** set from `providers.env` through a temporary file, deleted at once, never printed. `secrets list` (names): `EMAIL_JOB_SECRET`, `RESEND_API_KEY`.
+4. **Auth:**
+   - Command: `node supabase/scripts/push_auth_emails.mjs --apply --confirm-email-on --add-redirect=dzirent://auth/callback "--replace-redirect=https://*.vercel.app/**|https://dzirent.vercel.app/**" "--replace-redirect=https://localhost:3000/**|http://localhost:3000/**"`. It now has `--replace-redirect` for this.
+   - The dry run showed the 12 keys; `--apply`: "Applied 12 key(s); read back and identical"; a second dry run: "Nothing to change".
+   - Read back: `mailer_autoconfirm` false (Confirm email on); the redirect list `https://dzirent.com/auth/callback`, `https://dzirent.vercel.app/auth/callback`, `https://dzirent.vercel.app/**`, `https://dzirent.com/**`, `http://localhost:3000/**`, `dzirent://auth/callback`.
+   - Unchanged: Google on with the same web client, SMTP `smtp.resend.com:465` from `no-reply@mail.dzirent.com`, Site URL `https://dzirent.com`, 8-character passwords, the leaked-password check, 100 emails an hour, manual linking off.
+5. **The live check: one password reset to the owner's newer `@gmail.com` account** (the owner's choice; no notification email):
+   - `POST /auth/v1/recover` with `redirect_to=https://dzirent.vercel.app/auth/reset` (the website's own call) answered **200** at 03:10:34 UTC. The account's `recovery_sent_at` is **03:10:33 UTC** (Auth sets it only after Resend's SMTP took the email).
+   - **Resend message ID: not read.** The key in `providers.env` is a sending-only key (`GET /emails` answers 401 `restricted_api_key`), and the project's log API endpoint answered 410. The owner can read the ID in Resend > Emails ("Reset your Dzirent password", 2026-11-21 03:10 UTC) (Requests).
+   - **Still for the owner:** open the email and finish the reset. Nothing changed on the account.
+6. **HTTP checks** (nothing written):
+   - `email-events` without a signature: 503 `DZ-E7032` (no webhook secret yet);
+   - `send-email` without the outbox secret: 401 `DZ-E9004`;
+   - `email-unsubscribe` GET: 303 to `https://dzirent.com/app/settings/preferences`; POST with a bad token: 400 `DZ-E7033`.
+7. **Not run:** the Security Advisor (the Supabase connector needs a sign-in). No emulator, device or browser.
+
+**Resend webhook (2026-11-21, after the owner created it and saved its secret):**
+- `RESEND_WEBHOOK_SECRET` (in `providers.env`, `whsec_…`, 38 characters) set as the function secret through a temporary file, deleted at once, never printed. `secrets list` (names): `EMAIL_JOB_SECRET`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`.
+- **Same secret on both sides:** a self-signed `email.delivered` event to `email-events` answered 200 `ignored` (not stored); an unsigned one 401 `DZ-E7030`.
+- **A real event from Resend:** Resend's dashboard "send test" can't be pressed from here (no dashboard access; the key can only send). Instead, one email each to Resend's test addresses `bounced@resend.dev` and `complained@resend.dev` (Resend ids `01a1fc2f-b936-746b-b722-a3ca3412f330`, `01a1fc2f-b9f4-7e67-9229-95f279cdb521`, sent 03:39:06 UTC).
+- Resend's webhook delivered both within 5 seconds. `app_private.email_events` holds 2 rows, both with Resend's ids above, each recorded once:
+  - `email.bounced` (Svix `msg_3MOrFMKQfd0WjYE18ik4pwi4tvr`) and `email.complained` (Svix `msg_3MOrFOylTJCxtgb1Mdm3tzfFsEB`), received 03:39:11 UTC;
+  - both `no_account`: those test addresses belong to no Dzirent account, so **no profile is flagged** (0).
+- So signature checking with the real secret, the event types and the database step work end to end on live.
+
+**Next.js 16.4.3 → 16.4.6** (`a09e70a`, the owner's request: GHSA-mfr8-8qww-v76h, GHSA-vc7v-qv4w-wrv8, GHSA-7qx7-33qx-rqx2, GHSA-f3mh-rxg3-f5g2, GHSA-pc58-hwjq-p385, GHSA-rhh4-g77r-r9qj, GHSA-vvgp-ww4w-46vf; moderate):
+- 16.4.6 was published 2026-11-09, 11 days earlier: under the two weeks the project waited for the payment libraries, but the owner asked for this version.
+- Only `next`, `@next/env` and the eight `@next/swc-*` binaries change; every other dependency of 16.4.6 is the same as 16.4.3's.
+- `package.json` and those lockfile entries were edited with the registry's tarball and integrity: 41 lines added, 39 removed. `next`'s entry gained the `resolved` and `integrity` it lacked. `eslint-config-next` stays at 16.4.3.
+- `npm ci`: installed, "found 0 vulnerabilities"; `next` 16.4.6.
+- `npm run lint` clean, `tsc --noEmit` clean, `npm test` **68 of 68**, `npm run build` passed ("Next.js 16.4.6", no security notice).
+- CI [run 44860470560](https://github.com/Vivek-k24/Dzirent/actions/runs/44860470560) on `a09e70a`: **all 6 jobs green**. Vercel deployed it to the preview site (`dzirent.vercel.app`) at 03:19:47 UTC.
+
+**Package and debug key** (for the native Google sheet later; fingerprints are public):
+- Package: `com.dzirent.app` (release), `com.dzirent.app.debug` (debug).
+- The debug keystore `~/.android/debug.keystore`, alias `androiddebugkey` (`keytool -list -v`), the same key that signed this APK (`apksigner verify --print-certs`):
+  - SHA-1 `A8:57:B5:1A:97:FC:D5:C7:27:36:2B:29:3E:B0:26:8E:91:D0:99:FF`
+  - SHA-256 `A7:AF:02:EA:F1:8C:67:72:05:A4:FC:75:BF:48:3E:D8:E4:B4:5D:AB:DE:DC:DA:F1:B2:1E:05:D9:66:EE:95:7C`
+- The Play signing key's fingerprints come with P8A.
+
+**APK** (built 2026-11-20 20:40 local; 97,087,426 bytes):
+- Original: `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, replacing the F1 copy. Same size and SHA-256.
+
+**Owner, in the dashboards:**
+- **Confirm email:** on since 2026-11-21 03:09 UTC (the script). The dashboard switch, if it's ever needed: Authentication > Sign In / Providers > Email > "Confirm email".
+- **Android redirect value:** `dzirent://auth/callback`, added by the script (step 4). In the dashboard: Authentication > URL Configuration > Redirect URLs.
+- **Resend webhook:**
+  1. Resend > Webhooks > Add endpoint `https://pwfzkyjeivadbtkfkdxr.supabase.co/functions/v1/email-events`, events `email.bounced` and `email.complained`.
+  2. Copy the signing secret (`whsec_…`) into `providers.env` as `RESEND_WEBHOOK_SECRET`.
+  3. An agent sets the function secret. **Done 2026-11-21** (see "Resend webhook" above): real bounce and complaint events from Resend arrive and are recorded.
+- **Done at the owner's request (2026-11-21):** `https://*.vercel.app/**` replaced by `https://dzirent.vercel.app/**`, and `https://localhost:3000/**` by `http://localhost:3000/**`. Confirm email is on and `dzirent://auth/callback` is in the redirect list (step 4).
+
+**Phone test** (after the live steps; this APK's links open the preview site):
+- Log In > Forgot password?: any address shows the same message; your account gets "Reset your Dzirent password". Its button opens `dzirent.vercel.app/auth/reset`; after the new password you're signed in there, and the app (another device) is signed out.
+- Sign Up with a new address: "Check your email"; "Send the link again" counts down a minute; the link opens "You're confirmed"; then Log In works. Logging in before confirming offers "Send the link again".
+- Continue with Google: Google in a Custom Tab, back to the app; a new Google account sees Finish your profile (name prefilled; 18+ and terms required), then the app. Google with your password account's email lands in that account.
+- Settings: "Email me a reset link" (or "Set a password" for a Google-only account).
+
+**iPhone, for the Mac session:**
+- Build-check the E1 shared code:
+  - `ui/AuthScreens.kt` (`GoogleSignInButton`, hidden unless `push.platform == "android"`; `ForgotPasswordScreen`; `EmailConfirmationView` with resend), `ui/FinishProfileScreen.kt`, `ui/DzirentApp.kt` (`NeedsProfile`, `authCallback`), `ui/SettingsScreen.kt`;
+  - `util/AuthFlows.kt`, `model/Models.kt` (`profileCompletedAt`, `NOT_READ`);
+  - `repository/DzirentRepository.kt`: `flowType = PKCE`, `scheme`/`host`, `resendConfirmation` through `client.httpClient.httpClient` (Ktor Darwin), `signInWithGoogle`, `completeGoogleSignIn`, `completeProfile`, `hasPasswordSignIn`;
+  - the generated `SupabaseBuildConfig.WEBSITE_URL`.
+- PKCE now applies to the iPhone's sign-up and reset too. The emails' token-hash links work whichever flow asked (tested locally).
+- **Not on iPhone yet:** Apple sign-in, then Apple and Google together (the paid Apple account). No URL scheme is registered in `iosApp` (no Google there).
+
+**Open issues:**
+- **Resend message ID of the live reset email:** not read (a sending-only key). The owner reads it in Resend > Emails, or adds a read-access key for agents.
+- **Test users' `@example.com` addresses** have no inbox. With the Resend key set, rental emails to them now go out and bounce, and since the webhook is live those bounces flag the accounts (non-essential emails to them stop).
+- **Between 02:28 and 03:07 UTC** the preview site's reset page didn't understand Supabase's default `?code=` link (fixed above). Between 02:28 and 02:37 every signed-in account there was shown "Finish your profile" (fixed in `e348ddc`).
+- **Until `Preview` is merged into `main`:** links that fall back to the Site URL (`https://dzirent.com`) reach main's old pages. That means old app builds (no redirect sent) and the main website. Confirmation links then fail there, and a reset link gets 404.
+- **Website sign-in** still has only Auth's per-IP limits, which see Vercel's addresses (the new limit covers only reset and resend emails).
+- **After a reset:** other devices' access tokens stay valid until they expire (up to 1 hour); their refresh tokens are revoked.
+- **The privacy page changed without a version bump** (no one is asked to accept again). Owner and attorney: whether it needs one.
+- **Not built:**
+  - an admin button to clear an email flag (it clears when the address changes);
+  - receipts are not essential (they follow the switch); say if they should always go;
+  - magic-link and invite emails are templated, but no screen sends them.
+- **Next.js:** 16.4.6 since `a09e70a` (above).
+- **Android Lint** wasn't run (the build and unit tests were).
+
+**Requests:**
+- **Owner:** the live reset email's Resend message ID from Resend > Emails (or a read-access key for agents); finish the reset from the email.
+- **Owner:** merge `Preview` into `main`, so links that fall back to `https://dzirent.com` reach the new pages.
+- **Root `README.md`** (product features): Forgot password, Confirm email, Continue with Google, Finish your profile, the email rules.
+
+## V2 - 2026-11-20 - V1b migration live, pins v2, linear head, two-tier gate, text or poster, v2.1 deployed
+
+**Before starting:**
+- `Preview` was clean and up to date at `9489259`.
+- No Docker container was running, so there was no local Supabase to stop.
+- `H:\DziRent\vision-own` was left alone.
+- `H:\DziRent\vision-test\should-accept` now holds 32 photos; `should-reject` is empty. The folder was only read on this PC: never copied, and never named in the repo.
+- **Correction:** the first push of `report-v2.md` (`d4deb73`) listed the 32 file names (generic browser-download names, no personal data). The report now numbers them instead ("file 1-32", in sorted-name order).
+- gcloud was used only for Cloud Storage, Cloud Build and the `vision` deploy. The Supabase CLI ran with the access token from `H:\DziRent\secrets\`.
+
+**Part 0: the V1b migration on `dzirent-server`.**
+- **Before (read-only):** 114 policy rows, no `costume` row, `listings_garment_type_check` without `costume`, 12 scans.
+- **Applied:** `supabase db push --linked --dry-run` listed only `20261119120000_v1b_costume_and_scan_type.sql`; `supabase db push --linked --yes` applied it.
+- **After (read-only):**
+  - 115 policy rows, including the `costume` row (garment, allowed, Occasion & Party, garment type `costume`);
+  - both garment-type checks accept `costume`;
+  - `vision_finish_scan` names `vocabulary_version`, `top_types`, `banned_score` and `type_confidence`;
+  - the last migration is `20261119120000`.
+- **A real scan through `scan-listing`:**
+  - `node supabase/tests/step8a_scan.mjs --live` passed, but it returned the listing's finished scan from 2026-11-06. `request_scan` reuses a finished scan while the photo set is unchanged, so that proved nothing new.
+  - So I ran `node supabase/tests/step8b_recheck.mjs off <a typed-page JPEG I generated> --live`. It is the existing tool for this; with `vision_required` off it re-checks and never pauses. It added a photo to test user 1's "Emerald Velvet Cocktail Dress" and removed it again.
+  - The server ran two fresh scans through `scan-listing` and `v1b.1`:
+    - `e21d789b…`, with the typed page: done, review, "The photos seem to show different things…", 67 s (cold start);
+    - `d57215e5…`, the original two photos: done, review, "We're not sure what this piece is…", 3 s.
+  - **Both rows' `suggestions` hold the new fields:**
+    - `service_version` `v1b.1` and `vocabulary_version` `69eb998d…`;
+    - `type` cocktail dress (Occasion & Party, dress);
+    - `type_confidence` 0.2479 and 0.3472, `agreement` false;
+    - 5 `top_types`;
+    - `banned_score` 0.2071 and 0.001.
+  - The listing ended active with its 2 photos; the script removed the test photo and its row.
+
+**Part 1: pins v2 and the looser model-agreement check** (`data/vision/embed/build_pins.py`). It reused V1b's embedding cache, so nothing had to be embedded again.
+- **Text pins:**
+  - Each pin is "a photo of a {name}" for the English name and its English aliases: Wikidata's English aliases and D1's launch fallback names. Only names the type's `vocabulary` has, at most 5, no repeats, no `also_called`.
+  - 843 pins, 1,860 prompts; 476 types have aliases.
+  - `vocabulary_version` now covers the prompts: the sha256 of `vocabulary.json`'s sha256, the pin recipe and every pin's prompts. `vocabulary.json` itself didn't change.
+  - The new version is **`02fcb7ac3009731c6154ffeae27ad8849b2e6743e13e4c7083a23f4cae1bb7d0`**.
+- **The rule:** a photo stays when any text pin with the same `dzirent_category` and `dzirent_garment_type` as its own type is in its top 5. Every not-allowed type shares the blank mapping, so a not-allowed photo agrees with any not-allowed pin.
+  - **What was checked:** every photo V1b marked `model_disagrees` (1,945). The 277 rows that passed in V1b were kept as they were, and the 159 photos you had decided weren't touched.
+  - **Result:** **930 pass and are kept again** (608 Openverse, 322 search); **1,015 stay dropped**.
+  - **How they come back:** the auto filter simply stops dropping them, and no owner row is written. So an owner decision still wins, and they show as undecided on the label-check page.
+  - `model_agreement.csv` gained the columns `rule`, `top5` and `mapping_rank`.
+- **Auto filter and split:** I reran `auto_filter.py`, then `split.py` (sticky).
+  - `labels.csv` lost exactly the 930 auto rows, and **your 4,170 rows are byte-identical**. V1b's entry said 4,171, but the file had 4,170 then too.
+  - **10,952 kept: 8,827 train, 2,125 test; 930 new; 0 photos changed sides.**
+- **How good the restored photos are:** a contact sheet of 24 of the 930, chosen at random:
+  - 8 right, 6 doubtful, 10 wrong;
+  - the wrong ones: soldiers for qamis, Mackintosh and cagoule; a car named Duster; a Modigliani painting for blouse; two Second Life adverts for day dress; two 3D renders.
+  - So the looser rule gives back wrong photos along with the right ones.
+- **Per launch type.** "Removed" and "Restored" count this check only; the test columns are from the eval below.
+
+| Type | Policy | V1b removed | V2 restored | Kept V1b | Kept V2 | Train | Test | Test: type top-1 | Test: mapping top-1 | V2 test verdicts (allowed / review / rejected) | V1b test verdicts |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| achkan (under 20) | allowed | 4 | 0 | 0 | 0 | 0 | 0 |  |  | 0 / 0 / 0 | 0 / 0 / 0 |
+| débutante dress (under 20) | allowed | 5 | 3 | 2 | 5 | 3 | 2 | 50% | 100% | 0 / 2 / 0 | 0 / 0 / 0 |
+| Anarkali Salwar Suit (under 20) | allowed | 0 | 0 | 8 | 8 | 6 | 2 | 50% | 100% | 1 / 1 / 0 | 0 / 2 / 0 |
+| Nehru jacket (under 20) | allowed | 6 | 6 | 2 | 8 | 6 | 2 | 0% | 0% | 1 / 1 / 0 | 0 / 1 / 0 |
+| Sherwani (under 20) | allowed | 20 | 2 | 15 | 17 | 14 | 3 | 67% | 67% | 0 / 2 / 1 | 0 / 2 / 0 |
+| sheath dress | allowed | 62 | 4 | 18 | 22 | 18 | 4 | 0% | 0% | 0 / 4 / 0 | 0 / 4 / 0 |
+| dashiki | allowed | 17 | 9 | 18 | 27 | 22 | 5 | 40% | 60% | 0 / 5 / 0 | 0 / 4 / 0 |
+| blouse | allowed | 69 | 21 | 11 | 32 | 26 | 6 | 0% | 0% | 1 / 4 / 1 | 0 / 2 / 0 |
+| China Poblana | allowed | 68 | 23 | 12 | 35 | 28 | 7 | 71% | 71% | 2 / 5 / 0 | 0 / 2 / 0 |
+| bridesmaid's dress | allowed | 21 | 17 | 21 | 38 | 30 | 8 | 75% | 75% | 2 / 6 / 0 | 0 / 4 / 0 |
+| party dress | allowed | 0 | 0 | 40 | 40 | 32 | 8 | 25% | 50% | 0 / 8 / 0 | 0 / 8 / 0 |
+| cardigan | allowed | 0 | 0 | 41 | 41 | 33 | 8 | 38% | 62% | 0 / 7 / 1 | 0 / 7 / 1 |
+| huipil | allowed | 0 | 0 | 43 | 43 | 34 | 9 | 100% | 100% | 5 / 4 / 0 | 0 / 9 / 0 |
+| costume jewelry | allowed | 0 | 0 | 44 | 44 | 35 | 9 | 33% | 89% | 2 / 7 / 0 | 0 / 9 / 0 |
+| blazer | allowed | 0 | 0 | 45 | 45 | 36 | 9 | 56% | 78% | 1 / 8 / 0 | 0 / 9 / 0 |
+| handbag | allowed | 0 | 0 | 45 | 45 | 36 | 9 | 89% | 100% | 5 / 4 / 0 | 0 / 8 / 1 |
+| down jacket | allowed | 0 | 0 | 46 | 46 | 37 | 9 | 89% | 89% | 0 / 9 / 0 | 0 / 6 / 3 |
+| guayabera | allowed | 23 | 11 | 35 | 46 | 37 | 9 | 78% | 78% | 1 / 8 / 0 | 0 / 6 / 0 |
+| tracksuit bottoms | not allowed | 36 | 3 | 44 | 47 | 38 | 9 | 33% | 44% | 0 / 5 / 4 | 0 / 3 / 5 |
+| jumpsuit | allowed | 54 | 24 | 26 | 50 | 40 | 10 | 60% | 70% | 0 / 10 / 0 | 0 / 4 / 0 |
+| sunglasses | allowed | 0 | 0 | 50 | 50 | 40 | 10 | 80% | 100% | 9 / 1 / 0 | 5 / 5 / 0 |
+| hat | not allowed | 0 | 0 | 51 | 51 | 40 | 11 | 45% | 82% | 1 / 3 / 7 | 0 / 3 / 8 |
+| cheongsam (qipao) | allowed | 0 | 0 | 52 | 52 | 42 | 10 | 90% | 100% | 7 / 3 / 0 | 3 / 7 / 0 |
+| dinner jacket | allowed | 0 | 0 | 52 | 52 | 42 | 10 | 40% | 70% | 4 / 6 / 0 | 0 / 10 / 0 |
+| jeans | not allowed | 0 | 0 | 52 | 52 | 39 | 13 | 23% | 54% | 0 / 5 / 8 | 0 / 3 / 10 |
+| suit | allowed | 0 | 0 | 52 | 52 | 42 | 10 | 30% | 50% | 0 / 10 / 0 | 0 / 9 / 1 |
+| cap | not allowed | 0 | 0 | 53 | 53 | 43 | 10 | 30% | 70% | 0 / 5 / 5 | 0 / 2 / 8 |
+| hanbok | allowed | 0 | 0 | 55 | 55 | 44 | 11 | 64% | 82% | 2 / 9 / 0 | 0 / 11 / 0 |
+| leather jacket | allowed | 0 | 0 | 55 | 55 | 44 | 11 | 64% | 73% | 4 / 7 / 0 | 0 / 11 / 0 |
+| boubou | allowed | 0 | 0 | 56 | 56 | 45 | 11 | 64% | 73% | 2 / 9 / 0 | 0 / 11 / 0 |
+| evening dress | allowed | 66 | 42 | 14 | 56 | 45 | 11 | 36% | 64% | 0 / 11 / 0 | 0 / 0 / 0 |
+| swimsuit | not allowed | 58 | 34 | 22 | 56 | 45 | 11 | 9% | 9% | 0 / 3 / 8 | 0 / 1 / 4 |
+| t-shirt | not allowed | 0 | 0 | 56 | 56 | 45 | 11 | 73% | 82% | 0 / 4 / 7 | 0 / 4 / 7 |
+| shorts | not allowed | 0 | 0 | 58 | 58 | 46 | 12 | 25% | 58% | 0 / 4 / 8 | 0 / 0 / 12 |
+| trousers | allowed | 58 | 36 | 22 | 58 | 46 | 12 | 33% | 67% | 0 / 10 / 2 | 0 / 2 / 2 |
+| sari | allowed | 34 | 15 | 46 | 61 | 49 | 12 | 67% | 92% | 7 / 5 / 0 | 0 / 9 / 0 |
+| tuxedo | allowed | 0 | 0 | 62 | 62 | 50 | 12 | 58% | 83% | 6 / 6 / 0 | 0 / 12 / 0 |
+| sundress | allowed | 43 | 26 | 37 | 63 | 50 | 13 | 62% | 69% | 2 / 10 / 1 | 0 / 6 / 1 |
+| kurta | allowed | 35 | 20 | 45 | 65 | 52 | 13 | 69% | 77% | 5 / 8 / 0 | 0 / 10 / 0 |
+| trench coat | allowed | 38 | 23 | 42 | 65 | 52 | 13 | 69% | 85% | 6 / 6 / 1 | 0 / 10 / 0 |
+| hoodie | not allowed | 0 | 0 | 66 | 66 | 52 | 14 | 57% | 64% | 0 / 5 / 9 | 0 / 3 / 11 |
+| shalwar kameez | allowed | 29 | 19 | 47 | 66 | 53 | 13 | 31% | 46% | 1 / 12 / 0 | 0 / 8 / 0 |
+| day dress | allowed | 55 | 42 | 25 | 67 | 54 | 13 | 54% | 69% | 2 / 11 / 0 | 0 / 4 / 0 |
+| lingerie | not allowed | 48 | 36 | 32 | 68 | 54 | 14 | 64% | 100% | 0 / 1 / 13 | 0 / 0 / 7 |
+| overcoat | allowed | 57 | 47 | 23 | 70 | 56 | 14 | 43% | 86% | 1 / 12 / 1 | 0 / 4 / 0 |
+| undergarment | not allowed | 47 | 37 | 33 | 70 | 56 | 14 | 43% | 64% | 0 / 2 / 12 | 0 / 0 / 6 |
+| smartwatch | not allowed | 0 | 0 | 71 | 71 | 57 | 14 | 64% | 64% | 0 / 1 / 13 | 0 / 0 / 14 |
+| lehenga | allowed | 0 | 0 | 73 | 73 | 58 | 15 | 60% | 60% | 3 / 12 / 0 | 1 / 14 / 0 |
+| cocktail dress | allowed | 0 | 0 | 74 | 74 | 59 | 15 | 53% | 60% | 1 / 14 / 0 | 0 / 15 / 0 |
+| skirt | allowed | 53 | 47 | 27 | 74 | 59 | 15 | 40% | 93% | 2 / 11 / 2 | 0 / 4 / 1 |
+| necktie | allowed | 37 | 32 | 43 | 75 | 60 | 15 | 53% | 100% | 9 / 6 / 0 | 0 / 8 / 0 |
+| sweatshirt | not allowed | 0 | 0 | 75 | 75 | 60 | 15 | 53% | 73% | 0 / 2 / 13 | 0 / 1 / 14 |
+| shoe | not allowed | 31 | 29 | 49 | 78 | 62 | 16 | 62% | 94% | 0 / 2 / 14 | 0 / 1 / 9 |
+| sports jersey | not allowed | 0 | 0 | 79 | 79 | 63 | 16 | 19% | 88% | 0 / 1 / 15 | 0 / 0 / 16 |
+| ball gown | allowed | 0 | 0 | 80 | 80 | 64 | 16 | 56% | 69% | 3 / 13 / 0 | 0 / 16 / 0 |
+| three-piece suit | allowed | 0 | 0 | 80 | 80 | 64 | 16 | 81% | 88% | 4 / 12 / 0 | 0 / 16 / 0 |
+| wristwatch | allowed | 0 | 0 | 80 | 80 | 64 | 16 | 69% | 94% | 10 / 5 / 1 | 0 / 15 / 1 |
+
+- **Launch types now under 20 kept: 5** (10 in V1b):
+
+| Type | Kept |
+| --- | --- |
+| achkan | 0 |
+| débutante dress | 5 |
+| Anarkali Salwar Suit | 8 |
+| Nehru jacket | 8 |
+| Sherwani | 17 |
+
+  - Evening dress is back to 56 kept, 11 of them test.
+  - Débutante dress has 2 test photos again.
+  - Achkan still has none.
+  - All 608 launch restorations are Openverse photos.
+- **Other types restored most:**
+
+| Type | Restored | Kept now |
+| --- | --- | --- |
+| mantle | 45 | 54 |
+| rain cape | 35 | 64 |
+| Mackintosh | 34 | 36 |
+| qamis | 33 | 37 |
+| abaya | 32 | 60 |
+| duster | 31 | 39 |
+| cagoule | 27 | 33 |
+| Farwah | 23 | 24 |
+| walking suit | 11 | |
+| track suit top | 11 | |
+| beach dress | 11 | |
+
+  Eight more types got back 1 to 6 photos each.
+- **Gallery:** 8,827 train photos of 708 types (2,997 not allowed); the build refuses a test photo.
+- **Bucket:**
+  - Uploaded to `gs://dzirent-vision-data-dzirent/pins/02fcb7ac…/`, together with `vocabulary.npz`, `linear.npz` and `pins.json`.
+  - The bucket's `images/labels.csv` and `images/split.json` were refreshed; `manifest.csv` didn't change.
+
+**Part 2: decisions at the Dzirent level** (`services/vision/app/pins.py`):
+- **Scores:** text, gallery and linear probabilities are kept per type and also summed per mapping (category, garment type, allowed).
+- **Agreement:** the text pins' top mapping and the gallery vote's top mapping are the same. That mapping is chosen, and its confidence is its final score.
+- **Disagreement:** the mapping with the highest final score is chosen, its score is halved, and `agreement` is false.
+- **What's reported:** `type` is the best type (final score) inside the chosen mapping; `top_types` are the 5 best types by the final score.
+
+**Part 3: the linear head** (`data/vision/embed/train_linear.py`, `services/vision/app/linear.npz`):
+- **What it is:** multinomial logistic regression on the 768-number embeddings, one class per type with train photos (708). It uses sample weights and L2 on the weights, and is fitted with full-batch L-BFGS (torch, CPU).
+- **Train split only:** every sample is a train photo or an augmented copy of one. `training_samples` asserts that no test sha1 gets in, and `augment.py` refuses test photos too.
+- **Thin types:**
+  - The 549 types under 20 kept got augmented copies of their 3,035 train photos. The copies use `augment.py`'s pipeline, seeded by each photo's sha1, and each photo is drawn its `oversample` times, at most 8.
+  - That made **6,655 copies**: 224 x 224 PNGs in `images/raw/augmented/` (not committed), embedded by the service's own code in 34 minutes.
+  - The 188 train photos of other oversampled types count with a weight instead (at most 8).
+  - **15,482 samples** in all.
+- **Choosing the L2 strength:** 5-fold cross-fitting, keeping the lowest out-of-fold log loss.
+  - Folds are by photo. A photo's copies and its same-picture twins (cosine 0.995 or more) stay in one fold; 21 such pairs were merged.
+
+| L2 | Out-of-fold log loss | Top-1 | Top-3 |
+| --- | --- | --- | --- |
+| 1e-7 | 2.469 | 58.2 % | 72.9 % |
+| 3e-7 | 2.412 | 58.2 % | 73.1 % |
+| **1e-6** | **2.401** | **58.1 %** | **73.1 %** |
+| 3e-6 | 2.465 | 57.8 % | 73.1 % |
+| 1e-5 | 2.650 | 56.7 % | 72.6 % |
+| 3e-5 | 3.168 | 51.2 % | 68.6 % |
+| 1e-4 | 4.346 | 37.9 % | 54.3 % |
+| 3e-4 | 5.517 | 20.7 % | 33.8 % |
+| 1e-3 | 6.161 | 10.9 % | 16.5 % |
+
+  My first grid stopped at 1e-4, and its lowest value won. So I widened it until the best value had a worse one on each side.
+- **The file:**
+  - Weights and bias are float16; 708 classes; **1,019,078 bytes**. That is 0.97 MiB, just over a decimal megabyte, which is what 708 x 768 float16 values come to.
+  - Training set sha256 `0e62735dae6b86704a3737607dc3e6f09db849f49a5ea31d2e4333178a6306b1`; file sha256 `7fd0498b060272aeaca0c4a052f44591380a2a5eb5a87989f1f813eadfbebcd4`.
+  - Both hashes are in `pins.json`. The service refuses to start on a mismatch, and the Docker build checks them too.
+- **Calibration reads out-of-fold probabilities:** each train photo's out-of-fold probabilities (`images/raw/linear_oof.npz`) are what calibration uses. So no train photo is scored by a head that learned from it.
+
+**Part 4: the two-tier gate** (`app/verdict.py`). `banned_score` is the largest of the three sources' not-allowed shares (`banned_rule` max).
+- **At `banned_hard` or more:** rejected, with the not-allowed reason.
+- **From `banned_min` up to `banned_hard`:** review, "We couldn't confirm this item is allowed; a reviewer will check."
+- **A size tag or close-up at `banned_min` or more:** review, as in V1b.
+
+**Part 5: text or poster.**
+- **The rows:** six new rows in the policy's not-clothing group, defined like the others (kind other, not allowed, policy group "not clothing", the one not-clothing reason): `text_page`, `poster`, `book_cover`, `shop_sign`, `infographic` and `screenshot`. Each has 3-4 prompts.
+- **What they do:** a whole-piece photo goes to review when its text-or-poster share of the policy labels reaches `text_poster_min`, or when the policy check calls it not clothing with one of these items. The reason is "This photo looks like text or a poster, not the piece itself, so someone at Dzirent will check it." It is never allowed and never rejected as not clothing.
+- **The migration:** `20261120120000_v2_text_or_poster_policy.sql` reseeds `policy_item_types` (121 rows) the same way V1b's did. `test_policy_sync` passes, and the **policy digest is `f2250888045a4f47`** (was `30466e8f3a812d8c`).
+- Photo `decision` values are unchanged: `photo_scans_decision_check` allows only the five old ones.
+- **This migration wasn't applied to `dzirent-server` during the step**, because the prompt asked only for V1b's; scans don't need it, since no column refers to policy keys. It was applied afterwards at the owner's request (see "Owner decisions").
+
+**Thresholds and why.** Every value is in `services/vision/app/thresholds.json`, each with its reason. `eval/calibrate.py` chose them on the **train** split:
+- **Photos:** 8,827: 5,830 of allowed types and 2,997 not allowed.
+- **No self-scoring:** each photo was read without its own gallery pin or any identical picture, and with out-of-fold linear probabilities.
+- **Each source alone on train:** the text pins read the type right for 25.3 % of photos, the gallery 51.2 %, the linear head 58.1 %.
+
+| Name | Value | Why |
+| --- | --- | --- |
+| `weight_text` / `weight_gallery` / `weight_linear` | 0.6 / 0.1 / 0.3 | I tried 66 triples (0.1 steps) under both banned rules. This one allows the most allowed train photos while allowing no not-allowed one: 30.6 % (1,783); mapping top-1 72.1 %. Without the head the best was 30.5 % (0.8 / 0.2 / 0, mapping top-1 64.6 %); V1b's equal text and gallery weights, 28.1 %. |
+| `banned_rule` | max | The weighted ("combined") rule's best was 25.7 %. |
+| `banned_hard` | 0.91 | The lowest value (0.01 steps) that rejects at most 1 % of allowed train photos outright (0.70 %). It rejects 54.7 % of not-allowed train photos. |
+| `banned_min` | 0.10 | Chosen together with `type_min_confidence`: no not-allowed train photo allowed, and as many allowed ones allowed as possible. This tier sends 44.8 % of not-allowed and 45.7 % of allowed train photos to review. |
+| `type_min_confidence` | 0.60 | Under `banned_min`, the highest confidence any not-allowed train photo reached on an agreeing allowed mapping was 0.595 (the next was 0.578), so this is the next 0.05 above it. Of the allowed train photos it allows, 96.1 % have the right mapping and 64.3 % the right type. |
+| `text_poster_min` | 0.25 | The lowest value (0.05 steps) at which at most 1 % of allowed train photos read as text or a poster: 0.96 %, and 1.5 % of not-allowed ones. |
+| `text_logit_scale`, `text_top`, `gallery_k`, `disagreement_factor` | 100, 5, 10, 0.5 | Unchanged from V1b. |
+
+**Part 6: the eval** (`run_eval.py --local`; **`services/vision/eval/report-v2.md`**, committed). It was measured once, after every value above was fixed.
+- **Test set:** V2's test split is V1b's 1,928 photos (the split is sticky) plus 197 of the restored ones.
+- **Like-for-like:** V2 is also measured on exactly V1b's photos.
+
+| Run | Photos | Type top-1 | Mapping top-1 | Agreement | Allowed types: allowed / review / rejected | Not-allowed types: allowed / review / rejected |
+| --- | --- | --- | --- | --- | --- | --- |
+| V1b | 1,928 | 51 % | | 20 % | 35 / 1,115 / 64 | 0 / 129 / 585 |
+| V2, V1b's photos | 1,928 | 53 % | 75 % | 59 % | **291** / 883 / 40 | **1** / 221 / 492 |
+| V2, all | 2,125 | 53 % | 75 % | 57 % | **304** / 1,014 / 60 | **1** / 229 / 517 |
+
+- **Each source alone on the test split:** text top-1 25 %, gallery 54 %, linear head 64 %. The photo's type is in the top 3 by the final score for 76 % of photos (text pins alone: 43 %).
+- **Allowed-type photos allowed: 304 of 1,378 (22 %).** V1b: 35 of 1,214 (2.9 %).
+- **Gate false rejections** (allowed-type photos the gate rejected outright): **8 of 1,378** (V1b: 44 of 1,214).
+- **Allowed-type photos rejected by anything:** 8 by the gate, 50 by the policy check's own rules, 2 for nudity.
+- **Why allowed-type photos went to review:**
+
+| Reason | Photos |
+| --- | --- |
+| The gate's lower tier | 499 |
+| "Not sure" | 353 |
+| Hood | 131 |
+| Text or poster | 16 |
+| Unsure safety | 11 |
+| Photos that disagree | 4 |
+
+  The report has the full table.
+- **Banned leaks: 1, not 0.** The photo is `27abe3ead742`, labelled **hat**: a Commons category photo you kept on the label-check page on 2026-11-19.
+  - It shows a group of five men; the man in the middle wears a small cap with a long embroidered robe.
+  - Text pins, gallery and linear head all read **boubou** (agreeing, confidence 0.757, banned score 0.006), and so did the policy check.
+  - That is a correct reading of the most visible garment, in a photo labelled by its smallest one.
+  - I did **not** change anything after seeing it: that would mean choosing values on the test split.
+  - **For the coordinator:** excluding it would need `type_min_confidence` 0.80. On train that allows 22.4 % of allowed photos instead of 30.6 %; on test, 226 instead of 304. No gate threshold catches it, since its banned score is 0.006.
+- **The 57 launch types:** in the table above and in the report, with V1b's numbers beside V2's.
+- **Your folders:**
+  - `should-accept`, 32 photos: **15 allowed, 17 review, 0 rejected**. Every file read as a kurta or a Sherwani (Cultural & Traditional, top or suit). The report has each file's verdict, type and confidence, by number.
+  - `should-reject` is empty.
+
+**Tests:**
+- **`services/vision`:** `pytest -m "not model" tests`, **166 passed**.
+  - 24 are new, in `tests/test_v2.py`, using synthetic pins and a tiny synthetic linear head. They cover:
+    - **Mapping agreement:** two types of one mapping agree; different mappings halve the confidence; mapping agreement allows what type agreement wouldn't.
+    - **The final score and the head:** `top_types` follow the final score; the head takes part, and calibration can replace its probabilities.
+    - **The two-tier gate:**
+      - the hard tier rejects with the not-allowed reason;
+      - borderline scores of 0.30, 0.50 and 0.69 give review with the neutral reason, never allowed;
+      - under `banned_min`, the type decides;
+      - a borderline close-up only sends to review;
+      - both banned rules.
+    - **Text or poster:**
+      - the new rows are defined like the other not-clothing rows;
+      - a text-or-poster photo goes to review even with a confident allowed type;
+      - it is never rejected as not clothing, while a phone still is;
+      - the scan flags it from the labels.
+    - **The response:** it keeps every field and adds `mapping` and `linear_sha256`.
+    - **Loading the head:** it is refused on a file-hash mismatch, a training-set-hash mismatch or a missing `pins.json` key. The thresholds' checks run, and the committed head matches `pins.json`.
+  - `test_v1b.py`'s 26 tests still pass with one-tier, no-linear thresholds; two assertions were updated for V2's meaning.
+  - `test_policy_sync` passes.
+- **`data/vision`:** **152 passed**.
+  - `test_build_pins.py` was rewritten for V2: English aliases, the version following the prompts, the mapping rule, not-allowed types, and a run re-checking only the marked and new photos.
+  - `test_train_linear.py` is new (5 tests).
+- **CI:** run 44813657094 on `2fc7080`: **success on all 6 jobs** (contracts, database, android, vision-data, vision, website). pgTAP ran 16 files, 459 tests (`16_v2` ok).
+  - Run 44816802558 on `9537883` (the report correction and this entry) failed in contracts and website. `pranalika/code-reference.md` was stale: `local_eval.py`'s line numbers had moved.
+  - I regenerated it in `cce3ffa`, and run 44817969891 then succeeded on all 6 jobs.
+
+**Build and deploy:**
+- **Cloud Build** `e0411964-7875-4cd3-84c2-f215d5b7c08e`, 12 min 48 s:
+  - `app/gallery.npz: OK` (the sha256 matched);
+  - the build's start-up check printed "843 type pins, 8827 gallery pins, 708 linear head classes";
+  - 2,383 prompts for 121 policy items embedded in 476 s;
+  - image `us-west1-docker.pkg.dev/dzirent/cloud-run-source-deploy/vision:v2-1-2fc7080`.
+- **Deploy:** `gcloud run deploy vision --image …` with the image only, so every setting stays. **Revision `vision-00008-m4m` serves 100 % of traffic** (it was `vision-00007-6s4`, `v1b.1`).
+- **Settings, checked after the deploy:**
+  - service account `vision-runtime`;
+  - max 1 instance (min unset, so 0), 2 CPU, 4 GiB;
+  - timeout 120 s, concurrency 4, startup CPU boost;
+  - the only IAM binding is `roles/run.invoker` for `vision-invoker`.
+- **To go back:** `gcloud run services update-traffic vision --to-revisions vision-00007-6s4=100 --project dzirent --region us-west1`.
+- **`/health`** (signed in with the invoker key):
+  - `service_version` **`v2.1`**;
+  - `vocabulary_version` **`02fcb7ac3009731c6154ffeae27ad8849b2e6743e13e4c7083a23f4cae1bb7d0`**;
+  - `linear_head` sha256 **`7fd0498b060272aeaca0c4a052f44591380a2a5eb5a87989f1f813eadfbebcd4`** (training set `0e62735d…`, 708 classes);
+  - 121 policy items, policy digest `f2250888045a4f47`;
+  - 843 type pins, 8,827 gallery pins;
+  - start-up 37.8 s.
+
+**The two live responses.** `run_eval.py`'s `--key-file` signed in with `H:\DziRent\secrets\vision-invoker-key.json`. There is no key material below, and the fingerprints are shortened. The listing and photo ids are neutral, so no file name was sent.
+
+- **should-accept** ("file 1": the first file of `vision-test\should-accept` in sorted order, taken as it came rather than picking an allowed one; 2.8 s). Live matches the local run exactly: review, kurta, 0.4755.
+
+  ```json
+  {"listing_id":"v2-live-accept","verdict":"review","reason":"We're not sure what this piece is, so someone at Dzirent will check the photos.","item_key":null,"suggestions":{"item_key":"sherwani","item_label":"Sherwani","category":"Cultural & Traditional","item_type":null,"garment_type":"suit","colors":["White"],"color_confidence":0.7,"pattern":null,"fabric":null,"styles":["South Asian"],"title":"White sherwani","description":"White sherwani.","alternatives":["Kurta","Salwar kameez"],"confidence":0.6608},"quality":{"summary":"All photos look good.","photos":1,"photos_with_warnings":0,"warnings":[]},"photos":[{"photo_id":"v2-live-accept-photo","slot":"front","ok":true,"blur_score":0.0,"brightness_score":0.6904,"framing_score":null,"worn_by_person":0.968,"checks":{"sharp":"pass","lighting":"pass","whole_item":"unsure","notes":["sharp","acceptable_light","background_not_uniform"],"sharpness":2791.6,"mean_gray":176.0},"warnings":[],"decision":"allowed","looks_like":"sherwani","labels":{"items":{"sherwani":0.6608,"kurta":0.159,"salwar_kameez":0.077,"ao_dai":0.0451,"waistcoat":0.0203,"barong":0.0131,"dashiki":0.0057,"suit":0.0046,"hanbok":0.0039,"dupatta":0.0028},"groups":{"allowed":0.9995,"not_allowed":0.0003,"not_clothing":0.0001,"detail":0.0001},"not_fashion":0.0161,"hooded":0.0399,"safety":{"nsfw":0.0674},"text_or_poster":0.0,"patterns":{"solid":0.2068,"striped":0.0021,"polka dot":0.0012,"floral":0.2455,"plaid":0.0027,"embroidered":0.5321,"sequined":0.0096},"styles":{"South Asian":0.8671,"East Asian":0.0057,"Southeast Asian":0.1151,"Middle Eastern":0.0066,"African":0.0033,"Mexican & Latin American":0.0004,"Country & Western":0.0,"Western formal":0.0011,"Western casual":0.0006},"fabrics":{"silk":0.4256,"satin":0.0268,"cotton":0.0744,"linen":0.424,"wool":0.0097,"denim":0.0017,"velvet":0.0202,"chiffon":0.0085,"leather":0.0036,"lace":0.0055},"pins":{"type":"Q855915","type_confidence":0.4755,"agreement":true,"text":{"qid":"Q6207848","score":0.1803},"gallery":{"qid":"Q855915","score":0.6036},"banned_score":0.0059,"linear":{"qid":"Q855915","score":0.7149},"mapping":{"category":"Cultural & Traditional","garment_type":"top","allowed":true,"score":0.4755},"text_mapping":{"category":"Cultural & Traditional","garment_type":"top","allowed":true},"gallery_mapping":{"category":"Cultural & Traditional","garment_type":"top","allowed":true},"banned":{"text":0.0034,"gallery":0.0,"linear":0.0059}}},"fingerprint":"[768 numbers]"}],"model":{"id":"Marqo/marqo-fashionSigLIP","revision":"c56244cc94f92419e8369fa71efdaf403b124ce8","license":"Apache-2.0"},"safety_model":{"id":"Marqo/nsfw-image-detection-384","revision":"0c26ec22111b83f106d72a55f611ec35962bcb65","license":"Apache-2.0"},"policy_digest":"f2250888045a4f47","service_version":"v2.1","type":{"qid":"Q855915","english_name":"kurta","category":"Cultural & Traditional","item_type":null,"garment_type":"top"},"type_confidence":0.4755,"agreement":true,"top_types":[{"qid":"Q855915","english_name":"kurta","allowed":true,"score":0.3155},{"qid":"Q837879","english_name":"Sherwani","allowed":true,"score":0.1423},{"qid":"Q6207848","english_name":"Jodhpuri","allowed":true,"score":0.1082},{"qid":"Q11339904","english_name":"Nehru jacket","allowed":true,"score":0.0609},{"qid":"Q16671745","english_name":"qamis","allowed":true,"score":0.0471}],"banned_score":0.0059,"vocabulary_version":"02fcb7ac3009731c6154ffeae27ad8849b2e6743e13e4c7083a23f4cae1bb7d0","mapping":{"category":"Cultural & Traditional","garment_type":"top","allowed":true,"score":0.4755},"linear_sha256":"7fd0498b060272aeaca0c4a052f44591380a2a5eb5a87989f1f813eadfbebcd4","timing_ms":{"fetch":0,"queue":0,"analyze":2479,"total":2479}}
+  ```
+
+- **should-reject** (`should-reject` is empty, so this is a locked test photo: the shoe photo `0f5982ac4581` V1b also used, never in the gallery or the head's training set; 1.5 s):
+
+  ```json
+  {"listing_id":"v2-live-0f5982ac4581","verdict":"rejected","reason":"This looks like sneakers. Dzirent doesn't allow shoes.","item_key":null,"suggestions":null,"quality":{"summary":"1 of 1 photos could be better.","photos":1,"photos_with_warnings":1,"warnings":["Too bright: avoid direct sun and flash"]},"photos":[{"photo_id":"v2-live-0f5982ac4581-photo","slot":"front","ok":true,"blur_score":0.0,"brightness_score":0.7763,"framing_score":0.0,"worn_by_person":0.4125,"checks":{"sharp":"pass","lighting":"fail","whole_item":"pass","notes":["sharp","overexposed","garment_fully_visible"],"sharpness":4034.7,"mean_gray":198.0},"warnings":["Too bright: avoid direct sun and flash"],"decision":"not_allowed","looks_like":"sneakers","labels":{"items":{"sneakers":0.7578,"dress_shoes":0.1455,"sandals":0.0759,"heels":0.0102,"dog":0.0019,"socks":0.0015,"boots":0.0012,"joggers":0.0007,"jeans":0.0006,"cat":0.0004},"groups":{"allowed":0.0012,"not_allowed":0.994,"not_clothing":0.0048,"detail":0.0},"not_fashion":0.4197,"hooded":0.1766,"safety":{"nsfw":0.0551},"text_or_poster":0.0,"patterns":{"solid":0.1194,"striped":0.0142,"polka dot":0.5467,"floral":0.1093,"plaid":0.0373,"embroidered":0.1556,"sequined":0.0175},"styles":{"South Asian":0.0515,"East Asian":0.1285,"Southeast Asian":0.0113,"Middle Eastern":0.0906,"African":0.0119,"Mexican & Latin American":0.3075,"Country & Western":0.0268,"Western formal":0.0077,"Western casual":0.3643},"fabrics":{"silk":0.0031,"satin":0.0022,"cotton":0.2454,"linen":0.0097,"wool":0.0131,"denim":0.1748,"velvet":0.0031,"chiffon":0.0072,"leather":0.5338,"lace":0.0076},"pins":{"type":"Q22676","type_confidence":0.8325,"agreement":true,"text":{"qid":"Q107268359","score":0.2795},"gallery":{"qid":"Q161928","score":0.1956},"banned_score":1.0,"linear":{"qid":"Q22676","score":0.8703},"mapping":{"category":null,"garment_type":null,"allowed":false,"score":0.8325},"text_mapping":{"category":null,"garment_type":null,"allowed":false},"gallery_mapping":{"category":null,"garment_type":null,"allowed":false},"banned":{"text":0.7678,"gallery":1.0,"linear":0.9472}}},"fingerprint":"[768 numbers]"}],"model":{"id":"Marqo/marqo-fashionSigLIP","revision":"c56244cc94f92419e8369fa71efdaf403b124ce8","license":"Apache-2.0"},"safety_model":{"id":"Marqo/nsfw-image-detection-384","revision":"0c26ec22111b83f106d72a55f611ec35962bcb65","license":"Apache-2.0"},"policy_digest":"f2250888045a4f47","service_version":"v2.1","type":{"qid":"Q22676","english_name":"shoe","category":null,"item_type":null,"garment_type":null},"type_confidence":0.8325,"agreement":true,"top_types":[{"qid":"Q22676","english_name":"shoe","allowed":false,"score":0.3714},{"qid":"Q107268359","english_name":"doll shoes","allowed":false,"score":0.1788},{"qid":"Q161928","english_name":"footwear","allowed":false,"score":0.1376},{"qid":"Q139505887","english_name":"Bekishe","allowed":true,"score":0.0704},{"qid":"Q167633","english_name":"clog","allowed":false,"score":0.0465}],"banned_score":1.0,"vocabulary_version":"02fcb7ac3009731c6154ffeae27ad8849b2e6743e13e4c7083a23f4cae1bb7d0","mapping":{"category":null,"garment_type":null,"allowed":false,"score":0.8325},"linear_sha256":"7fd0498b060272aeaca0c4a052f44591380a2a5eb5a87989f1f813eadfbebcd4","timing_ms":{"fetch":1,"queue":0,"analyze":1166,"total":1167}}
+  ```
+
+**Owner decisions:**
+- **Apply the V2 migration** (`20261120120000_v2_text_or_poster_policy.sql`, the six text-or-poster policy rows) to `dzirent-server`? **Done later on 2026-11-20, at the owner's request.**
+  - **Before (read-only):** 115 policy rows, none of the six, last migration `20261119120000`.
+  - **Applied:** `supabase db push --linked --dry-run` listed only this file; `supabase db push --linked --yes` applied it.
+  - **After (read-only):** 121 rows, every one identical to `policy.json` (all 13 columns, in order). The six sit at positions 99-104, right after `document`, each kind `other`, not allowed, policy group "not clothing". The last migration is `20261120120000`.
+- **Look at the 930 restored photos** if you have time. They show as undecided under `review_server.py --types-with-new`, and about 4 in 10 of a random sample were wrong photos.
+
+**Open questions for the coordinator:**
+1. **The one banned leak** (above): treat it as a label problem (the photo shows an allowed boubou; relabel it, or drop it from "hat"), or raise `type_min_confidence` to 0.80 (train: 30.6 % -> 22.4 % of allowed photos allowed)?
+2. **The gate's lower tier is the main review reason.** `banned_min` 0.10 sends 499 of the 1,014 allowed-type test photos that went to review there (45.7 % of allowed train photos). It is what keeps not-allowed photos out at this `type_min_confidence`. The cheaper path is cleaner not-allowed training photos: the "max" rule follows whichever source is most alarmed, often the gallery or the head.
+3. **The hood rule** sends 131 allowed-type test photos to review; hoods are common on coats and jackets. Keep it?
+4. **The looser model-agreement rule** gave back 930 photos, about 4 in 10 wrong in a sample, and they are now in the gallery and the head's training set. Keep it, tighten it (top 3 of the mapping), or have the owner check them?
+5. **`vision_finish_scan`** keeps every V1b field, but not V2's `mapping` and `linear_sha256`. Add them in a migration?
+6. **Suggestions vs `type` and `mapping`:** the apps still read `suggestions`, which come from `policy.json`. For file 1 live, the suggestions say "Sherwani" while `type` says "kurta".
+7. **Text or poster:** `text_poster_min` was set at 1 % of allowed train photos, with no labelled posters to measure it on. 16 allowed-type and 8 not-allowed-type test photos went to review through it.
+8. **Thin data:** achkan still has no photo. Débutante dress, Anarkali, Nehru jacket and Sherwani are under 20.
+9. **The linear head file** is 1.02 MB (0.97 MiB), a little over the expected "under 1 MB". Float16 weights for 708 classes can't get much smaller without dropping classes.
+
+## V1b - 2026-11-19 - type pins, banned gate, backup bucket, v1b.1 deployed
+
+**Before starting:** clean tree, `Preview` up to date at `8df8b77`. No Docker container was running, so there was no Supabase to stop. `H:\DziRent\vision-own` was left alone (not read, not listed anywhere). `H:\DziRent\vision-test\should-accept` and `should-reject` are empty. gcloud was first signed in as `admin@dzirent.com`, which has no access to project `dzirent` (only `dzirent-17c88`, the Firebase project); after the owner signed in the account that owns project `dzirent`, everything below ran as that account. gcloud was used only for Cloud Storage, Cloud Build and the Cloud Run deploy (plus reading the service's settings before it).
+
+**Part 0:** no uncommitted `labels.csv` rows, so nothing to commit.
+
+**Part 1: the backup bucket** `gs://dzirent-vision-data-dzirent` (project `dzirent`; the project ID has no suffix, so the suffix is the ID itself):
+- `us-west1`, Standard, uniform bucket-level access, public access prevention enforced (Google's default 7-day soft delete). Object read (`roles/storage.objectViewer`) for `vision-runtime@dzirent.iam.gserviceaccount.com` and for Cloud Build's account (`296325491472-compute@developer.gserviceaccount.com`, which fetches the gallery pins); the other bindings are the project's own owner/editor/viewer roles. No public member.
+- Uploaded with `gcloud storage rsync data/vision/images/files gs://dzirent-vision-data-dzirent/images/files --recursive` (1,019 s), then `manifest.csv`, `labels.csv` and `split.json` into `images/`, and the two pin files into `pins/<vocabulary_version>/`.
+- **15,105 objects, 5,342,621,097 bytes** (4.98 GiB): the 15,100 photos, 5,319,005,365 bytes, exactly the files and bytes on this PC (and the manifest: no file missing or extra), plus the 3 data files (7.9 MB) and the 2 pin files (15.7 MB). The bucket and the rsync command are in `data/vision/README.md` ("Backup bucket").
+
+**Part 2: the pins** (`data/vision/embed/build_pins.py`, run on this PC's CPU with the service's Python):
+- **Same model, same code:** the pinned files (Marqo-FashionSigLIP `c56244cc…`, the safety model `0c26ec22…`) were copied from V1a's folder and every file checked against Hugging Face's hashes for those commits (8 of 8 match). Photos go through the service's own `open_image`, `preprocess` and `embed_tensors` (the last two split out of `Model.embed_images`, which now calls them); text through `build_assets.embed_entries`. Nothing duplicated.
+- **Embedding cache:** every kept photo plus the 1,679 the owner dropped (13,646 photos, none failed), in 8 pieces of about 9 minutes (about 3 photos a second on this CPU), cached in `images/raw/embeddings/` (not committed).
+- **Text pins:** 843, one per `vocabulary.json` entry (691 allowed, 152 not allowed), 2,642 prompts: "a photo of a {name}" for the English name and its `also_called` names (the sheet's rule, now `build_taxonomy.also_called`; at most 5). `services/vision/app/vocabulary.npz`, float16, 1.6 MB, committed, with each row's qid, English name, category, item type, garment type and allowed, and `vocabulary_version` = sha256 of `vocabulary.json` = `69eb998d7fbb4296…`.
+- **The model-agreement check:** 2,222 kept Openverse and search photos nobody had decided (159 more were skipped: the owner had decided them). **1,945 are `model_disagrees`** (own type not in their top 3 text pins): 1,074 of 1,241 Openverse, 871 of 981 search. `images/model_agreement.csv` (committed) holds every checked photo's rank and top 3; `auto_filter.py` turns `model_disagrees` into auto drops (the owner's 4,171 rows byte-identical; an owner decision still wins), then `split.py` (sticky): **10,022 kept, 8,094 train, 1,928 test, 1,945 left, 0 changed sides**.
+  - **How good the rule is**, measured on the owner's own decisions (embedded for this): "own type in the top 3" turns away **63 % of the photos the owner kept** and 87 % of those the owner dropped. With 843 types many are near-twins ("skirt" loses to "short skirt", "pleated skirt", "circle skirt"), so it is harsh on clean photos. A looser rank barely separates them better (top 100: 7 % of keeps, 36 % of drops).
+  - **On the photos it marked**, a contact sheet of 24 chosen at random: 18 were wrong photos (a tank, a bust, a stone inscription, a curtain, an Economist cover, a book titled "The Ragged Trousered Philanthropists" for trousers), 4 doubtful, 2 right (a red swimsuit, a lingerie photo). Of 18 it kept, 6 were wrong, some because the photo shows the type's name written (an infographic, a "kurta boys" shop sign). So it was applied as specified; the numbers are for the coordinator.
+  - **Launch types** (57; "Removed" counts this check only; the test columns are from the eval below):
+
+| Type | Policy | Kept before | Checked | Removed | Kept after | Train | Test | Test: type top-1 | Test verdicts (allowed / review / rejected) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| achkan (under 20) | allowed | 4 | 4 | 4 | 0 | 0 | 0 |  | no test photo |
+| débutante dress (under 20) | allowed | 7 | 7 | 5 | 2 | 2 | 0 |  | no test photo |
+| Nehru jacket (under 20) | allowed | 8 | 7 | 6 | 2 | 1 | 1 | 0% | 0 / 1 / 0 |
+| Anarkali Salwar Suit (under 20) | allowed | 8 | 0 | 0 | 8 | 6 | 2 | 100% | 0 / 2 / 0 |
+| blouse (under 20) | allowed | 80 | 70 | 69 | 11 | 9 | 2 | 0% | 0 / 2 / 0 |
+| China Poblana (under 20) | allowed | 80 | 68 | 68 | 12 | 10 | 2 | 50% | 0 / 2 / 0 |
+| evening dress (under 20) | allowed | 80 | 77 | 66 | 14 | 14 | 0 |  | no test photo |
+| Sherwani (under 20) | allowed | 35 | 26 | 20 | 15 | 13 | 2 | 100% | 0 / 2 / 0 |
+| dashiki (under 20) | allowed | 35 | 19 | 17 | 18 | 14 | 4 | 50% | 0 / 4 / 0 |
+| sheath dress (under 20) | allowed | 80 | 62 | 62 | 18 | 14 | 4 | 0% | 0 / 4 / 0 |
+| bridesmaid's dress | allowed | 42 | 27 | 21 | 21 | 17 | 4 | 50% | 0 / 4 / 0 |
+| swimsuit | not allowed | 80 | 62 | 58 | 22 | 17 | 5 | 40% | 0 / 1 / 4 |
+| trousers | allowed | 80 | 58 | 58 | 22 | 18 | 4 | 0% | 0 / 2 / 2 |
+| overcoat | allowed | 80 | 59 | 57 | 23 | 19 | 4 | 25% | 0 / 4 / 0 |
+| day dress | allowed | 80 | 59 | 55 | 25 | 21 | 4 | 75% | 0 / 4 / 0 |
+| jumpsuit | allowed | 80 | 58 | 54 | 26 | 22 | 4 | 50% | 0 / 4 / 0 |
+| skirt | allowed | 80 | 53 | 53 | 27 | 22 | 5 | 20% | 0 / 4 / 1 |
+| lingerie | not allowed | 80 | 61 | 48 | 32 | 25 | 7 | 43% | 0 / 0 / 7 |
+| undergarment | not allowed | 80 | 47 | 47 | 33 | 27 | 6 | 0% | 0 / 0 / 6 |
+| guayabera | allowed | 58 | 32 | 23 | 35 | 29 | 6 | 83% | 0 / 6 / 0 |
+| sundress | allowed | 80 | 48 | 43 | 37 | 30 | 7 | 43% | 0 / 6 / 1 |
+| party dress | allowed | 40 | 0 | 0 | 40 | 32 | 8 | 38% | 0 / 8 / 0 |
+| cardigan | allowed | 41 | 0 | 0 | 41 | 33 | 8 | 25% | 0 / 7 / 1 |
+| trench coat | allowed | 80 | 50 | 38 | 42 | 32 | 10 | 70% | 0 / 10 / 0 |
+| huipil | allowed | 43 | 0 | 0 | 43 | 34 | 9 | 100% | 0 / 9 / 0 |
+| necktie | allowed | 80 | 76 | 37 | 43 | 35 | 8 | 62% | 0 / 8 / 0 |
+| costume jewelry | allowed | 44 | 0 | 0 | 44 | 35 | 9 | 22% | 0 / 9 / 0 |
+| tracksuit bottoms | not allowed | 80 | 41 | 36 | 44 | 36 | 8 | 12% | 0 / 3 / 5 |
+| blazer | allowed | 45 | 0 | 0 | 45 | 36 | 9 | 44% | 0 / 9 / 0 |
+| handbag | allowed | 45 | 0 | 0 | 45 | 36 | 9 | 78% | 0 / 8 / 1 |
+| kurta | allowed | 80 | 46 | 35 | 45 | 35 | 10 | 70% | 0 / 10 / 0 |
+| down jacket | allowed | 46 | 0 | 0 | 46 | 37 | 9 | 33% | 0 / 6 / 3 |
+| sari | allowed | 80 | 41 | 34 | 46 | 37 | 9 | 78% | 0 / 9 / 0 |
+| shalwar kameez | allowed | 76 | 38 | 29 | 47 | 39 | 8 | 25% | 0 / 8 / 0 |
+| shoe | not allowed | 80 | 45 | 31 | 49 | 39 | 10 | 30% | 0 / 1 / 9 |
+| sunglasses | allowed | 50 | 0 | 0 | 50 | 40 | 10 | 90% | 5 / 5 / 0 |
+| hat | not allowed | 51 | 0 | 0 | 51 | 40 | 11 | 36% | 0 / 3 / 8 |
+| cheongsam (qipao) | allowed | 52 | 0 | 0 | 52 | 42 | 10 | 80% | 3 / 7 / 0 |
+| dinner jacket | allowed | 52 | 0 | 0 | 52 | 42 | 10 | 20% | 0 / 10 / 0 |
+| jeans | not allowed | 52 | 0 | 0 | 52 | 39 | 13 | 23% | 0 / 3 / 10 |
+| suit | allowed | 52 | 0 | 0 | 52 | 42 | 10 | 20% | 0 / 9 / 1 |
+| cap | not allowed | 53 | 0 | 0 | 53 | 43 | 10 | 40% | 0 / 2 / 8 |
+| hanbok | allowed | 55 | 0 | 0 | 55 | 44 | 11 | 45% | 0 / 11 / 0 |
+| leather jacket | allowed | 55 | 0 | 0 | 55 | 44 | 11 | 73% | 0 / 11 / 0 |
+| boubou | allowed | 56 | 0 | 0 | 56 | 45 | 11 | 45% | 0 / 11 / 0 |
+| t-shirt | not allowed | 56 | 0 | 0 | 56 | 45 | 11 | 27% | 0 / 4 / 7 |
+| shorts | not allowed | 58 | 0 | 0 | 58 | 46 | 12 | 33% | 0 / 0 / 12 |
+| tuxedo | allowed | 62 | 0 | 0 | 62 | 50 | 12 | 67% | 0 / 12 / 0 |
+| hoodie | not allowed | 66 | 0 | 0 | 66 | 52 | 14 | 50% | 0 / 3 / 11 |
+| smartwatch | not allowed | 71 | 0 | 0 | 71 | 57 | 14 | 100% | 0 / 0 / 14 |
+| lehenga | allowed | 73 | 0 | 0 | 73 | 58 | 15 | 60% | 1 / 14 / 0 |
+| cocktail dress | allowed | 74 | 0 | 0 | 74 | 59 | 15 | 87% | 0 / 15 / 0 |
+| sweatshirt | not allowed | 75 | 0 | 0 | 75 | 60 | 15 | 53% | 0 / 1 / 14 |
+| sports jersey | not allowed | 79 | 0 | 0 | 79 | 63 | 16 | 25% | 0 / 0 / 16 |
+| ball gown | allowed | 80 | 0 | 0 | 80 | 64 | 16 | 75% | 0 / 16 / 0 |
+| three-piece suit | allowed | 80 | 0 | 0 | 80 | 64 | 16 | 81% | 0 / 16 / 0 |
+| wristwatch | allowed | 80 | 0 | 0 | 80 | 64 | 16 | 50% | 0 / 15 / 1 |
+
+  - **Launch types now under 20 kept: 10** (4 before): achkan 0, débutante dress 2, Nehru jacket 2, Anarkali Salwar Suit 8, blouse 11, China Poblana 12, evening dress 14, Sherwani 15, sheath dress 18, dashiki 18. Evening dress and débutante dress lost their test photos (Openverse ones; the sticky split never moves a train photo to test); achkan, thin before, has no photo left. All 1,074 launch removals were Openverse photos.
+  - **Other types:** 871 search photos in 24 keep-list and costume types, some now nearly empty: Farwah 78 of 78 (1 kept), period costume 75 of 77 (3), Xifu 70 of 72 (2), qamis 69 of 72 (4), mantle 65 of 65 (9), walking suit 62 of 70 (9), duster 62 of 62 (8), track suit top 58 of 75 (17), simar 56 of 56 (12), cagoule 54 of 59 (6), Mackintosh 52 of 52 (2), rain cape 47 of 48 (29), abaya 46 of 52 (28), beach dress 20 of 22 (3), shaluka 19 of 20 (1), oilskin 18 of 28 (44), and 8 more with 1-7.
+- **Gallery pins:** one per kept train photo of a type with a text pin: **8,094 photos, 707 types (2,880 not allowed)**, none left out; the build refuses a test photo. `gallery.npz` (float16, 14 MB) is in the bucket under `pins/69eb998d…/`, not in git; `services/vision/app/pins.json` (committed) names the vocabulary version, both files' sha256 (`gallery_sha256` `920ca9d7…`), the rows and the bucket path.
+
+**Part 3: the service, `v1b.1`** (V1a's color reader included):
+- `app/pins.py` loads both pin files at start-up and refuses to start when they don't match `pins.json` (version, sha256, every gallery type has a text pin). Per photo, and for the whole-piece photos together: text pins as softmax(100 x cosine), top 5; the 10 nearest gallery photos vote for their type by similarity. Agree: that type, confidence the mean of the two scores. Disagree: the higher-scoring one, its score halved, `agreement` false.
+- **Banned gate**, apart from the type: `banned_score` = max(the highest probability of any not-allowed text pin, the not-allowed share of the gallery vote). A whole-piece photo, or the photos together, at `banned_min` or more: **rejected, whatever the type says**, with the reason of the photo's closest not-allowed policy item (e.g. "This looks like sneakers. Dzirent doesn't allow shoes."; "This item isn't allowed on Dzirent." if there is none). A size tag or close-up at `banned_min`: review (a not-allowed item there always sent the listing to review).
+- **Verdict**, strongest first: nudity 0.90 rejected; the gate; the policy check's rejections (a not-allowed item, not clothing); unsure safety review; the policy check's photo reviews (a photo couldn't be opened, no whole piece, photos that disagree); then **allowed only for an allowed type the text and gallery pins agree on at `type_min_confidence` or more**, every whole-piece photo the same kind of thing (garment, or the same accessory); a hood turns that into review; anything else review ("no clear signal"). Worn never counts.
+- **Response:** adds `type` {qid, english_name, category, item_type, garment_type}, `type_confidence`, `agreement`, `top_types` (5 with scores), `banned_score`, `vocabulary_version`; `service_version` is `v1b.1`; each photo's `labels.pins` has its own reading. Every earlier field is kept; suggestions still come from `policy.json`, and their `garment_type` is never `costume` (`vocab.APP_GARMENT_TYPES`: the apps don't list it, and the website would show "Choose a garment kind" for an unknown value), while `type.garment_type` can be. `/health` adds `vocabulary_version`, `type_pins`, `gallery_pins`.
+- **Policy:** the garment type `costume`, "costumes and replica suits; certified protective equipment is never a type": migration `20261119120000_v1b_costume_and_scan_type.sql` adds it to `listings_garment_type_check` and `policy_item_types_garment_type_check` and reseeds `policy_item_types` with the new `costume` row (Occasion & Party; 115 rows) the same way the 8B migrations did; `policy.json` has the same row. `tests/test_policy_sync.py` passes. Policy digest `30466e8f3a812d8c` (was `fab11ee739b2e4db`).
+- **scan-listing / the database:** `scan-listing` already passes the whole result to `vision_finish_scan`, so its code is unchanged; the migration redefines `vision_finish_scan` (C1's version) to keep `type`, `type_confidence`, `agreement`, `top_types`, `banned_score`, `vocabulary_version` and `service_version` in `listing_scans.suggestions`, beside `quality`, `item_key` and `model`. No new table or column. pgTAP `15_v1b` checks the constraints, the row and every stored field. **The migration is not applied to `dzirent-server`**: this prompt didn't ask for it (see the owner decision below). The apps are unchanged.
+- **Build:** `services/vision/cloudbuild.yaml` fetches `gallery.npz` from the bucket and checks its sha256 against `pins.json` before `docker build`; the Dockerfile loads the pins before anything else, so a missing or wrong gallery fails the build; `.gcloudignore` keeps a local copy out of the upload.
+
+**Thresholds and why** (`services/vision/app/thresholds.json`, each with its reason; chosen on the **train** split with `eval/calibrate.py`: all 8,094 train photos read exactly as a scan reads them but without their own gallery pin or an identical picture; the test split was never used):
+
+| Name | Value | Why |
+| --- | --- | --- |
+| `text_logit_scale` | 100 | The model card's zero-shot recipe, as the policy check uses. |
+| `text_top` | 5 | `top_types` reports 5. |
+| `gallery_k` | 10 | The prompt's k. |
+| `disagreement_factor` | 0.5 | A disagreeing type keeps half its score and is never allowed straight away. |
+| `banned_min` | 0.60 | The lowest value that rejects at most 5 % of allowed train photos (4.6 %); it catches 77 % of not-allowed train photos (0.30 would catch 93 % but reject 15 % of allowed photos). |
+| `type_min_confidence` | 0.70 | The highest confidence any not-allowed train photo reached with an allowed, agreeing type was 0.667 (a smartwatch read as a watch type); 0.70 is the next 0.05 above, so no train photo leaks. Conservative: only 4.9 % of allowed train photos clear it (96.9 % of them with the right type). |
+
+Train (leave one out): text top-1 24.6 %, text top-3 41.6 %, gallery top-1 51.4 %, decided type top-1 48.8 %, agreement 19.7 %. The full tables print from `calibrate.py`.
+
+**Part 4: the eval** (`run_eval.py --local`, `services/vision/eval/report-v1b.md`, committed): the 1,928 locked test photos (488 types; none of a type without a pin), each as a one-photo listing through the service's `Model` and `scan.listing_verdict` on this PC:
+- **Type top-1 51 %** (text 24 %, gallery 55 %), the photo's type in the top 3 text pins 42 %, agreement 20 %.
+- **Allowed types (1,214):** 35 allowed, 1,115 review, 64 rejected (44 by the gate, 20 by the policy check, 2 of those for nudity). Of the reviews: 1,075 "not sure" (153 of them agreeing but under 0.70), 31 hood, 7 unsure safety, 2 no whole piece.
+- **Not-allowed types (714):** 0 allowed, 129 review, 585 rejected (557 by the gate).
+- **Banned leaks: 0** (no not-allowed test photo was allowed). This is the number V2 must keep at zero while allowing far more of the allowed photos: today 2.9 % of them.
+- The 57 launch types' rows are in the table above and in the report. The owner's folders: `should-accept` and `should-reject` are empty, so nothing was run from them.
+- **Text pins from the English name alone** would do better (the same test photos: text top-1 28.2 % against 23.7 %, top-3 47.3 % against 42.5 %; English aliases instead of `also_called` 28.4 % / 47.2 %). `also_called` is mostly other languages ("Bleiser", "futal", "calça"), which dilutes the pins. Not changed: the prompt asked for `also_called` (open question 2).
+
+**Tests:**
+- `services/vision`: `pytest -m "not model" tests` **142 passed** (26 new in `tests/test_v1b.py`, synthetic pins, no model, no network): agreement and disagreement, the confidence, leave-one-out, the gate overriding an allowed type, the plain gate reason, a banned close-up only reviewing, photos of different kinds, review on low confidence and on disagreement, nudity, hood and worn unchanged, the policy check's rejections standing, the rules without pins as before, the response keeping every field and adding the new ones (plain JSON), costume never reaching the apps' garment kind, the pin files refused on a sha256, version or type mismatch or a missing gallery, every threshold explained, the committed `vocabulary.npz` matching `pins.json`. `test_policy_sync` passes.
+- `data/vision`: **146 passed** (7 new in `tests/test_build_pins.py`); `validate.py` 8 of 8.
+- The response schema isn't in `contracts/` (only the error codes are), so no contracts test changed.
+- **CI:** run 44661543438 on `3468125` failed in `database`: my pgTAP test called `pg_catalog.row(...)` (`row` is a keyword); fixed in `7d5c1ac`. Run **44661969529 on `7d5c1ac`: success, all 6 jobs** (contracts, database, android, vision-data, vision, website); pgTAP 15 files, 454 tests, `15_v1b` ok.
+- A full local check through the HTTP app (FastAPI's test client, the built local model): `/health` `v1b.1` and a cheongsam test photo scanned with type, confidence and agreement (start-up 13.9 s).
+
+**Build and deploy:**
+- Cloud Build `baa696a3-bdb4-404b-b169-e11b106484bd`, 12 min 38 s: `app/gallery.npz: OK` (sha256), "843 type pins, 8094 gallery pins", 2,363 prompts embedded in 471 s; image `us-west1-docker.pkg.dev/dzirent/cloud-run-source-deploy/vision:v1b-1-3468125` (built from `3468125`; `services/vision` is the same at `7d5c1ac`).
+- Deployed to the existing `vision` (us-west1) with its settings: no unauthenticated access, `vision-runtime`, min 0, max 1, 2 CPU, 4 GiB, timeout 120 s, concurrency 4, startup CPU boost, the same `VISION_ALLOWED_URL_PREFIXES`. **Revision `vision-00007-6s4`, 100 % of traffic** (was `vision-00006-sxv`, `s1.1`: V1a was never deployed before, it goes live inside `v1b.1`).
+- **`/health` (signed in with the invoker key):** `service_version` `v1b.1`, `vocabulary_version` `69eb998d7fbb42965eeeeb0fe57b4fd5a82bff67d19f39cdc43b6dcce8b2a703`, 843 type pins, 8,094 gallery pins, policy digest `30466e8f3a812d8c`, start-up 36.6 s.
+- The live flags (read through the public API): `vision_required` is off, so a scan blocks nothing; with `v1b.1` most scans will come back review.
+
+**The two live responses** (`run_eval.py`'s new `--key-file` signs in as the service account in `H:\DziRent\secrets\vision-invoker-key.json`, no gcloud; no key material below; the fingerprints, 768 numbers each, shortened). The folders were empty, so these are two Commons test photos:
+
+- **should-accept (cheongsam test photo)** (`13b9d5cd0abe`, a locked test photo, never in the gallery; 2.7 s):
+
+  ```json
+  {"listing_id":"v1b-live-13b9d5cd0abe","verdict":"allowed","reason":"This looks like a cheongsam (qipao). You can list it.","item_key":"qipao","suggestions":{"item_key":"qipao","item_label":"Qipao","category":"Cultural & Traditional","item_type":null,"garment_type":"dress","colors":["Green"],"color_confidence":0.7,"pattern":"floral","fabric":"silk","styles":["East Asian"],"title":"Green floral qipao","description":"Green floral qipao.","alternatives":["Ao dai","Kimono"],"confidence":0.9917},"quality":{"summary":"1 of 1 photos could be better.","photos":1,"photos_with_warnings":1,"warnings":["Strong glare: move out of direct light"]},"photos":[{"photo_id":"test-13b9d5cd0abe","slot":"front","ok":true,"blur_score":0.0,"brightness_score":0.6398,"framing_score":null,"worn_by_person":0.0077,"checks":{"sharp":"pass","lighting":"fail","whole_item":"unsure","notes":["sharp","glare","background_not_uniform"],"sharpness":730.0,"mean_gray":163.1},"warnings":["Strong glare: move out of direct light"],"decision":"allowed","looks_like":"qipao","labels":{"items":{"qipao":0.9917,"ao_dai":0.0046,"kimono":0.0016,"hanbok":0.0009,"blouse":0.0006,"dress_shirt":0.0001,"kebaya":0.0001,"kurta":0.0001,"costume":0.0,"kaftan":0.0},"groups":{"allowed":1.0,"not_allowed":0.0,"not_clothing":0.0,"detail":0.0},"not_fashion":0.0064,"hooded":0.0274,"safety":{"nsfw":0.0593},"patterns":{"solid":0.0039,"striped":0.0001,"polka dot":0.0003,"floral":0.9486,"plaid":0.0009,"embroidered":0.0459,"sequined":0.0003},"styles":{"South Asian":0.0003,"East Asian":0.9756,"Southeast Asian":0.0239,"Middle Eastern":0.0001,"African":0.0,"Mexican & Latin American":0.0001,"Country & Western":0.0,"Western formal":0.0,"Western casual":0.0},"fabrics":{"silk":0.9455,"satin":0.0319,"cotton":0.0027,"linen":0.0025,"wool":0.0011,"denim":0.0,"velvet":0.0057,"chiffon":0.01,"leather":0.0002,"lace":0.0002},"pins":{"type":"Q836934","type_confidence":0.9448,"agreement":true,"text":{"qid":"Q836934","score":0.8895},"gallery":{"qid":"Q836934","score":1.0},"banned_score":0.0001}},"fingerprint":"[768 numbers]"}],"model":{"id":"Marqo/marqo-fashionSigLIP","revision":"c56244cc94f92419e8369fa71efdaf403b124ce8","license":"Apache-2.0"},"safety_model":{"id":"Marqo/nsfw-image-detection-384","revision":"0c26ec22111b83f106d72a55f611ec35962bcb65","license":"Apache-2.0"},"policy_digest":"30466e8f3a812d8c","service_version":"v1b.1","type":{"qid":"Q836934","english_name":"cheongsam (qipao)","category":"Cultural & Traditional","item_type":null,"garment_type":"dress"},"type_confidence":0.9448,"agreement":true,"top_types":[{"qid":"Q836934","english_name":"cheongsam (qipao)","allowed":true,"score":0.8895},{"qid":"Q92159035","english_name":"Qipao mini dress","allowed":true,"score":0.069},{"qid":"Q97618878","english_name":"informal dress (changfu)","allowed":true,"score":0.0194},{"qid":"Q6371145","english_name":"Kariyushi shirt","allowed":true,"score":0.0016},{"qid":"Q1327357","english_name":"hanfu","allowed":true,"score":0.0016}],"banned_score":0.0001,"vocabulary_version":"69eb998d7fbb42965eeeeb0fe57b4fd5a82bff67d19f39cdc43b6dcce8b2a703","timing_ms":{"fetch":1,"queue":0,"analyze":2297,"total":2298}}
+  ```
+
+- **should-reject (shoe test photo)** (`0f5982ac4581`, a locked test photo, never in the gallery; 1.5 s):
+
+  ```json
+  {"listing_id":"v1b-live-0f5982ac4581","verdict":"rejected","reason":"This looks like sneakers. Dzirent doesn't allow shoes.","item_key":null,"suggestions":null,"quality":{"summary":"1 of 1 photos could be better.","photos":1,"photos_with_warnings":1,"warnings":["Too bright: avoid direct sun and flash"]},"photos":[{"photo_id":"test-0f5982ac4581","slot":"front","ok":true,"blur_score":0.0,"brightness_score":0.7763,"framing_score":0.0,"worn_by_person":0.4125,"checks":{"sharp":"pass","lighting":"fail","whole_item":"pass","notes":["sharp","overexposed","garment_fully_visible"],"sharpness":4034.7,"mean_gray":198.0},"warnings":["Too bright: avoid direct sun and flash"],"decision":"not_allowed","looks_like":"sneakers","labels":{"items":{"sneakers":0.7578,"dress_shoes":0.1455,"sandals":0.0759,"heels":0.0102,"dog":0.0019,"socks":0.0015,"boots":0.0012,"joggers":0.0007,"jeans":0.0006,"cat":0.0004},"groups":{"allowed":0.0012,"not_allowed":0.994,"not_clothing":0.0048,"detail":0.0},"not_fashion":0.4197,"hooded":0.1766,"safety":{"nsfw":0.0551},"patterns":{"solid":0.1194,"striped":0.0142,"polka dot":0.5467,"floral":0.1093,"plaid":0.0373,"embroidered":0.1556,"sequined":0.0175},"styles":{"South Asian":0.0515,"East Asian":0.1285,"Southeast Asian":0.0113,"Middle Eastern":0.0906,"African":0.0119,"Mexican & Latin American":0.3075,"Country & Western":0.0268,"Western formal":0.0077,"Western casual":0.3643},"fabrics":{"silk":0.0031,"satin":0.0022,"cotton":0.2454,"linen":0.0097,"wool":0.0131,"denim":0.1748,"velvet":0.0031,"chiffon":0.0072,"leather":0.5338,"lace":0.0076},"pins":{"type":"Q107268359","type_confidence":0.2288,"agreement":false,"text":{"qid":"Q107268359","score":0.4575},"gallery":{"qid":"Q161928","score":0.1956},"banned_score":1.0}},"fingerprint":"[768 numbers]"}],"model":{"id":"Marqo/marqo-fashionSigLIP","revision":"c56244cc94f92419e8369fa71efdaf403b124ce8","license":"Apache-2.0"},"safety_model":{"id":"Marqo/nsfw-image-detection-384","revision":"0c26ec22111b83f106d72a55f611ec35962bcb65","license":"Apache-2.0"},"policy_digest":"30466e8f3a812d8c","service_version":"v1b.1","type":{"qid":"Q107268359","english_name":"doll shoes","category":null,"item_type":null,"garment_type":null},"type_confidence":0.2288,"agreement":false,"top_types":[{"qid":"Q107268359","english_name":"doll shoes","allowed":false,"score":0.4575},{"qid":"Q161928","english_name":"footwear","allowed":false,"score":0.1009},{"qid":"Q22676","english_name":"shoe","allowed":false,"score":0.0908},{"qid":"Q4120618","english_name":"poodle skirt","allowed":true,"score":0.0639},{"qid":"Q4189109","english_name":"shoe covers","allowed":false,"score":0.0427}],"banned_score":1.0,"vocabulary_version":"69eb998d7fbb42965eeeeb0fe57b4fd5a82bff67d19f39cdc43b6dcce8b2a703","timing_ms":{"fetch":0,"queue":0,"analyze":1161,"total":1161}}
+  ```
+
+**Owner decisions:**
+- **Apply the V1b migration to `dzirent-server`** (`supabase db push`, as earlier migrations went live after CI). Until then live scans don't keep the new fields (everything else works: `vision_finish_scan` ignores keys it doesn't know) and `costume` isn't a database value there. Not done here because this prompt didn't ask for it.
+- **Look at the photos the model check dropped** if any should come back: on the label-check page an owner keep overrules `model_disagrees`. They don't show under `--types-with-new` (auto drops count as decided); the review page's "drop (auto)" marks them.
+
+**Open questions for the coordinator:**
+1. **Allowed is rare:** 35 of 1,214 allowed test photos (2.9 %). Agreement on the exact type happens for 20 % of photos because the vocabulary has many near-twins. V2 options: agree on the Dzirent mapping (category, garment type, allowed) instead of the exact type, a linear layer on the gallery, or a lower `type_min_confidence` once leaks stay at zero on a bigger test set.
+2. **Text pins from the English name only** (or English aliases) score better than name + `also_called` (above). Switch?
+3. **The model-agreement rule** drops 63 % of photos the owner had confirmed (measured), and it left 10 launch types under 20 and several keep-list and costume types nearly empty. Keep it, loosen it (rank or sibling types), or have the owner look at its drops?
+4. **Text in photos** passes the check and pulls the model (an infographic, a shop sign); V2 could add a "text or poster" not-clothing bank.
+5. **Suggestions still come from `policy.json`.** Should the apps move to `type` (and learn the `costume` garment kind)?
+6. **Gate false rejections:** 44 allowed test photos (3.6 %) are rejected by the gate, the price of `banned_min` 0.60; lenders see a not-allowed reason. Review instead of rejected under some score?
+7. **Test photos lost:** evening dress and débutante dress have no test photo now (their test photos were dropped Openverse ones) and achkan has no photo at all, so they can't be measured.
+8. The bucket name: the project ID is plain `dzirent`, so the bucket is `dzirent-vision-data-dzirent`.
+
+## D2e+D4b - 2026-11-19 - Openverse run, sticky split, owner photos (written, not added), augmentation
+
+**Before starting:** `Preview` up to date at `8b98151`; no Docker container was running, so there was no Supabase to stop. Read `pranalika/README.md`, BOARD, the D2d entry and `data/vision/README.md`. `labels.csv` had the owner's uncommitted review session.
+
+**Part 0: the owner's labels:** committed on their own as `a22c933`: 352 owner rows appended, nothing else changed. Kept and dropped now (owner decisions; "auto" = the filter's, for photos the owner didn't click):
+
+| Type | Kept | Dropped | Not sure |
+| --- | --- | --- | --- |
+| cap | 53 | 25 + 1 auto | 1 |
+| hat | 51 | 18 + 11 auto | 0 |
+| hoodie | 66 | 11 + 3 auto | 0 |
+| jeans | 52 | 26 + 2 auto | 0 |
+| undergarment | 33 | 44 + 1 auto | 2 |
+
+**Part 1: Openverse, run once:**
+- **The key:** `OPENVERSE_CLIENT_ID` and `OPENVERSE_CLIENT_SECRET` were in `providers.env` (checked by name and length only; never printed). The token worked.
+- **The limits the headers reported:** the registered key gets `x-ratelimit-limit-oauth2_client_credentials_burst: 100/min` and `..._sustained: 10000/day`. The token request itself is counted anonymously (`anon_burst: 20/min`, `anon_sustained: 200/day`).
+  - The script now sets the gap between API calls from the latest response's burst limit, never under 1 s. In piece 1 the anonymous 20/min from the token reply held every call to 3 s; fixed before piece 2.
+- **Targets:** 28 launch types under 40 kept-or-undecided: the 27 of D2d plus undergarment, now at 33 after the owner's drops. At most 696 API calls.
+- **Requests, every one counted** (`images/raw/openverse/run_state.json`, not committed):
+
+  | Piece | API calls (1 token each) | From cache | Download requests | Files received | Saved | Left today |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | 50 | 0 | 538 | 538 | 521 | 9,951 |
+  | 2 | 44 | 2 | 555 | 555 | 539 | 9,908 |
+  | 3 | 20 | 2 | 331 | 327 | 319 | 9,889 |
+  | 4 (guayabera, kurta refill) | 8 | 0 | 27 | 27 | 24 | 9,882 |
+  | **Total** | **122** (118 searches, 4 tokens) | 4 | **1,451** | 1,447 | 1,403 | |
+
+  - Downloads went to the source sites (Flickr 1,244 of the kept files; museums, rawpixel and others), not to Openverse. 44 files were refused after download (43 too small, 1 format). 4 download requests brought no file: one museum file failed 3 times (HTTP 522) and was skipped, and one other answered without it.
+- **iNaturalist removed:** "guayabera" returned 42 photos of the parrot *Amazona guayabera* (lilac-crowned amazon), and "kurta" 3 of a fish, all from iNaturalist (species observations only).
+  - I removed those 45 (disk, manifest, `openverse.csv`, credits; 10.2 MB) and added `inaturalist` to `excluded_source` beside `wikimedia`.
+  - I reopened the two types in the same run (piece 4).
+- **Result:** **1,358 Openverse photos** (233.9 MB) for 27 of the 28 types. "Anarkali Salwar Suit" returned nothing under any of its 4 names.
+  - **Licenses:** CC BY 2.0 797, CC BY-SA 2.0 375, CC0 112, Public Domain Mark 44, CC BY 4.0 37, CC BY-SA 4.0 12, CC BY 3.0 2.
+  - `CREDITS.md` has the Openverse part with the "not endorsed or certified" note.
+- **Changes to `fetch_openverse.py` before the run**, so one run can go in foreground pieces:
+  - `run_state.json` fixes the targets at the first piece. A type stopped halfway on 61 was still filled to 80, though no longer under 40.
+  - The same file keeps the finished types, the results refused after download (never fetched again) and each piece's counts.
+  - Photos the filter would drop count as dropped between pieces.
+  - The time is checked before each download, not only each search.
+  - A source site gets 3 tries of 30 s.
+- **Auto-filter:** 117 of the Openverse photos auto-dropped (black-and-white, sepia, page), so 1,241 count as kept. The owner's 4,170 rows came through byte-identical and in order.
+  - The `labels.csv` diff looks large only because the merge writes owner rows first: the owner's 352 new lines had been appended after the auto rows, and moved up unchanged.
+- **Split: changed to sticky.** Under D4's rule ("the lowest 20 % of sha1s are test"), adding photos to a type shifts the cut. This run would have moved **23 committed train photos into test and 16 test photos into train**.
+  - Now a photo in the committed `split.json` keeps its side, and new photos fill the test share, lowest sha1 first. **Result: no photo changed sides**; 1,241 new, 92 left (dropped by the owner).
+  - A type over its share after the owner's drops keeps its test photos: jeans has 13 test of 52 kept.
+- **README:** section 5b has the line asked for: "Openverse was used through its API with a registered key, within its limits, as a one-time targeted search; the catalogue was not crawled." It also has the run and the iNaturalist exclusion.
+- **Now:** 15,100 photos (5.32 GB, not committed), **11,967 kept: 9,639 train, 2,328 test**; 710 types, 217 thin, 19 types with a target but no kept photo.
+
+**Part 2: the owner's photos (`ingest_own.py`), written and tested, NOT run:**
+- `H:\DziRent\vision-own` exists with two folders, both matching a type exactly: `Sherwani` (Q837879, 17 files) and `kurta` (Q855915, 15 files). The dry run found no other folders, nothing unreadable, and 8 files under 300 px on the short side.
+- **Why I stopped:** these don't look like photos the owner took.
+  - All 32 are named `images.jfif`, `images (1).jfif` … `images (17).jfif`. That is what a browser names an image saved from a Google Images results page.
+  - They are at search-thumbnail sizes (316 × 316, 452 × 678, 480 × 640, 258 × 387…) and carry no EXIF at all, where a phone photo has its camera data and is usually 3000+ px.
+  - All were saved within about two minutes.
+  - The prompt asks to record them as license "owner", author "Dzirent owner". For web images that would be a false provenance claim in a public repo, and they would train the photo check without a license. So nothing was copied, and `manifest.csv`, `labels.csv` and `split.json` don't have them.
+- **What the script does once there are real owner photos:**
+  - folder names matched exactly, ignoring case; a folder matching no type (or two) is reported and skipped;
+  - each photo turned upright, converted to sRGB, at most 1600 px long, saved with no metadata (no EXIF, so no location or device; no XMP, comments or colour profile);
+  - a manifest row with source owner, license owner, author Dzirent owner and no URLs, and a `labels.csv` keep with source owner-upload;
+  - always train (`split.py`), and a second run adds nothing.
+- **Fixed along the way:**
+  - `auto_filter.py`'s merge dropped any label row whose source wasn't "owner", so owner-upload rows would have vanished on the next merge. It now keeps them as owner decisions.
+  - `--forget-owner` leaves owner-upload rows alone.
+  - `CREDITS.md` counts owner photos in a section of their own.
+  - The review page tags owner photos "own" and Openverse photos "openverse".
+
+**Part 3: augmentation (`augment.py`) and oversampling:**
+- **Albumentations 2.0.8**, its last MIT release; its successor AlbumentationsX is AGPL or paid. The pipeline, in memory:
+  - rotation ±10° (p 0.5, reflect border);
+  - random resized crop 70-100 % to 224 × 224, the vision model's input;
+  - horizontal flip (p 0.5);
+  - brightness and contrast ±0.2 (p 0.5);
+  - hue ±5° only (p 0.3). OpenCV's 8-bit hue has 2° steps, so the limit is 2.5;
+  - gaussian blur kernel 3-5, sigma 0.1-1.0 (p 0.2);
+  - JPEG quality 60-95 (p 0.3).
+- **Training only:**
+  - `Augmenter` refuses a test sha1;
+  - `epoch()` draws train photos only;
+  - it writes no manifest rows and no files;
+  - `--preview <sha1>` writes the original plus 8 samples to `images/raw/augment_preview/<sha1>/` and refuses a test photo. I ran it once on a kurta photo and looked: crops, flips, slight rotations, brightness, colours unchanged.
+- Importing it turns Albumentations' PyPI update check off (`NO_ALBUMENTATIONS_UPDATE=1`).
+- **Requirements:** albumentations, albucore, PyYAML, simsimd and stringzilla are new. numpy, scipy, opencv-python-headless and pydantic are pinned at `services/vision`'s versions.
+- **Oversampling:** a type with fewer than 20 train photos gets `oversample` = ceil(20 / train) in `split.json`, so it gives at least 20 samples an epoch. **555 of 710 types** have a factor above 1, mostly the allowed types with 12 photos (9-10 train → 2-3). Factors run up to 20 for a type with one photo.
+
+**The 57 launch types** (photos by source; kept counts the owner's keeps plus photos nobody decided that the filter didn't drop):
+
+| Type | Allowed | Commons | Search | Openverse | Owner | Kept | Train | Test |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| blazer | allowed | 54 | 0 | 0 | 0 | 45 | 36 | 9 |
+| sheath dress | allowed | 9 | 71 | 66 | 0 | 80 | 64 | 16 |
+| suit | allowed | 80 | 0 | 0 | 0 | 52 | 42 | 10 |
+| three-piece suit | allowed | 80 | 0 | 0 | 0 | 80 | 64 | 16 |
+| trousers | allowed | 80 | 0 | 60 | 0 | 80 | 64 | 16 |
+| ball gown | allowed | 80 | 0 | 0 | 0 | 80 | 64 | 16 |
+| bridesmaid's dress | allowed | 1 | 30 | 30 | 0 | 42 | 34 | 8 |
+| cocktail dress | allowed | 80 | 0 | 0 | 0 | 74 | 59 | 15 |
+| dinner jacket | allowed | 18 | 62 | 0 | 0 | 52 | 42 | 10 |
+| débutante dress | allowed | 0 | 5 | 11 | 0 | 7 | 5 | 2 |
+| evening dress | allowed | 80 | 0 | 118 | 0 | 80 | 64 | 16 |
+| jumpsuit | allowed | 71 | 0 | 59 | 0 | 80 | 64 | 16 |
+| party dress | allowed | 0 | 80 | 0 | 0 | 40 | 32 | 8 |
+| tuxedo | allowed | 80 | 0 | 0 | 0 | 62 | 50 | 12 |
+| achkan | allowed | 0 | 8 | 6 | 0 | 4 | 4 | 0 |
+| Anarkali Salwar Suit | allowed | 7 | 3 | 0 | 0 | 8 | 6 | 2 |
+| boubou | allowed | 80 | 0 | 0 | 0 | 56 | 45 | 11 |
+| cheongsam (qipao) | allowed | 80 | 0 | 0 | 0 | 52 | 42 | 10 |
+| China Poblana | allowed | 28 | 39 | 69 | 0 | 80 | 64 | 16 |
+| dashiki | allowed | 15 | 4 | 19 | 0 | 35 | 28 | 7 |
+| guayabera | allowed | 24 | 24 | 32 | 0 | 58 | 46 | 12 |
+| hanbok | allowed | 80 | 0 | 0 | 0 | 55 | 44 | 11 |
+| huipil | allowed | 80 | 0 | 0 | 0 | 43 | 34 | 9 |
+| kurta | allowed | 66 | 0 | 50 | 0 | 80 | 64 | 16 |
+| lehenga | allowed | 80 | 0 | 0 | 0 | 73 | 58 | 15 |
+| Nehru jacket | allowed | 4 | 5 | 7 | 0 | 8 | 6 | 2 |
+| sari | allowed | 80 | 0 | 43 | 0 | 80 | 64 | 16 |
+| shalwar kameez | allowed | 80 | 0 | 38 | 0 | 76 | 61 | 15 |
+| Sherwani | allowed | 51 | 0 | 26 | 0 | 35 | 28 | 7 |
+| blouse | allowed | 80 | 0 | 73 | 0 | 80 | 64 | 16 |
+| cardigan | allowed | 80 | 0 | 0 | 0 | 41 | 33 | 8 |
+| day dress | allowed | 1 | 79 | 62 | 0 | 80 | 64 | 16 |
+| skirt | allowed | 80 | 0 | 55 | 0 | 80 | 64 | 16 |
+| sundress | allowed | 24 | 56 | 54 | 0 | 80 | 64 | 16 |
+| down jacket | allowed | 80 | 0 | 0 | 0 | 46 | 37 | 9 |
+| leather jacket | allowed | 80 | 0 | 0 | 0 | 55 | 44 | 11 |
+| overcoat | allowed | 80 | 0 | 69 | 0 | 80 | 64 | 16 |
+| trench coat | allowed | 31 | 49 | 56 | 0 | 80 | 64 | 16 |
+| costume jewelry | allowed | 80 | 0 | 0 | 0 | 44 | 35 | 9 |
+| handbag | allowed | 80 | 0 | 0 | 0 | 45 | 36 | 9 |
+| necktie | allowed | 80 | 0 | 79 | 0 | 80 | 64 | 16 |
+| sunglasses | allowed | 80 | 0 | 0 | 0 | 50 | 40 | 10 |
+| wristwatch | allowed | 80 | 0 | 0 | 0 | 80 | 64 | 16 |
+| cap | not_allowed | 80 | 0 | 0 | 0 | 53 | 43 | 10 |
+| hat | not_allowed | 80 | 0 | 0 | 0 | 51 | 40 | 11 |
+| hoodie | not_allowed | 80 | 0 | 0 | 0 | 66 | 52 | 14 |
+| jeans | not_allowed | 80 | 0 | 0 | 0 | 52 | 39 | 13 |
+| lingerie | not_allowed | 80 | 0 | 67 | 0 | 80 | 64 | 16 |
+| shoe | not_allowed | 80 | 0 | 46 | 0 | 80 | 64 | 16 |
+| shorts | not_allowed | 80 | 0 | 0 | 0 | 58 | 46 | 12 |
+| smartwatch | not_allowed | 80 | 0 | 0 | 0 | 71 | 57 | 14 |
+| sports jersey | not_allowed | 80 | 0 | 0 | 0 | 79 | 63 | 16 |
+| sweatshirt | not_allowed | 80 | 0 | 0 | 0 | 75 | 60 | 15 |
+| swimsuit | not_allowed | 80 | 0 | 68 | 0 | 80 | 64 | 16 |
+| t-shirt | not_allowed | 80 | 0 | 0 | 0 | 56 | 45 | 11 |
+| tracksuit bottoms | not_allowed | 45 | 0 | 41 | 0 | 80 | 64 | 16 |
+| undergarment | not_allowed | 80 | 0 | 54 | 0 | 80 | 64 | 16 |
+| **Total (57)** | | 3489 | 515 | 1358 | 0 | 3479 | 2780 | 699 |
+
+**The 14 thin types from D2d** (kept before → after; train / test now; oversample):
+- **Filled to 80:** evening dress 3, necktie 4, blouse 10, China Poblana 12, sheath dress 18, swimsuit 18, lingerie 19. Each is now 64 / 16.
+- **Better but short of 80** (Openverse ran out): bridesmaid's dress 15 → 42 (34 / 8), Sherwani 9 → 35 (28 / 7), dashiki 16 → 35 (28 / 7).
+- **Still under 20:**
+  - débutante dress 0 → 7 (5 / 2, ×4);
+  - Nehru jacket 1 → 8 (6 / 2, ×4);
+  - achkan 0 → 4 (4 / 0, thin, ×5);
+  - Anarkali Salwar Suit 8 → 8 (6 / 2, ×4; Openverse had nothing).
+- Commons and Openverse are both exhausted for these four.
+
+**Tests and CI:**
+- `pytest data/vision/tests`: **139 passed** (114 before), no network.
+- **New:**
+  - Openverse: the limits from the headers (the latest response sets the gap), a later piece keeping the run's targets, refused results not downloaded again, the time checked before each download, a failing site skipped after 3 tries, the filter's drops counted between pieces;
+  - the sticky split: committed photos keep their side (and D4's rule would have moved them), a thin type growing, a type over its share, the owner's photos train only, the oversampling factors;
+  - `ingest_own.py`:
+    - folder names exact ignoring case;
+    - EXIF with GPS, make and model gone, and turned upright;
+    - PNG text gone;
+    - 1600 px, never enlarged;
+    - the rows, LF endings, a second run adding nothing, the dry run;
+    - owner-upload kept by the merge and by `--forget-owner`;
+    - the credits count;
+  - `augment.py`: train photos only per epoch with the factors, a test photo refused, the pipeline's settings, the hue within 5° on 60 seeds, `--preview` writing its own folder only, the update check off.
+  - The recorded Openverse fixture is unchanged.
+- **CI:**
+  - [Run 44632518871](https://github.com/Vivek-k24/Dzirent/actions/runs/44632518871) on `fb9d4d2` (everything, board and this entry included): green on all six jobs.
+  - The vision-data log on `cc64529` (run 44631808850, cancelled later by the newer push) shows the new requirements installing, "ALL 8 CHECKS PASSED" and "139 passed".
+- **Commits:**
+  - `a22c933` (the owner's labels);
+  - `048e23c` (`fetch_openverse.py` in pieces, limits, iNaturalist);
+  - `e678303` (sticky split, owner train-only, oversampling);
+  - `59ab60d` (the Openverse data: manifest, `openverse.csv`, credits, auto-filter, labels, split);
+  - `0f8f898` (`ingest_own.py`);
+  - `b4c938c` (`augment.py`);
+  - `cc64529` (review page tags);
+  - `e40ebe5` (docs);
+  - then the board and this entry.
+
+**Owner:**
+1. **Say whether you took the 32 photos in `H:\DziRent\vision-own`.**
+   - If yes, the next session runs `ingest_own.py`, then `auto_filter.py` and `split.py`.
+   - If they came from a web search, please delete them and put in photos you took (any size; the script strips location and device data).
+2. **Check the Openverse photos on the label-check page**, 27 launch types, each photo tagged "openverse". Paste this into a plain PowerShell window, then open http://127.0.0.1:8765:
+
+   `& "H:\DziRent\Dzirent_dev\data\vision\.venv\Scripts\python.exe" "H:\DziRent\Dzirent_dev\data\vision\images\review_server.py" --types-with-new --launch-only`
+
+   For a not-allowed type, keep = this photo clearly shows the banned item.
+
+**For the coordinator (open questions):**
+- **The owner's photos** (Part 2): not added until the owner says they took them.
+- **Four launch types are still under 20 kept:** débutante dress 7, Nehru jacket 8, Anarkali Salwar Suit 8, achkan 4. Commons and Openverse are exhausted. Options:
+  - the owner's own photos;
+  - launching them on fewer photos;
+  - or treating achkan with Sherwani and Anarkali with shalwar kameez, which are close styles.
+- **Search precision:** some also_called names are loose. "formal" brought 21 photos to evening dress, "trench" 36 to trench coat, "sheath" 7 to sheath dress, "knee length jacket" all 6 of achkan's. The owner's check catches them; dropping one-word generic names from the searches would avoid them.
+- **Openverse's not-allowed types** (lingerie 67, swimsuit 68, undergarment 54, from Flickr with `mature=false`) need the owner's look like the others; nothing explicit was seen in the counts, but I didn't view them all.
+- **The sticky split replaces D4's rule.** Please confirm. Without it, every addition moves committed photos between train and test.
+- **Oversampling up to ×20** for one-photo types repeats a single photo 20 times an epoch. A cap (for example ×5), or leaving types under 5 train photos out of training, may be better.
+- **Openverse's terms** reserve fees for heavy commercial use. This run was 122 API calls on a 10,000-a-day key.
+- **Still open from D2c+D4 and D2d:**
+  - the auto-filter's misses (black-and-white between 0.02 and 0.06 saturation, line drawings);
+  - garment type `costume` isn't a database value;
+  - the keep-list calls.
+
+**Next session:**
+- after the owner's answer, `ingest_own.py` (if they took the photos), then `auto_filter.py` and `split.py`;
+- `supabase start` before any database work.
+
+## D2d - 2026-11-18 - four owner decisions undone, decode check, Openverse written (not run), --types-with-new
+
+**Before starting:** `Preview` up to date at `1416f23`. No Docker container was running, so there was no Supabase to stop. Read `pranalika/README.md`, BOARD, the D2c+D4 entry and `data/vision/README.md`.
+
+**Part 1: hat, hoodie, jeans and cap back to filter-only:**
+- `auto_filter.py --forget-owner Q80151,Q920929,Q83363,Q6147804` removed their **328 owner rows**: cap 88, hat 80, hoodie 80, jeans 80. The merge then ran as usual.
+- **Checked against the file before:** the other **3,818 owner rows are byte-identical and in order**, and all 1,253 earlier auto rows are still there. The filter added 17 auto drops for the four: hat 11, hoodie 3, jeans 2, cap 1. Nothing else in `labels.csv` changed.
+- **Kept, before → after:**
+
+  | Type | Before | After | Train / test |
+  | --- | --- | --- | --- |
+  | hat | 0 | 69 | 55 / 14 |
+  | hoodie | 0 | 77 | 62 / 15 |
+  | jeans | 0 | 78 | 62 / 16 |
+  | cap | 0 | 79 | 63 / 16 |
+
+- **`split.py`:** 303 photos new to the split; **no photo changed sides** (train→test 0, test→train 0).
+
+**Part 2: the decode check:**
+- `fetch_commons.py` now opens every saved photo with Pillow and decodes every pixel. A file that fails is deleted and skipped as "unreadable", and a later run tries it again.
+- `--verify` checks the whole manifest the same way. **Run once: 13,744 checked, 2 removed (3.3 MB):**
+  - parka, `db797502…` (`File:Amanda-Tapping.jpg`): cut short;
+  - Ulster, `94b0fffe…` (`File:The_Strand_Magazine_(Volume_2)_(page_74_crop)_(retouched).png`): its colour-profile chunk fails its checksum.
+- Their two auto rows left `labels.csv`. `split.json` didn't change, since neither photo was kept.
+- **Now:** 13,742 photos, 5,085,065,940 bytes, all decoding. **10,818 kept**; `split.json` has 708 types, 8,725 train, 2,093 test, 219 thin.
+
+**Part 3: Openverse (`fetch_openverse.py`), written and tested, not run:**
+- **The limits, checked today:**
+  - The API docs (the OpenAPI schema at `api.openverse.org/v1/schema/`) give no numbers: "Anonymous requests should be sufficient for most users… Registered users are automatically granted slightly higher limits". The numbers are in each response's headers.
+  - **One anonymous search returned `x-ratelimit-limit-anon_burst: 20/min` and `x-ratelimit-limit-anon_sustained: 200/day`.**
+  - The run needs up to **666 search calls** (27 types × their names × 5 pages, plus the token). So anonymous isn't enough.
+  - `providers.env` has no `OPENVERSE_CLIENT_ID`/`OPENVERSE_CLIENT_SECRET` (checked by name only). So I stopped there, as the prompt says. Without them the script makes no request and prints the registration steps (below).
+  - I made 3 anonymous requests in all: the header check, and the two searches recorded as the test fixture.
+- **What it does once there's a key:**
+  - **Targets:** the 27 launch types under 40 kept (below), filled up to 80 kept-or-undecided across all sources.
+  - **Searches:** the English name, then each `also_called` name, as a phrase, up to 5 pages of 20. Licenses `cc0,by,by-sa,pdm` are asked for and checked again per result. `excluded_source=wikimedia`, because Commons is the first source and its files would come back as duplicates. Nothing mature.
+  - **Files:** downloaded from the source site. Same format (JPEG, PNG, WebP), decode, size (short side ≥ 300 px, saved ≤ 1280 px wide) and sha1 rules as Commons.
+  - **Auto-filter:** run on each saved photo at once. An auto drop is kept on disk and in the manifest but doesn't count toward 80.
+  - **Records:** manifest `source` = openverse; `images/openverse.csv` holds the Openverse id, license and version, license URL, creator, creator URL, source site, landing page and URL.
+  - **Credits:** `CREDITS.md` gets an Openverse part by license (creator and source site per file). It carries the line Openverse's terms ask for: made with Openverse, not endorsed or certified by it. With no Openverse rows, `CREDITS.md` comes out byte-identical to today's.
+  - **Politeness:** the same User-Agent (`support@dzirent.com`), 1 s between API calls, 0.5 s between downloads, back-off on 429 and 5xx, a clean stop when fewer than 5 calls are left today, `--max-minutes`, and every response cached.
+- **Targets and kept-or-undecided now** (the "before"; the "after" waits for the run):
+  - **Under 20 (14 types):** débutante dress 0, achkan 0, Nehru jacket 1, evening dress 3, necktie 4, Anarkali Salwar Suit 8, Sherwani 9, blouse 10, China Poblana 12, bridesmaid's dress 15, dashiki 16, sheath dress 18, swimsuit 18, lingerie 19.
+  - **20 to 39 (13 types):** day dress 21, overcoat 21, trousers 22, jumpsuit 22, guayabera 26, skirt 27, trench coat 30, sundress 32, kurta 34, shoe 35, shalwar kameez 38, sari 39, tracksuit bottoms 39.
+- **What the recorded searches show:** expect a modest yield for niche types. "achkan" (licenses filtered, Wikimedia out) returned **0 results**. "nehru jacket" returned 16 on its first page: 7 with an accepted license (by 5, cc0 1, by-sa 1), several of them dolls.
+
+**Part 4: `review_server.py --types-with-new`:**
+- It serves only the types with at least one photo that neither the owner nor the auto-filter has decided, in `review.csv`'s order. Combined with `--launch-only`, only the launch types among them.
+- **On today's data: 658 types, 10,104 photos (8,835 undecided).**
+  - First come the five launch types cap, hat, hoodie, jeans and undergarment.
+  - Then the never-checked keep-list types (Mao suit, walking suit, …), the costumes and the other types.
+  - Once Openverse runs, its new photos make their launch types show too.
+
+**Tests and CI:**
+- `pytest data/vision/tests`: **114 passed** (88 before), no network. New:
+  - the decode check: a cut-short download deleted and skipped; `--verify` removes a broken photo, its row and its credit;
+  - `--forget-owner`: every other line byte-identical, through the merge and the CSV writer too; a file without a source column;
+  - `--types-with-new`: the order, and a type decided by owner plus filter hidden;
+  - `fetch_openverse.py` on the recorded search `tests/fixtures/openverse_search.json`:
+    - license acceptance, with pdm accepted and by-nc, by-nd, by-nc-sa, by-nc-nd, sampling+ and nc-sampling+ refused;
+    - the recorded results' verdicts, and refused licenses never downloaded;
+    - the photo checks: small, cut short, a 3000-px file saved 1280 wide;
+    - 80 kept-or-undecided, with an auto drop not counted;
+    - the manifest, `openverse.csv` and credits rows;
+    - the cache (a second run makes no call), the token, `read_env`;
+    - the stop with the registration steps and no client made.
+- **CI:**
+  - [Run 44448880898](https://github.com/Vivek-k24/Dzirent/actions/runs/44448880898) on `4b7cdbf` (everything, board and this entry included): green on all six jobs.
+  - The vision-data log on `37d228e` shows "ALL 8 CHECKS PASSED" and "114 passed".
+- **Commits:** `c0296e4` (`--forget-owner`), `771f2e9` (the four types' labels and split), `276287e` (decode check and `--verify`), `b6f1df9` (the 2 removals), `0fed2aa` (`fetch_openverse.py` and tests), `37d228e` (`--types-with-new`), `fa8bf05` (docs), then the board and this entry.
+
+**Owner: register Openverse once** (about two minutes; it is also what `fetch_openverse.py` prints):
+1. In a plain PowerShell window, paste this one line. It registers "Dzirent vision data" and adds `OPENVERSE_CLIENT_ID` and `OPENVERSE_CLIENT_SECRET` to `H:\DziRent\secrets\providers.env` without showing them. The file has no line break at its end, so the command starts with an empty line.
+
+   `$r = Invoke-RestMethod -Method Post -Uri "https://api.openverse.org/v1/auth_tokens/register/" -ContentType "application/json" -Body '{"name": "Dzirent vision data", "description": "Finds openly licensed clothing photos to train the photo check of the Dzirent clothing rental app.", "email": "support@dzirent.com"}'; Add-Content -Path "H:\DziRent\secrets\providers.env" -Value "", "OPENVERSE_CLIENT_ID=$($r.client_id)", "OPENVERSE_CLIENT_SECRET=$($r.client_secret)"; "Saved. Now open the email Openverse sent to support@dzirent.com."`
+
+2. Click the verification link in the email Openverse sends to support@dzirent.com. Until then the key has the anonymous limits.
+3. Tell the coordinator; the next session runs `fetch_openverse.py --max-minutes 8.5` in foreground pieces, then `auto_filter.py` and `split.py`, and reports the per-type counts.
+
+**For the coordinator (open questions):**
+- **Openverse's terms forbid scraping the catalog.** This is a bounded, targeted search (27 types, at most 666 calls, within the published limits) for openly licensed photos, credited per file. Please confirm that use is acceptable before the run. The terms also reserve fees "for commercial uses … and/or for heavy usage".
+- **Yield:** Openverse looks thin for the niche types (achkan returned nothing). The types still under 20 after the run may need the owner's own photos, or a decision to launch with fewer.
+- **Wikimedia is left out of the Openverse search** to avoid fetching Commons files twice. Say if you'd rather include it.
+- **The registration uses support@dzirent.com** as Openverse's contact address. The owner can change it in the command.
+- **`--types-with-new` today shows 658 types**, since everything outside the 57 launch types has never been checked. The owner can stop after the first five (cap, hat, hoodie, jeans, undergarment), or add `--launch-only` to see only those.
+- **Still open from D2c+D4:**
+  - the auto-filter's misses (black-and-white photos between 0.02 and 0.06 saturation, line drawings, sepia that isn't everywhere);
+  - garment type `costume` isn't a database value;
+  - search precision;
+  - the keep-list calls.
+
+**Next session:** after the owner's registration, run Openverse as above; `supabase start` before any database work.
+
+## D2c+D4 - 2026-11-18 - full download, space suit models out, auto-filter, locked split
+
+**Before starting:** `Preview` up to date at `6de7082`. No local Supabase container was running (nothing to stop). Read `pranalika/README.md`, the board's D2b and photo-check rows, the D2b entry and `data/vision/README.md`. The owner's `labels.csv` was committed first exactly as the review page saved it (`5fcb041`: 4,146 rows).
+
+**Part 1: the full download** (`fetch_commons.py`, no flags, in the foreground):
+- **New flag `--max-minutes`:** the run stops before its next photo once the time is up, writes `CREDITS.md` and its report, and the next run resumes from the manifest. Each piece ran with `--max-minutes 8.5`.
+- **The pieces:** 10 pieces added 770, 81, 774, 834, 708, 555, 756, 729, 758 and 351 photos, about 700 per piece.
+  - Piece 2 ended early: the connection dropped and one download gave up after 6 tries. The manifest and disk still matched (8,907 each), and the next piece resumed.
+  - Piece 10 finished the plan. A check run then made **0 requests** (816 cache hits) and added nothing.
+- **Totals: 13,744 photos for 729 types, 5,088,338,397 bytes (5.09 GB, this PC only).**
+  - Every manifest row has its file and every file its row; no sha1 twice. `CREDITS.md` lists all 13,744.
+  - **Licenses:** CC BY-SA 6,471, public domain 3,604, CC BY 2,560, CC0 1,109.
+  - **Sources:** category 9,478, subcategory 2,048, search 1,623, P18 595.
+- **By target:**
+
+  | Group | Types | Photos | Short of target | At zero |
+  | --- | --- | --- | --- | --- |
+  | needs_owner (80 each) | 104 | 6,719 | 33 | 0 |
+  | Not allowed (40 each) | 136 | 3,174 | 73 | 11 |
+  | Other allowed (12 each) | 603 | 3,851 | 333 | 103 |
+
+- **The 114 types at zero:** 72 have no Wikidata image or Commons category. For the rest, everything Commons had was too small, a duplicate, the wrong format or unlicensed.
+  - Not allowed (11): acid-washed jeans, birthing girdle, Danish time trial champion jersey, edible underwear, girdle, Kepis of the Confederate States, micro-short, Military headgear of the Confederate States, nursing bra, ringer t-shirt, trikini.
+  - Allowed (103): the full list is in `images/raw/last_run.json`, for example breeks, drape suit, dress trousers, Jodhpuri, slacks, slip dress, Bhagalpur sari.
+
+**Part 2: the nine space suit models:**
+- `specs.ONLY_ITSELF_ROOTS = ["space_suit"]`: below that root only a launch or keep-list type stays.
+  - Dropped: A7L, Berkut, Feitian, Orlan, SK-1, Sokol, Yastreb, Mars suit and space activity suit. They are in `excluded.json` as "below a root kept as itself only".
+  - Kept: space suit itself, and Advanced Crew Escape Suit (keep list).
+  - `validate.py` checks the rule. It reported exactly the nine on the old outputs, then passes 8 of 8 after the rebuild, with and without `--cache`. Two rebuilds are byte-identical.
+- **Now:** 1,758 types (57 launch, 33 keep, 14 allowed costumes), **needs_owner 104**, 843 in `vocabulary.json`, 4,696 excluded.
+- **`--prune`:** 628 photos (217.8 MB): 80 each for seven of the suits, 34 each for Mars suit and Yastreb. None had an owner label.
+
+**Part 3: `auto_filter.py`:**
+- **Measures:**
+  - saturation (mean HSV saturation of the pixels that aren't near-white or near-black);
+  - white_frac and black_frac;
+  - page_score (how many of the four borders are paper);
+  - and, cached locally only, the coloured pixels' hue, how much of the photo is tinted and the border's own colour.
+- **Thresholds:** from the histogram and hand-labelled contact sheets; the full reasoning is in `data/vision/README.md` §7.
+  - **grayscale:** saturation under 0.02. The histogram's spike is 1,426 photos in 0.00-0.02, 1,338 of them exactly 0. Then come 194, 253 and 272 a bin, rising to about 650 a bin around 0.25.
+    - The 0.02-0.06 bins are about half black-and-white photos and half colour photos of white, black or grey things, and nothing measured here separates them. So the line is at the spike's edge.
+  - **sepia:** saturation under 0.25, at least 93 % of the pixels tinted, one brown-orange hue. In the samples, about 2 in 30 of what it marks are colour photos of beige things.
+  - **page:** at least 3 paper borders, saturation under 0.15, the border itself cream (border saturation 0.07 or more), one hue. About 1 in 10 of what it marks are museum photos on cream backgrounds.
+  - **small:** a short side under 300 px. None.
+  - **unreadable:** 2 files Pillow can't open.
+    - `db797502…` (parka): a JPEG cut short, no end marker.
+    - `94b0fffe…` (Ulster): a PNG whose colour-profile chunk fails its checksum, apparently already broken on Commons.
+- **Result:** `auto_filter.csv` has 13,744 rows; **1,757 are auto_drop**: grayscale 1,426, sepia 237, page 72, sepia and page 20, unreadable 2.
+- **Merge into `labels.csv`** (new `source` column):
+  - The owner's 4,146 rows are unchanged: same values, same order (checked against the committed file), and marked owner.
+  - 504 auto_drop photos already had an owner decision, so the owner's stands.
+  - **1,253 auto rows** were added (decision drop, source auto, no time): needs_owner types 359, not allowed 338, other allowed 556. The filter touched 299 types.
+  - The review page writes `source` = owner and shows an auto drop as "drop (auto)" until the owner clicks the photo.
+- **The owner's decisions:** 4,146 rows on 3,959 photos: **keep 1,983, drop 1,908, not sure 68**. Every launch type was checked: 56 completely, undergarment 35 of 80.
+- **Most auto drops added** (needs_owner unless marked; from photos per type): tabard 37 (80), Mao suit 35, pinafore 29, ballet costume 28, Mackintosh 26, raincoat 24, disguise 21, cagoule 20, oilskin 18; not allowed: girdle 29 (40), hourglass corset 26, corselet 23, bustle 18, petticoat 18, stocking 15.
+- **Kept after both: 10,515 photos:** needs_owner 4,384, not allowed 2,836, other allowed 3,295.
+
+**Per launch type: owner keep / drop / not sure → photos left** (auto added 0 on all but undergarment):
+
+| Type | Owner k / d / n | Left | Type | Owner k / d / n | Left |
+| --- | --- | --- | --- | --- | --- |
+| blazer (54) | 45 / 9 / 0 | 45 | sari | 39 / 41 / 0 | 39 |
+| sheath dress | 18 / 62 / 0 | 18 | shalwar kameez | 38 / 42 / 0 | 38 |
+| suit | 52 / 28 / 0 | 52 | Sherwani (51) | 9 / 41 / 1 | 9 |
+| three-piece suit | 80 / 0 / 0 | 80 | blouse | 10 / 60 / 10 | 10 |
+| trousers | 22 / 58 / 0 | 22 | cardigan | 41 / 35 / 4 | 41 |
+| ball gown | 80 / 0 / 0 | 80 | day dress | 21 / 58 / 1 | 21 |
+| bridesmaid's dress (31) | 15 / 16 / 0 | 15 | skirt | 27 / 48 / 5 | 27 |
+| cocktail dress | 74 / 6 / 0 | 74 | sundress | 32 / 47 / 1 | 32 |
+| dinner jacket | 52 / 28 / 0 | 52 | down jacket | 46 / 33 / 1 | 46 |
+| débutante dress (5) | 0 / 5 / 0 | 0 | leather jacket | 55 / 23 / 2 | 55 |
+| evening dress | 3 / 76 / 1 | 3 | overcoat | 21 / 52 / 7 | 21 |
+| jumpsuit (71) | 22 / 45 / 4 | 22 | trench coat | 30 / 49 / 1 | 30 |
+| party dress | 40 / 40 / 0 | 40 | costume jewelry | 44 / 33 / 3 | 44 |
+| tuxedo | 62 / 17 / 1 | 62 | handbag | 45 / 34 / 1 | 45 |
+| achkan (8) | 0 / 8 / 0 | 0 | necktie | 4 / 75 / 1 | 4 |
+| Anarkali Salwar Suit (10) | 8 / 2 / 0 | 8 | sunglasses | 50 / 30 / 0 | 50 |
+| boubou | 56 / 24 / 0 | 56 | wristwatch | 80 / 0 / 0 | 80 |
+| cheongsam (qipao) | 52 / 28 / 0 | 52 | cap (not allowed) | 0 / 80 / 0 | 0 |
+| China Poblana (67) | 12 / 55 / 0 | 12 | hat (not allowed) | 0 / 80 / 0 | 0 |
+| dashiki (19) | 16 / 3 / 0 | 16 | hoodie (not allowed) | 0 / 80 / 0 | 0 |
+| guayabera (48) | 26 / 22 / 0 | 26 | jeans (not allowed) | 0 / 80 / 0 | 0 |
+| hanbok | 55 / 25 / 0 | 55 | lingerie (not allowed) | 19 / 60 / 1 | 19 |
+| huipil | 43 / 21 / 16 | 43 | shoe (not allowed) | 35 / 45 / 0 | 35 |
+| kurta (66) | 34 / 31 / 1 | 34 | shorts (not allowed) | 58 / 21 / 1 | 58 |
+| lehenga | 73 / 7 / 0 | 73 | smartwatch (not allowed) | 71 / 8 / 1 | 71 |
+| Nehru jacket (9) | 1 / 8 / 0 | 1 | sports jersey (not allowed) | 79 / 1 / 0 | 79 |
+| sweatshirt (not allowed) | 75 / 5 / 0 | 75 | swimsuit (not allowed) | 18 / 61 / 1 | 18 |
+| t-shirt (not allowed) | 56 / 23 / 1 | 56 | tracksuit bottoms (not allowed, 45) | 39 / 6 / 0 | 39 |
+| undergarment (not allowed) | 0 / 33 / 2 of 80; auto 1 | 44 | | | |
+
+(80 photos unless shown in brackets.)
+
+**The 20 launch types with the fewest photos left:** achkan 0, cap 0, débutante dress 0, hat 0, hoodie 0, jeans 0, Nehru jacket 1, evening dress 3, necktie 4, Anarkali Salwar Suit 8, Sherwani 9, blouse 10, China Poblana 12, bridesmaid's dress 15, dashiki 16, sheath dress 18, swimsuit 18, lingerie 19, day dress 21, overcoat 21.
+
+**Part 4: `split.py` (D4):**
+- **Kept photos only:** the owner's latest decision, else the auto one, else keep. Drop and not sure are out.
+- **Per type:** the round(20 %) with the lowest sha1 are test (at least 2 once a type has 5 kept); under 5 kept, all train and listed as thin.
+- **`split.json`: 704 types, 8,483 train, 2,032 test.**
+  - Test by group: needs_owner 873, not allowed 561, other allowed 598.
+  - **219 thin types:** 184 other allowed, 27 not allowed, and 8 needs_owner (necktie 4, Garibaldi shirt 4, evening dress 3, priestly tunic 3, Dead character costume 3, dinosaur suit 2, Nehru jacket 1, posing trunks 1).
+  - **25 types have photos but none kept:** achkan, cap, débutante dress, hat, hoodie, jeans, demob suit (12), string tie (5), and 17 types with 1 photo each.
+- **Determinism:** a second run (`--check`) moved no photo.
+- README §8: **the test set is locked, never used for the gallery or the linear layer**. A re-run prints how many photos changed sides against the committed file.
+
+**Tests and CI:**
+- `pytest data/vision/tests`: **88 passed** (64 before), no network. New:
+  - images made in the test: grayscale, colour, a cream page, a pale garment on pure white that isn't a page, sepia, small, a cut-short file, a transparent PNG;
+  - the merge: an owner keep beats auto_drop, owner rows unchanged, a second merge changes nothing;
+  - the page's source column: auto drops shown as auto, an owner click wins, a four-column file stays four columns;
+  - the split: determinism whatever the order, 80/20 (80 → 16, 12 → 2, 13 → 3), at least 2 from 5, thin under 5, kept photos only, the changed-sides count;
+  - `--max-minutes`: a stop after 3 photos, then a resume that fetches nothing twice; a passed limit makes no call.
+- **Mutation check:** the owner-wins and minimum-2 tests fail with those rules switched off.
+- `validate.py`: 8 of 8.
+- **CI:**
+  - [Run 44442023554](https://github.com/Vivek-k24/Dzirent/actions/runs/44442023554) on `d4fa032` (everything below plus the board and this entry): green on all six jobs.
+  - The vision-data log on `5a0ec4f` shows "ALL 8 CHECKS PASSED" and "88 passed". That earlier run was cancelled by the newer push, after five of its six jobs had passed.
+- **Commits:** `5fcb041` (the owner's labels as saved), `2147735` (`--max-minutes`), `b3200d5` (space suit), `9cae3bb` (manifest and credits), `fea5702` (auto-filter and page), `4ab9eb9` (`auto_filter.csv`), `f93a3cf` (merged `labels.csv`), `1ba5c9b` (`split.py`), `5a0ec4f` (`split.json`), `9070bef` (docs), then the board and this entry.
+
+**For the coordinator (open questions):**
+- **Hat, hoodie and jeans were dropped whole and cap one by one, all 80 photos each.**
+  - Hat, hoodie and jeans were each one "Drop whole type" click: all 80 rows share one second, at 22:49:22, 22:49:28 and 22:49:32 UTC. Cap was clicked photo by photo (88 rows over a minute), ending with all 80 dropped.
+  - All four are not-allowed launch types. The page asks to keep the photos that really show a not-allowed type, because they teach the check what to refuse. As it stands these four have no training photos.
+  - If the drops meant "not allowed" rather than "bad photo", the owner should look again (a click on a photo changes it). If they meant bad photos, these types need other photos. I changed nothing.
+- **Undergarment is half checked:** 35 of 80 (33 drop, 2 not sure, no keep). The other 45 count as keep (44 after one auto drop).
+- **Launch types thin after the owner's drops:** achkan and débutante dress 0, Nehru jacket 1, evening dress 3, necktie 4. More photos would need another source (a looser search, or the owner's own photos).
+- **What the auto-filter misses:**
+  - Black-and-white photos between 0.02 and 0.06 saturation: about half of the 0.02-0.06 bins, judging by the contact sheets, so a few hundred.
+  - Line drawings on white paper that have any colour.
+  - Sepia prints whose tint isn't everywhere.
+  - A model-based check (for example "a black and white photo" against the vision model) would catch more. Not done: it's beyond simple measures and needs the model.
+- **Auto-filter false drops:** about 2 in 30 of the sepia drops and 1 in 10 of the page drops are colour photos, mostly beige things and museum photos on cream backgrounds. The owner can undo any of them on the page with one click.
+- **The 2 unreadable files** stay in the manifest and are auto-dropped.
+  - `fetch_commons.py` could check that each file opens before writing its row (a short download would then be retried).
+  - The open question is whether to add that and fetch the parka photo again.
+- **Still open from D2b:** garment type `costume` isn't a database value (`vocabulary.json` uses it for 20 types now, 29 before), search precision, and the keep-list calls.
+
+**Owner:** nothing to run. The review page shows auto drops as "drop (auto)" if the owner opens it again (same command as in the D2b entry).
+
+**Next session:** `supabase start` before any database work. The photos and caches stay on this PC (`data/vision/images/files/`, `raw/`).
+
+## D2b - 2026-11-17 - costume roots, keep list rework, search source, needs_owner photos
+
+**Before starting:** `Preview` up to date at `f673bf6`. Read `pranalika/README.md`, the board's D2 and D3 rows, the D2+D3 entry, `data/vision/README.md` and `taxonomy/specs.py`.
+
+**Part 0: roots and lists** (each resolved with wbsearchentities and wbgetentities or checked by QID and English label, recorded in `roots.json`; counts from `validate.py`, 8 of 8 passing, with and without `--cache`; two rebuilds byte-identical):
+- **Total:** 1,767 types (D2 1,745): 57 launch, 33 keep list, 23 allowed costumes; **needs_owner = yes on 113**; keep = no on 7.
+- **By allowed:** review 909, allowed 704, not_allowed 154. **By category:** Everyday 546, Accessories 450, Cultural & Traditional 281, Outerwear 155, not_applicable 154, Career & Professional 105, Occasion & Party 76.
+- **`vocabulary.json`:** 852 types. **`excluded.json`:** 4,687. Size gate (2,000) not reached.
+- **Owner policy:** costumes rent (Halloween, dress-up, theatre; space suits as costume); military, industrial and protective suits, helmets, masks and protective gear don't; sportswear stays out. `data/vision/README.md` has the one-line item policy.
+- **New positive roots:**
+  - costume Q1410477 (the one cut A excluded; out of `EXCLUDE_ROOTS`), 2 levels;
+  - space suit Q223571 ("gas-tight protective suit for astronauts"), 1 level.
+  - Both classify as Occasion & Party, garment type `costume`.
+  - Mask, uniform, protective clothing and sportswear stay in `EXCLUDE_ROOTS` and win over the costume root (`specs.COSTUME_EXCLUSION_WINS`). A subclass of costume more than 2 levels down isn't brought in through clothing.
+- **Costume rules I had to set:**
+  - A costume type is allowed when its own name or description reads as worn, and review when only a parent class does (D1b's rule). 8 are review: covert agent, Babiniku, clown's red nose, knaptand, processional giant, Big Heads, Gegants from Cardona, Reine Tournay.
+  - Halloween costume is in because Wikidata files it as an *instance* of costume (P31), which counts as under it, as P31 always has for the exclusion roots.
+  - The allowed costumes have their own sheet part, "costume", after the keep list, with needs_owner = yes.
+- **Came in (34):** 21 from the costume root (13 allowed), 10 from the space suit root (all allowed), and the 3 exceptions. **Left (12):** the 12 types off the keep list, below.
+- **Keep list 45 → 33** (`specs.KEEP_LIST`; reasons in `KEEP_LIST_REMOVED`):
+  - **Costumes (6):** Advanced Crew Escape Suit, bear suit, cat suit, dinosaur suit, fatsuit and gorilla suit are now Occasion & Party / costume (they were Career & Professional / suit).
+  - **Not-allowed examples (2):** track suit top and posing trunks (rule: sportswear).
+  - **Removed (12):**
+    - burka: owner (Wikidata's Q1016353 is a felt cloak, "rough raincoat", not the burqa);
+    - Positive pressure personnel suit: industrial protective suit;
+    - environmental suit, cold-protection suit, waders: protective;
+    - racing silks, Speed skating suits, skin suit: sportswear;
+    - Tunic (military): military;
+    - **my calls:**
+      - attila: military; its parents are military uniform and dress uniform;
+      - zephyr: sportswear; a competition rowing shirt;
+      - Al-Azhar attire: one institution's uniform; its parents include uniform.
+- **Instance-of exceptions** (`EXCLUDE_INSTANCE_OF_EXCEPTIONS`, QIDs from `excluded.json`): Perfecto Q134632 (review: named through its parent only), Harrington jacket Q1586189 (Outerwear, allowed), Kariyushi shirt Q6371145 (Everyday, allowed).
+- **Drop list** (`DROP_LIST`, keep = no, allowed unchanged): Rolex GMT Master II, Patek Philippe Calibre 89, The Vacheron Constantin Reference 57260, Microbrand watches, Samsung Gear S3, Ruputer, I'm Watch.
+- **Wikidata:** `--roots-only`, then the full fetch (3 min); a re-run made 0 requests (406 cache hits).
+
+**Part 1: `fetch_commons.py`:**
+- **`--prune`** removes from disk (and thumbnails) and from `manifest.csv` the photos of every type dropped or keep = no, and rewrites `CREDITS.md`.
+  - **Run once: 338 photos of 10 types, 94,291,004 bytes (94.3 MB).** Speed skating suits 80, racing silks 80, waders 68, Positive pressure personnel suit 55, attila 32, burka 19, and 1 each for cold-protection suit, environmental suit, skin suit and Al-Azhar attire.
+  - Afterwards the manifest and disk matched (4,340 each).
+- **`source` column** (p18, category, subcategory, search). The 4,340 existing rows got theirs by replaying each type's listings from the cache, with no request: p18 71, category 3,385, subcategory 884.
+- **Search source:** only for a needs_owner = yes type still under 40 photos after P18, category and subcategories.
+  - It runs a Commons file search: the search module as a generator over namespace 6, `"<name>" filetype:bitmap`, for the English name and then each `also_called` name (the sheet's column). It takes the first 100 results each, best match first.
+  - Same license, format, size and sha1 rules; same cap of 80; same 2 requests a second.
+
+**Part 2: `review_server.py`:**
+- `--launch-only` serves only the needs_owner = yes, priority launch types of `review.csv`, in the sheet's order: 57 types, 4,004 photos.
+- A blue "search" tag marks a photo whose source is search (515 of the 4,004).
+- After `N`, the next page opens with "Finished <type>: kept · dropped · not sure", counted from the saved decisions.
+
+**Tests and CI:**
+- `pytest data/vision/tests`: 64 passed, recorded fixtures only. New:
+  - a recorded Commons search (bear suit);
+  - a recorded slice of the Wikidata cache (eight types and the roots);
+  - what they cover: the search fallback (rank order, the under-40 bar, the cap), the source column and filling it from the cache, `--prune`, the Harrington jacket exception, the drop list's keep = no, costume classification, a costume under protective clothing (recorded) or mask (added) dropped, `--launch-only`, the tag and the finished line.
+  - The mask test fails with the rule switched off.
+- [CI run 44217926370](https://github.com/Vivek-k24/Dzirent/actions/runs/44217926370) on `1e55e87` (all code and tests) was green on all six jobs. The vision-data log shows "ALL 8 CHECKS PASSED" and "64 passed".
+
+**The runs:**
+1. **`--only-launch`, first try** (19:40-19:49): added 629 photos, all from search. Then Claude Code stopped it because the PC was critically low on memory while the session was idle. The manifest and disk were consistent (4,969 each).
+2. **`supabase stop`** (owner's call, to free Docker's memory): no container left running; the database volume is kept.
+3. **`--only-launch`, resumed** (20:07-20:38, 1,878 s): it resumed from the manifest, and no saved photo was fetched again.
+   - 2,548 requests, 146 cache hits; 11 were 429 and one connection dropped, each retried and through.
+   - **Added 2,378** (913 MB): search 1,303, category 877, subcategory 182, P18 16. Licenses CC BY-SA 986, public domain 806, CC BY 463, CC0 123.
+4. **Full run** (no flags, 20:38-20:46): **paused at 709 not-allowed photos (26 of 136 not-allowed types), resumes from manifest.** Claude Code's memory guard stopped it again (9 × 429 before that).
+   - 3.0 GB of 15.8 GB was free; Chrome was the largest user.
+   - The dry run counted about 6,300 more: not allowed about 2,480, other allowed 3,853.
+   - `CREDITS.md` was then rewritten from the manifest; a stopped run doesn't write it.
+
+**Where the photos stand:** 8,056 photos for 139 types, 3,039,881,874 bytes (3.04 GB) on this PC only; every manifest row has its file and every file its row.
+- **Licenses:** CC BY-SA 3,627, public domain 2,284, CC BY 1,484, CC0 661.
+- **Sources:** category 4,827, search 1,932, subcategory 1,191, P18 106.
+- **needs_owner = yes:** 113 types, 7,347 photos, **none at zero**, 35 short of 80; 45 types got search photos.
+- **Launch types (57, 4,004 photos; 44 at 80):**
+  - Short: jumpsuit 71, China Poblana 67 (39 from search), kurta 66, blazer 54, Sherwani 51, guayabera 48 (24), tracksuit bottoms 45, bridesmaid's dress 31 (30), dashiki 19 (4), Anarkali Salwar Suit 10 (3), Nehru jacket 9 (5), achkan 8 (8), débutante dress 5 (5).
+  - Search took these to 80: party dress (80 from search), day dress (79), sheath dress (71), dinner jacket (62), sundress (56), trench coat (49).
+- **Keep list (33, 1,765; 17 at 80):**
+  - At 80: Mao suit, walking suit (79 from search), Advanced Crew Escape Suit, abaya (57), Farwah (79), ikan, oilskin (46), pinafore, simar (68), cagoule (79), duster (71), Mackintosh (75), mantle (71), rain cape (51), raincoat, tabard, track suit top (80).
+  - Short: qamis 74 (73), djellaba 61, fatsuit 50, communion clothing 47, gorilla suit 43, beach dress 29 (28), Teba jacket 21, jingle dress 21 (4), shaluka 20 (20), bear suit 17 (17), cat suit 7 (6), informal dress (changfu) 5 (4), Garibaldi shirt 4 (3), priestly tunic 3, dinosaur suit 2 (2), posing trunks 1 (1).
+- **Costumes (23, 1,578; 17 at 80):**
+  - At 80: Apollo/Skylab A7L, ballet costume, Berkut spacesuit (65), costume, dance costume, disguise, Feitian space suit (56), film costume, fursuit, Halloween costume, Orlan space suit, period costume (79), SK-1 spacesuit (80), Sokol, space activity suit (80), space suit, theatrical costume.
+  - Short: Xifu 79 (79), creature suit 35 (34), Mars suit 34 (1), Yastreb 34 (27), bortaga 33, Dead character costume 3 (2).
+
+**For the coordinator (open questions):**
+- **Garment type `costume` isn't a database value.** `listings_garment_type_check` allows top, trousers, suit, dress, skirt, saree, one_size. `vocabulary.json` now carries `costume` for 29 allowed types, so a migration (and the apps' lists) is needed before a listing can use it.
+- **Space suit models:** at 1 level, the space suit root brought nine specific suits besides space suit itself: A7L, Berkut, Feitian, Orlan, SK-1, Sokol, Yastreb, Mars suit and space activity suit. That's 708 photos across the 10, mostly of real flight hardware. As a costume, "space suit" alone may be enough.
+- **Search precision:** 40 types have more than half their photos from search; party dress, track suit top, SK-1 and space activity suit have all 80 from it. Commons search matches words in titles and descriptions, so expect more drops there; the page tags those photos. If the owner finds them too noisy, lower the bar (for example under 20) or take fewer results per name.
+- **Keep-list calls to confirm:**
+  - My removals: attila, zephyr, Al-Azhar attire.
+  - Kept though neither list names them: the clergy dress simar, mantle ("ecclesiastical overgarment") and priestly tunic.
+  - Baiana costume is dropped because Wikidata puts it under protective clothing (the exclusion wins); an exception by QID would bring it back.
+- **The full run:** paused at 709 not-allowed photos; it resumes from the manifest. Claude Code stops background commands when memory is critically low while the session is idle, so the next session runs it in the foreground in pieces of about 9 minutes.
+
+**Owner's next step:**
+- Paste this into a plain PowerShell window (outside Claude Code, so the memory guard can't stop it), then open http://127.0.0.1:8765:
+  `& "H:\DziRent\Dzirent_dev\data\vision\.venv\Scripts\python.exe" "H:\DziRent\Dzirent_dev\data\vision\images\review_server.py" --launch-only`
+- Keys: `1` keep, `2` drop, `3` not sure, `N` next type. Look closely at photos with the blue "search" tag.
+- `Ctrl+C` in that window stops the page; decisions are already saved in `data/vision/images/labels.csv`.
+- The owner chose to start the page this way this once (rule 12 otherwise).
+- The review.csv check (now 113 needs_owner rows) still stands.
+
+**Next session:**
+- Resume the full run in foreground pieces; it resumes from the manifest and fetches nothing twice.
+- Then commit `manifest.csv`, `CREDITS.md` and the owner's `labels.csv`, with its counts.
+- `supabase start` before any database work.
+
+## D2+D3 - 2026-11-17 - Commons photos and the label-check page
+
+**Before starting:** `Preview` up to date at `ad3275e`. The uncommitted `CLAUDE.md` from a /doctor run (one rule: read `pranalika/contract.md` by section, never whole) was reviewed and committed first as `529787d`. Read `pranalika/README.md`, the board's D2 and D3 rows, the D1c entry, and `data/vision/README.md`, `HANDOFF.md` and `taxonomy/specs.py`.
+
+**Part 0: vocabulary cleanup** (counts from `validate.py`, 8 of 8 passing):
+- **Total:** 1,745 types (D1c 1,731): 57 launch, 45 on the keep list; **needs_owner = yes on 102**.
+- **By allowed:** review 900, allowed 693, not_allowed 152.
+- **By category:** Everyday 548, Accessories 450, Cultural & Traditional 282, Outerwear 156, not_applicable 152, Career & Professional 118, Occasion & Party 39.
+- **`vocabulary.json`:** 845 types (D1c 812). **`excluded.json`:** 4,708 types.
+- **Left (58 of D1c's rows):**
+  - **instance of an excluded class: 55** (11 allowed, 26 review, 18 not allowed). For example Lady Dior, Levi's 501, Air Jordan, Ray-Ban Wayfarer and Aviator, Hermès scarf, Cartier Santos and Tank, Omega Seamaster, G-Shock, the smartwatch models (Pebble, Moto 360, Samsung Gear, LG G Watch), Belle's ball gown;
+  - **generic entries: 3**: clothing (Q11460, the root itself, with the aliases garment and apparel) and the two items labelled "gown" (Q1036729, Q1732031).
+- **Came in (72):** the keep list 45; 23 under the new watch root (17 allowed: watch, pocket, analog, digital, mechanical, skeleton, solar-powered watches and others; 6 review: stopwatch, chess clock, nurse watch and others); 4 banned examples that moved into freed slots.
+- **The seven classes** (`specs.EXCLUDE_INSTANCE_OF`), each resolved with wbsearchentities and wbgetentities, recorded in `roots.json` ("instance_of"):
+  - fictional object Q15706911; brand Q431289; trademark Q167270; product model Q10929058;
+  - **fictional clothing Q62595215:** no item is labelled "fictional item of clothing"; this one is "clothing that only exists in works of fiction";
+  - **model series Q811701:** "product line" is its English alias;
+  - **archaeological artefact Q220659:** no item is labelled "archaeological artefact type"; this is the artefact class.
+- **The rule:** P31, or P31 of a subclass (P31/P279*), never "subclass of". Six real types are filed as *subclasses* of archaeological artefact (dress fastener, kaiwa, ishi-kushiro, heart scarab and two not kept anyway), so they stay. Pebble and the other smartwatch models go through "smartwatch model", a subclass of product model.
+- **Watch root:** Q178794 ("personal time indicator, portable, used as an accessory"). Smartwatch stays a banned root; no buckle root.
+- **Keep list** (`specs.KEEP_LIST`): `build_taxonomy.classify` on the 529 cut A rows of `excluded.json` gives exactly 45 allowed, as D1c counted.
+  - Each is checked by QID and English label on every fetch (`roots.json`, "keep"), comes back past cut A only, and is classified again by the normal rules: all 45 allowed (Career & Professional 15, Everyday 14, Outerwear 11, Cultural & Traditional 5).
+  - Sheet part "keep", right after the launch rows; notes say "Keep list: back from cut A (<root>); check category and allowed."
+- **Place-derived names stay** (Banarasi sari, Norfolk jacket). No rename.
+- **Also fixed:** names differing only in case ("terno", "Terno") were ordered by Python's set order, so each rebuild reordered them. Two rebuilds are now byte-identical.
+
+**Part 1: D2 downloader, `data/vision/images/fetch_commons.py`:**
+- **Sources per type, in order:** its P18 image, the files directly in its Commons category, then the files directly in each subcategory (one level).
+- **Kept only when:**
+  - the `License` code in Commons' extmetadata is cc0, pd, cc-by-* or cc-by-sa-* (any version or port). Commons gives no code at all for licenses outside these: Attribution, GFDL, FAL, PDM-owner, KOGL, GODL-India, "Copyrighted free use", "No restrictions". Those files are skipped as "no machine-readable license";
+  - it is a JPEG, PNG or WebP;
+  - its short side, and the saved file's, are at least 300 px;
+  - its sha1 isn't taken (across all types: the first type fetched keeps it).
+- **Saved:** `files/<qid>/<sha1>.<ext>`, Commons' 1280 px rendition, or the original when that is no wider. For narrower files Commons reports a 1280 px size but serves the unscaled original, so the manifest's width and height are the saved file's own.
+- **Targets:** needs_owner = yes 80, not allowed 40, other allowed 12; review rows and keep = no get none.
+- **Polite:** User-Agent `DziRentVisionData/0.1 (Dzirent clothing photo set; support@dzirent.com)`; at most 2 requests a second; back-off on 429 and 5xx with Retry-After; one JSON per API call in `images/raw/`.
+
+**Part 2: D3 label-check page, `data/vision/images/review_server.py`** (http.server, 127.0.0.1:8765 only):
+- One type a page: name, category, allowed badge, and its photos as 256 px thumbnails (made on first view into `images/thumbs/`).
+- Click cycles keep, drop, not sure; keys `1` `2` `3` (then the next photo), arrows, `Enter` for the full photo, `N` next type, `P` previous; a "Drop whole type" button.
+- Each decision is POSTed and appended to `images/labels.csv` (sha1, qid, decision, decided_at); the latest wins; undecided counts as keep.
+- `N` saves keep for the photos left undecided, so "types checked" in the progress bar means every photo has a decision.
+- Dark page; it shows no Commons file names, descriptions or authors (they name places and brands).
+
+**Docs:**
+- `data/vision/README.md`: how to run both scripts, the license policy, the layout, committed vs ignored, the tests.
+- Root `README.md`: "Clothing photos" (Wikimedia Commons, per-file licenses in `data/vision/images/CREDITS.md`); Pillow and pytest for `data/vision`.
+- `data/vision/.gitignore`: `images/files/`, `images/thumbs/`, `images/raw/` instead of all of `images/`.
+- `requirements.txt`: Pillow 13.0.0 and pytest 8.4.2 with its dependencies, the versions `services/vision` uses.
+- `pranalika/testing.md`.
+
+**What was run:**
+1. **Wikidata:** `fetch_wikidata.py --roots-only` resolved everything: 11 positive, 15 banned, 18 exclusion, 7 instance-of, 1 skipped, 57 launch, 45 keep. Then the full fetch: 50 requests, 193 s; the watch crawl has 162 classes.
+2. **Taxonomy:** `build_taxonomy.py` exit 0, 1,745 rows. `validate.py` passed 8 of 8, with and without `--cache`, and on a copy of only the committed files.
+3. **Tests:** `pytest data/vision/tests`: 49 passed. They use recorded fixtures only: a cardigan listing from Commons with six real refused pages, and Wikidata P31 records. Any connection off the PC fails a test; a live Commons call was checked to be blocked.
+4. **CI:** [run 44194900141](https://github.com/Vivek-k24/Dzirent/actions/runs/44194900141) on `c417b6b` (the code and docs), and [run 44205648597](https://github.com/Vivek-k24/Dzirent/actions/runs/44205648597) on `b2853ef` (with `manifest.csv`, `CREDITS.md` and this entry), both green: contracts, website, android, vision, database, vision-data. Each vision-data log shows "ALL 8 CHECKS PASSED" and "49 passed".
+5. **`fetch_commons.py --dry-run`** (every type with a target): 1,912 requests, 26 min, no 429.
+   - needs_owner: 102 types, 4,678 of 8,160 available;
+   - not allowed: 138 types, 3,190 of 5,520;
+   - other allowed: 605 types, 3,853 of 7,260 (104 with none).
+6. **`fetch_commons.py --only-launch`:** 4,730 requests in 55 min. 53 answers were 429 and one connection dropped; each was retried once and went through.
+   - **Downloaded:** 4,678 photos for 92 of the 102 types, **1.72 GB** on disk. Same as the dry run.
+   - **Skipped:** 344 format, 255 small, 118 no license code, 62 duplicates; 7 types have no image or category.
+   - **Licenses:** CC BY-SA 2,183 (4.0 1,365), public domain 1,201, CC BY 866, CC0 428.
+   - **A second run** made 0 requests and added nothing; `manifest.csv` and `CREDITS.md` were unchanged (same hashes).
+7. **Launch types (57, 3,489 photos):**
+   - 38 at 80;
+   - short: jumpsuit 71, kurta 66, blazer 54, sherwani 51, tracksuit bottoms 45, trench coat 31, China Poblana 28, guayabera 24, sundress 24, dinner jacket 18, dashiki 15, sheath dress 9, Anarkali salwar suit 7, Nehru jacket 4, bridesmaid's dress 1, day dress 1;
+   - **none:** débutante dress (its one file has no license code), party dress and achkan (no image or Commons category in Wikidata).
+8. **Keep list (45, 1,189 photos):**
+   - 8 at 80: Advanced Crew Escape Suit, Mao suit, speed skating suits, ikan, pinafore, racing silks, raincoat, tabard;
+   - 30 between 1 and 68 (waders 68, djellaba 61, abaya 23, burka 19 …; 12 have a single photo);
+   - **none:** bear suit, dinosaur suit, posing trunks, shaluka, track suit top, military tunic, zephyr.
+9. **`review_server.py`:** started once, decisions pointed at a scratch file (`--labels`) so the committed `labels.csv` stays header-only.
+   - `/` 302 to `/type/1` (blazer, type 1 of 92); `/type/1` 200; a thumbnail 200 (205 × 256);
+   - a POST 200 wrote one line; a reload showed it;
+   - then stopped, with nothing listening on 8765.
+
+**For the coordinator (open questions):**
+- **The full download:** 7,043 more photos by the dry run (not allowed 3,190, other allowed 3,853), roughly 2.6 GB at this run's average size and about 80 minutes. Not run.
+- **"Launch rows (needs_owner=yes)"** was read as all 102 needs_owner rows, so the keep list got the 80 target too. Several keep-list types don't look rentable: Advanced Crew Escape Suit (80 photos), positive pressure personnel suit (55), environmental and cold-protection suits, fatsuit (50), gorilla suit (43), bear, cat and dinosaur suits, posing trunks, waders, racing silks, speed skating suits, military tunic. The owner can set keep = no; drop their photos on the page.
+- **What the instance-of rule also removes:** real styles Wikidata files as trademarks or brands (Harrington jacket, Kariyushi shirt, Perfecto), or as archaeological artefacts (Skört, Mamuli, Zierscheibe, Jade burial suit), plus kakute (model series) and air-conditioned clothing (trademark). If some should stay: an exception list by QID.
+- **Brand names the rule can't reach** (no P31, or only "watch"/"smartwatch"): Rolex GMT Master II, Patek Philippe Calibre 89, The Vacheron Constantin Reference 57260, Microbrand watches (allowed); Samsung Gear S3, Ruputer (not allowed); I'm Watch (review). Name matching was ruled out, so they stay for the owner's keep = no.
+- **Unknown authors:** 255 photos have no author in Commons' metadata (219 public domain, 3 CC0, 27 CC BY or CC BY-SA). `CREDITS.md` links each one's Commons page, which carries the full credit.
+- **Who runs the page:** the owner doesn't run local commands (rule 12), so an agent has to start `review_server.py` and keep it running while the owner checks, then commit `labels.csv`.
+
+**Owner's next step:** Ask for a session that starts the label-check page, then open http://127.0.0.1:8765 and check the photos, type by type: keep the ones that clearly show the type, drop the rest (for not-allowed types, keep the ones that really show it). The review.csv check of the needs_owner = yes rows (now 102) also still stands.
+
+## D1c - 2026-11-16 - vision data in the repo
+
+**Before starting:** clean tree, `Preview` up to date at `361f9ef`. Read the D1b entry in `H:\DziRent\Dzirent_vision_data\HANDOFF.md` and its `taxonomy/specs.py`.
+
+**Counts** (`data/vision/taxonomy/`, from `validate.py`):
+- **Total:** 1,731 types, 57 of them launch (gate 200-2,000).
+- **By allowed:** review 919, allowed 645, not_allowed 167.
+- **By category:** Everyday 542, Accessories 452, Cultural & Traditional 277, not_applicable 167, Outerwear 147, Career & Professional 104, Occasion & Party 42.
+- **By region:** Global 719, Unknown 436, European 238, East Asian 101, South Asian 57, African 45, Southeast Asian 39, Latin American 29, North American 28, Middle Eastern 22, Oceanian 11, Central Asian 6.
+- **`vocabulary.json`:** 812 types (645 allowed, 167 not allowed), 3,311 names.
+  - Accessories in it: costume jewelry 145, watch 13, tie 12, handbag 6, sunglasses 6.
+- **`excluded.json`:** 4,721 types.
+  - No Commons category, image or English article: 1,654.
+  - Under an excluded root: 964 (D1b's roots plus cut A).
+  - Banned kind beyond its root's 15 examples: 846.
+  - Only through "fashion accessory" (cut B): 453.
+  - Banned kind more than 2 levels down: 416.
+  - No English label: 227.
+  - Label word: 161.
+
+**The cut applied (A+B, as in the D1b handoff):**
+- **Cut A: nine more exclusion roots in `specs.py`.** Each is resolved and checked by label and description like the others, and recorded in `roots.json`:
+  - costume Q1410477, uniform Q7434, mask Q161524, protective clothing Q14524031, religious clothing Q2490224;
+  - "Liturgical vestments and insignia" Q6501052, academic dress Q1349227, sportswear Q645292, professional wear Q29000407.
+  - **"costume":** two items carry that label. Q9053464 is "wardrobe and dress in general" and holds kimono, hanbok, dirndl, abaya and ball gown (482 of D1b's 2,713 rows). The one used, Q1410477, is the performer's or character's costume.
+  - **Scope "clothing":** they drop a type (P279* or P31/P279*) only when the clothing root alone brings it in. Without that, they would also have removed:
+    - **9 launch types:** kurta and huipil (religious and professional wear); trench coat and sunglasses (protective clothing); hoodie, sweatshirt, swimsuit, sports jersey and tracksuit bottoms (sportswear);
+    - **29 banned examples:** swimwear, jerseys, gym shorts, a helmet. These stay not allowed;
+    - **16 types other roots bring in:** Ray-Ban and aviator sunglasses, ecclesiastical rings, tallit.
+- **Cut B:** the clothing crawl skips "fashion accessory" (Q1065579, resolved the same way). What clothing reaches only through it is dropped unless another positive root reaches it.
+- **Removed, out of D1b's 2,713:**
+  - cut A: 529 (45 allowed, 11 not allowed, 473 review);
+  - cut B: 453 (25 allowed, 4 not allowed, 424 review).
+- **Why 1,731 and not the expected 1,674:** D1b's estimate followed one recorded path per type. The real cut reads each type's ancestors, which catches more. It also spares the launch types, banned examples and other roots' types above, which keeps more. Cut B drops only what "fashion accessory" alone brings in.
+- **Unchanged from D1b:**
+  - plural label words, the "<dress word> of/in" drops, verified countries;
+  - no origin from bare garment classes, the Central Asian region, special-purpose types to review;
+  - step 8: a type with no clear signal is "review", never "allowed" (274 such rows).
+
+**For the coordinator: what the cut costs** (all in `excluded.json` with the root that dropped them):
+- **Cut A removes 45 types the classifier had as allowed.**
+  - **Religious clothing:** abaya, djellaba, qamis, Farwah, Al-Azhar attire.
+  - **Uniform:** Mao suit, attila, ikan, changfu.
+  - **Protective clothing:** raincoat, Mackintosh, cagoule, duster, rain cape, burka.
+  - **Sportswear:** Teba jacket.
+  - **Costume:** bear and gorilla suits.
+  - **The fix, if wanted:** list the cultural ones as launch types, or let cut A send allowed types to review instead of dropping them.
+- **Cut B removes plain watches, cravats and buckles.** Watch, pocket watch, analog, mechanical and digital watches aren't under wristwatch; cravat and ascot aren't under necktie; every buckle comes only through "fashion accessory". So `vocabulary.json` has no "Belt buckle" type.
+  - **The fix, if wanted:** "watch" and "buckle" as accessory roots.
+- **Some garment names hold a city, state or brand.**
+  - **Examples:** Banarasi, Kanchipuram and Kerala saris; Norfolk and Argyll jackets; Guayaquil skirt; Poncho salteño; Hardangerbunad; Jodhpuri; Lady Dior; Ray-Ban; Air Jordan.
+  - **What they are:** Wikidata's names for the type. The origin fields hold countries only.
+  - **If the "no city or state names" rule covers type names:** D2 or D3 should drop or rename them.
+
+**What moved:**
+- **New home:** the tooling is now in `data/vision/`, with the same layout: `README.md`, `HANDOFF.md`, `requirements.txt` and `taxonomy/`.
+  - `taxonomy/` holds the five scripts, `taxonomy.json`, `roots.json`, `excluded.json`, `vocabulary.json` and `review.csv`.
+  - 14 files are tracked. The largest is `taxonomy.json` at 2.8 MB.
+- **Ignored:** `data/vision/.gitignore` keeps out `.venv/`, `taxonomy/raw/` (the Wikidata cache, 39 MB, copied here so the scripts run) and `images/`.
+- **Not copied:** the data folder's `.git`, its `.venv`, D1's stale cache files and D1's wrong outputs. The build wrote new outputs.
+- **`H:\DziRent\Dzirent_vision_data` stays in place:**
+  - a note at the top of its `HANDOFF.md` says the tooling moved, committed in that local-only repo as `edd10a1` and `0f75bee`;
+  - the owner deletes the folder later.
+
+**What changed in the tooling:**
+- **`review.csv`:**
+  - a first column `needs_owner`, yes on the 57 launch rows;
+  - the order is launch rows, then review rows, then the rest by category;
+  - the sheet's part is stored per row (`sheet_group`), so the owner's edits never break the order check.
+- **`vocabulary.json`:** for V1b. One entry per allowed or not-allowed type, never a review type or one marked keep = no.
+  - Fields: `qid`, `english_name`, `vocabulary`, `dzirent_category`, `dzirent_item_type`, `dzirent_garment_type`, `allowed`, `region`.
+- **`--apply-review`:**
+  - keep must be yes, no or blank;
+  - a type marked keep = no stays in `taxonomy.json` and the sheet, so it can be undone, and leaves `vocabulary.json`;
+  - it rewrites `vocabulary.json`;
+  - it reads Excel's plain CSV (Windows-1252) as well as CSV UTF-8.
+- **Validator without the cache:**
+  - each row carries its evidence (`ancestor_roots`, `positive_roots`, `country_evidence`), so `validate.py` runs from the committed files;
+  - `--cache` re-checks that evidence against `taxonomy/raw/fetched.json`: ancestors, the positive roots, every path step as a crawl edge, and the countries' classes.
+- **Line endings:** the JSON files are written with LF.
+- **CI:** a new `vision-data` job installs `data/vision/requirements.txt` and runs `python taxonomy/validate.py` with no network and no cache.
+- **Docs:**
+  - `README.md` open-source section: "Clothing types" (Wikidata, CC0 1.0; Requests, Apache 2.0);
+  - `BOARD.md` Vision data rows;
+  - `testing.md`: the suite, the command and the job;
+  - `data/vision/README.md` and `HANDOFF.md`.
+
+**What was run:**
+1. `fetch_wikidata.py --roots-only`: the ten new specs each resolved to exactly one item (20 requests). All 105 pass: 10 positive, 15 banned, 18 exclusion, 1 skipped, 4 country classes, 57 launch.
+2. `fetch_wikidata.py`: only the ancestor check was new (48 requests); 226 s in all. A re-run made 0 requests (2.2 s).
+3. `build_taxonomy.py`: exit 0, 1,731 rows.
+4. `validate.py` passed 8 of 8 three ways:
+   - on the repo copy;
+   - with `--cache`;
+   - on a scratch copy of only the 14 files git adds, with plain Python 3.12 and no cache (the CI case).
+5. `--apply-review` on a scratch copy, with the sheet saved as Windows-1252 the way Excel's plain CSV saves it:
+   - a keep = no row stayed in `taxonomy.json` and left `vocabulary.json`;
+   - a review row set to allowed joined it;
+   - a launch row's new category was applied;
+   - keep "maybe" was skipped and reported;
+   - the validator then passed 8 of 8.
+   - With two planted defects (a clothing-only type under uniform, and needs_owner on a non-launch row), checks 2 and 7 failed, as they should.
+6. **CI:** [run 44023221048](https://github.com/Vivek-k24/Dzirent/actions/runs/44023221048) on `c3508b6`, green: contracts, website, android, vision, database and the new `vision-data`. Its log shows the pinned packages installed and "ALL 8 CHECKS PASSED" (1,731 rows, 57 launch, 812 in `vocabulary.json`).
+
+**Owner's next step:** Open data/vision/taxonomy/review.csv in Excel; check only the rows where needs_owner is yes (dzirent_category and allowed); save as CSV; tell the coordinator.
+
 ## V1a - 2026-11-15 - color reader
 
 **Before starting:** clean tree, `Preview` up to date at `8dcd49e`. I didn't touch `H:\DziRent\Dzirent_vision_data` (the other agent's folder). `H:\DziRent\vision-test\should-accept` and `should-reject` are still empty, so there were no owner photos to compare.

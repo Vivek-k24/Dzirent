@@ -85,6 +85,28 @@ Changes to the list: Dzirent uses the English list as of commit `5faf2ba`, leave
 
 Changes to the list: none; the names and values are copied as published, into `services/vision/app/color_names.json`.
 
+### Clothing types
+
+| Data | What Dzirent uses it for | License | Project |
+|---|---|---|---|
+| Wikidata (clothing and accessory classes: their names in English and 15 other languages, parent classes, countries and cultures of origin) | The list of clothing and accessory types in `data/vision/taxonomy/`: each type's Dzirent category, garment or item type, whether it can be listed, and its region. The photo check will read the names in `vocabulary.json` | CC0 1.0 | [wikidata.org](https://www.wikidata.org) |
+
+| Software | What Dzirent uses it for | License | Project |
+|---|---|---|---|
+| Requests | Fetches the Wikidata classes and the Commons photos (`data/vision`, run on a PC, not part of any app or service) | Apache 2.0 | [psf/requests](https://github.com/psf/requests) |
+| Pillow | Makes the thumbnails on the photo label-check page (`data/vision/images/review_server.py`) | MIT-CMU | [python-pillow/Pillow](https://github.com/python-pillow/Pillow) |
+| pytest | Runs the `data/vision` tests | MIT | [pytest-dev/pytest](https://github.com/pytest-dev/pytest) |
+
+Changes to the data: Dzirent keeps only the types it can classify and maps them to its own categories and rules (`data/vision/README.md`).
+
+### Clothing photos
+
+| Data | What Dzirent uses it for | License | Project |
+|---|---|---|---|
+| Wikimedia Commons (photos of the clothing types, found through each type's Wikidata image and Commons category) | Photos of each clothing type, checked by hand on the label-check page, for teaching and testing the photo check (`data/vision/images/`). The photos stay on the PC that downloads them and are not in this repository | Each file's own: CC0, CC BY or CC BY-SA (any version) or public domain; nothing else is downloaded. Every file's author, license and Commons page are in [`data/vision/images/CREDITS.md`](data/vision/images/CREDITS.md) | [commons.wikimedia.org](https://commons.wikimedia.org) |
+
+Changes to the photos: each is Commons' 1280-pixel-wide rendition, or the original when that is no wider; nothing else is changed.
+
 ### Photo-check service
 
 | Software | What Dzirent uses it for | License | Project |

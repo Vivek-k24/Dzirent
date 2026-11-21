@@ -42,7 +42,7 @@ function NotificationChoices({ initial }: { initial: NotificationChoicesData }) 
     ["messages", "Messages", "New messages, new chats, date changes and rental requests and answers"],
     ["show_message_text", "Show message text", "Show what they wrote in notifications, also on the lock screen"],
     ["rental_reminders", "Rental reminders", "The day before a pickup or return, and when a return is overdue"],
-    ["email_rentals", "Email me about rentals", "Requests, answers, receipts, pickup and return reminders, and claims, to your account's email"],
+    ["email_rentals", "Email me about rentals", "Requests, answers, receipts and claims, to your account's email. Pickup and return reminders are always emailed."],
   ];
   return (
     <div className="account-section">
@@ -94,6 +94,15 @@ export function Settings({
   const [confirmation, setConfirmation] = useState("");
   const [exporting, setExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState({ text: "", error: false });
+  /** E1: the "Set a password" / "Email me a reset link" answer. After a reset (?notice=password-changed). */
+  const [passwordLink, setPasswordLink] = useState({ text: "", error: false });
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("notice") === "password-changed") {
+      Promise.resolve().then(() =>
+        setPasswordLink({ text: "Your password is changed. You're signed out on every other device and browser.", error: false }),
+      );
+    }
+  }, []);
   /** Download my data (P3A): saves dzirent-data-<date>.json. Once a day. */
   async function downloadData() {
     setExporting(true);
@@ -271,15 +280,41 @@ export function Settings({
                   <span>Email</span>
                   <input type="email" value={data.email} readOnly />
                 </label>
+                {/* E1: a Google-only account sets a password through the reset email; anyone can
+                    ask for that email instead of typing the current password. */}
+                {!data.hasPassword && (
+                  <p className="muted">You sign in with Google. To sign in with your email too, set a password: we&apos;ll email you a link.</p>
+                )}
+                <Notice message={passwordLink.text} error={passwordLink.error} />
                 <div className="button-row">
+                  {data.hasPassword && (
+                    <button
+                      className="button secondary"
+                      onClick={() => {
+                        setError("");
+                        setModal("password");
+                      }}
+                    >
+                      Change password
+                    </button>
+                  )}
                   <button
-                    className="button secondary"
-                    onClick={() => {
-                      setError("");
-                      setModal("password");
+                    className={data.hasPassword ? "text-button" : "button secondary"}
+                    disabled={busy}
+                    onClick={async () => {
+                      setBusy(true);
+                      setPasswordLink({ text: "", error: false });
+                      try {
+                        await workflow("account/password_link", {});
+                        setPasswordLink({ text: `We sent a link to ${data.email}. Open it to choose a password; it works for one hour.`, error: false });
+                      } catch (e) {
+                        setPasswordLink({ text: (e as Error).message, error: true });
+                      } finally {
+                        setBusy(false);
+                      }
                     }}
                   >
-                    Change password
+                    {data.hasPassword ? "Email me a reset link" : "Set a password"}
                   </button>
                   <button
                     className="text-button danger"

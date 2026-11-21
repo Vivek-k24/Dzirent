@@ -30,11 +30,11 @@ export async function authenticate(form: FormData) {
   };
   if (!email || !password) fail("Enter your email and password.");
   if (mode === "signup") {
-    if (password.length < 8) fail("Password must be at least 8 characters.");
-    if (form.get("adult") !== "on") fail("Please confirm you are at least 18.");
-    if (form.get("legal") !== "on")
-      fail("Please agree to the Terms of Use and Privacy Policy.");
-    if (!name) fail("Enter your name.");
+    // E1: the same coded rules as "Finish your profile" and the reset page.
+    if (password.length < 8) fail(errorText(shown("DZ-E1071")));
+    if (form.get("adult") !== "on") fail(errorText(shown("DZ-E1079")));
+    if (form.get("legal") !== "on") fail(errorText(shown("DZ-E1081")));
+    if (!name) fail("", errorText(shown("DZ-E1080")));
     const { data: nameRefusal } = await client.rpc("check_text", {
       p_text: name,
       p_where: "profile",
@@ -82,6 +82,18 @@ export async function authenticate(form: FormData) {
           ),
         ),
       );
+    // E1: with Confirm email on there is no session yet: "Check your email" (with "Send the link
+    // again"), its address in a short-lived cookie, never in the page's address.
+    if (!data.session) {
+      (await cookies()).set("dzirent-pending-email", email, {
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: origin.startsWith("https://"),
+        maxAge: 3600,
+      });
+      redirect("/auth/check-email");
+    }
     if (data.session) {
       await client.rpc("accept_legal", { p_platform: "web" });
       // The age gate (P2C): the website has no app store signal, so the 18+ tick is recorded
@@ -92,17 +104,20 @@ export async function authenticate(form: FormData) {
         p_platform: "web",
       });
     }
-    if (!data.session)
-      redirect(
-        "/auth?mode=signin&message=" +
-          encodeURIComponent(
-            "Check your email to confirm your account, then sign in.",
-          ) +
-          "&next=" +
-          encodeURIComponent(next),
-      );
   } else {
     const { error } = await client.auth.signInWithPassword({ email, password });
+    // E1: a password account that isn't confirmed yet goes to "Check your email", where it can
+    // ask for the link again.
+    if (error?.code === "email_not_confirmed") {
+      (await cookies()).set("dzirent-pending-email", email, {
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: ((await headers()).get("origin") || "").startsWith("https://"),
+        maxAge: 3600,
+      });
+      redirect("/auth/check-email");
+    }
     if (error)
       fail(
         errorText(

@@ -13,6 +13,7 @@ import torch
 from PIL import Image
 
 from . import config
+from . import pins as type_pins
 from .color_reader import ColorBank, color_digest
 from .safety import SafetyModel
 from .scan import TextBank
@@ -54,6 +55,20 @@ def preprocess(image: Image.Image) -> torch.Tensor:
     return torch.from_numpy(np.ascontiguousarray(a.transpose(2, 0, 1)))
 
 
+@torch.inference_mode()
+def embed_tensors(visual: torch.nn.Module, x: torch.Tensor) -> np.ndarray:
+    """Unit-length embeddings of preprocessed images (a batch from preprocess), one 768-number row each."""
+    features = torch.nn.functional.normalize(visual(x), dim=-1)
+    return features.numpy().astype(np.float32)
+
+
+def embed_with(visual: torch.nn.Module, images: list[Image.Image]) -> np.ndarray:
+    """Unit-length image embeddings, one 768-number row per image. The service and the pin
+    builder (data/vision/embed/build_pins.py) both embed photos through preprocess and
+    embed_tensors, so a pin and a scan see a photo the same way."""
+    return embed_tensors(visual, torch.stack([preprocess(im) for im in images]))
+
+
 class Model:
     def __init__(self, model_dir: Path = config.MODEL_DIR):
         torch.set_num_threads(config.TORCH_THREADS)
@@ -72,11 +87,12 @@ class Model:
         self.color_bank = ColorBank(keys=[str(k) for k in data["colors_keys"]], matrix=data["colors_matrix"])
         self.visual = create_vision_tower(model_dir)
         self.safety = SafetyModel(model_dir / config.SAFETY_SUBDIR)
-        log.info("model ready: %d item labels, safety model %s", len(self.vocab.items), config.SAFETY_MODEL_ID)
+        # V1b: the text and gallery pins, checked against pins.json, and the rules' thresholds.
+        self.pins = type_pins.load()
+        self.thresholds = type_pins.Thresholds.load()
+        log.info("model ready: %d item labels, %d type pins, %d gallery pins, safety model %s", len(self.vocab.items),
+                 len(self.pins.types), len(self.pins.gallery), config.SAFETY_MODEL_ID)
 
-    @torch.inference_mode()
     def embed_images(self, images: list[Image.Image]) -> np.ndarray:
         """Unit-length image embeddings, one 768-number row per image."""
-        x = torch.stack([preprocess(im) for im in images])
-        features = torch.nn.functional.normalize(self.visual(x), dim=-1)
-        return features.numpy().astype(np.float32)
+        return embed_with(self.visual, images)

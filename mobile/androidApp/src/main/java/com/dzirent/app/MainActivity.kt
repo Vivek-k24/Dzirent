@@ -19,6 +19,7 @@ import com.dzirent.shared.platform.AndroidSettingsStorage
 import com.dzirent.shared.platform.LocalDevice
 import com.dzirent.shared.ui.DzirentApp
 import com.dzirent.shared.util.AppSettings
+import com.dzirent.shared.util.AuthDeepLink
 import com.dzirent.shared.util.LinkTarget
 import com.dzirent.shared.util.ShareLinks
 
@@ -32,6 +33,12 @@ class MainActivity : ComponentActivity() {
     private fun linkIn(intent: Intent?): LinkTarget? =
         intent?.takeIf { it.action == Intent.ACTION_VIEW }?.dataString?.let(ShareLinks::parse)
 
+    /** E1: back from Google sign-in (Custom Tabs): dzirent://auth/callback?code=..., until handled. */
+    private var authCallback by mutableStateOf<String?>(null)
+
+    private fun authCallbackIn(intent: Intent?): String? =
+        intent?.takeIf { it.action == Intent.ACTION_VIEW }?.dataString?.takeIf(AuthDeepLink::isOurs)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // The Messages channel exists from the start, so it shows in the phone's settings.
@@ -40,6 +47,7 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) {
             chatToOpen = ChatNotifications.chatToOpen(intent)
             linkToOpen = linkIn(intent)
+            authCallback = authCallbackIn(intent)
         }
         val settingsStorage = AndroidSettingsStorage(applicationContext)
         val packageInfo = packageManager.getPackageInfo(packageName, 0)
@@ -64,7 +72,9 @@ class MainActivity : ComponentActivity() {
                         openChatId = chatToOpen,
                         onOpenChatHandled = { chatToOpen = null },
                         openLink = linkToOpen,
-                        onOpenLinkHandled = { linkToOpen = null }
+                        onOpenLinkHandled = { linkToOpen = null },
+                        authCallback = authCallback,
+                        onAuthCallbackHandled = { authCallback = null }
                     )
                 }
             }
@@ -76,5 +86,6 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         ChatNotifications.chatToOpen(intent)?.let { chatToOpen = it }
         linkIn(intent)?.let { linkToOpen = it }
+        authCallbackIn(intent)?.let { authCallback = it }
     }
 }

@@ -15,6 +15,10 @@ export type Profile = {
   style_tags: string[];
   suspended_until?: string | null;
   suspension_reason?: string | null;
+  /** E1: when the profile was finished; null until a Google sign-up finishes it. */
+  profile_completed_at?: string | null;
+  /** E1: "ok", or "bounced" / "complained" (Resend's webhook). */
+  email_status?: string;
 };
 export type PrivateProfile = {
   user_id: string;
@@ -159,6 +163,8 @@ export type SettingsData = {
   /** C5: payments on (the payouts block and the deposit field show only then) and my payout account. */
   paymentsEnabled: boolean;
   payoutAccount: PayoutAccount | null;
+  /** E1: the account can sign in with a password (a Google-only account sets one by email). */
+  hasPassword: boolean;
 };
 export const itemTypes = [
   "Sunglasses",

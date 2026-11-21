@@ -139,6 +139,11 @@ export default async function Auth({
             />
             {signup && <small>At least 8 characters.</small>}
           </label>
+          {!signup && (
+            <p className="forgot-link">
+              <Link href="/auth/forgot">Forgot password?</Link>
+            </p>
+          )}
           {signup && (
             <>
               <label className="field">
@@ -186,6 +191,14 @@ export default async function Auth({
           )}
           <Submit label={signup ? "Create account" : "Sign in"} />
         </form>
+        {/* E1: Google sign-in (Supabase OAuth). A first-time Google account finishes its profile
+            (18+, name, area, terms) before it can list, rent or message. */}
+        <div className="auth-or" aria-hidden="true">
+          <span>or</span>
+        </div>
+        <a className="button full secondary google-button" href={"/auth/google?next=" + encodeURIComponent(next)}>
+          Continue with Google
+        </a>
         <p className="auth-switch">
           {signup ? "Already part of the neighborhood?" : "New around here?"}{" "}
           <Link

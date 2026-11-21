@@ -1,4 +1,5 @@
-# Dzirent vision service (Step 8A): Marqo-FashionSigLIP on CPU PyTorch, for Cloud Run.
+# Dzirent vision service (Step 8A; V1b type pins; V2 linear head): Marqo-FashionSigLIP on CPU PyTorch, for Cloud Run.
+# Built by Cloud Build with cloudbuild.yaml, which first fetches app/gallery.npz from the bucket.
 # The pinned model is downloaded and every prompt embedded here, at build time, so a cold start
 # never downloads anything. Only the vision tower's weights stay in the image, with the pinned
 # image safety model (P2A: Marqo/nsfw-image-detection-384) in /opt/model/safety.
@@ -16,6 +17,10 @@ COPY requirements.txt .
 RUN pip install --no-deps -r requirements.txt && pip check
 
 COPY app ./app
+# V1b: the type pins must load (vocabulary.npz from git, gallery.npz fetched by cloudbuild.yaml,
+# both checked against pins.json) before anything else is built. V2: so must the linear head
+# (linear.npz from git, its file's and training set's sha256 checked against pins.json).
+RUN python -c "from app import pins; p = pins.load(); pins.Thresholds.load(); print(len(p.types), 'type pins,', len(p.gallery), 'gallery pins,', len(p.linear.bias), 'linear head classes')"
 RUN python -m app.build_assets \
  && rm -f /opt/model/open_clip_model.safetensors /opt/model/tokenizer.json /opt/model/tokenizer_config.json \
           /opt/model/special_tokens_map.json /opt/model/spiece.model \

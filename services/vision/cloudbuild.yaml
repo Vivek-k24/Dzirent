@@ -1,0 +1,25 @@
+# V1b: builds the vision image in Cloud Build. The gallery pins (app/gallery.npz, not in git) are
+# fetched from the bucket first and checked against the sha256 in app/pins.json, then built into the
+# image, so a cold start never reads the bucket. Submit from the repo root:
+#
+#   gcloud builds submit services/vision --project dzirent --region us-west1 \
+#     --config services/vision/cloudbuild.yaml --substitutions _IMAGE=<registry>/vision:<tag>
+#
+# then deploy that image to the existing service (services/vision/README.md, "Deploy").
+steps:
+  - id: gallery
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        path=$$(sed -n 's/.*"bucket_path": "\(.*\)".*/\1/p' app/pins.json)
+        sha=$$(sed -n 's/.*"gallery_sha256": "\([0-9a-f]*\)".*/\1/p' app/pins.json)
+        gcloud storage cp "$${path}gallery.npz" app/gallery.npz
+        echo "$${sha}  app/gallery.npz" | sha256sum -c -
+  - id: image
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "--tag", "${_IMAGE}", "."]
+images: ["${_IMAGE}"]
+timeout: 2400s

@@ -83,6 +83,12 @@ async def health() -> dict:
         "policy_items": len(model.vocab.items),
         "policy_digest": model.vocab.digest[:16],
         "service_version": config.SERVICE_VERSION,
+        "vocabulary_version": model.pins.version,
+        "type_pins": len(model.pins.types),
+        "gallery_pins": len(model.pins.gallery),
+        # V2: the linear head (its file's and its training set's sha256, as pins.json names them)
+        "linear_head": {"sha256": model.pins.linear.sha256, "training_set_sha256": model.pins.linear.training_sha256,
+                        "classes": len(model.pins.linear.bias)},
         "startup_seconds": state["startup_seconds"],
     }
 
@@ -106,8 +112,9 @@ def _run(listing_id: str, photos: list[PhotoIn], payloads: list) -> dict:
     embeddings = model.embed_images([images[i] for i in ok]) if ok else []
     nsfw = model.safety.nsfw([images[i] for i in ok]) if ok else []
     for i, embedding, p in zip(ok, embeddings, nsfw):
-        analyze_photo(results[i], embedding, working_image(images[i]), model.banks, model.vocab, nsfw=p)
-    return scan(listing_id, results, model.banks, model.vocab, model.color_bank)
+        analyze_photo(results[i], embedding, working_image(images[i]), model.banks, model.vocab, nsfw=p,
+                      pins=model.pins, thresholds=model.thresholds)
+    return scan(listing_id, results, model.banks, model.vocab, model.color_bank, model.pins, model.thresholds)
 
 
 @app.post("/scan")

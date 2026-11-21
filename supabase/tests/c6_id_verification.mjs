@@ -16,7 +16,7 @@
 // Prints only statuses, codes and counts: never keys, tokens, names or emails.
 import assert from "node:assert/strict";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
-import { LIVE, STUBS_URL, SUPABASE_KEY, SUPABASE_URL, sql, userEnv } from "./lib/config.mjs";
+import { LIVE, SERVICE_KEY, STUBS_URL, SUPABASE_KEY, SUPABASE_URL, sql, userEnv } from "./lib/config.mjs";
 import { adminSession, call, fn, fnRaw, rest, rpc, signIn, waitFor } from "./lib/c4.mjs";
 
 if (LIVE) {
@@ -270,6 +270,14 @@ async function on(u1, u2, u3) {
     body: JSON.stringify({ email, password, data: { display_name: "Delete Test", role: "renter", adult_confirmed: true } }),
   });
   assert.equal(signup.status, 200, `local sign-up: ${signup.status}`);
+  // E1: Confirm email is on, so the throwaway account is confirmed with the local service key.
+  const pending = await signup.json();
+  const confirmed = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${pending.id ?? pending.user?.id}`, {
+    method: "PUT",
+    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ email_confirm: true }),
+  });
+  assert.equal(confirmed.status, 200, `local confirm: ${confirmed.status}`);
   const temp = await signIn(email, password);
   const sTemp = await start(temp);
   const del = await fn("delete-account", { token: temp.token });

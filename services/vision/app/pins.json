@@ -1,0 +1,19 @@
+{
+ "vocabulary_version": "02fcb7ac3009731c6154ffeae27ad8849b2e6743e13e4c7083a23f4cae1bb7d0",
+ "vocabulary_sha256": "7c5bcba2a6cb99f9eea3b7d04c0fd6db3ce3c4edb15d3b3bf5fa28206077ae80",
+ "gallery_sha256": "4dea27f0ee4413e584e7e967e36ed8887a6bbb604eb96cf6fc34834c2707caaa",
+ "gallery_rows": 8827,
+ "gallery_types": 708,
+ "gallery_not_allowed_rows": 2997,
+ "split_sha256": "061fd07f887b9831e7a00c086354c701f297497321cf83312bd49485fd5346d0",
+ "model_revision": "c56244cc94f92419e8369fa71efdaf403b124ce8",
+ "template": "a photo of a {name}",
+ "recipe": "v2: 'a photo of a {name}' for the English name and its English aliases (at most 5)",
+ "bucket_path": "gs://dzirent-vision-data-dzirent/pins/02fcb7ac3009731c6154ffeae27ad8849b2e6743e13e4c7083a23f4cae1bb7d0/",
+ "linear_sha256": "7fd0498b060272aeaca0c4a052f44591380a2a5eb5a87989f1f813eadfbebcd4",
+ "linear_training_sha256": "0e62735dae6b86704a3737607dc3e6f09db849f49a5ea31d2e4333178a6306b1",
+ "linear_classes": 708,
+ "linear_samples": 15482,
+ "linear_augmented": 6655,
+ "linear_l2": 1e-06
+}

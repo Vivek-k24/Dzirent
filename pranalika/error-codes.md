@@ -30,6 +30,21 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E1052` | error | text | 400 |  |  | Unknown place for the text check |
 | `DZ-E1053` | error | text | 400 |  |  | Text too long |
 | `DZ-E1060` | error | account | 400 |  |  | Invalid push token |
+| `DZ-E1070` | error | sign-in | 400 | `email` |  | Enter a valid email address. |
+| `DZ-E1071` | error | sign-in | 400 | `password` |  | Choose a password of at least 8 characters. |
+| `DZ-E1072` | error | sign-in | 400 | `password_confirm` |  | The two passwords don't match. |
+| `DZ-E1073` | error | sign-in | 400 | `password` |  | This password has appeared in a data breach. Choose a different one. |
+| `DZ-E1074` | error | sign-in | 400 | `password` |  | Choose a password that's different from your current one. |
+| `DZ-E1075` | error | sign-in | 400 |  |  | This reset link has expired or was already used. Ask for a new one. |
+| `DZ-E1076` | error | sign-in | 400 |  |  | This confirmation link has expired or was already used. Sign in, or ask for a new link. |
+| `DZ-E1077` | error | sign-in | 429 |  |  | Wait a minute before asking for another email. |
+| `DZ-E1078` | error | profile | 403 | `profile` |  | Finish your profile first. |
+| `DZ-E1079` | error | profile | 400 | `adult` |  | Confirm that you are 18 or older. |
+| `DZ-E1080` | error | profile | 400 | `display_name` |  | Enter your name (up to 80 characters). |
+| `DZ-E1081` | error | profile | 400 | `legal` |  | Agree to the Terms of Use and Privacy Policy. |
+| `DZ-E1082` | error | profile | 400 | `city` |  | Pick your city from the list. |
+| `DZ-E1083` | error | sign-in | 401 |  |  | Open the link in your email again to set a new password. |
+| `DZ-E1084` | error | sign-in | 503 |  |  | Couldn't send the email. Please try again in a few minutes. |
 
 ## 2xxx - Listings, photos, photo checks
 
@@ -225,7 +240,7 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E6014` | error | id verification | 409 |  |  | The verification didn't finish. Please try again. |
 | `DZ-E6015` | error | id verification | 409 |  |  | Verifying in the app isn't available on this phone yet. Verify on dzirent.com. |
 
-## 7xxx - Data download, account deletion
+## 7xxx - Data download, account deletion; integrations: email, Google sign-in (E1)
 
 | Code | Kind | Area | Status | Field | Server words | Message |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -238,6 +253,13 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E7013` | error | deletion | 503 |  |  | Couldn't load your listings. Please try again. |
 | `DZ-E7014` | error | deletion | 503 |  |  | Couldn't remove listing photos. Please retry. |
 | `DZ-E7015` | error | deletion | 503 |  |  | Couldn't delete your account. Please try again. |
+| `DZ-E7020` | error | google sign-in | 400 |  |  | Google sign-in didn't finish. Please try again. |
+| `DZ-E7021` | error | google sign-in | 503 |  |  | Google sign-in isn't available right now. Use your email and password. |
+| `DZ-E7022` | error | google sign-in | 400 |  |  | Google sign-in was cancelled. |
+| `DZ-E7030` | error | email | 401 |  |  | This email event isn't signed correctly. |
+| `DZ-E7031` | error | email | 401 |  |  | This email event is too old. |
+| `DZ-E7032` | error | email | 503 |  |  | Email events aren't set up yet. |
+| `DZ-E7033` | error | email | 400 |  |  | This unsubscribe link isn't valid. |
 
 ## 9xxx - System
 
@@ -258,4 +280,4 @@ The one source is `contracts/error-codes.json`; this table is generated from it.
 | `DZ-E9020` | error | system | 500 |  |  | A setting is missing. Please try again later. |
 | `DZ-E9999` | error | system | 500 |  |  | Something went wrong. Please try again. |
 
-214 codes: 205 errors, 9 warnings.
+236 codes: 227 errors, 9 warnings.

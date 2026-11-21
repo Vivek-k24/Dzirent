@@ -7,3 +7,5 @@ eval/
 .pytest_cache/
 .venv/
 README.md
+# V1b: Cloud Build fetches the gallery pins from the bucket itself; a local copy is never uploaded.
+app/gallery.npz

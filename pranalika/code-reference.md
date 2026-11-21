@@ -17,11 +17,11 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L11: `class DzirentApplication : Application() {`
 - L12: `override fun onCreate() {`
 
-### `mobile/androidApp/src/main/java/com/dzirent/app/MainActivity.kt` (80 lines)
+### `mobile/androidApp/src/main/java/com/dzirent/app/MainActivity.kt` (91 lines)
 
-- L25: `class MainActivity : ComponentActivity() {`
-- L35: `override fun onCreate(savedInstanceState: Bundle?) {`
-- L74: `override fun onNewIntent(intent: Intent) {`
+- L26: `class MainActivity : ComponentActivity() {`
+- L42: `override fun onCreate(savedInstanceState: Bundle?) {`
+- L84: `override fun onNewIntent(intent: Intent) {`
 
 ### `mobile/androidApp/src/main/java/com/dzirent/app/age/PlayAgeSignals.kt` (55 lines)
 
@@ -240,109 +240,109 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L14: `fun isSigned(userId: String, version: Int): Boolean = prefs.getBoolean(key(userId, version), false)`
 - L16: `fun markSigned(userId: String, version: Int) {`
 
-### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/model/Models.kt` (715 lines)
+### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/model/Models.kt` (726 lines)
 
 - L16: `data class Profile(`
-- L36: `val hasLocation: Boolean get() = approxLat != null && approxLng != null`
-- L37: `val studioTitle: String get() = studioName?.ifBlank { null } ?: displayName.ifBlank { "Studio" }`
-- L40: `val suspensionNotice: String? get() = com.dzirent.shared.util.suspensionNotice(suspendedUntil, suspensionReason)`
-- L47: `data class PrivateProfile(`
-- L61: `val fit: FitProfile? get() = FitProfile.fromDb(fitProfile)`
-- L62: `val hasMeasurementsConsent: Boolean get() = measurementsConsentAt != null`
-- L64: `fun bodyCm(measurement: BodyMeasurement): Double? = when (measurement) {`
-- L76: `data class UsCity(`
-- L83: `val label: String get() = "$name, $state"`
-- L88: `data class ListingCard(`
-- L103: `data class ListingPhotoDetail(`
-- L110: `data class ListingMeasurementDetail(`
-- L117: `data class AvailabilityRange(`
-- L124: `data class ListingDetail(`
-- L153: `data class StudioDetail(`
-- L172: `data class BlockedUserItem(`
-- L182: `data class SavedListingItem(`
-- L200: `data class SavedStudioCard(`
-- L211: `data class ConversationCard(`
-- L227: `val requestedDates: DateRange? get() = parseDateRange(requestedStart, requestedEnd)`
-- L235: `data class MyVerification(`
-- L248: `data class VerificationStart(val url: String, val sessionToken: String)`
-- L252: `data class Listing(`
-- L285: `val typeLabel: String get() = itemType ?: category`
-- L289: `val priceLabel: String get() = priceUsd?.let { formatPerDay(it) } ?: priceNote`
-- L293: `data class ListingPhoto(`
-- L306: `data class ListingScan(`
-- L319: `val finished: Boolean get() = status == "done" || status == "failed"`
-- L324: `data class PhotoScanRow(`
-- L331: `data class ListingMeasurement(`
-- L340: `data class Availability(`
-- L348: `data class Conversation(`
-- L363: `val requestedDates: DateRange? get() = parseDateRange(requestedStart, requestedEnd)`
-- L364: `fun otherUserId(me: String): String = if (me == renterId) lenderId else renterId`
-- L365: `fun otherUser(me: String): Profile? = if (me == renterId) lender else renter`
-- L366: `val lastMessage: Message? get() = messages.firstOrNull()`
-- L370: `data class Message(`
-- L379: `data class Rental(`
-- L400: `data class RentalEvent(`
-- L411: `data class RentalPhoto(`
-- L424: `data class RentalView(`
-- L462: `val iAmLender: Boolean get() = yourRole == "lender"`
-- L463: `val dates: DateRange? get() = parseDateRange(startDate, endDate)`
-- L468: `data class RentalClaimView(`
-- L483: `data class RentalSettings(`
-- L495: `data class PayoutAccount(`
-- L502: `data class PaymentStart(val clientSecret: String, val publishableKey: String, val amount: Double?)`
-- L505: `data class ConversationRead(`
-- L511: `data class RentalOutcome(`
-- L519: `data class Block(`
-- L528: `data class NotificationSettings(`
-- L538: `data class Report(`
-- L548: `data class SavedListing(`
-- L558: `data class SavedStudio(`
-- L567: `data class StudioPage(`
-- L581: `data class SuggestionEvent(`
-- L588: `object Roles {`
-- L589: `const val RENTER = "renter"`
-- L590: `const val LENDER = "lender"`
-- L591: `const val BOTH = "both"`
-- L593: `fun canLend(role: String) = role == LENDER || role == BOTH`
-- L596: `object Categories {`
-- L597: `const val ACCESSORIES = "Accessories"`
-- L599: `val ALL = listOf(`
-- L618: `fun measurementSuggestions(category: String, itemType: String?): List<String> =`
-- L624: `object AccessoryTypes {`
-- L626: `const val COSTUME_JEWELRY = "Costume jewelry"`
-- L628: `val ALL = listOf("Sunglasses", "Handbag", "Tie", "Watch (non-smart)", "Belt buckle", COSTUME_JEWELRY)`
-- L630: `val SUGGESTIONS = mapOf(`
-- L640: `object ReportReasons {`
-- L641: `val ALL = listOf("Inappropriate photo", "Prohibited item", "Scam or fraud", "Harassment", "Other")`
-- L642: `const val DETAILS_MAX = 500`
-- L645: `object ListingEvents {`
-- L646: `const val VIEW = "view"`
-- L647: `const val SAVE = "save"`
-- L648: `const val MESSAGE = "message"`
-- L651: `sealed class UiState<out T> {`
-- L652: `object Loading : UiState<Nothing>()`
-- L653: `data class Error(val message: String) : UiState<Nothing>()`
-- L654: `data class Success<T>(val data: T) : UiState<T>()`
-- L657: `data class ListingValidationResult(`
-- L665: `fun validateListingForm(`
-- L670: `val trimmedTitle = title.trim()`
-- L671: `val titleError = when {`
-- L678: `val priceError = when {`
-- L685: `val mErrors = validateMeasurements(measurements)`
-- L686: `val hasMeasurementError = mErrors.any { it != null }`
-- L688: `val first = titleError ?: priceError ?: mErrors.firstOrNull { it != null }`
-- L699: `object AppLinks {`
-- L700: `const val TERMS_URL = "https://dzirent.com/terms"`
-- L701: `const val PRIVACY_URL = "https://dzirent.com/privacy"`
-- L702: `const val SUPPORT_EMAIL = "support@dzirent.com"`
-- L703: `const val HELP_URL = "https://dzirent.com/help"`
-- L704: `const val SAFETY_URL = "https://dzirent.com/safety"`
-- L705: `const val COMMUNITY_GUIDELINES_URL = "https://dzirent.com/community-guidelines"`
-- L706: `const val COPYRIGHT_URL = "https://dzirent.com/copyright"`
-- L707: `const val DELETE_ACCOUNT_URL = "https://dzirent.com/delete-account"`
-- L708: `const val SUPPORT_URL = "https://dzirent.com/support"`
-- L710: `const val DATA_EXPORT_URL = "https://dzirent.com/app/settings/preferences#privacy"`
-- L714: `const val PASSWORD_MIN_LENGTH = 8`
+- L47: `val hasLocation: Boolean get() = approxLat != null && approxLng != null`
+- L48: `val studioTitle: String get() = studioName?.ifBlank { null } ?: displayName.ifBlank { "Studio" }`
+- L51: `val suspensionNotice: String? get() = com.dzirent.shared.util.suspensionNotice(suspendedUntil, suspensionReason)`
+- L58: `data class PrivateProfile(`
+- L72: `val fit: FitProfile? get() = FitProfile.fromDb(fitProfile)`
+- L73: `val hasMeasurementsConsent: Boolean get() = measurementsConsentAt != null`
+- L75: `fun bodyCm(measurement: BodyMeasurement): Double? = when (measurement) {`
+- L87: `data class UsCity(`
+- L94: `val label: String get() = "$name, $state"`
+- L99: `data class ListingCard(`
+- L114: `data class ListingPhotoDetail(`
+- L121: `data class ListingMeasurementDetail(`
+- L128: `data class AvailabilityRange(`
+- L135: `data class ListingDetail(`
+- L164: `data class StudioDetail(`
+- L183: `data class BlockedUserItem(`
+- L193: `data class SavedListingItem(`
+- L211: `data class SavedStudioCard(`
+- L222: `data class ConversationCard(`
+- L238: `val requestedDates: DateRange? get() = parseDateRange(requestedStart, requestedEnd)`
+- L246: `data class MyVerification(`
+- L259: `data class VerificationStart(val url: String, val sessionToken: String)`
+- L263: `data class Listing(`
+- L296: `val typeLabel: String get() = itemType ?: category`
+- L300: `val priceLabel: String get() = priceUsd?.let { formatPerDay(it) } ?: priceNote`
+- L304: `data class ListingPhoto(`
+- L317: `data class ListingScan(`
+- L330: `val finished: Boolean get() = status == "done" || status == "failed"`
+- L335: `data class PhotoScanRow(`
+- L342: `data class ListingMeasurement(`
+- L351: `data class Availability(`
+- L359: `data class Conversation(`
+- L374: `val requestedDates: DateRange? get() = parseDateRange(requestedStart, requestedEnd)`
+- L375: `fun otherUserId(me: String): String = if (me == renterId) lenderId else renterId`
+- L376: `fun otherUser(me: String): Profile? = if (me == renterId) lender else renter`
+- L377: `val lastMessage: Message? get() = messages.firstOrNull()`
+- L381: `data class Message(`
+- L390: `data class Rental(`
+- L411: `data class RentalEvent(`
+- L422: `data class RentalPhoto(`
+- L435: `data class RentalView(`
+- L473: `val iAmLender: Boolean get() = yourRole == "lender"`
+- L474: `val dates: DateRange? get() = parseDateRange(startDate, endDate)`
+- L479: `data class RentalClaimView(`
+- L494: `data class RentalSettings(`
+- L506: `data class PayoutAccount(`
+- L513: `data class PaymentStart(val clientSecret: String, val publishableKey: String, val amount: Double?)`
+- L516: `data class ConversationRead(`
+- L522: `data class RentalOutcome(`
+- L530: `data class Block(`
+- L539: `data class NotificationSettings(`
+- L549: `data class Report(`
+- L559: `data class SavedListing(`
+- L569: `data class SavedStudio(`
+- L578: `data class StudioPage(`
+- L592: `data class SuggestionEvent(`
+- L599: `object Roles {`
+- L600: `const val RENTER = "renter"`
+- L601: `const val LENDER = "lender"`
+- L602: `const val BOTH = "both"`
+- L604: `fun canLend(role: String) = role == LENDER || role == BOTH`
+- L607: `object Categories {`
+- L608: `const val ACCESSORIES = "Accessories"`
+- L610: `val ALL = listOf(`
+- L629: `fun measurementSuggestions(category: String, itemType: String?): List<String> =`
+- L635: `object AccessoryTypes {`
+- L637: `const val COSTUME_JEWELRY = "Costume jewelry"`
+- L639: `val ALL = listOf("Sunglasses", "Handbag", "Tie", "Watch (non-smart)", "Belt buckle", COSTUME_JEWELRY)`
+- L641: `val SUGGESTIONS = mapOf(`
+- L651: `object ReportReasons {`
+- L652: `val ALL = listOf("Inappropriate photo", "Prohibited item", "Scam or fraud", "Harassment", "Other")`
+- L653: `const val DETAILS_MAX = 500`
+- L656: `object ListingEvents {`
+- L657: `const val VIEW = "view"`
+- L658: `const val SAVE = "save"`
+- L659: `const val MESSAGE = "message"`
+- L662: `sealed class UiState<out T> {`
+- L663: `object Loading : UiState<Nothing>()`
+- L664: `data class Error(val message: String) : UiState<Nothing>()`
+- L665: `data class Success<T>(val data: T) : UiState<T>()`
+- L668: `data class ListingValidationResult(`
+- L676: `fun validateListingForm(`
+- L681: `val trimmedTitle = title.trim()`
+- L682: `val titleError = when {`
+- L689: `val priceError = when {`
+- L696: `val mErrors = validateMeasurements(measurements)`
+- L697: `val hasMeasurementError = mErrors.any { it != null }`
+- L699: `val first = titleError ?: priceError ?: mErrors.firstOrNull { it != null }`
+- L710: `object AppLinks {`
+- L711: `const val TERMS_URL = "https://dzirent.com/terms"`
+- L712: `const val PRIVACY_URL = "https://dzirent.com/privacy"`
+- L713: `const val SUPPORT_EMAIL = "support@dzirent.com"`
+- L714: `const val HELP_URL = "https://dzirent.com/help"`
+- L715: `const val SAFETY_URL = "https://dzirent.com/safety"`
+- L716: `const val COMMUNITY_GUIDELINES_URL = "https://dzirent.com/community-guidelines"`
+- L717: `const val COPYRIGHT_URL = "https://dzirent.com/copyright"`
+- L718: `const val DELETE_ACCOUNT_URL = "https://dzirent.com/delete-account"`
+- L719: `const val SUPPORT_URL = "https://dzirent.com/support"`
+- L721: `const val DATA_EXPORT_URL = "https://dzirent.com/app/settings/preferences#privacy"`
+- L725: `const val PASSWORD_MIN_LENGTH = 8`
 
 ### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/platform/AgeSignals.kt` (45 lines)
 
@@ -448,114 +448,120 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L36: `override suspend fun loadSession(): UserSession? {`
 - L48: `override suspend fun deleteSession() {`
 
-### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/repository/DzirentRepository.kt` (2188 lines)
+### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/repository/DzirentRepository.kt` (2306 lines)
 
-- L69: `class DzirentException(message: String, val field: String? = null, val code: String? = null) : Exception(message) {`
-- L74: `val CANT_MESSAGE_USER: String = ErrorCatalog.shown("DZ-E3005").text`
-- L80: `internal fun storageRefusal(statusCode: Int?, raw: String): String? {`
-- L81: `val said = raw.lowercase()`
-- L90: `internal fun serverError(throwable: Throwable): ShownError? {`
-- L91: `val rest = throwable as? RestException`
-- L92: `val hint = rest?.description?.trim()?.takeIf { it.isNotEmpty() && ErrorCatalog.parse(it) == null && !it.startsWith("{") }`
-- L97: `internal fun clientErrorCode(raw: String): String? {`
-- L98: `val said = raw.lowercase()`
-- L128: `data class InboxSnapshot(`
-- L134: `val hasNews: Boolean get() = unreadIds.isNotEmpty() || activity.any { it.isNew }`
-- L137: `class ChatSubscription(`
-- L144: `fun generateUuid(): String {`
-- L145: `val chars = "0123456789abcdef"`
-- L146: `val bytes = ByteArray(16)`
-- L150: `val sb = StringBuilder(36)`
-- L162: `val chars = "0123456789abcdef"`
-- L167: `fun createDzirentSupabaseClient(`
-- L218: `class DzirentRepository(`
-- L229: `val auth: Auth get() = client.auth`
-- L230: `val postgrest: Postgrest get() = client.postgrest`
-- L231: `val storage: Storage get() = client.storage`
-- L232: `val realtime: Realtime get() = client.realtime`
-- L233: `val functions: Functions get() = client.functions`
-- L235: `fun currentEmail(): String? = auth.currentUserOrNull()?.email`
-- L258: `val currentUserId: String? get() = auth.currentUserOrNull()?.id`
-- L259: `val currentEmail: String? get() = auth.currentUserOrNull()?.email`
-- L261: `suspend fun awaitAuth() {`
-- L265: `fun hasSession(): Boolean = auth.currentSessionOrNull() != null`
-- L274: `suspend fun signUp(`
-- L322: `suspend fun signIn(emailStr: String, passwordStr: String) {`
-- L333: `suspend fun signOut() {`
-- L347: `suspend fun changePassword(current: String, new: String) {`
-- L370: `suspend fun resetPassword(emailStr: String) {`
-- L382: `suspend fun browseListings(`
-- L435: `suspend fun getListing(listingId: String, lat: Double? = null, lng: Double? = null): ListingDetail? {`
-- L450: `suspend fun getStudio(handle: String, lat: Double? = null, lng: Double? = null): StudioDetail? {`
-- L465: `suspend fun fitListings(`
-- L488: `suspend fun myConversations(`
-- L507: `suspend fun mySavedStudios(`
-- L528: `suspend fun searchCities(query: String, limit: Int = 20): List<UsCity> {`
-- L546: `suspend fun startConversation(listingId: String, start: String? = null, end: String? = null): String {`
-- L561: `suspend fun saveStudio(handle: String) {`
-- L569: `suspend fun unsaveStudio(handle: String) {`
-- L577: `suspend fun blockUser(handle: String) {`
-- L585: `suspend fun unblockUser(handle: String) {`
-- L593: `suspend fun reportUser(handle: String, reason: String, details: String? = null) {`
-- L605: `suspend fun setConversationDates(conversationId: String, start: String, end: String): Boolean {`
-- L621: `suspend fun markConversationRead(conversationId: String) {`
-- L628: `suspend fun markActivitySeen() {`
-- L635: `suspend fun recordAccessoryDeclaration(fullLegalName: String, version: Int, appVersion: String) {`
-- L656: `suspend fun checkText(text: String, where: String): String? = try {`
-- L669: `suspend fun needsLegalAcceptance(): Boolean = try {`
-- L676: `suspend fun acceptLegal(platform: String) {`
-- L686: `suspend fun giveMeasurementsConsent() {`
-- L695: `suspend fun withdrawMeasurementsConsent() {`
-- L709: `suspend fun recordAgeCheck(source: String, result: String, platform: String): Boolean = try {`
-- L724: `suspend fun registerPushToken(token: String, platform: String) {`
-- L739: `suspend fun unregisterPushToken(token: String) {`
-- L747: `suspend fun getNotificationSettings(): NotificationSettings {`
-- L758: `suspend fun saveNotificationSettings(settings: NotificationSettings) {`
-- L775: `suspend fun recordListingDeclaration(listingId: String, version: Int) {`
-- L793: `suspend fun deleteListing(listingId: String) {`
-- L807: `suspend fun exportMyData(): String {`
-- L821: `suspend fun deleteAccount() {`
-- L834: `suspend fun getCurrentProfile(): Profile? {`
-- L845: `suspend fun updateProfile(profile: Profile) {`
-- L856: `suspend fun updateRole(role: String): Profile {`
-- L868: `suspend fun updateLocation(lat: Double, lng: Double, city: String): Profile {`
-- L886: `suspend fun updateStudio(`
-- L913: `suspend fun getPrivateProfile(): PrivateProfile {`
-- L924: `suspend fun saveBodyMeasurements(`
-- L945: `suspend fun getMyListings(): List<Listing> {`
-- L983: `suspend fun getMyListing(listingId: String): Listing? {`
-- L1018: `suspend fun createListing(listing: Listing): Listing {`
-- L1030: `suspend fun updateListingDetails(listing: Listing, status: String) {`
-- L1060: `suspend fun replaceMeasurements(listingId: String, measurements: List<ListingMeasurement>) {`
-- L1070: `suspend fun replaceAvailability(listingId: String, ranges: List<Availability>) {`
-- L1079: `suspend fun toggleListingStatus(id: String, newStatus: String) {`
-- L1089: `suspend fun updatePhotoPosition(photoId: String, position: Int, slot: String?) {`
-- L1102: `suspend fun updateListing(listing: Listing): Listing {`
-- L1117: `suspend fun setListingStatus(listingId: String, status: String) {`
-- L1136: `suspend fun uploadListingPhoto(`
-- L1176: `suspend fun deleteListingPhoto(photo: ListingPhoto) {`
-- L1188: `suspend fun updatePhotoPositions(photos: List<ListingPhoto>) {`
-- L1204: `suspend fun saveListingMeasurements(listingId: String, measurements: List<ListingMeasurement>) {`
-- L1218: `suspend fun saveAvailability(listingId: String, ranges: List<Availability>) {`
-- L1232: `suspend fun hasSavedListing(listingId: String): Boolean {`
-- L1246: `suspend fun saveListing(listingId: String) {`
-- L1261: `suspend fun unsaveListing(listingId: String) {`
-- L1275: `suspend fun isListingSaved(listingId: String): Boolean {`
-- L1290: `suspend fun getMessages(conversationId: String): List<Message> {`
-- L1301: `suspend fun subscribeToChat(conversationId: String): ChatSubscription {`
-- L1331: `suspend fun getRentedOutListingIds(): Set<String> {`
-- L1351: `suspend fun getChatRental(conversationId: String): RentalView? = try {`
-- L1358: `suspend fun getRentalById(rentalId: String): RentalView? = try {`
-- L1366: `suspend fun myRentals(): List<RentalView> = try {`
-- L1374: `suspend fun requestRental(listingId: String, dates: DateRange): String = try {`
-- L1385: `suspend fun respondRental(rentalId: String, accept: Boolean, note: String? = null): String = rentalCall(`
-- L1394: `suspend fun cancelRental(rentalId: String, reason: String? = null): String = rentalCall(`
-- L1402: `suspend fun markPickedUp(rentalId: String, note: String? = null): String = rentalCall(`
-- L1410: `suspend fun markReturned(rentalId: String, note: String? = null): String = rentalCall(`
-- L1418: `suspend fun completeRental(rentalId: String): String = rentalCall(`
-- L1433: `suspend fun rentalSettings(refresh: Boolean = false): RentalSettings {`
-- L1444: `suspend fun myPayoutAccount(): PayoutAccount? {`
-- L1456: `suspend fun payoutSetupLink(): String {`
+- L76: `class DzirentException(message: String, val field: String? = null, val code: String? = null) : Exception(message) {`
+- L81: `val CANT_MESSAGE_USER: String = ErrorCatalog.shown("DZ-E3005").text`
+- L87: `internal fun storageRefusal(statusCode: Int?, raw: String): String? {`
+- L88: `val said = raw.lowercase()`
+- L97: `internal fun serverError(throwable: Throwable): ShownError? {`
+- L98: `val rest = throwable as? RestException`
+- L99: `val hint = rest?.description?.trim()?.takeIf { it.isNotEmpty() && ErrorCatalog.parse(it) == null && !it.startsWith("{") }`
+- L104: `internal fun clientErrorCode(raw: String): String? {`
+- L105: `val said = raw.lowercase()`
+- L135: `data class InboxSnapshot(`
+- L141: `val hasNews: Boolean get() = unreadIds.isNotEmpty() || activity.any { it.isNew }`
+- L144: `class ChatSubscription(`
+- L151: `fun generateUuid(): String {`
+- L152: `val chars = "0123456789abcdef"`
+- L153: `val bytes = ByteArray(16)`
+- L157: `val sb = StringBuilder(36)`
+- L169: `val chars = "0123456789abcdef"`
+- L174: `fun createDzirentSupabaseClient(`
+- L231: `class DzirentRepository(`
+- L242: `val auth: Auth get() = client.auth`
+- L243: `val postgrest: Postgrest get() = client.postgrest`
+- L244: `val storage: Storage get() = client.storage`
+- L245: `val realtime: Realtime get() = client.realtime`
+- L246: `val functions: Functions get() = client.functions`
+- L248: `fun currentEmail(): String? = auth.currentUserOrNull()?.email`
+- L271: `val currentUserId: String? get() = auth.currentUserOrNull()?.id`
+- L272: `val currentEmail: String? get() = auth.currentUserOrNull()?.email`
+- L274: `suspend fun awaitAuth() {`
+- L278: `fun hasSession(): Boolean = auth.currentSessionOrNull() != null`
+- L287: `suspend fun signUp(`
+- L336: `suspend fun signIn(emailStr: String, passwordStr: String) {`
+- L347: `suspend fun signOut() {`
+- L361: `suspend fun changePassword(current: String, new: String) {`
+- L388: `suspend fun requestPasswordReset(emailStr: String): EmailRequest {`
+- L404: `suspend fun resendConfirmation(emailStr: String): EmailRequest {`
+- L441: `suspend fun signInWithGoogle() {`
+- L451: `suspend fun completeGoogleSignIn(code: String): Profile? {`
+- L462: `fun hasPasswordSignIn(): Boolean {`
+- L469: `fun googleName(): String {`
+- L479: `suspend fun completeProfile(displayName: String, adult: Boolean, city: UsCity?): Profile? {`
+- L500: `suspend fun browseListings(`
+- L553: `suspend fun getListing(listingId: String, lat: Double? = null, lng: Double? = null): ListingDetail? {`
+- L568: `suspend fun getStudio(handle: String, lat: Double? = null, lng: Double? = null): StudioDetail? {`
+- L583: `suspend fun fitListings(`
+- L606: `suspend fun myConversations(`
+- L625: `suspend fun mySavedStudios(`
+- L646: `suspend fun searchCities(query: String, limit: Int = 20): List<UsCity> {`
+- L664: `suspend fun startConversation(listingId: String, start: String? = null, end: String? = null): String {`
+- L679: `suspend fun saveStudio(handle: String) {`
+- L687: `suspend fun unsaveStudio(handle: String) {`
+- L695: `suspend fun blockUser(handle: String) {`
+- L703: `suspend fun unblockUser(handle: String) {`
+- L711: `suspend fun reportUser(handle: String, reason: String, details: String? = null) {`
+- L723: `suspend fun setConversationDates(conversationId: String, start: String, end: String): Boolean {`
+- L739: `suspend fun markConversationRead(conversationId: String) {`
+- L746: `suspend fun markActivitySeen() {`
+- L753: `suspend fun recordAccessoryDeclaration(fullLegalName: String, version: Int, appVersion: String) {`
+- L774: `suspend fun checkText(text: String, where: String): String? = try {`
+- L787: `suspend fun needsLegalAcceptance(): Boolean = try {`
+- L794: `suspend fun acceptLegal(platform: String) {`
+- L804: `suspend fun giveMeasurementsConsent() {`
+- L813: `suspend fun withdrawMeasurementsConsent() {`
+- L827: `suspend fun recordAgeCheck(source: String, result: String, platform: String): Boolean = try {`
+- L842: `suspend fun registerPushToken(token: String, platform: String) {`
+- L857: `suspend fun unregisterPushToken(token: String) {`
+- L865: `suspend fun getNotificationSettings(): NotificationSettings {`
+- L876: `suspend fun saveNotificationSettings(settings: NotificationSettings) {`
+- L893: `suspend fun recordListingDeclaration(listingId: String, version: Int) {`
+- L911: `suspend fun deleteListing(listingId: String) {`
+- L925: `suspend fun exportMyData(): String {`
+- L939: `suspend fun deleteAccount() {`
+- L952: `suspend fun getCurrentProfile(): Profile? {`
+- L963: `suspend fun updateProfile(profile: Profile) {`
+- L974: `suspend fun updateRole(role: String): Profile {`
+- L986: `suspend fun updateLocation(lat: Double, lng: Double, city: String): Profile {`
+- L1004: `suspend fun updateStudio(`
+- L1031: `suspend fun getPrivateProfile(): PrivateProfile {`
+- L1042: `suspend fun saveBodyMeasurements(`
+- L1063: `suspend fun getMyListings(): List<Listing> {`
+- L1101: `suspend fun getMyListing(listingId: String): Listing? {`
+- L1136: `suspend fun createListing(listing: Listing): Listing {`
+- L1148: `suspend fun updateListingDetails(listing: Listing, status: String) {`
+- L1178: `suspend fun replaceMeasurements(listingId: String, measurements: List<ListingMeasurement>) {`
+- L1188: `suspend fun replaceAvailability(listingId: String, ranges: List<Availability>) {`
+- L1197: `suspend fun toggleListingStatus(id: String, newStatus: String) {`
+- L1207: `suspend fun updatePhotoPosition(photoId: String, position: Int, slot: String?) {`
+- L1220: `suspend fun updateListing(listing: Listing): Listing {`
+- L1235: `suspend fun setListingStatus(listingId: String, status: String) {`
+- L1254: `suspend fun uploadListingPhoto(`
+- L1294: `suspend fun deleteListingPhoto(photo: ListingPhoto) {`
+- L1306: `suspend fun updatePhotoPositions(photos: List<ListingPhoto>) {`
+- L1322: `suspend fun saveListingMeasurements(listingId: String, measurements: List<ListingMeasurement>) {`
+- L1336: `suspend fun saveAvailability(listingId: String, ranges: List<Availability>) {`
+- L1350: `suspend fun hasSavedListing(listingId: String): Boolean {`
+- L1364: `suspend fun saveListing(listingId: String) {`
+- L1379: `suspend fun unsaveListing(listingId: String) {`
+- L1393: `suspend fun isListingSaved(listingId: String): Boolean {`
+- L1408: `suspend fun getMessages(conversationId: String): List<Message> {`
+- L1419: `suspend fun subscribeToChat(conversationId: String): ChatSubscription {`
+- L1449: `suspend fun getRentedOutListingIds(): Set<String> {`
+- L1469: `suspend fun getChatRental(conversationId: String): RentalView? = try {`
+- L1476: `suspend fun getRentalById(rentalId: String): RentalView? = try {`
+- L1484: `suspend fun myRentals(): List<RentalView> = try {`
+- L1492: `suspend fun requestRental(listingId: String, dates: DateRange): String = try {`
+- L1503: `suspend fun respondRental(rentalId: String, accept: Boolean, note: String? = null): String = rentalCall(`
+- L1512: `suspend fun cancelRental(rentalId: String, reason: String? = null): String = rentalCall(`
+- L1520: `suspend fun markPickedUp(rentalId: String, note: String? = null): String = rentalCall(`
+- L1528: `suspend fun markReturned(rentalId: String, note: String? = null): String = rentalCall(`
+- L1536: `suspend fun completeRental(rentalId: String): String = rentalCall(`
+- L1551: `suspend fun rentalSettings(refresh: Boolean = false): RentalSettings {`
+- L1562: `suspend fun myPayoutAccount(): PayoutAccount? {`
+- L1574: `suspend fun payoutSetupLink(): String {`
 
 ### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/AboutScreen.kt` (108 lines)
 
@@ -593,38 +599,9 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L38: `fun signOut() {`
 - L48: `fun delete() {`
 
-### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/AuthScreens.kt` (708 lines)
+### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/AuthScreens.kt` (872 lines)
 
-- L29: `fun WelcomeScreen(`
-- L96: `fun LoginScreen(`
-- L102: `var email by remember { mutableStateOf("") }`
-- L103: `var password by remember { mutableStateOf("") }`
-- L104: `var isLoading by remember { mutableStateOf(false) }`
-- L105: `var errorMessage by remember { mutableStateOf<String?>(null) }`
-- L106: `var resetSentTo by remember { mutableStateOf<String?>(null) }`
-- L107: `var isSendingReset by remember { mutableStateOf(false) }`
-- L108: `val scope = rememberCoroutineScope()`
-- L270: `fun SignUpScreen(`
-- L276: `var displayName by remember { mutableStateOf("") }`
-- L277: `var email by remember { mutableStateOf("") }`
-- L278: `var password by remember { mutableStateOf("") }`
-- L279: `var city by remember { mutableStateOf<UsCity?>(null) }`
-- L280: `var cityText by remember { mutableStateOf("") }`
-- L281: `var showCityHint by remember { mutableStateOf(false) }`
-- L282: `var selectedRole by remember { mutableStateOf("both") }`
-- L283: `var adultConfirmed by remember { mutableStateOf(false) }`
-- L284: `var termsAccepted by remember { mutableStateOf(false) }`
-- L285: `var showPolicy by remember { mutableStateOf(false) }`
-- L287: `var nameError by remember { mutableStateOf<String?>(null) }`
-- L289: `var isLoading by remember { mutableStateOf(false) }`
-- L290: `var errorMessage by remember { mutableStateOf<String?>(null) }`
-- L291: `var confirmationSentTo by remember { mutableStateOf<String?>(null) }`
-- L292: `val scope = rememberCoroutineScope()`
-- L293: `val device = LocalDevice.current`
-- L300: `val sentTo = confirmationSentTo`
-- L556: `fun EmailConfirmationView(`
-- L608: `fun FirstVisitBottomSheet(`
-- L676: `fun SignUpPromptDialog(`
+- L30: `fun WelcomeScreen(`
 
 ### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/BodyMeasurementsScreen.kt` (269 lines)
 
@@ -755,7 +732,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L224: `fun EmptyView(`
 - L276: `fun listingPhotoUrl(storagePath: String?): String? {`
 
-### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/DzirentApp.kt` (257 lines)
+### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/DzirentApp.kt` (334 lines)
 
 - L22: `sealed class AuthScreenState {`
 - L23: `object Loading : AuthScreenState()`
@@ -763,18 +740,21 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L25: `data class Authenticated(val profile: Profile) : AuthScreenState()`
 - L27: `data class NeedsTerms(val profile: Profile) : AuthScreenState()`
 - L29: `data class AgeBlocked(val profile: Profile) : AuthScreenState()`
-- L30: `object Guest : AuthScreenState()`
-- L53: `fun DzirentApp(`
-- L64: `var screenState by remember { mutableStateOf<AuthScreenState>(AuthScreenState.Loading) }`
-- L65: `var firstVisitSeen by rememberSaveable { mutableStateOf(false) }`
-- L66: `var pendingGatedAction by remember { mutableStateOf<GatedAction?>(null) }`
-- L67: `var authStartDestination by rememberSaveable { mutableStateOf("welcome") }`
-- L68: `val device = LocalDevice.current`
-- L69: `val push = device.push`
-- L70: `val scope = rememberCoroutineScope()`
-- L84: `val signedInId = (screenState as? AuthScreenState.Authenticated)?.profile?.id`
-- L219: `fun AuthNavHost(`
-- L225: `val authNavController = rememberNavController()`
+- L31: `data class NeedsProfile(val profile: Profile) : AuthScreenState()`
+- L32: `object Guest : AuthScreenState()`
+- L57: `fun DzirentApp(`
+- L71: `var screenState by remember { mutableStateOf<AuthScreenState>(AuthScreenState.Loading) }`
+- L72: `var firstVisitSeen by rememberSaveable { mutableStateOf(false) }`
+- L73: `var pendingGatedAction by remember { mutableStateOf<GatedAction?>(null) }`
+- L74: `var authStartDestination by rememberSaveable { mutableStateOf("welcome") }`
+- L75: `val device = LocalDevice.current`
+- L76: `val push = device.push`
+- L77: `val scope = rememberCoroutineScope()`
+- L91: `val signedInId = (screenState as? AuthScreenState.Authenticated)?.profile?.id`
+- L104: `var googleError by remember { mutableStateOf<String?>(null) }`
+- L267: `fun AuthNavHost(`
+- L276: `val authNavController = rememberNavController()`
+- L278: `var handoffEmail by rememberSaveable { mutableStateOf("") }`
 
 ### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/FilterSheet.kt` (169 lines)
 
@@ -788,6 +768,21 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L38: `val minPrice = parsePrice(minText)`
 - L39: `val maxPrice = parsePrice(maxText)`
 - L40: `val priceError = when {`
+
+### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/FinishProfileScreen.kt` (170 lines)
+
+- L31: `fun FinishProfileScreen(`
+- L36: `val scope = rememberCoroutineScope()`
+- L37: `val device = LocalDevice.current`
+- L38: `var name by remember { mutableStateOf(repository.googleName()) }`
+- L39: `var city by remember { mutableStateOf<UsCity?>(null) }`
+- L40: `var cityText by remember { mutableStateOf("") }`
+- L41: `var showCityHint by remember { mutableStateOf(false) }`
+- L42: `var adult by remember { mutableStateOf(false) }`
+- L43: `var terms by remember { mutableStateOf(false) }`
+- L44: `var busy by remember { mutableStateOf(false) }`
+- L45: `var problem by remember { mutableStateOf<ShownError?>(null) }`
+- L46: `var error by remember { mutableStateOf<String?>(null) }`
 
 ### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/GuestGate.kt` (53 lines)
 
@@ -1360,40 +1355,42 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L95: `val radiusKm = settings.distanceUnit.radiusKm(session.filters.distanceStep)`
 - L100: `fun saveRecent(q: String) {`
 
-### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/SettingsScreen.kt` (569 lines)
+### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/SettingsScreen.kt` (591 lines)
 
-- L47: `fun SettingsScreen(`
-- L64: `val scope = rememberCoroutineScope()`
-- L65: `val device = LocalDevice.current`
-- L66: `val settings = LocalAppSettings.current`
-- L67: `val email = remember { repository.currentEmail() }`
-- L68: `var isSigningOut by remember { mutableStateOf(false) }`
-- L69: `var error by remember { mutableStateOf<String?>(null) }`
-- L70: `var showChangePassword by remember { mutableStateOf(false) }`
-- L71: `var showDeleteAccount by remember { mutableStateOf(false) }`
-- L236: `fun SettingsGroup(title: String) {`
-- L248: `fun SettingsRow(`
-- L307: `val scope = rememberCoroutineScope()`
-- L308: `val device = LocalDevice.current`
-- L309: `var saved by remember { mutableStateOf<NotificationSettings?>(null) }`
-- L310: `var loadFailed by remember { mutableStateOf(false) }`
-- L311: `var phoneAllows by remember { mutableStateOf(device.push.canNotify()) }`
-- L312: `val turnOn = rememberTurnOnNotifications { phoneAllows = it }`
-- L325: `fun save(updated: NotificationSettings) {`
-- L338: `val current = saved`
-- L408: `val scope = rememberCoroutineScope()`
-- L409: `var current by remember { mutableStateOf("") }`
-- L410: `var new by remember { mutableStateOf("") }`
-- L411: `var isSaving by remember { mutableStateOf(false) }`
-- L412: `var error by remember { mutableStateOf<String?>(null) }`
-- L414: `fun save() {`
-- L480: `val scope = rememberCoroutineScope()`
-- L481: `val device = LocalDevice.current`
-- L482: `var typed by remember { mutableStateOf("") }`
-- L483: `var isDeleting by remember { mutableStateOf(false) }`
-- L484: `var error by remember { mutableStateOf<String?>(null) }`
-- L486: `var activeRental by remember { mutableStateOf<Boolean?>(null) }`
-- L492: `fun delete() {`
+- L48: `fun SettingsScreen(`
+- L65: `val scope = rememberCoroutineScope()`
+- L66: `val device = LocalDevice.current`
+- L67: `val settings = LocalAppSettings.current`
+- L68: `val email = remember { repository.currentEmail() }`
+- L70: `val hasPassword = remember { repository.hasPasswordSignIn() }`
+- L71: `var sendingLink by remember { mutableStateOf(false) }`
+- L72: `var isSigningOut by remember { mutableStateOf(false) }`
+- L73: `var error by remember { mutableStateOf<String?>(null) }`
+- L74: `var showChangePassword by remember { mutableStateOf(false) }`
+- L75: `var showDeleteAccount by remember { mutableStateOf(false) }`
+- L257: `fun SettingsGroup(title: String) {`
+- L269: `fun SettingsRow(`
+- L328: `val scope = rememberCoroutineScope()`
+- L329: `val device = LocalDevice.current`
+- L330: `var saved by remember { mutableStateOf<NotificationSettings?>(null) }`
+- L331: `var loadFailed by remember { mutableStateOf(false) }`
+- L332: `var phoneAllows by remember { mutableStateOf(device.push.canNotify()) }`
+- L333: `val turnOn = rememberTurnOnNotifications { phoneAllows = it }`
+- L346: `fun save(updated: NotificationSettings) {`
+- L359: `val current = saved`
+- L430: `val scope = rememberCoroutineScope()`
+- L431: `var current by remember { mutableStateOf("") }`
+- L432: `var new by remember { mutableStateOf("") }`
+- L433: `var isSaving by remember { mutableStateOf(false) }`
+- L434: `var error by remember { mutableStateOf<String?>(null) }`
+- L436: `fun save() {`
+- L502: `val scope = rememberCoroutineScope()`
+- L503: `val device = LocalDevice.current`
+- L504: `var typed by remember { mutableStateOf("") }`
+- L505: `var isDeleting by remember { mutableStateOf(false) }`
+- L506: `var error by remember { mutableStateOf<String?>(null) }`
+- L508: `var activeRental by remember { mutableStateOf<Boolean?>(null) }`
+- L514: `fun delete() {`
 
 ### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/ui/Sidebar.kt` (157 lines)
 
@@ -1520,6 +1517,22 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L4: `enum class ThemeMode(val key: String, val label: String) {`
 - L9: `fun isDark(systemDark: Boolean): Boolean = when (this) {`
 - L21: `data class AppSettings(`
+
+### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/util/AuthFlows.kt` (172 lines)
+
+- L10: `object AuthLinks {`
+- L12: `const val SCHEME = "dzirent"`
+- L13: `const val HOST = "auth"`
+- L14: `const val CALLBACK = "dzirent://auth/callback"`
+- L17: `val website: String get() = SupabaseBuildConfig.WEBSITE_URL.trimEnd('/')`
+- L19: `val resetPage: String get() = "$website/auth/reset"`
+- L21: `val confirmPage: String get() = "$website/auth/callback"`
+- L25: `sealed class AuthCallback {`
+- L27: `data class Code(val code: String) : AuthCallback()`
+- L29: `data class Failed(val error: ShownError) : AuthCallback()`
+- L31: `data object NotOurs : AuthCallback()`
+- L34: `object AuthDeepLink {`
+- L36: `fun isOurs(uri: String?): Boolean {`
 
 ### `mobile/shared/src/commonMain/kotlin/com/dzirent/shared/util/BodyMeasurements.kt` (52 lines)
 
@@ -2235,6 +2248,11 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L29: `fun whatIsRecorded() {`
 - L37: `fun onceADay() {`
 
+### `mobile/shared/src/commonTest/kotlin/com/dzirent/shared/AuthFlowsTest.kt` (108 lines)
+
+- L19: `class AuthFlowsTest {`
+- L21: `fun googleReturnLinkIsRecognizedAndItsCodeRead() {`
+
 ### `mobile/shared/src/commonTest/kotlin/com/dzirent/shared/ChatPushTest.kt` (44 lines)
 
 - L12: `class ChatPushTest {`
@@ -2627,11 +2645,36 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L194: `export function adultFrom(dateOfBirth: unknown, today: Date = new Date()): boolean | null {`
 - L208: `export function summarizeDecision(decision: DiditBody, today: Date = new Date()): DecisionSummary {`
 
+### `supabase/functions/_shared/email-events.ts` (138 lines)
+
+- L10: `export const TOLERANCE_SECONDS = 300;`
+- L34: `export async function svixSignature(secret: string, id: string, timestamp: string, body: string): Promise<string> {`
+- L41: `export type SvixHeaders = { id: string | null; timestamp: string | null; signature: string | null };`
+- L42: `export type SvixCheck = "ok" | "unsigned" | "bad_signature" | "stale";`
+- L44: `export async function verifySvix(secret: string, h: SvixHeaders, body: string, nowSeconds: number): Promise<SvixCheck> {`
+- L64: `export type EmailEvent = {`
+- L72: `export function readEvent(eventId: string, payload: unknown): EmailEvent | null {`
+- L89: `export const HANDLED_EVENTS: readonly string[] = ["email.bounced", "email.complained"];`
+- L92: `export type EmailEventsDeps = {`
+- L106: `export async function handleEmailEvents(req: Request, deps: EmailEventsDeps): Promise<Response> {`
+
+### `supabase/functions/_shared/email-policy.ts` (59 lines)
+
+- L9: `export const ESSENTIAL_TEMPLATES: readonly string[] = ["pickup_reminder", "return_reminder", "account_deleted"];`
+- L11: `export function isEssential(template: string): boolean {`
+- L15: `export type EmailPrefs = { email_rentals?: boolean; email_status?: string };`
+- L16: `export type EmailDecision = { send: true } | { send: false; reason: "turned_off" | "suppressed" };`
+- L19: `export function emailDecision(template: string, prefs: EmailPrefs | null | undefined): EmailDecision {`
+- L36: `export async function unsubscribeToken(secret: string, userId: string): Promise<string> {`
+- L43: `export function sameText(a: string, b: string): boolean {`
+- L50: `export async function unsubscribeTokenValid(secret: string, userId: string, token: string): Promise<boolean> {`
+- L56: `export async function unsubscribeHeaders(functionsBase: string, secret: string, userId: string): Promise<Record<string, string>> {`
+
 ### `supabase/functions/_shared/email-templates.test.ts` (93 lines)
 
 - (no top-level declarations)
 
-### `supabase/functions/_shared/email-templates.ts` (263 lines)
+### `supabase/functions/_shared/email-templates.ts` (269 lines)
 
 - L9: `export type EmailTemplate =`
 - L20: `export const TEMPLATES: EmailTemplate[] = [`
@@ -2642,15 +2685,28 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L57: `export function datesLabel(start: unknown, end: unknown): string | null {`
 - L65: `export function timeLabel(v: unknown, timezone: unknown): string | null {`
 - L80: `export function escapeHtml(v: string): string {`
-- L150: `export function renderEmail(template: string, data: EmailData): RenderedEmail | null {`
+- L154: `export function renderEmail(template: string, data: EmailData): RenderedEmail | null {`
 
-### `supabase/functions/_shared/email.ts` (55 lines)
+### `supabase/functions/_shared/email-unsubscribe.ts` (33 lines)
 
-- L8: `export type EmailConfig = { provider: "resend" | "postmark"; key: string; from: string; url: string };`
-- L9: `export type EmailMessage = { to: string; subject: string; html: string; text: string; tag: string };`
-- L10: `export type EmailResult =`
-- L17: `export function emailConfig(env: (name: string) => string | undefined = (n) => Deno.env.get(n)): EmailConfig | null {`
-- L27: `export async function sendEmail(cfg: EmailConfig, msg: EmailMessage): Promise<EmailResult> {`
+- L12: `export type UnsubscribeDeps = { env: (name: string) => string | undefined; rpc: Rpc };`
+- L14: `export const SETTINGS_URL = "https://dzirent.com/app/settings/preferences";`
+- L21: `export async function handleUnsubscribe(req: Request, deps: UnsubscribeDeps): Promise<Response> {`
+
+### `supabase/functions/_shared/email.test.ts` (199 lines)
+
+- (no top-level declarations)
+
+### `supabase/functions/_shared/email.ts` (79 lines)
+
+- L9: `export const EMAIL_FROM = "Dzirent <no-reply@mail.dzirent.com>";`
+- L10: `export const EMAIL_REPLY_TO = "support@dzirent.com";`
+- L13: `export type EmailConfig = { key: string; from: string; replyTo: string; url: string };`
+- L14: `export type EmailMessage = {`
+- L25: `export type EmailResult =`
+- L33: `export function emailConfig(env: Env): EmailConfig | null {`
+- L41: `export function resendBody(cfg: EmailConfig, msg: EmailMessage): Record<string, unknown> {`
+- L56: `export async function sendEmail(cfg: EmailConfig, msg: EmailMessage, fetchFn: Fetch = fetch): Promise<EmailResult> {`
 
 ### `supabase/functions/_shared/errors.ts` (24 lines)
 
@@ -2683,6 +2739,11 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L95: `export function fromOutbox(req: Request): boolean {`
 - L105: `export function safeReturnUrl(value: unknown, fallback: string): string {`
 
+### `supabase/functions/_shared/send-email.ts` (95 lines)
+
+- L19: `export type SendEmailDeps = {`
+- L39: `export async function handleSendEmail(req: Request, deps: SendEmailDeps): Promise<Response> {`
+
 ### `supabase/functions/_shared/stripe.ts` (155 lines)
 
 - L8: `export const STRIPE_API_VERSION = "2024-06-20";`
@@ -2702,7 +2763,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 
 - (no top-level declarations)
 
-### `supabase/functions/admin-integrations/index.ts` (45 lines)
+### `supabase/functions/admin-integrations/index.ts` (48 lines)
 
 - (no top-level declarations)
 
@@ -2730,6 +2791,14 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 
 - (no top-level declarations)
 
+### `supabase/functions/email-events/index.ts` (29 lines)
+
+- (no top-level declarations)
+
+### `supabase/functions/email-unsubscribe/index.ts` (26 lines)
+
+- (no top-level declarations)
+
 ### `supabase/functions/export-my-data/index.ts` (189 lines)
 
 - (no top-level declarations)
@@ -2738,7 +2807,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 
 - (no top-level declarations)
 
-### `supabase/functions/send-email/index.ts` (72 lines)
+### `supabase/functions/send-email/index.ts` (24 lines)
 
 - (no top-level declarations)
 
@@ -2784,13 +2853,13 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L7: `export const metadata: Metadata = {`
 - L21: `export default function AccessibilityPage() {`
 
-### `apps/web/src/app/actions.ts` (205 lines)
+### `apps/web/src/app/actions.ts` (220 lines)
 
 - L11: `export async function authenticate(form: FormData) {`
-- L129: `export async function acceptLegalAction() {`
-- L136: `export async function signOut() {`
-- L141: `export async function savePiece(form: FormData) {`
-- L167: `export async function studioAction(form: FormData) {`
+- L144: `export async function acceptLegalAction() {`
+- L151: `export async function signOut() {`
+- L156: `export async function savePiece(form: FormData) {`
+- L182: `export async function studioAction(form: FormData) {`
 
 ### `apps/web/src/app/admin/audit-log/page.tsx` (25 lines)
 
@@ -2914,14 +2983,46 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L8: `export const metadata: Metadata = {`
 - L12: `export default async function SettingsPage({`
 
-### `apps/web/src/app/auth/callback/route.ts` (18 lines)
+### `apps/web/src/app/auth/actions.ts` (143 lines)
 
-- L5: `export async function GET(request:NextRequest) {`
+- L26: `export type FormState = { error?: ShownError; notice?: string; expired?: boolean; done?: boolean } | null;`
+- L41: `export async function requestPasswordReset(_: FormState, form: FormData): Promise<FormState> {`
+- L63: `export async function resetPassword(_: FormState, form: FormData): Promise<FormState> {`
+- L97: `export async function resendConfirmation(_: FormState, form: FormData): Promise<FormState> {`
+- L122: `export async function finishProfile(_: FormState, form: FormData): Promise<FormState> {`
 
-### `apps/web/src/app/auth/page.tsx` (206 lines)
+### `apps/web/src/app/auth/callback/route.ts` (60 lines)
+
+- L20: `export async function GET(request: NextRequest) {`
+
+### `apps/web/src/app/auth/check-email/page.tsx` (40 lines)
+
+- L8: `export const metadata: Metadata = {`
+- L20: `export default async function CheckEmail() {`
+
+### `apps/web/src/app/auth/confirmed/page.tsx` (48 lines)
+
+- L8: `export const metadata: Metadata = {`
+- L15: `export default async function Confirmed({ searchParams }: { searchParams: Promise<Query> }) {`
+
+### `apps/web/src/app/auth/forgot/page.tsx` (21 lines)
+
+- L6: `export const metadata: Metadata = {`
+- L12: `export default function ForgotPassword() {`
+
+### `apps/web/src/app/auth/google/route.ts` (31 lines)
+
+- L13: `export async function GET(request: NextRequest) {`
+
+### `apps/web/src/app/auth/page.tsx` (219 lines)
 
 - L11: `export const metadata: Metadata = {`
 - L15: `export default async function Auth({`
+
+### `apps/web/src/app/auth/reset/page.tsx` (59 lines)
+
+- L12: `export const metadata: Metadata = {`
+- L24: `export default async function ResetPassword({ searchParams }: { searchParams: Promise<Query> }) {`
 
 ### `apps/web/src/app/community-guidelines/page.tsx` (391 lines)
 
@@ -2952,11 +3053,11 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L6: `export const metadata: Metadata = {`
 - L21: `export default function HelpPage() {`
 
-### `apps/web/src/app/layout.tsx` (93 lines)
+### `apps/web/src/app/layout.tsx` (98 lines)
 
-- L10: `export const metadata: Metadata = {`
-- L20: `export const viewport: Viewport = {`
-- L36: `export default async function RootLayout({`
+- L11: `export const metadata: Metadata = {`
+- L21: `export const viewport: Viewport = {`
+- L37: `export default async function RootLayout({`
 
 ### `apps/web/src/app/list-an-outfit/page.tsx` (2 lines)
 
@@ -2992,7 +3093,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 
 - L48: `export default async function Home({`
 
-### `apps/web/src/app/privacy/page.tsx` (886 lines)
+### `apps/web/src/app/privacy/page.tsx` (901 lines)
 
 - L7: `export const metadata: Metadata = {`
 - L31: `export default function PrivacyPage() {`
@@ -3122,14 +3223,26 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L12: `export type AdminTakedownItem = {`
 - L27: `export function TakedownsView({ initialTakedowns }: { initialTakedowns: AdminTakedownItem[] }) {`
 
-### `apps/web/src/components/admin/users-view.tsx` (653 lines)
+### `apps/web/src/components/admin/users-view.tsx` (678 lines)
 
 - L138: `export type AdminUserData = {`
-- L180: `export function UsersView({ initialUsers, initialQuery }: { initialUsers: AdminUserData[]; initialQuery?: string }) {`
+- L176: `export function emailStatusLabel(u: Pick<AdminUserData, "email_status" | "email_status_at">) {`
+- L193: `export function UsersView({ initialUsers, initialQuery }: { initialUsers: AdminUserData[]; initialQuery?: string }) {`
 
 ### `apps/web/src/components/age-blocked.tsx` (85 lines)
 
 - L15: `export function AgeBlockedPage() {`
+
+### `apps/web/src/components/auth-forms.tsx` (190 lines)
+
+- L31: `export function ForgotPasswordForm({ email = "" }: { email?: string }) {`
+- L51: `export function ResetPasswordForm({ tokenHash, invite = false }: { tokenHash: string; invite?: boolean }) {`
+- L86: `export function ResendConfirmationForm({ email, waitSeconds }: { email: string; waitSeconds: number }) {`
+- L121: `export function FinishProfileScreen({`
+
+### `apps/web/src/components/auth-frame.tsx` (34 lines)
+
+- L6: `export function AuthFrame({ title, lead, children }: { title: string; lead?: string; children: ReactNode }) {`
 
 ### `apps/web/src/components/cards.tsx` (163 lines)
 
@@ -3236,7 +3349,7 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L83: `export function RentalCard({`
 - L416: `export function RentalRequestForm({`
 
-### `apps/web/src/components/settings.tsx` (719 lines)
+### `apps/web/src/components/settings.tsx` (754 lines)
 
 - L70: `export function Settings({`
 
@@ -3244,12 +3357,12 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 
 - L14: `export function ShareButton({ text, link, className = "button secondary" }: { text: string; link: string; className?: string }) {`
 
-### `apps/web/src/components/shell.tsx` (1259 lines)
+### `apps/web/src/components/shell.tsx` (1278 lines)
 
-- L55: `export function UpdateLocation() {`
-- L64: `export function FilterButton() {`
-- L312: `export function Shell({`
-- L1246: `export function BrowseGuest() {`
+- L56: `export function UpdateLocation() {`
+- L65: `export function FilterButton() {`
+- L313: `export function Shell({`
+- L1265: `export function BrowseGuest() {`
 
 ### `apps/web/src/components/sort-dropdown.tsx` (66 lines)
 
@@ -3354,6 +3467,40 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L53: `export type Parsed = { ok: true; value: unknown } | { ok: false; problem: string };`
 - L59: `export function parseSettingInput(s: Pick<AdminSetting, "type" | "min" | "max" | "unit" | "choices">, input: string): Parsed {`
 - L91: `export function groupSettings(settings: AdminSetting[]): [string, AdminSetting[]][] {`
+
+### `apps/web/src/lib/auth-flows.test.ts` (158 lines)
+
+- (no top-level declarations)
+
+### `apps/web/src/lib/auth-flows.ts` (199 lines)
+
+- L6: `export const PASSWORD_MIN = 8;`
+- L8: `export const RESEND_COOLDOWN_SECONDS = 60;`
+- L10: `export const RESET_WINDOW_SECONDS = 15 * 60;`
+- L13: `export const NEUTRAL_RESET = "If that address has an account, we've sent a link to reset its password. Check your inbox (and spam folder); the link works for one hour.";`
+- L15: `export const NEUTRAL_RESEND = "If that address is waiting to be confirmed, we've sent the link again. Check your inbox and spam folder.";`
+- L20: `export function emailProblem(email: string): ShownError | null {`
+- L26: `export function newPasswordProblem(password: string, confirm: string): ShownError | null {`
+- L33: `export type AuthFailure = { code?: string | null; status?: number | null; message?: string | null; reasons?: string[] | null } | null | undefined;`
+- L36: `export function authErrorCode(err: AuthFailure): string {`
+- L51: `export type LimitAnswer = "ok" | "ip_limited" | "address_limited";`
+- L53: `export type EmailRequestOutcome = { sent: true } | { sent: false; error: ShownError };`
+- L62: `export function emailRequestOutcome(limit: LimitAnswer | null, err: AuthFailure): EmailRequestOutcome {`
+- L74: `export const LINK_TYPES = ["email", "signup", "magiclink", "invite", "email_change", "recovery"] as const;`
+- L75: `export type LinkType = (typeof LINK_TYPES)[number];`
+- L77: `export type CallbackStep =`
+- L86: `export function callbackStep(q: { code?: string | null; token_hash?: string | null; type?: string | null; error?: string | null }): CallbackStep {`
+- L97: `export function afterVerified(type: LinkType): { path: string; resetWindow: boolean } {`
+- L105: `export function linkFailurePath(type: string | null | undefined): string {`
+- L110: `export type ResetView =`
+- L129: `export function resetView(`
+- L146: `export function needsProfile(profile: { profile_completed_at?: string | null } | null | undefined): boolean {`
+- L151: `export function finishProfileProblem(f: { name: string; adult: boolean; legal: boolean }): ShownError | null {`
+- L160: `export function suggestedName(meta: Record<string, unknown> | null | undefined): string {`
+- L166: `export function resendWait(lastSentAtMs: number | null | undefined, nowMs: number): number {`
+- L173: `export function clientAddress(get: (name: string) => string | null, onVercel: boolean): string {`
+- L180: `export function hasPasswordSignIn(user: { app_metadata?: { providers?: unknown } | null; identities?: { provider?: string }[] | null } | null | undefined): boolean {`
+- L190: `export function returnUrl(origin: string | null | undefined, path: string): string {`
 
 ### `apps/web/src/lib/data.ts` (232 lines)
 
@@ -3599,69 +3746,69 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L99: `export function safeReturnPath(path: string | null | undefined): string | null {`
 - L105: `export function verifyHref(next?: string | null): string {`
 
-### `apps/web/src/lib/workflow-mutations.ts` (441 lines)
+### `apps/web/src/lib/workflow-mutations.ts` (453 lines)
 
-- L7: `export function dates(body: Body, required = true) {`
-- L21: `export async function chatMutation(id: string, action: string, body: Body) {`
-- L215: `export async function paymentMutation(path: string[], body: Body, origin: string) {`
-- L241: `export async function startVerification(origin: string) {`
-- L252: `export async function uploadRentalPhoto(request: Request, conversationId: string) {`
-- L278: `export async function accountMutation(action: string, body: Body) {`
+- L8: `export function dates(body: Body, required = true) {`
+- L22: `export async function chatMutation(id: string, action: string, body: Body) {`
+- L216: `export async function paymentMutation(path: string[], body: Body, origin: string) {`
+- L242: `export async function startVerification(origin: string) {`
+- L253: `export async function uploadRentalPhoto(request: Request, conversationId: string) {`
+- L279: `export async function accountMutation(action: string, body: Body, origin = "https://dzirent.com") {`
 
-### `apps/web/src/lib/workflow-server.ts` (362 lines)
+### `apps/web/src/lib/workflow-server.ts` (364 lines)
 
-- L23: `export class WorkflowError extends Error {`
-- L35: `export function codedError(error: unknown, status = 400): WorkflowError {`
-- L43: `export function must<T>(`
-- L51: `export async function session() {`
-- L56: `export const uuid = (s: string) =>`
-- L60: `export async function conversation(id: string) {`
-- L88: `export async function readInbox(): Promise<InboxData> {`
-- L141: `export async function readRentals(): Promise<RentalView[]> {`
-- L145: `export async function readChat(id: string): Promise<ChatData> {`
-- L210: `export async function readVerification(): Promise<VerificationData> {`
-- L221: `export async function readRentalSettings(): Promise<RentalSettings | null> {`
-- L226: `export async function ownListing(id: string): Promise<OwnListing> {`
-- L264: `export async function readCloset() {`
-- L290: `export async function readSettings(): Promise<SettingsData> {`
-- L336: `export async function editorData(id?: string) {`
+- L24: `export class WorkflowError extends Error {`
+- L36: `export function codedError(error: unknown, status = 400): WorkflowError {`
+- L44: `export function must<T>(`
+- L52: `export async function session() {`
+- L57: `export const uuid = (s: string) =>`
+- L61: `export async function conversation(id: string) {`
+- L89: `export async function readInbox(): Promise<InboxData> {`
+- L142: `export async function readRentals(): Promise<RentalView[]> {`
+- L146: `export async function readChat(id: string): Promise<ChatData> {`
+- L211: `export async function readVerification(): Promise<VerificationData> {`
+- L222: `export async function readRentalSettings(): Promise<RentalSettings | null> {`
+- L227: `export async function ownListing(id: string): Promise<OwnListing> {`
+- L265: `export async function readCloset() {`
+- L291: `export async function readSettings(): Promise<SettingsData> {`
+- L338: `export async function editorData(id?: string) {`
 
-### `apps/web/src/lib/workflows.ts` (341 lines)
+### `apps/web/src/lib/workflows.ts` (347 lines)
 
 - L3: `export type { RentalView } from "./rentals";`
 - L4: `export type Profile = {`
-- L19: `export type PrivateProfile = {`
-- L32: `export type OwnPhoto = {`
-- L38: `export type Measurement = { label: string; value: number; unit: "cm" | "in" };`
-- L39: `export type OwnListing = {`
-- L64: `export type Conversation = {`
-- L73: `export type ConversationCard = {`
-- L90: `export type Message = {`
-- L98: `export type Rental = {`
-- L111: `export type Outcome = {`
-- L116: `export type InboxData = {`
-- L125: `export type ChatData = {`
-- L143: `export type NotificationChoicesData = {`
-- L150: `export type PayoutAccount = { charges_enabled: boolean; payouts_enabled: boolean; details_submitted: boolean };`
-- L151: `export type SettingsData = {`
-- L163: `export const itemTypes = [`
-- L171: `export const studioStyles = [`
-- L185: `export const slots = [`
-- L193: `export const slotNames = [`
-- L201: `export const garmentKinds = {`
-- L210: `export const templates: Record<string, string[]> = {`
-- L236: `export const declarationTexts = [`
-- L242: `export const listingNotice =`
-- L244: `export const fullPolicy =`
-- L246: `export const safetyTip =`
-- L248: `export const reportReasons = [`
-- L255: `export const bodyFields = [`
-- L263: `export const bodyLabels = [`
-- L271: `export const isoToday = () => new Date().toLocaleDateString("en-CA");`
-- L272: `export function dateRange(start: string | null, end: string | null) {`
-- L283: `export function activity(data: InboxData) {`
-- L325: `export async function workflow<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {`
-- L329: `export function dateChip(start: string | null, end: string | null) {`
+- L23: `export type PrivateProfile = {`
+- L36: `export type OwnPhoto = {`
+- L42: `export type Measurement = { label: string; value: number; unit: "cm" | "in" };`
+- L43: `export type OwnListing = {`
+- L68: `export type Conversation = {`
+- L77: `export type ConversationCard = {`
+- L94: `export type Message = {`
+- L102: `export type Rental = {`
+- L115: `export type Outcome = {`
+- L120: `export type InboxData = {`
+- L129: `export type ChatData = {`
+- L147: `export type NotificationChoicesData = {`
+- L154: `export type PayoutAccount = { charges_enabled: boolean; payouts_enabled: boolean; details_submitted: boolean };`
+- L155: `export type SettingsData = {`
+- L169: `export const itemTypes = [`
+- L177: `export const studioStyles = [`
+- L191: `export const slots = [`
+- L199: `export const slotNames = [`
+- L207: `export const garmentKinds = {`
+- L216: `export const templates: Record<string, string[]> = {`
+- L242: `export const declarationTexts = [`
+- L248: `export const listingNotice =`
+- L250: `export const fullPolicy =`
+- L252: `export const safetyTip =`
+- L254: `export const reportReasons = [`
+- L261: `export const bodyFields = [`
+- L269: `export const bodyLabels = [`
+- L277: `export const isoToday = () => new Date().toLocaleDateString("en-CA");`
+- L278: `export function dateRange(start: string | null, end: string | null) {`
+- L289: `export function activity(data: InboxData) {`
+- L331: `export async function workflow<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {`
+- L335: `export function dateChip(start: string | null, end: string | null) {`
 
 ### `apps/web/src/proxy.ts` (45 lines)
 
@@ -3736,24 +3883,44 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L34: `async def fetch_photo(client: httpx.AsyncClient, url: str) -> bytes:`
 - L65: `def open_image(data: bytes) -> Image.Image:`
 
-### `services/vision/app/main.py` (138 lines)
+### `services/vision/app/main.py` (145 lines)
 
 - L34: `async def lifespan(_: FastAPI):`
 - L54: `class PhotoIn(BaseModel):`
 - L67: `class ScanIn(BaseModel):`
 - L72: `@app.get("/health")`
 - L73: `async def health() -> dict:`
-- L90: `def _run(listing_id: str, photos: list[PhotoIn], payloads: list) -> dict:`
-- L113: `@app.post("/scan")`
-- L114: `async def scan_endpoint(body: ScanIn) -> dict:`
+- L96: `def _run(listing_id: str, photos: list[PhotoIn], payloads: list) -> dict:`
+- L120: `@app.post("/scan")`
+- L121: `async def scan_endpoint(body: ScanIn) -> dict:`
 
-### `services/vision/app/model.py` (82 lines)
+### `services/vision/app/model.py` (98 lines)
 
-- L24: `def _model_cfg(model_dir: Path) -> dict:`
-- L29: `def create_open_clip(model_dir: Path) -> torch.nn.Module:`
-- L39: `def create_vision_tower(model_dir: Path) -> torch.nn.Module:`
-- L50: `def preprocess(image: Image.Image) -> torch.Tensor:`
-- L57: `class Model:`
+- L25: `def _model_cfg(model_dir: Path) -> dict:`
+- L30: `def create_open_clip(model_dir: Path) -> torch.nn.Module:`
+- L40: `def create_vision_tower(model_dir: Path) -> torch.nn.Module:`
+- L51: `def preprocess(image: Image.Image) -> torch.Tensor:`
+- L59: `def embed_tensors(visual: torch.nn.Module, x: torch.Tensor) -> np.ndarray:`
+- L65: `def embed_with(visual: torch.nn.Module, images: list[Image.Image]) -> np.ndarray:`
+- L72: `class Model:`
+
+### `services/vision/app/pins.py` (371 lines)
+
+- L60: `class PinType:`
+- L84: `class Thresholds:`
+- L122: `def _unit(m: np.ndarray) -> np.ndarray:`
+- L129: `class Linear:`
+- L155: `class Pins:`
+- L189: `def _text(value) -> str | None:`
+- L194: `def _sha256(path: Path) -> str:`
+- L202: `def load_linear(linear_file: Path, expected: dict, version: str, index: dict[str, int]) -> Linear:`
+- L224: `def load(vocabulary_file: Path = VOCABULARY_PINS_FILE, gallery_file: Path = GALLERY_PINS_FILE,`
+- L255: `class TypeReading:`
+- L279: `def softmax(logits: np.ndarray) -> np.ndarray:`
+- L284: `def gallery_vote(embedding: np.ndarray, pins: Pins, k: int, exclude: np.ndarray | None = None) -> dict[int, float]:`
+- L307: `def _first_max(a: np.ndarray) -> int:`
+- L311: `def combine_banned(text: float, gallery: float, linear: float, th: Thresholds) -> float:`
+- L319: `def read(embedding: np.ndarray, pins: Pins, th: Thresholds, exclude: np.ndarray | None = None,`
 
 ### `services/vision/app/quality.py` (239 lines)
 
@@ -3775,55 +3942,89 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L17: `def preprocess(image: Image.Image, size: int = config.SAFETY_IMAGE_SIZE) -> torch.Tensor:`
 - L30: `class SafetyModel:`
 
-### `services/vision/app/scan.py` (220 lines)
+### `services/vision/app/scan.py` (306 lines)
 
-- L29: `class TextBank:`
-- L35: `def softmax(logits: np.ndarray) -> np.ndarray:`
-- L40: `def zero_shot(embedding: np.ndarray, bank: TextBank) -> dict[str, float]:`
-- L45: `def item_scores(embedding: np.ndarray, banks: dict[str, TextBank]) -> Scores:`
-- L57: `def unit_mean(embeddings: list[np.ndarray]) -> np.ndarray | None:`
-- L65: `def _r(x: float | None, digits: int = 4) -> float | None:`
-- L69: `def _top(probs: dict[str, float], n: int) -> dict[str, float]:`
-- L74: `class PhotoResult:`
-- L120: `def analyze_photo(result: PhotoResult, embedding: np.ndarray, rgb: np.ndarray, banks: dict[str, TextBank],`
-- L133: `def _suggestions(combined: np.ndarray, whole: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
-- L181: `def _quality_summary(results: list[PhotoResult]) -> dict:`
-- L194: `def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
+- L31: `class TextBank:`
+- L37: `def softmax(logits: np.ndarray) -> np.ndarray:`
+- L42: `def zero_shot(embedding: np.ndarray, bank: TextBank) -> dict[str, float]:`
+- L47: `def item_scores(embedding: np.ndarray, banks: dict[str, TextBank]) -> Scores:`
+- L59: `def unit_mean(embeddings: list[np.ndarray]) -> np.ndarray | None:`
+- L67: `def _r(x: float | None, digits: int = 4) -> float | None:`
+- L71: `def _top(probs: dict[str, float], n: int) -> dict[str, float]:`
+- L76: `class PhotoResult:`
+- L126: `def _mapping_json(m: tuple[str, str, bool] | None, score: float | None = None) -> dict | None:`
+- L134: `def _reading_json(r: TypeReading) -> dict:`
+- L147: `def banned_reason(scores: Scores, vocab: Vocab) -> str | None:`
+- L153: `def analyze_photo(result: PhotoResult, embedding: np.ndarray, rgb: np.ndarray | None, banks: dict[str, TextBank],`
+- L172: `def _suggestions(combined: np.ndarray, whole: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
+- L222: `def _quality_summary(results: list[PhotoResult]) -> dict:`
+- L235: `def listing_verdict(results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
+- L274: `def scan(listing_id: str, results: list[PhotoResult], banks: dict[str, TextBank], vocab: Vocab,`
 
 ### `services/vision/app/text.py` (40 lines)
 
 - L15: `def title_for(noun: str, color: str | None = None, detail: str | None = None) -> str:`
 - L27: `def suggest_text(`
 
-### `services/vision/app/verdict.py` (185 lines)
+### `services/vision/app/verdict.py` (304 lines)
 
-- L60: `class Scores:`
-- L85: `class Decision:`
-- L93: `def decide_photo(scores: Scores, vocab: Vocab) -> Decision:`
-- L120: `class PhotoView:`
-- L129: `class Verdict:`
-- L135: `def decide_listing(photos: list[PhotoView], combined: Decision | None, vocab: Vocab) -> Verdict:`
-- L154: `def _decide_item(photos: list[PhotoView], combined: Decision | None, vocab: Vocab) -> Verdict:`
+- L91: `def looks_like(name: str) -> str:`
+- L100: `class Scores:`
+- L125: `class Decision:`
+- L133: `def decide_photo(scores: Scores, vocab: Vocab) -> Decision:`
+- L160: `class PhotoView:`
+- L172: `class TypeView:`
+- L182: `class Verdict:`
+- L188: `def is_whole(p: PhotoView) -> bool:`
+- L193: `def is_text_or_poster(p: PhotoView) -> bool:`
+- L200: `def decide_listing(photos: list[PhotoView], combined: Decision | None, vocab: Vocab,`
+- L230: `def banned_gate(photos: list[PhotoView], types: TypeView) -> Verdict | None:`
+- L254: `def _decide_type(photos: list[PhotoView], before: Verdict, types: TypeView) -> Verdict:`
+- L271: `def _decide_item(photos: list[PhotoView], combined: Decision | None, vocab: Vocab) -> Verdict:`
 
-### `services/vision/app/vocab.py` (152 lines)
+### `services/vision/app/vocab.py` (164 lines)
 
-- L35: `class Item:`
-- L59: `class Entry:`
-- L70: `class Vocab:`
-- L88: `def _check_item(row: dict) -> Item:`
-- L123: `def load() -> Vocab:`
-- L149: `def policy_rows() -> list[dict]:`
+- L43: `class Item:`
+- L67: `class Entry:`
+- L78: `class Vocab:`
+- L96: `def _check_item(row: dict) -> Item:`
+- L131: `def load() -> Vocab:`
+- L161: `def policy_rows() -> list[dict]:`
 
-### `services/vision/eval/run_eval.py` (190 lines)
+### `services/vision/eval/calibrate.py` (214 lines)
 
-- L37: `def load_env(path: str | None) -> None:`
-- L46: `def identity_token() -> str:`
-- L54: `def post_json(url: str, body: dict | None, headers: dict, timeout: float = 150) -> tuple[int, dict | None, float]:`
-- L66: `def sample_listings() -> list[tuple[str, str]]:`
-- L72: `def sample_photos(supabase_url: str, key: str) -> list[dict]:`
-- L89: `def folder_photos(folder: Path) -> list[dict]:`
-- L100: `def passes(expected: str, verdict: str | None) -> bool:`
-- L106: `def main() -> int:`
+- L60: `def text_poster_shares(embeddings: np.ndarray, model_dir: Path) -> np.ndarray:`
+- L71: `def inputs(pins: type_pins.Pins, th: type_pins.Thresholds, model_dir: Path) -> dict:`
+- L106: `def evaluate(x: dict, pins: type_pins.Pins, w: tuple[float, float, float], factor: float) -> dict:`
+- L129: `def ceil_step(v: float, step: float) -> float:`
+- L133: `def choose(x: dict, r: dict, rule: str, text_poster_min: float) -> dict:`
+- L163: `def main(argv=None) -> int:`
+
+### `services/vision/eval/local_eval.py` (372 lines)
+
+- L49: `def _pct(x: float | None) -> str:`
+- L53: `def v1b_test_sha1s() -> set[str]:`
+- L59: `def v1b_report() -> dict:`
+- L79: `def _nsfw_cache_path(build_pins, config) -> Path:`
+- L83: `def run_local(args) -> int:`
+- L190: `def stats(rs: list[dict]) -> dict:`
+- L206: `def summarize(rows, entries, launch, th, pins, folders, left_out, model) -> dict:`
+- L247: `def report(s: dict) -> str:`
+
+### `services/vision/eval/run_eval.py` (267 lines)
+
+- L47: `def load_env(path: str | None) -> None:`
+- L56: `def identity_token() -> str:`
+- L64: `def _der(data: bytes, at: int) -> tuple[int, bytes, int]:`
+- L73: `def _rsa_key(pem: str) -> tuple[int, int]:`
+- L88: `def _rs256(message: bytes, n: int, d: int) -> bytes:`
+- L96: `def key_file_token(path: str, audience: str) -> str:`
+- L117: `def post_json(url: str, body: dict | None, headers: dict, timeout: float = 150) -> tuple[int, dict | None, float]:`
+- L129: `def sample_listings() -> list[tuple[str, str]]:`
+- L135: `def sample_photos(supabase_url: str, key: str) -> list[dict]:`
+- L152: `def folder_photos(folder: Path) -> list[dict]:`
+- L163: `def passes(expected: str, verdict: str | None) -> bool:`
+- L169: `def main() -> int:`
 
 ### `services/vision/tests/conftest.py` (9 lines)
 
@@ -3903,6 +4104,72 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L22: `def test_detail_already_in_the_noun_is_not_repeated():`
 - L26: `def test_without_color_or_detail():`
 - L30: `def test_title_fits_the_listing_limit():`
+
+### `services/vision/tests/test_v1b.py` (317 lines)
+
+- L36: `def basis(i: int, noise: float = 0.0, seed: int = 0) -> np.ndarray:`
+- L44: `def make_pins(gallery_types: list[int]) -> Pins:`
+- L56: `def test_text_and_gallery_agree_confidence_is_their_mean():`
+- L64: `def test_disagreement_keeps_the_higher_score_reduced_and_never_agrees():`
+- L75: `def test_banned_score_is_the_larger_of_text_and_gallery():`
+- L85: `def test_leave_one_out_exclude_removes_rows_from_the_vote():`
+- L98: `def views_and_types(embedding, pins=SHERWANI_GALLERY, decision=UNSURE_DECISION, slot="front", **kw):`
+- L104: `def test_confident_agreeing_allowed_type_is_allowed_even_when_the_policy_check_is_unsure():`
+- L110: `def test_low_confidence_goes_to_review():`
+- L118: `def test_disagreement_goes_to_review_whatever_the_confidence():`
+- L124: `def test_the_gate_overrides_an_allowed_type():`
+- L134: `def test_the_gate_without_a_policy_item_uses_the_plain_reason():`
+- L141: `def test_a_banned_close_up_only_sends_to_review():`
+- L148: `def test_photos_of_different_kinds_go_to_review():`
+- L155: `def test_nsfw_rules_are_unchanged():`
+- L163: `def test_hood_rule_is_unchanged():`
+- L169: `def test_policy_rejections_still_stand():`
+- L176: `def test_without_pins_the_rules_are_as_before():`
+- L181: `def test_looks_like_articles():`
+- L188: `def synthetic_banks(top_item: str, axis: int = 0) -> dict[str, TextBank]:`
+- L203: `def analyzed(embedding, banks, worn=None, slot="front", pins=SHERWANI_GALLERY):`
+- L218: `def test_response_keeps_every_field_and_adds_the_type_fields():`
+- L234: `def test_worn_never_changes_the_verdict():`
+- L241: `def test_costume_never_reaches_the_apps_garment_kind():`
+- L253: `def write_pins(tmp_path, version="a" * 64, gallery_version=None, gallery_qids=("Q1", "Q1")):`
+- L275: `def test_load_reads_both_files(tmp_path):`
+- L281: `def test_load_refuses_a_gallery_pins_json_doesnt_name(tmp_path):`
+- L288: `def test_load_refuses_another_vocabulary(tmp_path):`
+- L293: `def test_load_refuses_gallery_types_without_a_text_pin(tmp_path):`
+- L298: `def test_load_refuses_a_missing_gallery(tmp_path):`
+- L305: `def test_committed_thresholds_load_and_explain_every_value():`
+- L312: `def test_committed_vocabulary_pins_match_pins_json():`
+
+### `services/vision/tests/test_v2.py` (275 lines)
+
+- L35: `def linear_head(types=(0, 1, 2, 3, 4), scale=20.0) -> Linear:`
+- L41: `def make_pins(gallery_types, linear=None) -> Pins:`
+- L49: `def unit(v):`
+- L55: `def test_text_and_gallery_naming_two_types_of_one_mapping_agree():`
+- L65: `def test_different_mappings_disagree_and_halve_the_confidence():`
+- L72: `def test_mapping_agreement_allows_what_type_agreement_would_not():`
+- L84: `def test_top_types_are_per_type_by_the_final_score():`
+- L92: `def test_the_linear_head_takes_part_in_the_final_score():`
+- L101: `def test_calibration_can_replace_the_heads_probabilities():`
+- L110: `def gate_case(banned_share: float):`
+- L123: `def test_hard_tier_rejects_with_the_not_allowed_reason():`
+- L130: `def test_borderline_is_review_with_the_neutral_reason_never_allowed(share):`
+- L136: `def test_under_banned_min_the_type_decides():`
+- L141: `def test_a_borderline_close_up_only_reviews():`
+- L150: `def test_banned_rules():`
+- L158: `def test_text_or_poster_items_are_not_clothing_rows_like_the_others():`
+- L166: `def test_a_photo_flagged_text_or_poster_is_review_even_with_a_confident_allowed_type():`
+- L175: `def test_text_or_poster_is_never_rejected_as_not_clothing_but_a_phone_still_is():`
+- L183: `def test_scan_flags_text_or_poster_from_the_labels():`
+- L195: `def test_response_keeps_every_field_and_adds_the_v2_ones():`
+- L214: `def write_all(tmp_path, training="t" * 64, linear_training=None, drop_key=None):`
+- L228: `def test_load_reads_the_linear_head(tmp_path):`
+- L233: `def test_load_refuses_a_linear_head_whose_file_hash_differs(tmp_path):`
+- L240: `def test_load_refuses_a_linear_head_trained_on_another_set(tmp_path):`
+- L245: `def test_load_refuses_pins_json_without_a_linear_head(tmp_path):`
+- L250: `def test_thresholds_are_checked():`
+- L260: `def _load_from(raw):`
+- L269: `def test_committed_linear_head_matches_pins_json():`
 
 ### `services/vision/tests/test_verdict.py` (170 lines)
 
@@ -5310,3 +5577,59 @@ Generated from the `Preview` branch source by a script (`tools/gen-code-referenc
 - L24: `revoke execute on function app_private.refuse_self_block() from public, anon, authenticated;`
 - L29: `create or replace function app_private.report_prepare()`
 - L51: `revoke execute on function app_private.report_prepare() from public, anon, authenticated;`
+
+### `supabase/migrations/20261119120000_v1b_costume_and_scan_type.sql` (260 lines)
+
+- L14: `alter table public.listings drop constraint listings_garment_type_check;`
+- L15: `alter table public.listings add constraint listings_garment_type_check check (garment_type is null or garment_type = any (array[`
+- L18: `alter table public.policy_item_types drop constraint policy_item_types_garment_type_check;`
+- L19: `alter table public.policy_item_types add constraint policy_item_types_garment_type_check check (garment_type is null or garment_type in (`
+- L164: `CREATE OR REPLACE FUNCTION public.vision_finish_scan(p_scan_id uuid, p_photo_set_hash text, p_result jsonb)`
+
+### `supabase/migrations/20261120120000_v2_text_or_poster_policy.sql` (156 lines)
+
+- (no top-level declarations)
+
+### `supabase/migrations/20261120200000_e1_auth_email.sql` (631 lines)
+
+- L21: `alter table public.profiles`
+- L26: `comment on column public.profiles.profile_completed_at is`
+- L28: `comment on column public.profiles.email_status is`
+- L34: `create function app_private.keep_profile_server_fields()`
+- L48: `revoke execute on function app_private.keep_profile_server_fields() from public, anon, authenticated;`
+- L49: `create trigger profiles_keep_server_fields before update on public.profiles`
+- L52: `CREATE OR REPLACE FUNCTION public.handle_new_user()`
+- L95: `create function app_private.require_complete_profile(p_uid uuid)`
+- L109: `revoke execute on function app_private.require_complete_profile(uuid) from public, anon, authenticated;`
+- L111: `CREATE OR REPLACE FUNCTION app_private.terms_and_limits()`
+- L177: `CREATE OR REPLACE FUNCTION app_private.rental_guard(p_uid uuid, p_other uuid, p_check_block boolean)`
+- L211: `create function public.complete_profile(p_display_name text, p_adult boolean, p_city text default null,`
+- L253: `create function app_private.email_changed()`
+- L267: `revoke execute on function app_private.email_changed() from public, anon, authenticated;`
+- L268: `create trigger on_auth_user_email_changed after update of email on auth.users`
+- L273: `create table app_private.email_events (`
+- L282: `create index email_events_received_idx on app_private.email_events (received_at);`
+- L283: `create index email_events_user_idx on app_private.email_events (user_id);`
+- L284: `alter table app_private.email_events enable row level security;`
+- L285: `revoke all on app_private.email_events from public, anon, authenticated, service_role;`
+- L286: `comment on table app_private.email_events is`
+- L294: `create function public.email_event_record(p_event_id text, p_type text, p_message_id text,`
+- L354: `create function public.email_unsubscribe(p_user_id uuid)`
+- L371: `CREATE OR REPLACE FUNCTION app_private.queue_email(p_template text, p_recipient uuid, p_rental uuid, p_details jsonb DEFAULT '{}'::jsonb)`
+- L396: `CREATE OR REPLACE FUNCTION public.email_prepare(p_email_id uuid)`
+- L481: `create table app_private.auth_email_counters (`
+- L489: `alter table app_private.auth_email_counters enable row level security;`
+- L490: `revoke all on app_private.auth_email_counters from public, anon, authenticated, service_role;`
+- L491: `comment on table app_private.auth_email_counters is`
+- L504: `create function app_private.auth_email_take(p_kind text, p_scope text, p_value text)`
+- L538: `revoke execute on function app_private.auth_email_take(text, text, text) from public, anon, authenticated;`
+- L544: `create function public.auth_email_allowed(p_kind text, p_ip text, p_email text)`
+- L570: `CREATE OR REPLACE FUNCTION public.admin_find_user(p_query text)`
+- L620: `revoke execute on function public.complete_profile(text, boolean, text, double precision, double precision) from public, anon;`
+- L621: `grant execute on function public.complete_profile(text, boolean, text, double precision, double precision) to authenticated;`
+- L624: `revoke execute on function public.auth_email_allowed(text, text, text) from public;`
+- L625: `grant execute on function public.auth_email_allowed(text, text, text) to anon, authenticated;`
+- L628: `revoke execute on function public.email_event_record(text, text, text, text[], text) from public, anon, authenticated;`
+- L629: `grant execute on function public.email_event_record(text, text, text, text[], text) to service_role;`
+- L630: `revoke execute on function public.email_unsubscribe(uuid) from public, anon, authenticated;`
+- L631: `grant execute on function public.email_unsubscribe(uuid) to service_role;`

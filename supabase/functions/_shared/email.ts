@@ -1,42 +1,69 @@
-// C5: the email provider adapter: one HTTPS call, the provider and key from function secrets.
-//   EMAIL_PROVIDER  resend (default) or postmark: the request shape
-//   EMAIL_API_KEY   the provider key. Blank = email isn't set up: send-email marks emails skipped.
-//   EMAIL_FROM      the sender, e.g. "Dzirent <rentals@dzirent.com>" (a verified sender domain)
-//   EMAIL_API_URL   tests only: another address for the same request (ignored without a key)
-// Nothing here logs an address, a key or an email's text.
+// C5, E1: the email provider adapter: one HTTPS call to Resend, the key from function secrets.
+//   RESEND_API_KEY  the Resend key. Blank = email isn't set up: send-email marks emails skipped.
+//   EMAIL_API_URL   tests only: another address for the same request (a fake Resend)
+// Every email is from "Dzirent <no-reply@mail.dzirent.com>" with replies to support@dzirent.com,
+// and has a plain-text part next to the HTML. Resend's Idempotency-Key is the email's id, so an
+// outbox retry never sends the same email twice.
+// Nothing here logs an address, a key or an email's text. No imports: Deno and Node run it as is.
 
-export type EmailConfig = { provider: "resend" | "postmark"; key: string; from: string; url: string };
-export type EmailMessage = { to: string; subject: string; html: string; text: string; tag: string };
+export const EMAIL_FROM = "Dzirent <no-reply@mail.dzirent.com>";
+export const EMAIL_REPLY_TO = "support@dzirent.com";
+const RESEND_URL = "https://api.resend.com/emails";
+
+export type EmailConfig = { key: string; from: string; replyTo: string; url: string };
+export type EmailMessage = {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  tag: string;
+  /** Extra headers, e.g. List-Unsubscribe on non-essential emails. */
+  headers?: Record<string, string>;
+  /** Our email's id: Resend sends one email per key within 24 hours. */
+  idempotencyKey?: string;
+};
 export type EmailResult =
   | { ok: true; id: string | null }
   | { ok: false; retry: boolean; error: string };
 
-const DEFAULT_URL = { resend: "https://api.resend.com/emails", postmark: "https://api.postmarkapp.com/email" };
+type Env = (name: string) => string | undefined;
+type Fetch = (url: string, init: RequestInit) => Promise<Response>;
 
-/** The provider settings, or null while the key (or sender) is blank. */
-export function emailConfig(env: (name: string) => string | undefined = (n) => Deno.env.get(n)): EmailConfig | null {
-  const key = (env("EMAIL_API_KEY") ?? "").trim();
-  const from = (env("EMAIL_FROM") ?? "").trim();
-  if (!key || !from) return null;
-  const provider = (env("EMAIL_PROVIDER") ?? "resend").trim().toLowerCase() === "postmark" ? "postmark" : "resend";
+/** The provider settings, or null while the key is blank. */
+export function emailConfig(env: Env): EmailConfig | null {
+  const key = (env("RESEND_API_KEY") ?? "").trim();
+  if (!key) return null;
   const override = (env("EMAIL_API_URL") ?? "").trim();
-  return { provider, key, from, url: override || DEFAULT_URL[provider] };
+  return { key, from: EMAIL_FROM, replyTo: EMAIL_REPLY_TO, url: override || RESEND_URL };
 }
 
-/** One request to the provider. 4xx (not 429) is final; no answer, 429 or 5xx is worth a retry. */
-export async function sendEmail(cfg: EmailConfig, msg: EmailMessage): Promise<EmailResult> {
-  const request = cfg.provider === "postmark"
-    ? {
-      headers: { "X-Postmark-Server-Token": cfg.key, Accept: "application/json", "Content-Type": "application/json" },
-      body: { From: cfg.from, To: msg.to, Subject: msg.subject, HtmlBody: msg.html, TextBody: msg.text, Tag: msg.tag, MessageStream: "outbound" },
-    }
-    : {
-      headers: { Authorization: `Bearer ${cfg.key}`, "Content-Type": "application/json" },
-      body: { from: cfg.from, to: [msg.to], subject: msg.subject, html: msg.html, text: msg.text, tags: [{ name: "template", value: msg.tag }] },
-    };
+/** The JSON body Resend's POST /emails takes. */
+export function resendBody(cfg: EmailConfig, msg: EmailMessage): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    from: cfg.from,
+    to: [msg.to],
+    reply_to: cfg.replyTo,
+    subject: msg.subject,
+    html: msg.html,
+    text: msg.text,
+    tags: [{ name: "template", value: msg.tag.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 256) }],
+  };
+  if (msg.headers && Object.keys(msg.headers).length) body.headers = msg.headers;
+  return body;
+}
+
+/** One request to Resend. 4xx (not 429) is final; no answer, 429 or 5xx is worth a retry. */
+export async function sendEmail(cfg: EmailConfig, msg: EmailMessage, fetchFn: Fetch = fetch): Promise<EmailResult> {
+  const headers: Record<string, string> = { Authorization: `Bearer ${cfg.key}`, "Content-Type": "application/json" };
+  if (msg.idempotencyKey) headers["Idempotency-Key"] = msg.idempotencyKey;
   let res: Response;
   try {
-    res = await fetch(cfg.url, { method: "POST", headers: request.headers, body: JSON.stringify(request.body), signal: AbortSignal.timeout(10000) });
+    res = await fetchFn(cfg.url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(resendBody(cfg, msg)),
+      signal: AbortSignal.timeout(10000),
+    });
   } catch {
     return { ok: false, retry: true, error: "The email service didn't answer" };
   }
@@ -46,10 +73,7 @@ export async function sendEmail(cfg: EmailConfig, msg: EmailMessage): Promise<Em
   } catch {
     body = {};
   }
-  if (res.ok) {
-    const id = typeof body.id === "string" ? body.id : typeof body.MessageID === "string" ? body.MessageID : null;
-    return { ok: true, id };
-  }
+  if (res.ok) return { ok: true, id: typeof body.id === "string" ? body.id : null };
   const retry = res.status === 429 || res.status >= 500;
   return { ok: false, retry, error: `The email service answered HTTP ${res.status}` };
 }

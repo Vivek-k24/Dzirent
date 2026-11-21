@@ -1,0 +1,1348 @@
+{
+ "recorded": "Wikidata, 2026-11-17, through fetch_wikidata.py's cache (taxonomy/raw/fetched.json): the roots (launch list emptied, keep, exception and drop lists cut to these types) and eight types with their claims, ancestors and English labels; crawls cut to the edges on each type's shortest path.",
+ "types": {
+  "Q1586189": "Harrington jacket: instance of trademark, on the exception list",
+  "Q16034580": "Lady Dior: instance of product model, not an exception",
+  "Q382707": "Rolex GMT Master II: drop list",
+  "Q111200975": "ballet costume: one level below costume",
+  "Q16496152": "baiana costume: reached by costume, also under protective clothing",
+  "Q5586484": "gorilla suit: keep list, under costume",
+  "Q1934317": "waders: off the keep list, under protective clothing",
+  "Q5643122": "Halloween costume: an instance of costume that the clothing root reaches"
+ },
+ "fetched": {
+  "roots": {
+   "positive": [
+    {
+     "key": "clothing",
+     "qid": "Q11460",
+     "label": "clothing",
+     "description": "covering worn on the body",
+     "search": "clothing",
+     "rank": 1
+    },
+    {
+     "key": "handbag",
+     "qid": "Q467505",
+     "label": "handbag",
+     "description": "handled medium-to-large bag that is often fashionably designed, typically used by women, to hold personal items",
+     "search": "handbag",
+     "rank": 1
+    },
+    {
+     "key": "sunglasses",
+     "qid": "Q217541",
+     "label": "sunglasses",
+     "description": "protective eyewear designed to protect the eyes from bright sunlight and ultraviolet rays",
+     "search": "sunglasses",
+     "rank": 1
+    },
+    {
+     "key": "necktie",
+     "qid": "Q44416",
+     "label": "necktie",
+     "description": "clothing item, traditionally worn by boys and men with dress shirt",
+     "search": "necktie",
+     "rank": 1
+    },
+    {
+     "key": "wristwatch",
+     "qid": "Q26965868",
+     "label": "wristwatch",
+     "description": "watch designed to be worn on a wrist, attached by a watch strap or other type of bracelet",
+     "search": "wristwatch",
+     "rank": 1
+    },
+    {
+     "key": "belt",
+     "qid": "Q134560",
+     "label": "belt",
+     "description": "worn band or braid, usually around the waist or hips",
+     "search": "belt",
+     "rank": 2
+    },
+    {
+     "key": "jewellery",
+     "qid": "Q2142903",
+     "label": "jewelry",
+     "description": "objects of personal adornment, which may fulfill both decorative and functional purposes",
+     "search": "jewellery",
+     "rank": 2
+    },
+    {
+     "key": "costume_jewellery",
+     "qid": "Q1536680",
+     "label": "costume jewelry",
+     "description": "jewelry made to complement current fashions usually made of inexpensive materials and often set with imitation or semiprecious stones",
+     "search": "costume jewelry",
+     "rank": 2
+    },
+    {
+     "key": "scarf",
+     "qid": "Q191022",
+     "label": "scarf",
+     "description": "garment of fabric worn around neck or head",
+     "search": "scarf",
+     "rank": 3
+    },
+    {
+     "key": "shawl",
+     "qid": "Q3354532",
+     "label": "shawl",
+     "description": "simple item of clothing, loosely worn over the shoulders, upper body and arms",
+     "search": "shawl",
+     "rank": 1
+    },
+    {
+     "key": "watch",
+     "qid": "Q178794",
+     "label": "watch",
+     "description": "personal time indicator, portable, used as an accessory, usually worn on the wrist or kept in a pocket",
+     "search": "watch",
+     "rank": 5
+    },
+    {
+     "key": "costume",
+     "qid": "Q1410477",
+     "label": "costume",
+     "description": "clothes used by performers on stage; particular style of clothing worn to portray the wearer as a character or type of character at a social event in a theatrical performance on the stage or in film or television",
+     "search": "costume",
+     "rank": 4,
+     "depth": 2,
+     "costume": true
+    },
+    {
+     "key": "space_suit",
+     "qid": "Q223571",
+     "label": "space suit",
+     "description": "gas-tight protective suit for astronauts who are in the vacuum of space",
+     "search": "space suit",
+     "rank": 1,
+     "depth": 1,
+     "costume": true
+    }
+   ],
+   "banned": [
+    {
+     "key": "t_shirt",
+     "qid": "Q131151",
+     "label": "t-shirt",
+     "description": "piece of clothing with short sleeves, a round or V-shaped neckline, without collars, pockets or buttons",
+     "search": "T-shirt",
+     "rank": 1,
+     "rule": "T-shirts and tank tops"
+    },
+    {
+     "key": "sportswear_top",
+     "qid": "Q2623418",
+     "label": "sports jersey",
+     "description": "identifying shirt worn as part of a sports uniform",
+     "search": "sports jersey",
+     "rank": 1,
+     "rule": "T-shirts and tank tops"
+    },
+    {
+     "key": "tracksuit_bottoms",
+     "qid": "Q2426768",
+     "label": "tracksuit bottoms",
+     "description": "soft trousers made for athletic or leisure purposes",
+     "search": "tracksuit bottoms",
+     "rank": 1,
+     "rule": "track pants, sweatpants and joggers"
+    },
+    {
+     "key": "shorts",
+     "qid": "Q223269",
+     "label": "shorts",
+     "description": "garment for the lower body ending above the knee",
+     "search": "shorts",
+     "rank": 1,
+     "rule": "shorts"
+    },
+    {
+     "key": "jeans",
+     "qid": "Q83363",
+     "label": "jeans",
+     "description": "trousers often made from denim or dungaree cloth",
+     "search": "jeans",
+     "rank": 2,
+     "rule": "jeans"
+    },
+    {
+     "key": "hoodie",
+     "qid": "Q920929",
+     "label": "hoodie",
+     "description": "sweatshirt with a hood",
+     "search": "hoodie",
+     "rank": 2,
+     "rule": "hoodies and sweatshirts"
+    },
+    {
+     "key": "sweatshirt",
+     "qid": "Q19968163",
+     "label": "sweatshirt",
+     "description": "long-sleeved pullover shirt or jacket fashioned out of thick, usually cotton, cloth material",
+     "search": "sweatshirt",
+     "rank": 1,
+     "rule": "hoodies and sweatshirts"
+    },
+    {
+     "key": "footwear",
+     "qid": "Q161928",
+     "label": "footwear",
+     "description": "garments worn on feet",
+     "search": "footwear",
+     "rank": 2,
+     "rule": "shoes"
+    },
+    {
+     "key": "headgear",
+     "qid": "Q14952",
+     "label": "headgear",
+     "description": "any covering for the head; element of clothing which is worn on one's head",
+     "search": "headgear",
+     "rank": 1,
+     "rule": "hats and caps"
+    },
+    {
+     "key": "smartwatch",
+     "qid": "Q5362345",
+     "label": "smartwatch",
+     "description": "computerized wristwatch",
+     "search": "smartwatch",
+     "rank": 1,
+     "rule": "smartwatches"
+    },
+    {
+     "key": "swimwear",
+     "qid": "Q212989",
+     "label": "swimsuit",
+     "description": "clothing worn for swimming",
+     "search": "swimwear",
+     "rank": 1,
+     "rule": "swimwear"
+    },
+    {
+     "key": "lingerie",
+     "qid": "Q855691",
+     "label": "lingerie",
+     "description": "historically, linen and lace components of a woman's wardrobe collectively; now generally elegant undergarments",
+     "search": "lingerie",
+     "rank": 1,
+     "rule": "lingerie"
+    },
+    {
+     "key": "undergarment",
+     "qid": "Q198763",
+     "label": "undergarment",
+     "description": "clothes worn under other clothes",
+     "search": "undergarment",
+     "rank": 1,
+     "rule": "underwear"
+    },
+    {
+     "key": "sock",
+     "qid": "Q43663",
+     "label": "sock",
+     "description": "garment worn on foot and leg; made from materials like cotton, wool, or synthetics, they provide protection, warmth, comfort, and reduce friction inside shoes",
+     "search": "sock",
+     "rank": 2,
+     "rule": "socks"
+    },
+    {
+     "key": "hosiery",
+     "qid": "Q2524539",
+     "label": "hosiery",
+     "description": "leg coverings, sometimes woven in one with panties, that extend to the ankle and usually cover the foot; generally knitted or woven, sheer or opaque, and of lightweight or heavy fabric",
+     "search": "hosiery",
+     "rank": 1,
+     "rule": "pantyhose"
+    }
+   ],
+   "exclude": [
+    {
+     "key": "title",
+     "qid": "Q216353",
+     "label": "title",
+     "description": "qualified name, rank, or other indication of a class or role given to or inherited by a person, often affixed to a person's name",
+     "search": "title",
+     "rank": 1
+    },
+    {
+     "key": "award",
+     "qid": "Q618779",
+     "label": "award",
+     "description": "something given to a person or a group of people to recognize their merit or excellence",
+     "search": "award",
+     "rank": 1
+    },
+    {
+     "key": "occupation",
+     "qid": "Q12737077",
+     "label": "occupation",
+     "description": "label applied to a person based on an activity they participate in",
+     "search": "occupation",
+     "rank": 1
+    },
+    {
+     "key": "academic_degree",
+     "qid": "Q189533",
+     "label": "academic degree",
+     "description": "status awarded for completion of a academic program of study and having an exam at the end",
+     "search": "academic degree",
+     "rank": 1
+    },
+    {
+     "key": "position",
+     "qid": "Q4164871",
+     "label": "position",
+     "description": "social role with a set of powers and responsibilities within an organization",
+     "search": "position",
+     "rank": 39
+    },
+    {
+     "key": "human",
+     "qid": "Q5",
+     "label": "human",
+     "description": "any single member of Homo sapiens, unique extant species of the genus Homo",
+     "search": "human",
+     "rank": 1
+    },
+    {
+     "key": "organization",
+     "qid": "Q43229",
+     "label": "organization",
+     "description": "social entity established to meet needs or pursue goals",
+     "search": "organization",
+     "rank": 1
+    },
+    {
+     "key": "military_unit",
+     "qid": "Q176799",
+     "label": "military unit",
+     "description": "organization formed as part of an armed force",
+     "search": "military unit",
+     "rank": 1
+    },
+    {
+     "key": "armour",
+     "qid": "Q11886611",
+     "label": "armor",
+     "description": "protective covering or reinforcement for objects, persons, or animals that is used to prevent damage from direct contact weapons or projectiles, usually in combat",
+     "search": "armor",
+     "rank": 90
+    },
+    {
+     "key": "uniform",
+     "qid": "Q7434",
+     "label": "uniform",
+     "description": "similar clothing worn by a group of people",
+     "search": "uniform",
+     "rank": 1,
+     "scope": "clothing"
+    },
+    {
+     "key": "mask",
+     "qid": "Q161524",
+     "label": "mask",
+     "description": "any full or partial face covering, whether ceremonial, protective, decorative, or used as disguise",
+     "search": "mask",
+     "rank": 1,
+     "scope": "clothing"
+    },
+    {
+     "key": "protective_clothing",
+     "qid": "Q14524031",
+     "label": "protective clothing",
+     "description": "garments worn for protection against dirt or danger",
+     "search": "protective clothing",
+     "rank": 2,
+     "scope": "clothing"
+    },
+    {
+     "key": "religious_clothing",
+     "qid": "Q2490224",
+     "label": "religious clothing",
+     "description": "dress which has a special significance to a faith group",
+     "search": "religious clothing",
+     "rank": 1,
+     "scope": "clothing"
+    },
+    {
+     "key": "liturgical_vestments",
+     "qid": "Q6501052",
+     "label": "Liturgical vestments and insignia",
+     "description": "clothing prescribed for clergy performing specific roles",
+     "search": "liturgical vestments",
+     "rank": 1,
+     "scope": "clothing"
+    },
+    {
+     "key": "academic_dress",
+     "qid": "Q1349227",
+     "label": "academic dress",
+     "description": "regulated formal attire worn by students and officials at certain schools and universities, especially for commencement or other cerimonial occasions",
+     "search": "academic dress",
+     "rank": 1,
+     "scope": "clothing"
+    },
+    {
+     "key": "sportswear",
+     "qid": "Q645292",
+     "label": "sportswear",
+     "description": "clothing, including footwear, worn for sport or physical exercise",
+     "search": "sportswear",
+     "rank": 1,
+     "scope": "clothing"
+    },
+    {
+     "key": "professional_wear",
+     "qid": "Q29000407",
+     "label": "professional wear",
+     "description": "clothing associated with a profession or occupation",
+     "search": "professional wear",
+     "rank": 1,
+     "scope": "clothing"
+    }
+   ],
+   "instance_of": [
+    {
+     "key": "fictional_object",
+     "qid": "Q15706911",
+     "label": "fictional object",
+     "description": "anything that may be observed or acted upon by a subject in fictional stories",
+     "search": "fictional object",
+     "rank": 1
+    },
+    {
+     "key": "fictional_clothing",
+     "qid": "Q62595215",
+     "label": "fictional clothing",
+     "description": "clothing that only exists in works of fiction",
+     "search": "fictional clothing",
+     "rank": 1
+    },
+    {
+     "key": "brand",
+     "qid": "Q431289",
+     "label": "brand",
+     "description": "identification for a good or service",
+     "search": "brand",
+     "rank": 3
+    },
+    {
+     "key": "trademark",
+     "qid": "Q167270",
+     "label": "trademark",
+     "description": "trade identifier of products or services",
+     "search": "trademark",
+     "rank": 1
+    },
+    {
+     "key": "product_model",
+     "qid": "Q10929058",
+     "label": "product model",
+     "description": "class of manufactured objects of similar design generally sold under a specific brand",
+     "search": "product model",
+     "rank": 2
+    },
+    {
+     "key": "product_line",
+     "qid": "Q811701",
+     "label": "model series",
+     "description": "a series of product models sold under a common product name or market identity, simultaneously or consecutively",
+     "search": "product line",
+     "rank": 1
+    },
+    {
+     "key": "archaeological_artefact",
+     "qid": "Q220659",
+     "label": "archaeological artefact",
+     "description": "something made or modified by humans and of archaeological interest",
+     "search": "archaeological artefact",
+     "rank": 1
+    }
+   ],
+   "skip": [
+    {
+     "key": "fashion_accessory",
+     "qid": "Q1065579",
+     "label": "fashion accessory",
+     "description": "item carried or worn which is used to contribute to the wearer's outfit",
+     "search": "fashion accessory",
+     "rank": 1
+    }
+   ],
+   "country_classes": [
+    {
+     "key": "country",
+     "qid": "Q6256",
+     "label": "country",
+     "description": "distinct territorial body or political entity",
+     "search": "country",
+     "rank": 2
+    },
+    {
+     "key": "sovereign_state",
+     "qid": "Q3624078",
+     "label": "sovereign state",
+     "description": "state that has the highest authority over a territory",
+     "search": "sovereign state",
+     "rank": 1
+    },
+    {
+     "key": "historical_country",
+     "qid": "Q3024240",
+     "label": "historical country",
+     "description": "country, state or territory that once existed",
+     "search": "historical country",
+     "rank": 1
+    },
+    {
+     "key": "uk_country",
+     "qid": "Q3336843",
+     "label": "constituent country of the United Kingdom",
+     "description": "one of four constituent countries of the United Kingdom: England, Wales, Scotland and Northern Ireland",
+     "search": "constituent country of the United Kingdom",
+     "rank": 1
+    }
+   ],
+   "launch": [],
+   "keep": [
+    {
+     "qid": "Q5586484",
+     "label": "gorilla suit",
+     "description": "creature suit"
+    }
+   ],
+   "instance_of_exceptions": [
+    {
+     "qid": "Q1586189",
+     "label": "Harrington jacket",
+     "description": "type of jacket"
+    }
+   ],
+   "drop": [
+    {
+     "qid": "Q382707",
+     "label": "Rolex GMT Master II",
+     "description": "watch by Rolex"
+    }
+   ]
+  },
+  "crawls": {
+   "clothing": {
+    "role": "positive",
+    "root": "Q11460",
+    "hops": 4,
+    "nodes": {
+     "Q4388799": {
+      "label": "outerwear",
+      "commons": true,
+      "image": false,
+      "enwiki": true,
+      "depth": 1
+     },
+     "Q849964": {
+      "label": "jacket",
+      "commons": true,
+      "image": true,
+      "enwiki": true,
+      "depth": 2
+     },
+     "Q1586189": {
+      "label": "Harrington jacket",
+      "commons": false,
+      "image": false,
+      "enwiki": true,
+      "depth": 3
+     },
+     "Q9053464": {
+      "label": "costume",
+      "commons": true,
+      "image": true,
+      "enwiki": true,
+      "depth": 1
+     },
+     "Q1410477": {
+      "label": "costume",
+      "commons": true,
+      "image": true,
+      "enwiki": true,
+      "depth": 2
+     },
+     "Q111200975": {
+      "label": "ballet costume",
+      "commons": true,
+      "image": false,
+      "enwiki": false,
+      "depth": 3
+     },
+     "Q2490224": {
+      "label": "religious clothing",
+      "commons": true,
+      "image": false,
+      "enwiki": true,
+      "depth": 1
+     },
+     "Q16496152": {
+      "label": "baiana costume",
+      "commons": false,
+      "image": true,
+      "enwiki": false,
+      "depth": 2
+     },
+     "Q1123744": {
+      "label": "creature suit",
+      "commons": false,
+      "image": true,
+      "enwiki": true,
+      "depth": 3
+     },
+     "Q5586484": {
+      "label": "gorilla suit",
+      "commons": true,
+      "image": true,
+      "enwiki": true,
+      "depth": 4
+     },
+     "Q14524031": {
+      "label": "protective clothing",
+      "commons": true,
+      "image": true,
+      "enwiki": false,
+      "depth": 1
+     },
+     "Q1934317": {
+      "label": "waders",
+      "commons": true,
+      "image": true,
+      "enwiki": true,
+      "depth": 2
+     },
+     "Q28854909": {
+      "label": "religious costume",
+      "commons": false,
+      "image": false,
+      "enwiki": false,
+      "depth": 2
+     },
+     "Q5643122": {
+      "label": "Halloween costume",
+      "commons": true,
+      "image": true,
+      "enwiki": true,
+      "depth": 3
+     }
+    },
+    "edges": [
+     [
+      "Q111200975",
+      "Q1410477"
+     ],
+     [
+      "Q1123744",
+      "Q1410477"
+     ],
+     [
+      "Q1410477",
+      "Q9053464"
+     ],
+     [
+      "Q14524031",
+      "Q11460"
+     ],
+     [
+      "Q1586189",
+      "Q849964"
+     ],
+     [
+      "Q16496152",
+      "Q2490224"
+     ],
+     [
+      "Q1934317",
+      "Q14524031"
+     ],
+     [
+      "Q2490224",
+      "Q11460"
+     ],
+     [
+      "Q28854909",
+      "Q9053464"
+     ],
+     [
+      "Q4388799",
+      "Q11460"
+     ],
+     [
+      "Q5586484",
+      "Q1123744"
+     ],
+     [
+      "Q5643122",
+      "Q28854909"
+     ],
+     [
+      "Q849964",
+      "Q4388799"
+     ],
+     [
+      "Q9053464",
+      "Q11460"
+     ]
+    ]
+   },
+   "handbag": {
+    "role": "positive",
+    "root": "Q467505",
+    "hops": 4,
+    "nodes": {
+     "Q16034580": {
+      "label": "Lady Dior",
+      "commons": false,
+      "image": false,
+      "enwiki": true,
+      "depth": 1
+     }
+    },
+    "edges": [
+     [
+      "Q16034580",
+      "Q467505"
+     ]
+    ]
+   },
+   "sunglasses": {
+    "role": "positive",
+    "root": "Q217541",
+    "hops": 4,
+    "nodes": {},
+    "edges": []
+   },
+   "necktie": {
+    "role": "positive",
+    "root": "Q44416",
+    "hops": 4,
+    "nodes": {},
+    "edges": []
+   },
+   "wristwatch": {
+    "role": "positive",
+    "root": "Q26965868",
+    "hops": 4,
+    "nodes": {
+     "Q382707": {
+      "label": "Rolex GMT Master II",
+      "commons": true,
+      "image": true,
+      "enwiki": true,
+      "depth": 1
+     }
+    },
+    "edges": [
+     [
+      "Q382707",
+      "Q26965868"
+     ]
+    ]
+   },
+   "belt": {
+    "role": "positive",
+    "root": "Q134560",
+    "hops": 4,
+    "nodes": {},
+    "edges": []
+   },
+   "jewellery": {
+    "role": "positive",
+    "root": "Q2142903",
+    "hops": 4,
+    "nodes": {},
+    "edges": []
+   },
+   "costume_jewellery": {
+    "role": "positive",
+    "root": "Q1536680",
+    "hops": 4,
+    "nodes": {},
+    "edges": []
+   },
+   "scarf": {
+    "role": "positive",
+    "root": "Q191022",
+    "hops": 4,
+    "nodes": {},
+    "edges": []
+   },
+   "shawl": {
+    "role": "positive",
+    "root": "Q3354532",
+    "hops": 4,
+    "nodes": {},
+    "edges": []
+   },
+   "watch": {
+    "role": "positive",
+    "root": "Q178794",
+    "hops": 4,
+    "nodes": {
+     "Q26965868": {
+      "label": "wristwatch",
+      "commons": true,
+      "image": true,
+      "enwiki": true,
+      "depth": 1
+     },
+     "Q382707": {
+      "label": "Rolex GMT Master II",
+      "commons": true,
+      "image": true,
+      "enwiki": true,
+      "depth": 2
+     }
+    },
+    "edges": [
+     [
+      "Q26965868",
+      "Q178794"
+     ],
+     [
+      "Q382707",
+      "Q26965868"
+     ]
+    ]
+   },
+   "costume": {
+    "role": "positive",
+    "root": "Q1410477",
+    "hops": 2,
+    "nodes": {
+     "Q111200975": {
+      "label": "ballet costume",
+      "commons": true,
+      "image": false,
+      "enwiki": false,
+      "depth": 1
+     },
+     "Q2998475": {
+      "label": "dance costume",
+      "commons": true,
+      "image": true,
+      "enwiki": true,
+      "depth": 1
+     },
+     "Q16496152": {
+      "label": "baiana costume",
+      "commons": false,
+      "image": true,
+      "enwiki": false,
+      "depth": 2
+     },
+     "Q1123744": {
+      "label": "creature suit",
+      "commons": false,
+      "image": true,
+      "enwiki": true,
+      "depth": 1
+     },
+     "Q5586484": {
+      "label": "gorilla suit",
+      "commons": true,
+      "image": true,
+      "enwiki": true,
+      "depth": 2
+     }
+    },
+    "edges": [
+     [
+      "Q111200975",
+      "Q1410477"
+     ],
+     [
+      "Q1123744",
+      "Q1410477"
+     ],
+     [
+      "Q16496152",
+      "Q2998475"
+     ],
+     [
+      "Q2998475",
+      "Q1410477"
+     ],
+     [
+      "Q5586484",
+      "Q1123744"
+     ]
+    ]
+   },
+   "space_suit": {
+    "role": "positive",
+    "root": "Q223571",
+    "hops": 1,
+    "nodes": {},
+    "edges": []
+   },
+   "t_shirt": {
+    "role": "banned",
+    "root": "Q131151",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "sportswear_top": {
+    "role": "banned",
+    "root": "Q2623418",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "tracksuit_bottoms": {
+    "role": "banned",
+    "root": "Q2426768",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "shorts": {
+    "role": "banned",
+    "root": "Q223269",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "jeans": {
+    "role": "banned",
+    "root": "Q83363",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "hoodie": {
+    "role": "banned",
+    "root": "Q920929",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "sweatshirt": {
+    "role": "banned",
+    "root": "Q19968163",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "footwear": {
+    "role": "banned",
+    "root": "Q161928",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "headgear": {
+    "role": "banned",
+    "root": "Q14952",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "smartwatch": {
+    "role": "banned",
+    "root": "Q5362345",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "swimwear": {
+    "role": "banned",
+    "root": "Q212989",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "lingerie": {
+    "role": "banned",
+    "root": "Q855691",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "undergarment": {
+    "role": "banned",
+    "root": "Q198763",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "sock": {
+    "role": "banned",
+    "root": "Q43663",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   },
+   "hosiery": {
+    "role": "banned",
+    "root": "Q2524539",
+    "hops": 2,
+    "nodes": {},
+    "edges": []
+   }
+  },
+  "below_floor": {},
+  "entities": {
+   "Q1586189": {
+    "labels": {
+     "en": "Harrington jacket"
+    },
+    "descriptions": {
+     "en": "type of jacket"
+    },
+    "aliases": {
+     "en": [
+      "Harrington",
+      "Baracuta jacket",
+      "G9"
+     ]
+    },
+    "claims": {
+     "P31": [
+      "Q167270"
+     ],
+     "P279": [
+      "Q849964"
+     ],
+     "P495": [],
+     "P2596": [],
+     "P373": [],
+     "P18": []
+    },
+    "enwiki": "Harrington jacket"
+   },
+   "Q16034580": {
+    "labels": {
+     "en": "Lady Dior"
+    },
+    "descriptions": {
+     "en": "Women's handbag by Christian Dior"
+    },
+    "aliases": {
+     "en": []
+    },
+    "claims": {
+     "P31": [
+      "Q10929058"
+     ],
+     "P279": [
+      "Q467505"
+     ],
+     "P495": [
+      "Q142"
+     ],
+     "P2596": [],
+     "P373": [],
+     "P18": []
+    },
+    "enwiki": "Lady Dior"
+   },
+   "Q382707": {
+    "labels": {
+     "en": "Rolex GMT Master II"
+    },
+    "descriptions": {
+     "en": "watch by Rolex"
+    },
+    "aliases": {
+     "en": [
+      "ROLEX GMT"
+     ]
+    },
+    "claims": {
+     "P31": [],
+     "P279": [
+      "Q26965868"
+     ],
+     "P495": [],
+     "P2596": [],
+     "P373": [
+      "Rolex GMT Master II"
+     ],
+     "P18": [
+      "Rolex GMT Master II 116710BLNR Batman.jpg",
+      "Rolex GMT Master II - 16710 in it sitting on top of the box.jpg"
+     ]
+    },
+    "enwiki": "Rolex GMT Master II"
+   },
+   "Q111200975": {
+    "labels": {
+     "en": "ballet costume"
+    },
+    "descriptions": {
+     "en": "costume for ballet performances"
+    },
+    "aliases": {
+     "en": []
+    },
+    "claims": {
+     "P31": [],
+     "P279": [
+      "Q1410477"
+     ],
+     "P495": [],
+     "P2596": [],
+     "P373": [
+      "Ballet costumes"
+     ],
+     "P18": []
+    },
+    "enwiki": null
+   },
+   "Q16496152": {
+    "labels": {
+     "en": "baiana costume"
+    },
+    "descriptions": {
+     "en": "kind of traditional costume"
+    },
+    "aliases": {
+     "en": []
+    },
+    "claims": {
+     "P31": [
+      "Q200539"
+     ],
+     "P279": [
+      "Q4179400",
+      "Q2490224",
+      "Q13120975",
+      "Q2998475",
+      "Q828980",
+      "Q5064153",
+      "Q3172759"
+     ],
+     "P495": [],
+     "P2596": [],
+     "P373": [],
+     "P18": [
+      "SalvadorDaBahiaBahianDress.jpg",
+      "MinC entrega primeiro Mapeamento de Terreiros do DF (41930524282).jpg",
+      "Baianidade.jpg"
+     ]
+    },
+    "enwiki": null
+   },
+   "Q5586484": {
+    "labels": {
+     "en": "gorilla suit"
+    },
+    "descriptions": {
+     "en": "creature suit"
+    },
+    "aliases": {
+     "en": []
+    },
+    "claims": {
+     "P31": [],
+     "P279": [
+      "Q1123744"
+     ],
+     "P495": [],
+     "P2596": [],
+     "P373": [
+      "Gorilla suits"
+     ],
+     "P18": [
+      "Gorilla suit (Cut out) Kopie.jpg"
+     ]
+    },
+    "enwiki": "Gorilla suit"
+   },
+   "Q1934317": {
+    "labels": {
+     "en": "waders"
+    },
+    "descriptions": {
+     "en": "waterproof garment combining high-waisted trousers and boots, worn by fishermen"
+    },
+    "aliases": {
+     "en": []
+    },
+    "claims": {
+     "P31": [],
+     "P279": [
+      "Q14524031"
+     ],
+     "P495": [],
+     "P2596": [],
+     "P373": [
+      "Waders (footwear)"
+     ],
+     "P18": [
+      "Salmon dipnetting FWS.jpg"
+     ]
+    },
+    "enwiki": "Waders (footwear)"
+   },
+   "Q5643122": {
+    "labels": {
+     "en": "Halloween costume"
+    },
+    "descriptions": {
+     "en": "costumes worn on or around Halloween, a festival which falls on October 31"
+    },
+    "aliases": {
+     "en": []
+    },
+    "claims": {
+     "P31": [
+      "Q1410477"
+     ],
+     "P279": [
+      "Q28854909",
+      "Q91159242"
+     ],
+     "P495": [],
+     "P2596": [],
+     "P373": [
+      "Halloween costumes"
+     ],
+     "P18": [
+      "Budapest, BarCraft 2, Halloween, 23.jpg"
+     ]
+    },
+    "enwiki": "Halloween costume"
+   }
+  },
+  "ancestors": {
+   "Q1586189": {
+    "Q11460": "P279",
+    "Q167270": "P31"
+   },
+   "Q16034580": {
+    "Q467505": "P279",
+    "Q11460": "P279",
+    "Q10929058": "P31"
+   },
+   "Q382707": {
+    "Q26965868": "P279",
+    "Q178794": "P279",
+    "Q11460": "P279"
+   },
+   "Q111200975": {
+    "Q1410477": "P279",
+    "Q11460": "P279"
+   },
+   "Q16496152": {
+    "Q2490224": "P279",
+    "Q1410477": "P279",
+    "Q14524031": "P279",
+    "Q29000407": "P279",
+    "Q11460": "P279"
+   },
+   "Q5586484": {
+    "Q1410477": "P279",
+    "Q11460": "P279"
+   },
+   "Q1934317": {
+    "Q14524031": "P279",
+    "Q11460": "P279"
+   },
+   "Q5643122": {
+    "Q11460": "P279",
+    "Q1410477": "P31"
+   }
+  },
+  "labels": {
+   "Q10929058": "product model",
+   "Q111200975": "ballet costume",
+   "Q1123744": "creature suit",
+   "Q11460": "clothing",
+   "Q13120975": "dress",
+   "Q1410477": "costume",
+   "Q142": "France",
+   "Q14524031": "protective clothing",
+   "Q1586189": "Harrington jacket",
+   "Q16034580": "Lady Dior",
+   "Q16496152": "baiana costume",
+   "Q167270": "trademark",
+   "Q178794": "watch",
+   "Q1934317": "waders",
+   "Q200539": "dress",
+   "Q2490224": "religious clothing",
+   "Q26965868": "wristwatch",
+   "Q28854909": "religious costume",
+   "Q2998475": "dance costume",
+   "Q3172759": "traditional costume",
+   "Q382707": "Rolex GMT Master II",
+   "Q4179400": "women's clothing",
+   "Q4388799": "outerwear",
+   "Q467505": "handbag",
+   "Q5064153": "ceremonial dress",
+   "Q5586484": "gorilla suit",
+   "Q5643122": "Halloween costume",
+   "Q828980": "workwear",
+   "Q849964": "jacket",
+   "Q9053464": "costume",
+   "Q91159242": "party good",
+   "Q217541": "sunglasses",
+   "Q44416": "necktie",
+   "Q134560": "belt",
+   "Q2142903": "jewelry",
+   "Q1536680": "costume jewelry",
+   "Q191022": "scarf",
+   "Q3354532": "shawl",
+   "Q223571": "space suit",
+   "Q131151": "t-shirt",
+   "Q2623418": "sports jersey",
+   "Q2426768": "tracksuit bottoms",
+   "Q223269": "shorts",
+   "Q83363": "jeans",
+   "Q920929": "hoodie",
+   "Q19968163": "sweatshirt",
+   "Q161928": "footwear",
+   "Q14952": "headgear",
+   "Q5362345": "smartwatch",
+   "Q212989": "swimsuit",
+   "Q855691": "lingerie",
+   "Q198763": "undergarment",
+   "Q43663": "sock",
+   "Q2524539": "hosiery",
+   "Q216353": "title",
+   "Q618779": "award",
+   "Q12737077": "occupation",
+   "Q189533": "academic degree",
+   "Q4164871": "position",
+   "Q5": "human",
+   "Q43229": "organization",
+   "Q176799": "military unit",
+   "Q11886611": "armor",
+   "Q7434": "uniform",
+   "Q161524": "mask",
+   "Q6501052": "Liturgical vestments and insignia",
+   "Q1349227": "academic dress",
+   "Q645292": "sportswear",
+   "Q29000407": "professional wear",
+   "Q15706911": "fictional object",
+   "Q62595215": "fictional clothing",
+   "Q431289": "brand",
+   "Q811701": "model series",
+   "Q220659": "archaeological artefact",
+   "Q1065579": "fashion accessory",
+   "Q6256": "country",
+   "Q3624078": "sovereign state",
+   "Q3024240": "historical country",
+   "Q3336843": "constituent country of the United Kingdom"
+  },
+  "country_types": {
+   "Q142": [
+    "Q6256",
+    "Q7270",
+    "Q3624078"
+   ]
+  },
+  "fetched_at": "2026-11-18T01:28:09Z"
+ }
+}

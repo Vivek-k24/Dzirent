@@ -1,0 +1,1404 @@
+{
+  "positive": [
+    {
+      "key": "clothing",
+      "qid": "Q11460",
+      "label": "clothing",
+      "description": "covering worn on the body",
+      "search": "clothing",
+      "rank": 1
+    },
+    {
+      "key": "handbag",
+      "qid": "Q467505",
+      "label": "handbag",
+      "description": "handled medium-to-large bag that is often fashionably designed, typically used by women, to hold personal items",
+      "search": "handbag",
+      "rank": 1
+    },
+    {
+      "key": "sunglasses",
+      "qid": "Q217541",
+      "label": "sunglasses",
+      "description": "protective eyewear designed to protect the eyes from bright sunlight and ultraviolet rays",
+      "search": "sunglasses",
+      "rank": 1
+    },
+    {
+      "key": "necktie",
+      "qid": "Q44416",
+      "label": "necktie",
+      "description": "clothing item, traditionally worn by boys and men with dress shirt",
+      "search": "necktie",
+      "rank": 1
+    },
+    {
+      "key": "wristwatch",
+      "qid": "Q26965868",
+      "label": "wristwatch",
+      "description": "watch designed to be worn on a wrist, attached by a watch strap or other type of bracelet",
+      "search": "wristwatch",
+      "rank": 1
+    },
+    {
+      "key": "belt",
+      "qid": "Q134560",
+      "label": "belt",
+      "description": "worn band or braid, usually around the waist or hips",
+      "search": "belt",
+      "rank": 2
+    },
+    {
+      "key": "jewellery",
+      "qid": "Q2142903",
+      "label": "jewelry",
+      "description": "objects of personal adornment, which may fulfill both decorative and functional purposes",
+      "search": "jewellery",
+      "rank": 2
+    },
+    {
+      "key": "costume_jewellery",
+      "qid": "Q1536680",
+      "label": "costume jewelry",
+      "description": "jewelry made to complement current fashions usually made of inexpensive materials and often set with imitation or semiprecious stones",
+      "search": "costume jewelry",
+      "rank": 2
+    },
+    {
+      "key": "scarf",
+      "qid": "Q191022",
+      "label": "scarf",
+      "description": "garment of fabric worn around neck or head",
+      "search": "scarf",
+      "rank": 3
+    },
+    {
+      "key": "shawl",
+      "qid": "Q3354532",
+      "label": "shawl",
+      "description": "simple item of clothing, loosely worn over the shoulders, upper body and arms",
+      "search": "shawl",
+      "rank": 1
+    },
+    {
+      "key": "watch",
+      "qid": "Q178794",
+      "label": "watch",
+      "description": "personal time indicator, portable, used as an accessory, usually worn on the wrist or kept in a pocket",
+      "search": "watch",
+      "rank": 5
+    },
+    {
+      "key": "costume",
+      "qid": "Q1410477",
+      "label": "costume",
+      "description": "clothes used by performers on stage; particular style of clothing worn to portray the wearer as a character or type of character at a social event in a theatrical performance on the stage or in film or television",
+      "search": "costume",
+      "rank": 4,
+      "depth": 2,
+      "costume": true
+    },
+    {
+      "key": "space_suit",
+      "qid": "Q223571",
+      "label": "space suit",
+      "description": "gas-tight protective suit for astronauts who are in the vacuum of space",
+      "search": "space suit",
+      "rank": 1,
+      "depth": 1,
+      "costume": true
+    }
+  ],
+  "banned": [
+    {
+      "key": "t_shirt",
+      "qid": "Q131151",
+      "label": "t-shirt",
+      "description": "piece of clothing with short sleeves, a round or V-shaped neckline, without collars, pockets or buttons",
+      "search": "T-shirt",
+      "rank": 1,
+      "rule": "T-shirts and tank tops"
+    },
+    {
+      "key": "sportswear_top",
+      "qid": "Q2623418",
+      "label": "sports jersey",
+      "description": "identifying shirt worn as part of a sports uniform",
+      "search": "sports jersey",
+      "rank": 1,
+      "rule": "T-shirts and tank tops"
+    },
+    {
+      "key": "tracksuit_bottoms",
+      "qid": "Q2426768",
+      "label": "tracksuit bottoms",
+      "description": "soft trousers made for athletic or leisure purposes",
+      "search": "tracksuit bottoms",
+      "rank": 1,
+      "rule": "track pants, sweatpants and joggers"
+    },
+    {
+      "key": "shorts",
+      "qid": "Q223269",
+      "label": "shorts",
+      "description": "garment for the lower body ending above the knee",
+      "search": "shorts",
+      "rank": 1,
+      "rule": "shorts"
+    },
+    {
+      "key": "jeans",
+      "qid": "Q83363",
+      "label": "jeans",
+      "description": "trousers often made from denim or dungaree cloth",
+      "search": "jeans",
+      "rank": 2,
+      "rule": "jeans"
+    },
+    {
+      "key": "hoodie",
+      "qid": "Q920929",
+      "label": "hoodie",
+      "description": "sweatshirt with a hood",
+      "search": "hoodie",
+      "rank": 2,
+      "rule": "hoodies and sweatshirts"
+    },
+    {
+      "key": "sweatshirt",
+      "qid": "Q19968163",
+      "label": "sweatshirt",
+      "description": "long-sleeved pullover shirt or jacket fashioned out of thick, usually cotton, cloth material",
+      "search": "sweatshirt",
+      "rank": 1,
+      "rule": "hoodies and sweatshirts"
+    },
+    {
+      "key": "footwear",
+      "qid": "Q161928",
+      "label": "footwear",
+      "description": "garments worn on feet",
+      "search": "footwear",
+      "rank": 2,
+      "rule": "shoes"
+    },
+    {
+      "key": "headgear",
+      "qid": "Q14952",
+      "label": "headgear",
+      "description": "any covering for the head; element of clothing which is worn on one's head",
+      "search": "headgear",
+      "rank": 1,
+      "rule": "hats and caps"
+    },
+    {
+      "key": "smartwatch",
+      "qid": "Q5362345",
+      "label": "smartwatch",
+      "description": "computerized wristwatch",
+      "search": "smartwatch",
+      "rank": 1,
+      "rule": "smartwatches"
+    },
+    {
+      "key": "swimwear",
+      "qid": "Q212989",
+      "label": "swimsuit",
+      "description": "clothing worn for swimming",
+      "search": "swimwear",
+      "rank": 1,
+      "rule": "swimwear"
+    },
+    {
+      "key": "lingerie",
+      "qid": "Q855691",
+      "label": "lingerie",
+      "description": "historically, linen and lace components of a woman's wardrobe collectively; now generally elegant undergarments",
+      "search": "lingerie",
+      "rank": 1,
+      "rule": "lingerie"
+    },
+    {
+      "key": "undergarment",
+      "qid": "Q198763",
+      "label": "undergarment",
+      "description": "clothes worn under other clothes",
+      "search": "undergarment",
+      "rank": 1,
+      "rule": "underwear"
+    },
+    {
+      "key": "sock",
+      "qid": "Q43663",
+      "label": "sock",
+      "description": "garment worn on foot and leg; made from materials like cotton, wool, or synthetics, they provide protection, warmth, comfort, and reduce friction inside shoes",
+      "search": "sock",
+      "rank": 2,
+      "rule": "socks"
+    },
+    {
+      "key": "hosiery",
+      "qid": "Q2524539",
+      "label": "hosiery",
+      "description": "leg coverings, sometimes woven in one with panties, that extend to the ankle and usually cover the foot; generally knitted or woven, sheer or opaque, and of lightweight or heavy fabric",
+      "search": "hosiery",
+      "rank": 1,
+      "rule": "pantyhose"
+    }
+  ],
+  "exclude": [
+    {
+      "key": "title",
+      "qid": "Q216353",
+      "label": "title",
+      "description": "qualified name, rank, or other indication of a class or role given to or inherited by a person, often affixed to a person's name",
+      "search": "title",
+      "rank": 1
+    },
+    {
+      "key": "award",
+      "qid": "Q618779",
+      "label": "award",
+      "description": "something given to a person or a group of people to recognize their merit or excellence",
+      "search": "award",
+      "rank": 1
+    },
+    {
+      "key": "occupation",
+      "qid": "Q12737077",
+      "label": "occupation",
+      "description": "label applied to a person based on an activity they participate in",
+      "search": "occupation",
+      "rank": 1
+    },
+    {
+      "key": "academic_degree",
+      "qid": "Q189533",
+      "label": "academic degree",
+      "description": "status awarded for completion of a academic program of study and having an exam at the end",
+      "search": "academic degree",
+      "rank": 1
+    },
+    {
+      "key": "position",
+      "qid": "Q4164871",
+      "label": "position",
+      "description": "social role with a set of powers and responsibilities within an organization",
+      "search": "position",
+      "rank": 39
+    },
+    {
+      "key": "human",
+      "qid": "Q5",
+      "label": "human",
+      "description": "any single member of Homo sapiens, unique extant species of the genus Homo",
+      "search": "human",
+      "rank": 1
+    },
+    {
+      "key": "organization",
+      "qid": "Q43229",
+      "label": "organization",
+      "description": "social entity established to meet needs or pursue goals",
+      "search": "organization",
+      "rank": 1
+    },
+    {
+      "key": "military_unit",
+      "qid": "Q176799",
+      "label": "military unit",
+      "description": "organization formed as part of an armed force",
+      "search": "military unit",
+      "rank": 1
+    },
+    {
+      "key": "armour",
+      "qid": "Q11886611",
+      "label": "armor",
+      "description": "protective covering or reinforcement for objects, persons, or animals that is used to prevent damage from direct contact weapons or projectiles, usually in combat",
+      "search": "armor",
+      "rank": 90
+    },
+    {
+      "key": "uniform",
+      "qid": "Q7434",
+      "label": "uniform",
+      "description": "similar clothing worn by a group of people",
+      "search": "uniform",
+      "rank": 1,
+      "scope": "clothing"
+    },
+    {
+      "key": "mask",
+      "qid": "Q161524",
+      "label": "mask",
+      "description": "any full or partial face covering, whether ceremonial, protective, decorative, or used as disguise",
+      "search": "mask",
+      "rank": 1,
+      "scope": "clothing"
+    },
+    {
+      "key": "protective_clothing",
+      "qid": "Q14524031",
+      "label": "protective clothing",
+      "description": "garments worn for protection against dirt or danger",
+      "search": "protective clothing",
+      "rank": 2,
+      "scope": "clothing"
+    },
+    {
+      "key": "religious_clothing",
+      "qid": "Q2490224",
+      "label": "religious clothing",
+      "description": "dress which has a special significance to a faith group",
+      "search": "religious clothing",
+      "rank": 1,
+      "scope": "clothing"
+    },
+    {
+      "key": "liturgical_vestments",
+      "qid": "Q6501052",
+      "label": "Liturgical vestments and insignia",
+      "description": "clothing prescribed for clergy performing specific roles",
+      "search": "liturgical vestments",
+      "rank": 1,
+      "scope": "clothing"
+    },
+    {
+      "key": "academic_dress",
+      "qid": "Q1349227",
+      "label": "academic dress",
+      "description": "regulated formal attire worn by students and officials at certain schools and universities, especially for commencement or other cerimonial occasions",
+      "search": "academic dress",
+      "rank": 1,
+      "scope": "clothing"
+    },
+    {
+      "key": "sportswear",
+      "qid": "Q645292",
+      "label": "sportswear",
+      "description": "clothing, including footwear, worn for sport or physical exercise",
+      "search": "sportswear",
+      "rank": 1,
+      "scope": "clothing"
+    },
+    {
+      "key": "professional_wear",
+      "qid": "Q29000407",
+      "label": "professional wear",
+      "description": "clothing associated with a profession or occupation",
+      "search": "professional wear",
+      "rank": 1,
+      "scope": "clothing"
+    }
+  ],
+  "instance_of": [
+    {
+      "key": "fictional_object",
+      "qid": "Q15706911",
+      "label": "fictional object",
+      "description": "anything that may be observed or acted upon by a subject in fictional stories",
+      "search": "fictional object",
+      "rank": 1
+    },
+    {
+      "key": "fictional_clothing",
+      "qid": "Q62595215",
+      "label": "fictional clothing",
+      "description": "clothing that only exists in works of fiction",
+      "search": "fictional clothing",
+      "rank": 1
+    },
+    {
+      "key": "brand",
+      "qid": "Q431289",
+      "label": "brand",
+      "description": "identification for a good or service",
+      "search": "brand",
+      "rank": 3
+    },
+    {
+      "key": "trademark",
+      "qid": "Q167270",
+      "label": "trademark",
+      "description": "trade identifier of products or services",
+      "search": "trademark",
+      "rank": 1
+    },
+    {
+      "key": "product_model",
+      "qid": "Q10929058",
+      "label": "product model",
+      "description": "class of manufactured objects of similar design generally sold under a specific brand",
+      "search": "product model",
+      "rank": 2
+    },
+    {
+      "key": "product_line",
+      "qid": "Q811701",
+      "label": "model series",
+      "description": "a series of product models sold under a common product name or market identity, simultaneously or consecutively",
+      "search": "product line",
+      "rank": 1
+    },
+    {
+      "key": "archaeological_artefact",
+      "qid": "Q220659",
+      "label": "archaeological artefact",
+      "description": "something made or modified by humans and of archaeological interest",
+      "search": "archaeological artefact",
+      "rank": 1
+    }
+  ],
+  "skip": [
+    {
+      "key": "fashion_accessory",
+      "qid": "Q1065579",
+      "label": "fashion accessory",
+      "description": "item carried or worn which is used to contribute to the wearer's outfit",
+      "search": "fashion accessory",
+      "rank": 1
+    }
+  ],
+  "country_classes": [
+    {
+      "key": "country",
+      "qid": "Q6256",
+      "label": "country",
+      "description": "distinct territorial body or political entity",
+      "search": "country",
+      "rank": 2
+    },
+    {
+      "key": "sovereign_state",
+      "qid": "Q3624078",
+      "label": "sovereign state",
+      "description": "state that has the highest authority over a territory",
+      "search": "sovereign state",
+      "rank": 1
+    },
+    {
+      "key": "historical_country",
+      "qid": "Q3024240",
+      "label": "historical country",
+      "description": "country, state or territory that once existed",
+      "search": "historical country",
+      "rank": 1
+    },
+    {
+      "key": "uk_country",
+      "qid": "Q3336843",
+      "label": "constituent country of the United Kingdom",
+      "description": "one of four constituent countries of the United Kingdom: England, Wales, Scotland and Northern Ireland",
+      "search": "constituent country of the United Kingdom",
+      "rank": 1
+    }
+  ],
+  "launch": [
+    {
+      "concept": "sherwani or achkan",
+      "qid": "Q837879",
+      "label": "Sherwani",
+      "description": "Attire of the Muslim Aristocracy of Sub-Continent",
+      "search": "sherwani",
+      "rank": 1,
+      "d1_qid": "Q837879",
+      "d1_label": "Sherwani",
+      "d1_description": "Attire of the Muslim Aristocracy of Sub-Continent",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "sherwani or achkan",
+      "qid": "Q4673806",
+      "label": "achkan",
+      "description": "knee length jacket",
+      "search": "achkan",
+      "rank": 1,
+      "d1_qid": "Q4673806",
+      "d1_label": "achkan",
+      "d1_description": "knee length jacket",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "kurta and kurta set",
+      "qid": "Q855915",
+      "label": "kurta",
+      "description": "any of various forms of tunic originating on the Indian subcontinent",
+      "search": "kurta",
+      "rank": 1,
+      "d1_qid": "Q855915",
+      "d1_label": "kurta",
+      "d1_description": "any of various forms of tunic originating on the Indian subcontinent",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "bandhgala or Nehru jacket",
+      "qid": "Q11339904",
+      "label": "Nehru jacket",
+      "description": "item of clothing popularised by former Indian Prime Minister, Jawaharlal Nehru",
+      "search": "nehru jacket",
+      "rank": 1,
+      "d1_qid": "Q11339904",
+      "d1_label": "Nehru jacket",
+      "d1_description": "item of clothing popularised by former Indian Prime Minister, Jawaharlal Nehru",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "lehenga",
+      "qid": "Q17050816",
+      "label": "lehenga",
+      "description": "long, embroidered, pleated skirt of the Indian subcontinent",
+      "search": "lehenga",
+      "rank": 1,
+      "d1_qid": "Q17050816",
+      "d1_label": "lehenga",
+      "d1_description": "long, embroidered, pleated skirt of the Indian subcontinent",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "saree",
+      "qid": "Q172827",
+      "label": "sari",
+      "description": "woman's draped garment of South Asia",
+      "search": "sari",
+      "rank": 8,
+      "d1_qid": "Q172827",
+      "d1_label": "sari",
+      "d1_description": "woman's draped garment of South Asia",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "anarkali or salwar suit",
+      "qid": "Q17070428",
+      "label": "Anarkali Salwar Suit",
+      "description": "form of women's dress originating from the Indian subcontinent",
+      "search": "anarkali salwar suit",
+      "rank": 1,
+      "d1_qid": "Q17070428",
+      "d1_label": "Anarkali Salwar Suit",
+      "d1_description": "form of women's dress originating from the Indian subcontinent",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "anarkali or salwar suit",
+      "qid": "Q12456113",
+      "label": "shalwar kameez",
+      "description": "costume for men and women consisting of trousers and a tunic, worn in South and Central Asia",
+      "search": "shalwar kameez",
+      "rank": 1,
+      "d1_qid": "Q12456113",
+      "d1_label": "shalwar kameez",
+      "d1_description": "costume for men and women consisting of trousers and a tunic, worn in South and Central Asia",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "quinceañera dress / prom dress",
+      "qid": "Q635784",
+      "label": "ball gown",
+      "description": "most formal style of full-length woman's evening dress",
+      "search": "ball gown",
+      "rank": 1,
+      "d1_qid": "Q635784",
+      "d1_label": "ball gown",
+      "d1_description": "most formal style of full-length woman's evening dress",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "quinceañera dress (coming-of-age gown)",
+      "qid": "Q5320192",
+      "label": "débutante dress",
+      "description": "gown worn by girls at debutante cotillions or for presentation at court",
+      "search": "débutante dress",
+      "rank": 1,
+      "d1_qid": "Q5320192",
+      "d1_label": "débutante dress",
+      "d1_description": "gown worn by girls at debutante cotillions or for presentation at court",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "guayabera",
+      "qid": "Q1552950",
+      "label": "guayabera",
+      "description": "type of shirt",
+      "search": "guayabera",
+      "rank": 1,
+      "d1_qid": "Q1552950",
+      "d1_label": "guayabera",
+      "d1_description": "type of shirt",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "embroidered huipil or folklórico dress",
+      "qid": "Q3269820",
+      "label": "huipil",
+      "description": "blouse or tunic worn by idigenous women of Mexico and Central America",
+      "search": "huipil",
+      "rank": 1,
+      "d1_qid": "Q3269820",
+      "d1_label": "huipil",
+      "d1_description": "blouse or tunic worn by idigenous women of Mexico and Central America",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "embroidered huipil or folklórico dress",
+      "qid": "Q1073477",
+      "label": "China Poblana",
+      "description": "traditional women's dress of Mexico",
+      "search": "china poblana",
+      "rank": 1,
+      "d1_qid": "Q1073477",
+      "d1_label": "China Poblana",
+      "d1_description": "traditional women's dress of Mexico",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "agbada or dashiki set",
+      "qid": "Q2647929",
+      "label": "boubou",
+      "description": "flowing wide sleeved robe worn by men in parts of West Africa and North Africa",
+      "search": "boubou",
+      "rank": 2,
+      "d1_qid": "Q2647929",
+      "d1_label": "boubou",
+      "d1_description": "flowing wide sleeved robe worn by men in parts of West Africa and North Africa",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "agbada or dashiki set",
+      "qid": "Q1133675",
+      "label": "dashiki",
+      "description": "colorful men's garment widely worn in West Africa that covers the top half of the body",
+      "search": "dashiki",
+      "rank": 1,
+      "d1_qid": "Q1133675",
+      "d1_label": "dashiki",
+      "d1_description": "colorful men's garment widely worn in West Africa that covers the top half of the body",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "qipao or cheongsam",
+      "qid": "Q836934",
+      "label": "cheongsam (qipao)",
+      "description": "fitted dress of Manchurian origin",
+      "search": "cheongsam (qipao)",
+      "rank": 1,
+      "d1_qid": "Q836934",
+      "d1_label": "cheongsam (qipao)",
+      "d1_description": "fitted dress of Manchurian origin",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "hanbok",
+      "qid": "Q701069",
+      "label": "hanbok",
+      "description": "traditional Korean outfit comprised of a jacket and a woman’s skirt or men’s trousers",
+      "search": "hanbok",
+      "rank": 1,
+      "d1_qid": "Q701069",
+      "d1_label": "hanbok",
+      "d1_description": "traditional Korean outfit comprised of a jacket and a woman’s skirt or men’s trousers",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "evening gown",
+      "qid": "Q2144456",
+      "label": "evening dress",
+      "description": "woman's dress usually worn to a semi-formal or formal affair",
+      "search": "evening dress",
+      "rank": 1,
+      "d1_qid": "Q2144456",
+      "d1_label": "evening dress",
+      "d1_description": "woman's dress usually worn to a semi-formal or formal affair",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "cocktail dress",
+      "qid": "Q1512004",
+      "label": "cocktail dress",
+      "description": "informal but rather elegant dress suitable for semi-formal occasions",
+      "search": "cocktail dress",
+      "rank": 1,
+      "d1_qid": "Q1512004",
+      "d1_label": "cocktail dress",
+      "d1_description": "informal but rather elegant dress suitable for semi-formal occasions",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "bridesmaid dress",
+      "qid": "Q29650222",
+      "label": "bridesmaid's dress",
+      "description": "dress worn by a bride's female attendants",
+      "search": "bridesmaid's dress",
+      "rank": 1,
+      "d1_qid": "Q29650222",
+      "d1_label": "bridesmaid's dress",
+      "d1_description": "dress worn by a bride's female attendants",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "prom dress / sequin party dress",
+      "qid": "Q7140985",
+      "label": "party dress",
+      "description": "semiformal woman's or girl's dress",
+      "search": "party dress",
+      "rank": 1,
+      "d1_qid": "Q7140985",
+      "d1_label": "party dress",
+      "d1_description": "semiformal woman's or girl's dress",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "formal jumpsuit",
+      "qid": "Q16472452",
+      "label": "jumpsuit",
+      "description": "one-piece suit consisting of conjoined shirt or top and trousers, originally worn by parachutists",
+      "search": "jumpsuit",
+      "rank": 2,
+      "d1_qid": "Q16472452",
+      "d1_label": "jumpsuit",
+      "d1_description": "one-piece suit consisting of conjoined shirt or top and trousers, originally worn by parachutists",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "tuxedo",
+      "qid": "Q50386965",
+      "label": "dinner jacket",
+      "description": "man's semi-formal suit coat, cut sack-style, usually with satin- or faille-faced lapels",
+      "search": "dinner jacket",
+      "rank": 1,
+      "d1_qid": "Q50386965",
+      "d1_label": "dinner jacket",
+      "d1_description": "man's semi-formal suit coat, cut sack-style, usually with satin- or faille-faced lapels",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "tuxedo",
+      "qid": "Q4668625",
+      "label": "tuxedo",
+      "description": "semi-formal Western dress code for evening events, originating in British and North American conventions for attire in the 19th century",
+      "search": "tuxedo",
+      "rank": 2,
+      "d1_qid": "Q4668625",
+      "d1_label": "tuxedo",
+      "d1_description": "semi-formal Western dress code for evening events, originating in British and North American conventions for attire in the 19th century",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "two- or three-piece suit",
+      "qid": "Q614806",
+      "label": "suit",
+      "description": "Western business attire of matching jacket and trousers",
+      "search": "suit",
+      "rank": 5,
+      "d1_qid": "Q614806",
+      "d1_label": "suit",
+      "d1_description": "Western business attire of matching jacket and trousers",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "two- or three-piece suit",
+      "qid": "Q2998484",
+      "label": "three-piece suit",
+      "description": "suit with jacket, trousers, and waistcoat (vest)",
+      "search": "three-piece suit",
+      "rank": 1,
+      "d1_qid": "Q2998484",
+      "d1_label": "three-piece suit",
+      "d1_description": "suit with jacket, trousers, and waistcoat (vest)",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "blazer",
+      "qid": "Q883234",
+      "label": "blazer",
+      "description": "striped or bright, solid-color informal jacket",
+      "search": "blazer",
+      "rank": 5,
+      "d1_qid": "Q883234",
+      "d1_label": "blazer",
+      "d1_description": "striped or bright, solid-color informal jacket",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "dress trousers",
+      "qid": "Q39908",
+      "label": "trousers",
+      "description": "clothing for the legs and lower body",
+      "search": "trousers",
+      "rank": 1,
+      "d1_qid": "Q39908",
+      "d1_label": "trousers",
+      "d1_description": "clothing for the legs and lower body",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "sheath or work dress",
+      "qid": "Q15008044",
+      "label": "sheath dress",
+      "description": "type of dress designed to fit close to the body, relatively unadorned",
+      "search": "sheath dress",
+      "rank": 1,
+      "d1_qid": "Q15008044",
+      "d1_label": "sheath dress",
+      "d1_description": "type of dress designed to fit close to the body, relatively unadorned",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "casual dress",
+      "qid": "Q7639866",
+      "label": "sundress",
+      "description": "lightweight warm weather dress, usually with shoulder straps",
+      "search": "sundress",
+      "rank": 1,
+      "d1_qid": "Q7639866",
+      "d1_label": "sundress",
+      "d1_description": "lightweight warm weather dress, usually with shoulder straps",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "casual dress",
+      "qid": "Q43297761",
+      "label": "day dress",
+      "description": "woman's dress appropriate for general wear in daytime; less formal than afternoon dress",
+      "search": "day dress",
+      "rank": 1,
+      "d1_qid": "Q43297761",
+      "d1_label": "day dress",
+      "d1_description": "woman's dress appropriate for general wear in daytime; less formal than afternoon dress",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "skirt",
+      "qid": "Q2160801",
+      "label": "skirt",
+      "description": "type of clothing worn from the waist downwards",
+      "search": "skirt",
+      "rank": 1,
+      "d1_qid": "Q2160801",
+      "d1_label": "skirt",
+      "d1_description": "type of clothing worn from the waist downwards",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "blouse or dressy top",
+      "qid": "Q152563",
+      "label": "blouse",
+      "description": "women's garment for the upper body",
+      "search": "blouse",
+      "rank": 2,
+      "d1_qid": "Q152563",
+      "d1_label": "blouse",
+      "d1_description": "women's garment for the upper body",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "knit cardigan",
+      "qid": "Q877140",
+      "label": "cardigan",
+      "description": "type of knitted garment that has an open front",
+      "search": "cardigan",
+      "rank": 7,
+      "d1_qid": "Q877140",
+      "d1_label": "cardigan",
+      "d1_description": "type of knitted garment that has an open front",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "wool overcoat or trench coat",
+      "qid": "Q337481",
+      "label": "overcoat",
+      "description": "coat worn over street dress",
+      "search": "overcoat",
+      "rank": 2,
+      "d1_qid": "Q337481",
+      "d1_label": "overcoat",
+      "d1_description": "coat worn over street dress",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "wool overcoat or trench coat",
+      "qid": "Q654290",
+      "label": "trench coat",
+      "description": "belted waterproof coat",
+      "search": "trench coat",
+      "rank": 1,
+      "d1_qid": "Q654290",
+      "d1_label": "trench coat",
+      "d1_description": "belted waterproof coat",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "leather jacket",
+      "qid": "Q1619986",
+      "label": "leather jacket",
+      "description": "jacket made of leather",
+      "search": "leather jacket",
+      "rank": 1,
+      "d1_qid": "Q1619986",
+      "d1_label": "leather jacket",
+      "d1_description": "jacket made of leather",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "down or puffer jacket",
+      "qid": "Q10477564",
+      "label": "down jacket",
+      "description": "quilted, padded jacket",
+      "search": "down jacket",
+      "rank": 1,
+      "d1_qid": "Q10477564",
+      "d1_label": "down jacket",
+      "d1_description": "quilted, padded jacket",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "handbag",
+      "qid": "Q467505",
+      "label": "handbag",
+      "description": "handled medium-to-large bag that is often fashionably designed, typically used by women, to hold personal items",
+      "search": "handbag",
+      "rank": 1,
+      "d1_qid": "Q467505",
+      "d1_label": "handbag",
+      "d1_description": "handled medium-to-large bag that is often fashionably designed, typically used by women, to hold personal items",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "sunglasses",
+      "qid": "Q217541",
+      "label": "sunglasses",
+      "description": "protective eyewear designed to protect the eyes from bright sunlight and ultraviolet rays",
+      "search": "sunglasses",
+      "rank": 1,
+      "d1_qid": "Q217541",
+      "d1_label": "sunglasses",
+      "d1_description": "protective eyewear designed to protect the eyes from bright sunlight and ultraviolet rays",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "necktie",
+      "qid": "Q44416",
+      "label": "necktie",
+      "description": "clothing item, traditionally worn by boys and men with dress shirt",
+      "search": "necktie",
+      "rank": 1,
+      "d1_qid": "Q44416",
+      "d1_label": "necktie",
+      "d1_description": "clothing item, traditionally worn by boys and men with dress shirt",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "wristwatch (not a smartwatch)",
+      "qid": "Q26965868",
+      "label": "wristwatch",
+      "description": "watch designed to be worn on a wrist, attached by a watch strap or other type of bracelet",
+      "search": "wristwatch",
+      "rank": 1,
+      "d1_qid": "Q26965868",
+      "d1_label": "wristwatch",
+      "d1_description": "watch designed to be worn on a wrist, attached by a watch strap or other type of bracelet",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "costume jewelry",
+      "qid": "Q1536680",
+      "label": "costume jewelry",
+      "description": "jewelry made to complement current fashions usually made of inexpensive materials and often set with imitation or semiprecious stones",
+      "search": "costume jewelry",
+      "rank": 2,
+      "d1_qid": "Q1536680",
+      "d1_label": "costume jewelry",
+      "d1_description": "jewelry made to complement current fashions usually made of inexpensive materials and often set with imitation or semiprecious stones",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "T-shirt",
+      "qid": "Q131151",
+      "label": "t-shirt",
+      "description": "piece of clothing with short sleeves, a round or V-shaped neckline, without collars, pockets or buttons",
+      "search": "T-shirt",
+      "rank": 1,
+      "d1_qid": "Q131151",
+      "d1_label": "t-shirt",
+      "d1_description": "piece of clothing with short sleeves, a round or V-shaped neckline, without collars, pockets or buttons",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "sport or athletic tee",
+      "qid": "Q2623418",
+      "label": "sports jersey",
+      "description": "identifying shirt worn as part of a sports uniform",
+      "search": "sports jersey",
+      "rank": 1,
+      "d1_qid": "Q1156828",
+      "d1_label": "sokutai",
+      "d1_description": "full official dress of Japanese male members of the imperial family and aristocrats",
+      "d1_check": "fail"
+    },
+    {
+      "concept": "track pants",
+      "qid": "Q2426768",
+      "label": "tracksuit bottoms",
+      "description": "soft trousers made for athletic or leisure purposes",
+      "search": "tracksuit bottoms",
+      "rank": 1,
+      "d1_qid": "Q2426768",
+      "d1_label": "tracksuit bottoms",
+      "d1_description": "soft trousers made for athletic or leisure purposes",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "shorts",
+      "qid": "Q223269",
+      "label": "shorts",
+      "description": "garment for the lower body ending above the knee",
+      "search": "shorts",
+      "rank": 1,
+      "d1_qid": "Q223269",
+      "d1_label": "shorts",
+      "d1_description": "garment for the lower body ending above the knee",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "jeans",
+      "qid": "Q83363",
+      "label": "jeans",
+      "description": "trousers often made from denim or dungaree cloth",
+      "search": "jeans",
+      "rank": 2,
+      "d1_qid": "Q83363",
+      "d1_label": "jeans",
+      "d1_description": "trousers often made from denim or dungaree cloth",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "hoodie or sweatshirt",
+      "qid": "Q920929",
+      "label": "hoodie",
+      "description": "sweatshirt with a hood",
+      "search": "hoodie",
+      "rank": 2,
+      "d1_qid": "Q920929",
+      "d1_label": "hoodie",
+      "d1_description": "sweatshirt with a hood",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "hoodie or sweatshirt",
+      "qid": "Q19968163",
+      "label": "sweatshirt",
+      "description": "long-sleeved pullover shirt or jacket fashioned out of thick, usually cotton, cloth material",
+      "search": "sweatshirt",
+      "rank": 1,
+      "d1_qid": "Q19968163",
+      "d1_label": "sweatshirt",
+      "d1_description": "long-sleeved pullover shirt or jacket fashioned out of thick, usually cotton, cloth material",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "shoes",
+      "qid": "Q22676",
+      "label": "shoe",
+      "description": "footwear",
+      "search": "shoe",
+      "rank": 1,
+      "d1_qid": "Q22676",
+      "d1_label": "shoe",
+      "d1_description": "footwear",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "smartwatch",
+      "qid": "Q5362345",
+      "label": "smartwatch",
+      "description": "computerized wristwatch",
+      "search": "smartwatch",
+      "rank": 1,
+      "d1_qid": "Q5362345",
+      "d1_label": "smartwatch",
+      "d1_description": "computerized wristwatch",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "cap or hat",
+      "qid": "Q6147804",
+      "label": "cap",
+      "description": "any of a variety of brimless head coverings, sometimes made with a visor",
+      "search": "cap",
+      "rank": 12,
+      "d1_qid": "Q6147804",
+      "d1_label": "cap",
+      "d1_description": "any of a variety of brimless head coverings, sometimes made with a visor",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "cap or hat",
+      "qid": "Q80151",
+      "label": "hat",
+      "description": "shaped head covering, having a brim and a crown, or one of these",
+      "search": "hat",
+      "rank": 1,
+      "d1_qid": "Q80151",
+      "d1_label": "hat",
+      "d1_description": "shaped head covering, having a brim and a crown, or one of these",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "swimwear",
+      "qid": "Q212989",
+      "label": "swimsuit",
+      "description": "clothing worn for swimming",
+      "search": "swimsuit",
+      "rank": 1,
+      "d1_qid": "Q212989",
+      "d1_label": "swimsuit",
+      "d1_description": "clothing worn for swimming",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "lingerie",
+      "qid": "Q855691",
+      "label": "lingerie",
+      "description": "historically, linen and lace components of a woman's wardrobe collectively; now generally elegant undergarments",
+      "search": "lingerie",
+      "rank": 1,
+      "d1_qid": "Q855691",
+      "d1_label": "lingerie",
+      "d1_description": "historically, linen and lace components of a woman's wardrobe collectively; now generally elegant undergarments",
+      "d1_check": "pass"
+    },
+    {
+      "concept": "lingerie",
+      "qid": "Q198763",
+      "label": "undergarment",
+      "description": "clothes worn under other clothes",
+      "search": "undergarment",
+      "rank": 1,
+      "d1_qid": "Q198763",
+      "d1_label": "undergarment",
+      "d1_description": "clothes worn under other clothes",
+      "d1_check": "pass"
+    }
+  ],
+  "keep": [
+    {
+      "qid": "Q15013",
+      "label": "Advanced Crew Escape Suit",
+      "description": "full pressure suit"
+    },
+    {
+      "qid": "Q118463",
+      "label": "Mao suit",
+      "description": "style of attire from China"
+    },
+    {
+      "qid": "Q182064",
+      "label": "djellaba",
+      "description": "long loose-fitting unisex outer robe with full sleeves, traditionally worn in the region of North Africa"
+    },
+    {
+      "qid": "Q297424",
+      "label": "oilskin",
+      "description": "waterproof garment made from treated sailcloth or canvas"
+    },
+    {
+      "qid": "Q305718",
+      "label": "abaya",
+      "description": "simple, loose over-garment wore by humans, especially Muslim women"
+    },
+    {
+      "qid": "Q932999",
+      "label": "duster",
+      "description": "light, loose-fitting long coat"
+    },
+    {
+      "qid": "Q1000777",
+      "label": "fatsuit",
+      "description": "bodysuit-like undergarment used to thicken the appearance of an actress or actor"
+    },
+    {
+      "qid": "Q1663649",
+      "label": "rain cape",
+      "description": "garment"
+    },
+    {
+      "qid": "Q2018769",
+      "label": "raincoat",
+      "description": "waterproof coat"
+    },
+    {
+      "qid": "Q2576557",
+      "label": "Mackintosh",
+      "description": "waterproof raincoat"
+    },
+    {
+      "qid": "Q2637777",
+      "label": "simar",
+      "description": "woman's long dress or robe"
+    },
+    {
+      "qid": "Q2899124",
+      "label": "priestly tunic",
+      "description": ""
+    },
+    {
+      "qid": "Q2933073",
+      "label": "cagoule",
+      "description": "lightweight, weatherproof raincoat or anorak with a hood"
+    },
+    {
+      "qid": "Q2998209",
+      "label": "mantle",
+      "description": "ecclesiastical overgarment"
+    },
+    {
+      "qid": "Q3247116",
+      "label": "pinafore",
+      "description": "sleeveless apronlike garments which have a skirt and a bodice portion and which cover the front, sides, and a portion of the back"
+    },
+    {
+      "qid": "Q3979915",
+      "label": "tabard",
+      "description": "ecclesiastical cloak, usually of wool, provided with a silk pilgrim and a velvet collar"
+    },
+    {
+      "qid": "Q5523301",
+      "label": "Garibaldi shirt",
+      "description": "red wool shirt, as worn by the followers of Giuseppe Garibaldi, or a woman's blouse or jacket inspired by these shirts"
+    },
+    {
+      "qid": "Q5586484",
+      "label": "gorilla suit",
+      "description": "creature suit"
+    },
+    {
+      "qid": "Q11626363",
+      "label": "ikan",
+      "description": "type of Japanese dress"
+    },
+    {
+      "qid": "Q16522478",
+      "label": "posing trunks",
+      "description": "regulation trunks worn by male bodybuilders in competition"
+    },
+    {
+      "qid": "Q16671745",
+      "label": "qamis",
+      "description": "long shirt or tunic worn alone or with trousers in many parts of Asia and the Middle East"
+    },
+    {
+      "qid": "Q29572363",
+      "label": "walking suit",
+      "description": "women's suit worn for walking and other similar physical activities, dating from around 1900, usually consisting of a coat or jacket and long skirt"
+    },
+    {
+      "qid": "Q29655703",
+      "label": "track suit top",
+      "description": "upper body component of a track suit, usually a jacket or pullover, often with a hood"
+    },
+    {
+      "qid": "Q29749328",
+      "label": "communion clothing",
+      "description": "special clothing worn for first communions or confirmations in some Christain cultures"
+    },
+    {
+      "qid": "Q44222414",
+      "label": "beach dress",
+      "description": "dress designed to be worn at the sea shore"
+    },
+    {
+      "qid": "Q48767474",
+      "label": "cat suit",
+      "description": "suit made to resemble a feline"
+    },
+    {
+      "qid": "Q48810759",
+      "label": "dinosaur suit",
+      "description": ""
+    },
+    {
+      "qid": "Q48843371",
+      "label": "Teba jacket",
+      "description": "soft jacket with notchless lapels and shirt-like sleeves, designed as a shooting blazer"
+    },
+    {
+      "qid": "Q48995588",
+      "label": "bear suit",
+      "description": "Costumed character or creature suit"
+    },
+    {
+      "qid": "Q51099841",
+      "label": "jingle dress",
+      "description": "dress decorated with conical tin jingles, worn for the jingle dress dance"
+    },
+    {
+      "qid": "Q97618878",
+      "label": "informal dress (changfu)",
+      "description": "a type of formal dress in China"
+    },
+    {
+      "qid": "Q105200672",
+      "label": "shaluka",
+      "description": "type of tunic"
+    },
+    {
+      "qid": "Q131283709",
+      "label": "Farwah",
+      "description": "A traditional winter coat worn across parts of the Arab world, featuring an inner lining of natural or synthetic fur or heavy felt for warmth. The farwa is loose-fitting, in colors like brown or black, sometimes with simple decorations."
+    }
+  ],
+  "instance_of_exceptions": [
+    {
+      "qid": "Q134632",
+      "label": "Perfecto",
+      "description": "line of motorcycle jackets from Schott"
+    },
+    {
+      "qid": "Q1586189",
+      "label": "Harrington jacket",
+      "description": "type of jacket"
+    },
+    {
+      "qid": "Q6371145",
+      "label": "Kariyushi shirt",
+      "description": "Dress shirt style from Okinawa, Japan, developed by the Okinawa Prefectural Tourism Federation in 1970"
+    }
+  ],
+  "drop": [
+    {
+      "qid": "Q382707",
+      "label": "Rolex GMT Master II",
+      "description": "watch by Rolex"
+    },
+    {
+      "qid": "Q7144403",
+      "label": "Patek Philippe Calibre 89",
+      "description": "watch"
+    },
+    {
+      "qid": "Q25325320",
+      "label": "The Vacheron Constantin Reference 57260",
+      "description": "Complicated mechanical pocket watch"
+    },
+    {
+      "qid": "Q56291735",
+      "label": "Microbrand watches",
+      "description": "Type of wristwatch company with low output"
+    },
+    {
+      "qid": "Q27890205",
+      "label": "Samsung Gear S3",
+      "description": "smartwatch"
+    },
+    {
+      "qid": "Q7380451",
+      "label": "Ruputer",
+      "description": "early smartwatch"
+    },
+    {
+      "qid": "Q11682766",
+      "label": "I'm Watch",
+      "description": "smart watch"
+    }
+  ]
+}

@@ -28,6 +28,7 @@ import com.dzirent.shared.model.PASSWORD_MIN_LENGTH
 import com.dzirent.shared.model.Profile
 import com.dzirent.shared.repository.DzirentRepository
 import com.dzirent.shared.util.DISTANCE_STEPS
+import com.dzirent.shared.util.EmailRequest
 import com.dzirent.shared.util.DistanceUnit
 import com.dzirent.shared.util.MeasureUnit
 import com.dzirent.shared.util.RENTAL_LENGTH_OPTIONS
@@ -65,6 +66,9 @@ fun SettingsScreen(
     val device = LocalDevice.current
     val settings = LocalAppSettings.current
     val email = remember { repository.currentEmail() }
+    // E1: a Google-only account has no password yet; it sets one through the reset email.
+    val hasPassword = remember { repository.hasPasswordSignIn() }
+    var sendingLink by remember { mutableStateOf(false) }
     var isSigningOut by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showChangePassword by remember { mutableStateOf(false) }
@@ -181,7 +185,24 @@ fun SettingsScreen(
             if (profile != null) {
                 SettingsGroup("Account")
                 SettingsRow("Email", email ?: "Not available", Icons.Default.Email, onClick = null)
-                SettingsRow("Change password", null, Icons.Default.Lock, onClick = { showChangePassword = true })
+                if (hasPassword) SettingsRow("Change password", null, Icons.Default.Lock, onClick = { showChangePassword = true })
+                SettingsRow(
+                    if (hasPassword) "Email me a reset link" else "Set a password",
+                    if (hasPassword) "For when you don't know your current password" else "Sign in with your email too: we'll email you a link",
+                    Icons.Default.Email,
+                    showChevron = false,
+                    onClick = {
+                        if (sendingLink || email == null) return@SettingsRow
+                        scope.launch {
+                            sendingLink = true
+                            when (val result = repository.requestPasswordReset(email)) {
+                                is EmailRequest.Sent -> device.toast("We sent a link to $email. Open it to choose a password.")
+                                is EmailRequest.Problem -> error = result.error.text
+                            }
+                            sendingLink = false
+                        }
+                    }
+                )
                 SettingsRow("Delete account", null, Icons.Default.DeleteForever, onClick = { showDeleteAccount = true })
             }
 
@@ -374,7 +395,8 @@ private fun NotificationSettingsSection(repository: DzirentRepository) {
     // C5: rental emails to the account's own email (never message text).
     SwitchSetting(
         title = "Email me about rentals",
-        subtitle = "Requests, answers, receipts, pickup and return reminders, and claims, to your account's email",
+        // E1: pickup and return reminders are essential: always emailed, whatever this says.
+        subtitle = "Requests, answers, receipts and claims, to your account's email. Pickup and return reminders are always emailed.",
         checked = current?.emailRentals == true,
         enabled = current != null,
         onCheckedChange = { on -> current?.let { save(it.copy(emailRentals = on)) } }

@@ -1,6 +1,7 @@
 import { session, conversation, must, uuid, codedError, WorkflowError } from "./workflow-server";
 import { reportReasons, bodyFields, studioStyles } from "./workflows";
 import { styles } from "./types";
+import { authErrorCode, returnUrl } from "./auth-flows";
 type Body = Record<string, unknown>;
 const text = (b: Body, k: string) =>
   typeof b[k] === "string" ? (b[k] as string).trim() : "";
@@ -275,8 +276,19 @@ export async function uploadRentalPhoto(request: Request, conversationId: string
   }
   return { path };
 }
-export async function accountMutation(action: string, body: Body) {
+export async function accountMutation(action: string, body: Body, origin = "https://dzirent.com") {
   const { user, client } = await session();
+  // E1: "Set a password" (a Google-only account) and "Email me a reset link": the reset email to
+  // the account's own address, opening /auth/reset on this site. Same limits as "Forgot password?".
+  if (action === "password_link") {
+    const email = user.email || "";
+    if (!email) throw codedError({ code: "DZ-E1070" });
+    const { data: limit } = await client.rpc("auth_email_allowed", { p_kind: "recovery", p_ip: "", p_email: email });
+    if (limit === "address_limited") throw codedError({ code: "DZ-E1077" }, 429);
+    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: returnUrl(origin, "/auth/reset") });
+    if (error) throw codedError({ code: authErrorCode(error) });
+    return { ok: true, sent_to: email };
+  }
   if (action === "role") {
     const role = text(body, "role");
     if (!["renter", "lender", "both"].includes(role))

@@ -467,3 +467,11 @@ a.icon-button {
 html[data-theme=dark] .notice:not(.error){color:var(--ink)!important}
 /* F1: your own studio shows Edit studio where other studios have Save. */
 .studio-own-actions{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+/* E1: sign-in extras: Forgot password?, the "or" line, Continue with Google, Finish your profile. */
+.forgot-link{margin:-8px 0 8px;text-align:right;font-size:12px}
+.forgot-link a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.auth-or{display:flex;align-items:center;gap:12px;margin:20px 0 14px;color:var(--muted);font-size:11px}
+.auth-or::before,.auth-or::after{content:"";flex:1;border-top:1px solid var(--line)}
+.google-button{display:flex;justify-content:center;text-decoration:none}
+.finish-profile-card{text-align:left}
+.finish-profile-card h2,.finish-profile-card .terms-update-lead{text-align:center}

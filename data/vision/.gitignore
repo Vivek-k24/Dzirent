@@ -1,0 +1,10 @@
+.venv/
+taxonomy/raw/
+# D2/D3: the photos, their thumbnails and the Commons API cache stay local;
+# manifest.csv, CREDITS.md and labels.csv are committed.
+images/files/
+images/thumbs/
+images/raw/
+__pycache__/
+*.pyc
+.DS_Store

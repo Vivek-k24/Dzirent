@@ -38,6 +38,7 @@ function isQuietPage(pathname: string | null) {
   return QUIET_PATHS.some((p) => pathname === p || Boolean(pathname?.startsWith(p + "/")));
 }
 import { TermsUpdateScreen } from "./terms-update";
+import { FinishProfileScreen } from "./auth-forms";
 import {
   GuestGateDialog,
   GatedActionTrigger,
@@ -320,6 +321,7 @@ export function Shell({
   isAdmin = false,
   previewLabel = false,
   ageBlocked = false,
+  finishProfile = null,
   children,
 }: {
   ctx: BrowseContext;
@@ -334,6 +336,8 @@ export function Shell({
   previewLabel?: boolean;
   /** The age gate blocked this account (P2C): show only the blocked page. */
   ageBlocked?: boolean;
+  /** E1: a signed-in account whose profile isn't finished (Google's first sign-in): the name to suggest. */
+  finishProfile?: { suggestedName: string } | null;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -347,6 +351,9 @@ export function Shell({
   // An account the age gate blocked sees only the blocked page, except on the policy and
   // support pages (so "Contact support" and the policies stay readable).
   const showAgeBlocked = authenticated && ageBlocked && !quietPage;
+  // E1: "Finish your profile" comes before the terms step (it asks for the terms too), except on the
+  // policy, help and sign-in pages.
+  const showFinishProfile = authenticated && Boolean(finishProfile) && !quietPage && !pathname?.startsWith("/auth");
   const [location, setLocation] = useState(false);
   const [dates, setDates] = useState(false);
   const [filters, setFilters] = useState(false);
@@ -722,10 +729,10 @@ export function Shell({
         <div
           className={
             "site-body" +
-            (desktopFilterOpen && !showTermsUpdate ? " filter-open" : "")
+            (desktopFilterOpen && !showTermsUpdate && !showFinishProfile ? " filter-open" : "")
           }
         >
-          {!showTermsUpdate && (
+          {!showTermsUpdate && !showFinishProfile && (
             <aside
               className={
                 "desktop-docked-panel " +
@@ -885,7 +892,19 @@ export function Shell({
           </aside>
           )}
           <main id="main">
-            {showTermsUpdate ? <TermsUpdateScreen /> : children}
+            {showFinishProfile ? (
+              <FinishProfileScreen
+                suggestedName={finishProfile?.suggestedName ?? ""}
+                city={ctx.city}
+                next={pathname || "/"}
+                onUpdateLocation={() => setLocation(true)}
+                signOutAction={signOut}
+              />
+            ) : showTermsUpdate ? (
+              <TermsUpdateScreen />
+            ) : (
+              children
+            )}
           </main>
         </div>
         <footer>
@@ -1218,7 +1237,7 @@ export function Shell({
             </button>
           </Modal>
         )}
-        {checklistOpen && userProfile && !showTermsUpdate && !quietPage && (
+        {checklistOpen && userProfile && !showTermsUpdate && !showFinishProfile && !quietPage && (
           <WelcomeChecklistModal
             profile={userProfile}
             onOpenLocation={() => setLocation(true)}
@@ -1226,7 +1245,7 @@ export function Shell({
             onClose={() => setChecklistOpen(false)}
           />
         )}
-        {guideOpen && !showTermsUpdate && (
+        {guideOpen && !showTermsUpdate && !showFinishProfile && (
           <GuideOverlay
             canLend={userProfile?.role !== "renter"}
             onClose={() => setGuideOpen(false)}
