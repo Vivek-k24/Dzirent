@@ -366,6 +366,9 @@ The database (triggers on `messages` and `conversations`) decides; the `send-pus
 | `didit-start` (C6) | `action` (`start` default, or `check`), `return_url` | 2 KB |
 | `didit-webhook` (C6) | Didit's event, read only after its signature is checked | 1 MB |
 | `didit-sync` (C6) | `session_id` (required) | 1 KB |
+| `send-email` (C5, E1) | `email_id` (required) | 1 KB |
+| `email-events` (E1) | Resend's event, read only after its signature is checked | 64 KB |
+| `email-unsubscribe` (E1) | none: `u` and `t` in the address (POST one-click; GET redirects) | - |
 
 ### `delete-listing`
 - **Who can call:** Signed-in listing owner (`POST /functions/v1/delete-listing`).
@@ -769,47 +772,58 @@ Not settings, on purpose (technical, not business): the outbox retry schedule, t
 
 ---
 
-## 9. Email (C5)
+## 9. Email (C5, E1)
 
-Transactional emails, built and **inactive while the provider key is blank** (now): every email is queued, then marked skipped by `send-email`. Emails go only to the account's own email address and never carry messages, a claim's written reason, measurements or places.
+Transactional emails go through Resend (E1) once `RESEND_API_KEY` is a function secret; while it is blank, every email is queued, then marked skipped by `send-email`. Emails go only to the account's own email address and never carry messages, a claim's written reason, measurements or places. Every email is from `Dzirent <no-reply@mail.dzirent.com>`, with replies to `support@dzirent.com`, and has an HTML and a plain-text part.
 
 ### Which emails
-| Template | To | When | Switch |
+| Template | To | When | Sent |
 | --- | --- | --- | --- |
-| `rental_request` | lender | a request (with the `rental_request` push) | Email me about rentals |
+| `rental_request` | lender | a request (with the `rental_request` push) | follows Email me about rentals |
 | `request_accepted` | renter | accepted (with payments on: "Pay $X by <time>") | same |
 | `request_declined` | renter | declined | same |
 | `payment_receipt` | renter | `payment_status` becomes `paid` (trigger `rentals_receipt_email`) | same |
-| `pickup_reminder` | both | `pickup_tomorrow` | same |
-| `return_reminder` | both | `return_tomorrow`, `return_overdue` | same |
-| `claim_filed` | renter | `file_claim` | same |
+| `pickup_reminder` | both | `pickup_tomorrow` | **always** (essential, E1) |
+| `return_reminder` | both | `return_tomorrow`, `return_overdue` | **always** (essential, E1) |
+| `claim_filed` | renter | `file_claim` | follows Email me about rentals |
 | `claim_decided` | lender when the renter accepts; both when Dzirent decides | with `claim_decided` | same |
 | `account_deleted` | the deleted account's address | `delete-account`, after the deletion | always |
 
-Rental emails are queued inside `queue_rental_push` after its blocked-pair check (so never between blocked people), with their own switch and without needing a phone; cancels, expiries, completion and hold renewals send none. `notification_settings.email_rentals` (default on; "Email me about rentals" in Settings > Notifications on the apps and website).
+Rental emails are queued inside `queue_rental_push` after its blocked-pair check (so never between blocked people), without needing a phone; cancels, expiries, completion and hold renewals send none. **E1:** the database queues every rental email whatever the switch; `send-email` decides (`_shared/email-policy.ts`): the essential ones (rental reminders, the account email) always go; the others are skipped with `turned_off` while `notification_settings.email_rentals` ("Email me about rentals", default on) is off, or with `suppressed` while the address is flagged (below), and carry a one-click `List-Unsubscribe`.
 
 ### Data and the outbox
-- `app_private.email_messages` (closed): `id`, `template`, `recipient_id` (null only for `account_deleted`), `to_address` (only `account_deleted`; cleared when it finishes), `rental_id`, `details` (the push kind and an amount line the database wrote), `status` (`queued`, `sent`, `skipped`, `failed`), `skip_reason` (`not_configured`, `turned_off`, `no_address`, `rental_gone`), `provider_message_id`, `error`, `created_at`, `finished_at`. Never the email text. Finished rows are deleted after `email_log_retention_days` (30, attorney; by `run_async_jobs`). `export_my_data` lists yours (template, status, times).
-- Outbox kind `send_email`, payload `{ email_id }`, to Vault `send_email_url` with `x-email-secret` = Vault `email_job_secret` (function secret `EMAIL_JOB_SECRET`). New job status `skipped`: a 2xx answer for an email `send-email` skipped. Done and skipped jobs are kept 1 day. A dead job marks its email failed (address dropped). Admin Background jobs: the "Emails" kind, with "skipped (not set up)" in 24 hours; the dead list shows the template only.
-- Server-key functions: `email_prepare(p_email_id)` → `{ state: send, to, template, data }` or `{ state: skipped, reason }` / `finished` / `gone`; `data` holds only `role`, `name`, `other_name`, `listing_title`, `status`, dates, `days`, prices and amounts, `deposit_status`, `payment_status`, `payment_due_at`, `expires_at`, `payments_enabled`, `timezone`, `chat_path`, `kind`, `detail` and `claim` (`amount`, `status`, `decision_amount`). `email_finish(p_email_id, p_status, p_reason, p_provider_id)` (`sent`, `skipped`, `failed`; else `DZ-E9016`). `queue_account_deleted_email(p_email)` (delete-account).
+- `app_private.email_messages` (closed): `id`, `template`, `recipient_id` (null only for `account_deleted`), `to_address` (only `account_deleted`; cleared when it finishes), `rental_id`, `details` (the push kind and an amount line the database wrote), `status` (`queued`, `sent`, `skipped`, `failed`), `skip_reason` (`not_configured`, `turned_off`, `suppressed`, `no_address`, `rental_gone`), `provider_message_id` (Resend's id), `error`, `created_at`, `finished_at`. Never the email text. Finished rows are deleted after `email_log_retention_days` (30, attorney; by `run_async_jobs`). `export_my_data` lists yours (template, status, times).
+- **E1, the address's flag:** `profiles.email_status` (`ok`, `bounced`, `complained`) and `email_status_at`, written only by the server (`email_event_record`); an app's update is ignored (trigger `profiles_keep_server_fields`). A new email address clears it (trigger `on_auth_user_email_changed`). Admins see it in user lookup (`admin_find_user`: `email_status`, `email_status_at`, and `profile_completed_at`).
+- **E1, `app_private.email_events`** (closed): Resend's webhook events by Svix message id (each once): type, Resend's email id, the account it matched, the result (`flagged_bounced`, `flagged_complained`, `temporary_bounce`, `no_account`, `ignored`). Never the address. Kept for `email_log_retention_days`.
+- Outbox kind `send_email`, payload `{ email_id }`, to Vault `send_email_url` with `x-email-secret` = Vault `email_job_secret` (function secret `EMAIL_JOB_SECRET`). Job status `skipped`: a 2xx answer for an email `send-email` skipped. Done and skipped jobs are kept 1 day. A dead job marks its email failed (address dropped). Admin Background jobs: the "Emails" kind, with "skipped (not set up)" in 24 hours; the dead list shows the template only.
+- Server-key functions: `email_prepare(p_email_id)` → `{ state: send, to, template, data, recipient_id, prefs: { email_rentals, email_status } }` (E1: it no longer skips for the switch itself) or `{ state: skipped, reason }` / `finished` / `gone`; `data` holds only `role`, `name`, `other_name`, `listing_title`, `status`, dates, `days`, prices and amounts, `deposit_status`, `payment_status`, `payment_due_at`, `expires_at`, `payments_enabled`, `timezone`, `chat_path`, `kind`, `detail` and `claim` (`amount`, `status`, `decision_amount`). `email_finish(p_email_id, p_status, p_reason, p_provider_id)` (`sent`, `skipped`, `failed`; else `DZ-E9016`). `queue_account_deleted_email(p_email)` (delete-account). E1: `email_event_record(p_event_id, p_type, p_message_id, p_addresses, p_bounce_type)` (email-events) and `email_unsubscribe(p_user_id)` (email-unsubscribe).
 
-### `send-email` (Edge Function, `verify_jwt = false`)
+### `send-email` (Edge Function, `verify_jwt = false`; the work is in `_shared/send-email.ts`)
 - Only the outbox (`x-email-secret`, else 401 `DZ-E9004`); body `{ email_id }` (else `DZ-E9010`-`E9016`).
-- **Key blank** (`EMAIL_API_KEY` or `EMAIL_FROM`): `email_finish(skipped, not_configured)` before anything is read; 200 `{ skipped: true }`.
-- Otherwise `email_prepare`, render the template (`_shared/email-templates.ts`: plain HTML and text, Dzirent's look), one HTTPS call to the provider (`_shared/email.ts`), then `sent` with the provider's id, or `failed` for a refusal the provider decides (4xx), or 503 for no answer / 429 / 5xx (the outbox retries; the email stays queued).
-- Secrets (names only): `EMAIL_PROVIDER` (`resend` default, or `postmark`), `EMAIL_API_KEY`, `EMAIL_FROM` (a verified sender, e.g. `Dzirent <rentals@dzirent.com>`), `EMAIL_JOB_SECRET`; `EMAIL_API_URL` for tests only. Admin > Integrations shows Email "configured" when `EMAIL_API_KEY` is set.
+- **Key blank** (`RESEND_API_KEY`): `email_finish(skipped, not_configured)` before anything is read; 200 `{ skipped: true }`.
+- Otherwise `email_prepare`, the preference check (skipped `turned_off` or `suppressed`, essential emails always sent), render the template (`_shared/email-templates.ts`: HTML and plain text; reminders say they are always sent), one HTTPS call to Resend (`_shared/email.ts`: `from`, `reply_to`, `html`, `text`, a `template` tag, the email's id as `Idempotency-Key`, and on non-essential emails `List-Unsubscribe: <https://<project>.supabase.co/functions/v1/email-unsubscribe?u=<account>&t=<token>>` with `List-Unsubscribe-Post: List-Unsubscribe=One-Click`), then `sent` with Resend's id, or `failed` for a refusal Resend decides (4xx), or 503 for no answer / 429 / 5xx (the outbox retries; the email stays queued).
+- Secrets (names only): `RESEND_API_KEY`, `EMAIL_JOB_SECRET`; `EMAIL_API_URL` for tests only (the stub's fake Resend). The unsubscribe token is HMAC-SHA256 of the account id with `EMAIL_JOB_SECRET` under its own label. Admin > Integrations: Email "configured" when `RESEND_API_KEY` and `EMAIL_JOB_SECRET` are set; "Email bounces and complaints" when `RESEND_WEBHOOK_SECRET` is.
 
-### Sign-in emails (Supabase Auth)
-`supabase/templates/confirmation.html`, `recovery.html`, `email_change.html` (same look), referenced from `supabase/config.toml` (`[auth.email.template.confirmation|recovery|email_change]`) for the **local stack only**. The live project's Auth settings are unchanged: confirmations off, the built-in email (team addresses only, G4/compliance gap 19).
+### `email-events` (E1, Edge Function, `verify_jwt = false`; `_shared/email-events.ts`)
+- Resend's webhook. `RESEND_WEBHOOK_SECRET` blank: 503 `DZ-E7032`. The Svix signature is checked on the raw body (`svix-id`, `svix-timestamp`, `svix-signature`; HMAC-SHA256 of `<id>.<timestamp>.<body>` with the base64 key after `whsec_`; any `v1,` entry may match); a bad or missing signature is 401 `DZ-E7030`, a timestamp more than 5 minutes off 401 `DZ-E7031`; at most 64 KB.
+- `email.bounced` and `email.complained` go to `email_event_record` (the account by our record of Resend's id, else by the address, since sign-in emails go through Resend's SMTP and Dzirent has no record of them). A hard bounce (`Permanent`) flags `bounced`, a complaint `complained` (never turned back into a bounce); a `Temporary` bounce and an unknown address change nothing; a repeated event answers `duplicate`. Every other event type is answered 200 `ignored` and not stored.
 
-### Runbook: switching on a custom email service
-Who: an agent with the CLI and the secrets folder, with the owner (who owns the provider account and the DNS). Never print or commit a key.
-1. **Provider account and domain:** the owner creates the account and verifies `dzirent.com` (the provider's SPF, DKIM and return-path DNS records; DMARC `p=none` to start). Pick the sender, e.g. `rentals@dzirent.com`.
-2. **Transactional emails:** save the API key in `H:\DziRent\secrets\providers.env` as `EMAIL_API_KEY`; set the function secrets from a temporary env file (deleted at once): `EMAIL_PROVIDER`, `EMAIL_API_KEY`, `EMAIL_FROM`. `EMAIL_JOB_SECRET` must equal Vault `email_job_secret` (set in C5). Never set `EMAIL_API_URL` on live.
-3. **Check:** Admin > Integrations: Email **configured**. Send one test email by having a test user request a rental from another test user (it goes to the lender's account email); Admin > Background jobs shows the Emails kind done, `email_messages` status `sent`.
-4. **Sign-in emails** (separate, in the dashboard or `supabase config push` reviewed line by line, never blind): Authentication > Emails > SMTP settings: the provider's SMTP host, port 587, user, password (the provider's SMTP key), sender `Dzirent <no-reply@dzirent.com>`. Templates: paste `supabase/templates/confirmation.html`, `recovery.html` and `email_change.html` with their subjects from `config.toml`. Set Site URL to `https://dzirent.com` and the redirect allow-list (compliance gap 19).
-5. **Then** (owner decision, P8C): turn on email confirmations. Test sign-up, password reset and change email with a test address first.
-6. **To switch off:** remove `EMAIL_API_KEY` (`supabase secrets unset EMAIL_API_KEY`): new emails are skipped again; nothing else changes.
+### `email-unsubscribe` (E1, Edge Function, `verify_jwt = false`; `_shared/email-unsubscribe.ts`)
+- `POST ?u=<account>&t=<token>` (the mail app's one-click): a valid token turns "Email me about rentals" off (`email_unsubscribe`); a wrong one is 400 `DZ-E7033`. A `GET` (someone opening the link) changes nothing and redirects (303) to `https://dzirent.com/app/settings/preferences`. Essential emails keep coming.
+
+### Sign-in emails (Supabase Auth, E1)
+- Sent by Supabase Auth through Resend's SMTP (`no-reply@mail.dzirent.com`, set by the owner; 100 an hour). Templates in the repo: `supabase/templates/confirmation.html`, `recovery.html`, `magic_link.html`, `email_change.html`, `invite.html`, with their subjects in `supabase/config.toml` (`[auth.email.template.<name>]`), used by the local stack as they are.
+- One button each, plain words, the red "Preview only" line (until the owner removes it from all five), `support@dzirent.com` as the only contact. The link is `<host>/auth/reset?token_hash=…&type=recovery` for a reset and `<host>/auth/callback?token_hash=…&type=email|email_change|invite` for the others, where `<host>` is the preview site only when the app or website asked for exactly `https://dzirent.vercel.app/auth/reset` (or `/auth/callback`), else the Site URL (`https://dzirent.com`). The host is never taken from the redirect address itself: the allow list has `https://*.vercel.app/**`, and a token hash must never reach another site.
+- **Live project:** `node supabase/scripts/push_auth_emails.mjs` (dry run) / `--apply` sets only the five subjects and templates through the Management API (`--confirm-email-on` also sets `mailer_autoconfirm` false; `--add-redirect=<url>` adds one redirect), then reads them back. `supabase config push` isn't used: it would push the whole local `[auth]` section. Fallback: paste each subject and file in the dashboard (Authentication > Emails > Templates).
+- **Confirm email** is on (`mailer_autoconfirm` false) since E1; every account that existed then was already confirmed. Google accounts are confirmed by Google.
+
+### Runbook: email
+Who: an agent with the CLI and the secrets folder; the owner owns the Resend account and the DNS (`mail.dzirent.com`, verified). Never print or commit a key.
+1. **Key:** `RESEND_API_KEY` in `H:\DziRent\secrets\providers.env`; set the function secret from a temporary env file (deleted at once). `EMAIL_JOB_SECRET` must equal Vault `email_job_secret` (set in C5). Never set `EMAIL_API_URL` on live.
+2. **Webhook (owner, once):** Resend > Webhooks > Add: URL `https://pwfzkyjeivadbtkfkdxr.supabase.co/functions/v1/email-events`, events `email.bounced` and `email.complained`; copy its signing secret (`whsec_…`) into `providers.env` as `RESEND_WEBHOOK_SECRET`. An agent then sets the function secret the same way. Admin > Integrations shows "Email bounces and complaints" configured.
+3. **Check:** Admin > Integrations: Email **configured**. A test user requests a rental from another test user (the email goes to the lender's account email); `email_messages` status `sent` with Resend's id.
+4. **Sign-in emails:** `node supabase/scripts/push_auth_emails.mjs`, then `--apply` (above).
+5. **To switch transactional email off:** `supabase secrets unset RESEND_API_KEY`: new emails are skipped again; sign-in emails are unaffected (SMTP).
 
 ---
 
@@ -900,3 +914,34 @@ Each failed start gives the attempt back (`didit_start_release`) and writes one 
 2. The legal pages: the privacy page says it "may later" be asked for; update the Terms and the privacy text to say it is required before messaging and publishing (attorney), and bump the versions if needed (G34).
 3. Admin website > Flags > `verification_required` on (logged). From then on unverified people can't start chats, send messages or publish; existing listings stay live.
 4. To switch off: the same flag off. Nothing else changes.
+
+---
+
+## 11. Sign-in (E1)
+
+### Website pages (`apps/web/src/app/auth/`, rules in `lib/auth-flows.ts`)
+| Page | What it does |
+| --- | --- |
+| `/auth` | Sign in / sign up. "Forgot password?" (sign-in), "Continue with Google" (both; a plain link to `/auth/google`). A password sign-up without a session (Confirm email is on) goes to `/auth/check-email`; a sign-in refused with `email_not_confirmed` too. |
+| `/auth/forgot` | The email field; always the neutral answer "If that address has an account, we've sent a link…", except for a malformed address (`DZ-E1070`), this network's limit (`DZ-E1008`) or no connection (`DZ-E9002`). Auth's per-address limit and a failure while sending get the neutral answer too (they happen only for real accounts). `resetPasswordForEmail` with `redirectTo` = this site's `/auth/reset`. |
+| `/auth/reset` | Opened by the reset email (`?token_hash=&type=recovery`). New password twice (8 characters, `DZ-E1071`; the same, `DZ-E1072`; Auth's refusals `DZ-E1007`, `DZ-E1073` breached, `DZ-E1074` the same as before), errors under their fields. The token is used when the form is sent (`verifyOtp`), so a mail scanner opening the link doesn't use it up; a refused password keeps the session the token made for 15 minutes (cookie `dzirent-reset`). Then `updateUser`, `signOut({ scope: "others" })` (every other device's session is revoked; their access tokens expire within the hour), and `/app/settings` with "Your password is changed". An expired or used link: `DZ-E1075` (or `DZ-E1083` with no link) and "Ask for a new link" (`/auth/forgot`). |
+| `/auth/check-email` | "Check your email" with "Send the link again" (`auth.resend`, signup): once a minute (cookie and countdown, `DZ-E1077`), the same limits as `/auth/forgot`, the neutral answer. The address comes from a short-lived httpOnly cookie, never the page's address. |
+| `/auth/callback` | Google (`?code=` exchanged, PKCE; `?error=access_denied` `DZ-E7022`, others `DZ-E7020`) and the email links (`?token_hash=&type=` verified with `verifyOtp`). A confirmation goes to `/auth/confirmed` ("You're confirmed"), an email change to `/auth/confirmed?change=1`, an invite to `/auth/reset?invite=1`; a reset link is passed to `/auth/reset`; a failed link `DZ-E1076`. |
+| `/auth/google` | `signInWithOAuth({ provider: "google", redirectTo: <this site>/auth/callback })`; `DZ-E7021` if it can't start. |
+| (every page) | **Finish your profile**, shown instead of the page (not on the policy, help and `/auth` pages) while the signed-in profile isn't finished: name (prefilled from Google), the area (the site's location, "Change"), the 18+ tick and the terms. `complete_profile`, `accept_legal('web')`, `record_age_check(self_declared, adult, web)`. |
+| `/app/settings` | Account: "Set a password" for a Google-only account (the reset email to the account's address), "Email me a reset link" for the others, next to Change password. |
+
+The website's own limit on reset and confirmation emails: `auth_email_allowed(p_kind 'recovery'|'signup_resend', p_ip, p_email)` (guests and signed-in): `ok`, `ip_limited` (20 an hour per network address, `rate_limit_auth_email_ip`; the address is Vercel's `x-forwarded-for`) or `address_limited` (3 an hour per address, `rate_limit_auth_email_address`; nothing is sent and the page still answers neutrally). Counters keep only SHA-256 hashes (`app_private.auth_email_counters`). Supabase Auth's own limits still apply (custom SMTP: 100 emails an hour for the project; one email a minute per address).
+
+### Finished profiles (database)
+- `profiles.profile_completed_at`: set at sign-up when the form gave the 18+ tick and a name (`handle_new_user`), else by `complete_profile(p_display_name, p_adult, p_city, p_lat, p_lng)` (signed in: `DZ-E1079` without the tick, `DZ-E1080` name 1-80, `DZ-E1082` a location needs a city and both coordinates; the profile text filter checks the name; coordinates rounded to 2 decimals). Every profile that existed before E1 counts as finished. Apps can't write it.
+- **The gate:** `app_private.require_complete_profile` (`DZ-E1078` "Finish your profile first.", hint `profile`) in the `terms_and_limits` trigger (publishing a listing, a new chat, a message) and `rental_guard` (every rental action, so requesting one). Saving, reporting and private drafts don't need it.
+
+### Google
+- Supabase's Google provider (on in the dashboard, with the web OAuth client). Website: PKCE through `/auth/google` and `/auth/callback`. Android: Supabase's OAuth in Custom Tabs (`auth.signInWith(Google, redirectUrl = "dzirent://auth/callback")`, PKCE: `flowType = PKCE`), the manifest's `dzirent://auth/callback` intent filter, `MainActivity` hands the link to `DzirentApp`, `exchangeCodeForSession`. iPhone: no Google button yet (password only; Apple and Google come together on iOS).
+- **Account linking:** Supabase links an OAuth identity to the existing account with the same **verified** email automatically (no setting: `security_manual_linking_enabled` is off, and only covers `linkIdentity`). An unverified provider email is refused (`provider_email_needs_verification`), never linked. Tested locally with the stub's OpenID provider (`e1_auth.mjs`).
+- **Redirect list (live):** `https://dzirent.com/**`, `https://*.vercel.app/**`, `https://dzirent.com/auth/callback`, `https://dzirent.vercel.app/auth/callback`, `https://localhost:3000/**`, and since E1 `dzirent://auth/callback`.
+
+### Android (shared Kotlin)
+- `util/AuthFlows.kt`: `AuthLinks` (`dzirent://auth/callback`; the website's `/auth/reset` and `/auth/callback` from `SupabaseBuildConfig.WEBSITE_URL`, `https://dzirent.com` unless the build sets `DZIRENT_WEBSITE_URL`), `AuthDeepLink.parse`, `AuthEmails` (the neutral outcome), `ResendCooldown`, `FinishProfile`.
+- Screens: Forgot password (`ForgotPasswordScreen`, the neutral answer; the link opens the website's reset page), Check your email (`EmailConfirmationView` with "Send the link again", once a minute; the link opens the website's callback; then the person signs in in the app), "Continue with Google" on Log In and Sign Up (Android only), `FinishProfileScreen` (state `NeedsProfile`, after the age gate and before the terms step), Settings > Set a password / Email me a reset link.
