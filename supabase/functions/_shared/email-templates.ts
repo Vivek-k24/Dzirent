@@ -1,4 +1,4 @@
-// C5: the transactional email templates (plain HTML and text, Dzirent's look). No imports, so the
+// C5, E1: the transactional email templates (plain HTML and text, Dzirent's look). No imports, so the
 // templates run the same in the send-email Edge Function (Deno) and in the Node unit test
 // (email-templates.test.ts).
 //
@@ -96,6 +96,8 @@ type Body = {
   button?: { label: string; url: string };
   /** false for the account-deleted email (there are no settings left to change). */
   settingsFooter?: boolean;
+  /** E1: rental reminders are essential: always sent, so the footer doesn't offer to turn them off. */
+  reminder?: boolean;
 };
 
 function layout(b: Body): RenderedEmail {
@@ -109,7 +111,9 @@ function layout(b: Body): RenderedEmail {
     : "";
   const footer = b.settingsFooter === false
     ? "This email confirms an action on your Dzirent account."
-    : "You get this email because you have a Dzirent account. Turn rental emails off in Settings > Notifications.";
+    : b.reminder
+      ? "You get this reminder because you have a rental on Dzirent. Rental reminders are always sent."
+      : "You get this email because you have a Dzirent account. Turn rental emails off in Settings > Notifications.";
   const html =
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">` +
     `<title>${escapeHtml(b.subject)}</title></head>` +
@@ -216,6 +220,7 @@ export function renderEmail(template: string, data: EmailData): RenderedEmail | 
       return layout({
         subject: `Pickup tomorrow: ${title}`,
         heading: "Pickup tomorrow",
+        reminder: true,
         lines: [hi, data.role === "lender"
           ? `${other} picks up ${title} tomorrow${dates ? ` (${dates})` : ""}. Add at least 2 photos of the piece at pickup.`
           : `You pick up ${title} from ${other} tomorrow${dates ? ` (${dates})` : ""}. Agree on the time and place in the chat.`],
@@ -227,6 +232,7 @@ export function renderEmail(template: string, data: EmailData): RenderedEmail | 
       return layout({
         subject: overdue ? `Return overdue: ${title}` : `Return due tomorrow: ${title}`,
         heading: overdue ? "Return overdue" : "Return due tomorrow",
+        reminder: true,
         lines: [hi, overdue
           ? `${title} was due back${end ? ` ${end}` : ""}. Arrange the return in the chat.`
           : data.role === "lender"

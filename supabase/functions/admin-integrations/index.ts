@@ -13,7 +13,10 @@ const SERVICES: { key: string; name: string; secrets: string[] }[] = [
   // C6: ID verification is available whenever both are set (verification_required is a separate switch).
   { key: "id_checks", name: "ID verification", secrets: ["DIDIT_API_KEY", "DIDIT_WEBHOOK_SECRET"] },
   { key: "notifications", name: "Notifications", secrets: ["FIREBASE_SERVICE_ACCOUNT_BASE64", "SEND_PUSH_SECRET"] },
-  { key: "email", name: "Email", secrets: ["EMAIL_API_KEY"] },
+  // E1: Resend. Emails go once the key is set; bounces and complaints come back once the webhook
+  // secret is set too.
+  { key: "email", name: "Email", secrets: ["RESEND_API_KEY", "EMAIL_JOB_SECRET"] },
+  { key: "email_events", name: "Email bounces and complaints", secrets: ["RESEND_WEBHOOK_SECRET"] },
   { key: "photo_checks", name: "Photo checks", secrets: ["VISION_URL", "VISION_INVOKER_KEY_BASE64", "SCAN_LISTING_SECRET"] },
 ];
 
