@@ -11,7 +11,7 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
   - Redirect list: `https://dzirent.com/auth/callback`, `https://dzirent.vercel.app/auth/callback`, `https://*.vercel.app/**`, `https://dzirent.com/**`, `https://localhost:3000/**`. The prompt says `http://localhost:3000/**`; live has **https** (Open issues).
 - **Live accounts** (read only): 8, **0 unconfirmed**, 0 non-email providers, 0 Google identities, every profile with the 18+ tick, a name and a location. 4 are `@example.com` (the test users: no inbox).
 
-**Done (in the repo; nothing is live yet, see "Live"):**
+**Done** (live since 2026-11-21, see "Live"):
 - **Database** (`supabase/migrations/20261120200000_e1_auth_email.sql`):
   - Built from the current bodies; the 7 functions it replaces are byte-identical on live (MD5 of `pg_get_functiondef` / `prosrc`, read on 2026-11-21 UTC after CI).
   - `profiles.profile_completed_at` (every existing profile set to its `created_at`, so nobody is locked out), `email_status` (`ok` / `bounced` / `complained`), `email_status_at`. Apps can't write any of them (trigger `profiles_keep_server_fields`).
@@ -103,12 +103,48 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
    - `supabase db push --linked --dry-run` listed only `20261120200000_e1_auth_email.sql`;
    - `push_auth_emails.mjs` dry run (12 keys). No emulator, device or browser.
 
-**Live: not done.** `supabase db push --linked` was refused by this session's permission check: the prompt asks for a live check, but doesn't say in words to apply the migration (in V2 the owner asked for that separately). So nothing below has run:
-1. Apply the E1 migration (`supabase db push --linked`; the dry run lists only it).
-2. Deploy every Edge Function (`--no-verify-jwt --use-api`; the two new ones too); each bundles the 236-code catalog.
-3. Set `RESEND_API_KEY` from `providers.env` (temporary file, deleted at once).
-4. `node supabase/scripts/push_auth_emails.mjs --apply --confirm-email-on --add-redirect=dzirent://auth/callback`.
-5. The live check. The owner chose **one password reset only, to the newer `@gmail.com` account** (created 2026-11-21 UTC): no notification email, because that account has no listing and the test users' `@example.com` addresses would bounce. The reset request uses the website's own call with `redirect_to=https://dzirent.vercel.app/auth/reset`; Resend's message ID comes from Resend's email list (ID, time and status only).
+**Follow-up (2026-11-21), the reset page** (the owner's report: in Supabase's Auth log, `POST /recover` 02:50:49 UTC, `GET /verify` at 02:51:43 succeeded, then `GET /verify` at 02:52:14 and 02:52:47 "One-time token not found", and the page showed "This link has expired (DZ-E1083)"; the same at 02:53):
+- **Cause:**
+  - Those `GET /verify` calls are Supabase's own link, not the page: the page verifies only with `POST /verify`, when the form is sent.
+  - The new templates weren't live yet, so the email used Supabase's default `{{ .ConfirmationURL }}`. Its first open used the token and sent the browser to `/auth/reset?code=…` (PKCE).
+  - The page only understood `?token_hash=`, so it showed DZ-E1083. Each later open of the same email asked Supabase to verify the used token again ("One-time token not found").
+- **Fix** (`7fc5c47`, the owner's rules):
+  - `resetView` in `lib/auth-flows.ts`. Once a recovery session exists (the `dzirent-reset` window and a signed-in user), every load of `/auth/reset` shows the form without the token, never "expired": a reload, the back button, the email opened again, Supabase's error for a used token.
+  - The action sends the token only when no such session exists, so it is used exactly once.
+  - A `?code=` link is exchanged once by `/auth/callback?flow=recovery` (which opens the window and comes back to `/auth/reset` without the code). A failed exchange shows DZ-E1075 unless the session already exists.
+  - With Dzirent's template (live since 03:09 UTC) the link is `?token_hash=` and Supabase's `GET /verify` isn't involved at all.
+- **Test:** `auth-flows.test.ts`: "reset page: the token is used once; a reload or a reopened link inside the recovery session shows the form, never expired" (the reload case, the reopened link, Supabase's error, `?code=`, no link). Website `npm test` **68 of 68**, `tsc` and `eslint` clean. CI [run 44859423857](https://github.com/Vivek-k24/Dzirent/actions/runs/44859423857) on `7fc5c47`: all 6 jobs green. Vercel deployed it to the preview site at 03:07:33 UTC.
+
+**Live (2026-11-21, the owner's go-ahead for steps 1-5, in this order):**
+1. **Migration:**
+   - `supabase db push --linked --dry-run` listed only `20261120200000_e1_auth_email.sql`; `db push` applied it.
+   - Read back: last migration `20261120200000`; **8 profiles, 0 unfinished**, 0 flagged; both gates in place (`terms_and_limits`, `rental_guard`); 2 limit settings, 2 triggers.
+   - Privileges: `auth_email_allowed` for guests; `complete_profile` signed-in only; `email_event_record` server key only.
+   - `email_events` and `auth_email_counters` have RLS and no grants to `anon`, `authenticated` or `service_role`.
+2. **Edge Functions:** all 20 deployed (`supabase functions deploy <name> --no-verify-jwt --use-api`). `functions list`: 20 **ACTIVE**, `verify_jwt` false; `email-events` and `email-unsubscribe` at v1, `send-email` v5.
+3. **`RESEND_API_KEY`:** set from `providers.env` through a temporary file, deleted at once, never printed. `secrets list` (names): `EMAIL_JOB_SECRET`, `RESEND_API_KEY`.
+4. **Auth:**
+   - Command: `node supabase/scripts/push_auth_emails.mjs --apply --confirm-email-on --add-redirect=dzirent://auth/callback "--replace-redirect=https://*.vercel.app/**|https://dzirent.vercel.app/**" "--replace-redirect=https://localhost:3000/**|http://localhost:3000/**"`. It now has `--replace-redirect` for this.
+   - The dry run showed the 12 keys; `--apply`: "Applied 12 key(s); read back and identical"; a second dry run: "Nothing to change".
+   - Read back: `mailer_autoconfirm` false (Confirm email on); the redirect list `https://dzirent.com/auth/callback`, `https://dzirent.vercel.app/auth/callback`, `https://dzirent.vercel.app/**`, `https://dzirent.com/**`, `http://localhost:3000/**`, `dzirent://auth/callback`.
+   - Unchanged: Google on with the same web client, SMTP `smtp.resend.com:465` from `no-reply@mail.dzirent.com`, Site URL `https://dzirent.com`, 8-character passwords, the leaked-password check, 100 emails an hour, manual linking off.
+5. **The live check: one password reset to the owner's newer `@gmail.com` account** (the owner's choice; no notification email):
+   - `POST /auth/v1/recover` with `redirect_to=https://dzirent.vercel.app/auth/reset` (the website's own call) answered **200** at 03:10:34 UTC. The account's `recovery_sent_at` is **03:10:33 UTC** (Auth sets it only after Resend's SMTP took the email).
+   - **Resend message ID: not read.** The key in `providers.env` is a sending-only key (`GET /emails` answers 401 `restricted_api_key`), and the project's log API endpoint answered 410. The owner can read the ID in Resend > Emails ("Reset your Dzirent password", 2026-11-21 03:10 UTC) (Requests).
+   - **Still for the owner:** open the email and finish the reset. Nothing changed on the account.
+6. **HTTP checks** (nothing written):
+   - `email-events` without a signature: 503 `DZ-E7032` (no webhook secret yet);
+   - `send-email` without the outbox secret: 401 `DZ-E9004`;
+   - `email-unsubscribe` GET: 303 to `https://dzirent.com/app/settings/preferences`; POST with a bad token: 400 `DZ-E7033`.
+7. **Not run:** the Security Advisor (the Supabase connector needs a sign-in). No emulator, device or browser.
+
+**Next.js 16.4.3 → 16.4.6** (`a09e70a`, the owner's request: GHSA-mfr8-8qww-v76h, GHSA-vc7v-qv4w-wrv8, GHSA-7qx7-33qx-rqx2, GHSA-f3mh-rxg3-f5g2, GHSA-pc58-hwjq-p385, GHSA-rhh4-g77r-r9qj, GHSA-vvgp-ww4w-46vf; moderate):
+- 16.4.6 was published 2026-11-09, 11 days earlier: under the two weeks the project waited for the payment libraries, but the owner asked for this version.
+- Only `next`, `@next/env` and the eight `@next/swc-*` binaries change; every other dependency of 16.4.6 is the same as 16.4.3's.
+- `package.json` and those lockfile entries were edited with the registry's tarball and integrity: 41 lines added, 39 removed. `next`'s entry gained the `resolved` and `integrity` it lacked. `eslint-config-next` stays at 16.4.3.
+- `npm ci`: installed, "found 0 vulnerabilities"; `next` 16.4.6.
+- `npm run lint` clean, `tsc --noEmit` clean, `npm test` **68 of 68**, `npm run build` passed ("Next.js 16.4.6", no security notice).
+- CI [run 44860470560](https://github.com/Vivek-k24/Dzirent/actions/runs/44860470560) on `a09e70a`: **all 6 jobs green**. Vercel deployed it to the preview site (`dzirent.vercel.app`) at 03:19:47 UTC.
 
 **Package and debug key** (for the native Google sheet later; fingerprints are public):
 - Package: `com.dzirent.app` (release), `com.dzirent.app.debug` (debug).
@@ -122,13 +158,13 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
 - Copy (rule 15): `C:\Users\User\Desktop\Belhaven\OneDrive - Belhaven University\Dzirent-apk\androidApp-debug.apk`, replacing the F1 copy. Same size and SHA-256.
 
 **Owner, in the dashboards:**
-- **Confirm email:** the script turns it on (`--confirm-email-on`). Without the script: Authentication > Sign In / Providers > Email > "Confirm email" on.
-- **Android redirect value:** `dzirent://auth/callback`. The script adds it (`--add-redirect=`). Without it: Authentication > URL Configuration > Redirect URLs > add `dzirent://auth/callback`.
+- **Confirm email:** on since 2026-11-21 03:09 UTC (the script). The dashboard switch, if it's ever needed: Authentication > Sign In / Providers > Email > "Confirm email".
+- **Android redirect value:** `dzirent://auth/callback`, added by the script (step 4). In the dashboard: Authentication > URL Configuration > Redirect URLs.
 - **Resend webhook:**
   1. Resend > Webhooks > Add endpoint `https://pwfzkyjeivadbtkfkdxr.supabase.co/functions/v1/email-events`, events `email.bounced` and `email.complained`.
   2. Copy the signing secret (`whsec_…`) into `providers.env` as `RESEND_WEBHOOK_SECRET`.
   3. An agent sets the function secret. Until then `email-events` answers 503 `DZ-E7032` and nothing is flagged.
-- **Recommended:** narrow `https://*.vercel.app/**` to `https://dzirent.vercel.app/**`, and add `http://localhost:3000/**` if local development should work (live has https).
+- **Done at the owner's request (2026-11-21):** `https://*.vercel.app/**` replaced by `https://dzirent.vercel.app/**`, and `https://localhost:3000/**` by `http://localhost:3000/**`. Confirm email is on and `dzirent://auth/callback` is in the redirect list (step 4).
 
 **Phone test** (after the live steps; this APK's links open the preview site):
 - Log In > Forgot password?: any address shows the same message; your account gets "Reset your Dzirent password". Its button opens `dzirent.vercel.app/auth/reset`; after the new password you're signed in there, and the app (another device) is signed out.
@@ -146,8 +182,9 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
 - **Not on iPhone yet:** Apple sign-in, then Apple and Google together (the paid Apple account). No URL scheme is registered in `iosApp` (no Google there).
 
 **Open issues:**
-- **Live steps not run** (above): the preview site runs the E1 website, but `complete_profile`, `auth_email_allowed` and the flag don't exist on live yet.
-  - Forgot password still sends Supabase's default email (the old template). Its link goes to `/auth/reset?code=`, which the reset page answers "This link has expired"; the fix is applying the templates.
+- **Resend message ID of the live reset email:** not read (a sending-only key). The owner reads it in Resend > Emails, or adds a read-access key for agents.
+- **Test users' `@example.com` addresses** have no inbox. With the Resend key set, rental emails to them now go out and bounce; once the webhook exists, the bounces flag those accounts.
+- **Between 02:28 and 03:07 UTC** the preview site's reset page didn't understand Supabase's default `?code=` link (fixed above). Between 02:28 and 02:37 every signed-in account there was shown "Finish your profile" (fixed in `e348ddc`).
 - **Until `Preview` is merged into `main`:** links that fall back to the Site URL (`https://dzirent.com`) reach main's old pages. That means old app builds (no redirect sent) and the main website. Confirmation links then fail there, and a reset link gets 404.
 - **Website sign-in** still has only Auth's per-IP limits, which see Vercel's addresses (the new limit covers only reset and resend emails).
 - **After a reset:** other devices' access tokens stay valid until they expire (up to 1 hour); their refresh tokens are revoked.
@@ -156,12 +193,13 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
   - an admin button to clear an email flag (it clears when the address changes);
   - receipts are not essential (they follow the switch); say if they should always go;
   - magic-link and invite emails are templated, but no screen sends them.
-- **Next.js 16.4.3** has 7 moderate advisories, fixed in 16.4.6 (Requests). `npm run build` stopped once on Next's own notice saying so.
+- **Next.js:** 16.4.6 since `a09e70a` (above).
 - **Android Lint** wasn't run (the build and unit tests were).
 
 **Requests:**
-- **Owner:** say whether an agent should run the live steps 1-5 above (the migration on `dzirent-server`, the function deploys, the Resend key, the Auth templates with Confirm email and the redirect, the one reset email to the newer Gmail account).
-- **Website dependency:** Next.js 16.4.3 → 16.4.6 (GHSA-mfr8-8qww-v76h, GHSA-vc7v-qv4w-wrv8, GHSA-7qx7-33qx-rqx2, GHSA-f3mh-rxg3-f5g2, GHSA-pc58-hwjq-p385, GHSA-rhh4-g77r-r9qj, GHSA-vvgp-ww4w-46vf; moderate), in a step that may change `apps/web/package.json`.
+- **Owner:** create the Resend webhook (above) and save `RESEND_WEBHOOK_SECRET` in `providers.env`; an agent then sets the function secret.
+- **Owner:** the live reset email's Resend message ID from Resend > Emails (or a read-access key for agents); finish the reset from the email.
+- **Owner:** merge `Preview` into `main`, so links that fall back to `https://dzirent.com` reach the new pages.
 - **Root `README.md`** (product features): Forgot password, Confirm email, Continue with Google, Finish your profile, the email rules.
 
 ## V2 - 2026-11-20 - V1b migration live, pins v2, linear head, two-tier gate, text or poster, v2.1 deployed
