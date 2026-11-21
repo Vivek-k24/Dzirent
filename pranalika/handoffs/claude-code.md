@@ -138,6 +138,15 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
    - `email-unsubscribe` GET: 303 to `https://dzirent.com/app/settings/preferences`; POST with a bad token: 400 `DZ-E7033`.
 7. **Not run:** the Security Advisor (the Supabase connector needs a sign-in). No emulator, device or browser.
 
+**Resend webhook (2026-11-21, after the owner created it and saved its secret):**
+- `RESEND_WEBHOOK_SECRET` (in `providers.env`, `whsec_…`, 38 characters) set as the function secret through a temporary file, deleted at once, never printed. `secrets list` (names): `EMAIL_JOB_SECRET`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`.
+- **Same secret on both sides:** a self-signed `email.delivered` event to `email-events` answered 200 `ignored` (not stored); an unsigned one 401 `DZ-E7030`.
+- **A real event from Resend:** Resend's dashboard "send test" can't be pressed from here (no dashboard access; the key can only send). Instead, one email each to Resend's test addresses `bounced@resend.dev` and `complained@resend.dev` (Resend ids `01a1fc2f-b936-746b-b722-a3ca3412f330`, `01a1fc2f-b9f4-7e67-9229-95f279cdb521`, sent 03:39:06 UTC).
+- Resend's webhook delivered both within 5 seconds. `app_private.email_events` holds 2 rows, both with Resend's ids above, each recorded once:
+  - `email.bounced` (Svix `msg_3MOrFMKQfd0WjYE18ik4pwi4tvr`) and `email.complained` (Svix `msg_3MOrFOylTJCxtgb1Mdm3tzfFsEB`), received 03:39:11 UTC;
+  - both `no_account`: those test addresses belong to no Dzirent account, so **no profile is flagged** (0).
+- So signature checking with the real secret, the event types and the database step work end to end on live.
+
 **Next.js 16.4.3 → 16.4.6** (`a09e70a`, the owner's request: GHSA-mfr8-8qww-v76h, GHSA-vc7v-qv4w-wrv8, GHSA-7qx7-33qx-rqx2, GHSA-f3mh-rxg3-f5g2, GHSA-pc58-hwjq-p385, GHSA-rhh4-g77r-r9qj, GHSA-vvgp-ww4w-46vf; moderate):
 - 16.4.6 was published 2026-11-09, 11 days earlier: under the two weeks the project waited for the payment libraries, but the owner asked for this version.
 - Only `next`, `@next/env` and the eight `@next/swc-*` binaries change; every other dependency of 16.4.6 is the same as 16.4.3's.
@@ -163,7 +172,7 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
 - **Resend webhook:**
   1. Resend > Webhooks > Add endpoint `https://pwfzkyjeivadbtkfkdxr.supabase.co/functions/v1/email-events`, events `email.bounced` and `email.complained`.
   2. Copy the signing secret (`whsec_…`) into `providers.env` as `RESEND_WEBHOOK_SECRET`.
-  3. An agent sets the function secret. Until then `email-events` answers 503 `DZ-E7032` and nothing is flagged.
+  3. An agent sets the function secret. **Done 2026-11-21** (see "Resend webhook" above): real bounce and complaint events from Resend arrive and are recorded.
 - **Done at the owner's request (2026-11-21):** `https://*.vercel.app/**` replaced by `https://dzirent.vercel.app/**`, and `https://localhost:3000/**` by `http://localhost:3000/**`. Confirm email is on and `dzirent://auth/callback` is in the redirect list (step 4).
 
 **Phone test** (after the live steps; this APK's links open the preview site):
@@ -183,7 +192,7 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
 
 **Open issues:**
 - **Resend message ID of the live reset email:** not read (a sending-only key). The owner reads it in Resend > Emails, or adds a read-access key for agents.
-- **Test users' `@example.com` addresses** have no inbox. With the Resend key set, rental emails to them now go out and bounce; once the webhook exists, the bounces flag those accounts.
+- **Test users' `@example.com` addresses** have no inbox. With the Resend key set, rental emails to them now go out and bounce, and since the webhook is live those bounces flag the accounts (non-essential emails to them stop).
 - **Between 02:28 and 03:07 UTC** the preview site's reset page didn't understand Supabase's default `?code=` link (fixed above). Between 02:28 and 02:37 every signed-in account there was shown "Finish your profile" (fixed in `e348ddc`).
 - **Until `Preview` is merged into `main`:** links that fall back to the Site URL (`https://dzirent.com`) reach main's old pages. That means old app builds (no redirect sent) and the main website. Confirmation links then fail there, and a reset link gets 404.
 - **Website sign-in** still has only Auth's per-IP limits, which see Vercel's addresses (the new limit covers only reset and resend emails).
@@ -197,7 +206,6 @@ Newest entry at the top. Title every entry `## Step <number> - <date> - <short t
 - **Android Lint** wasn't run (the build and unit tests were).
 
 **Requests:**
-- **Owner:** create the Resend webhook (above) and save `RESEND_WEBHOOK_SECRET` in `providers.env`; an agent then sets the function secret.
 - **Owner:** the live reset email's Resend message ID from Resend > Emails (or a read-access key for agents); finish the reset from the email.
 - **Owner:** merge `Preview` into `main`, so links that fall back to `https://dzirent.com` reach the new pages.
 - **Root `README.md`** (product features): Forgot password, Confirm email, Continue with Google, Finish your profile, the email rules.
