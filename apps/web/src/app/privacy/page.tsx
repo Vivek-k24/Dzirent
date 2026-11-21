@@ -86,6 +86,13 @@ export default function PrivacyPage() {
             encryption, so no one, including us, can read it.
           </li>
           <li>
+            <strong>Google sign-in:</strong> If you sign in with Google, Google
+            tells us your name and email address. We never get your Google
+            password or anything else from your Google account. If you already
+            have a Dzirent account with the same email, both sign-in methods lead
+            to that one account.
+          </li>
+          <li>
             <strong>Adult confirmation:</strong> Your confirmation that you are
             at least 18 years old.
           </li>
@@ -242,6 +249,14 @@ export default function PrivacyPage() {
             and a confirmation when your account is deleted. Sign-in emails
             (confirming your address, resetting your password, changing your
             email) come from our sign-in service.
+          </li>
+          <li>
+            <strong>Which ones you can turn off:</strong> pickup and return
+            reminders and account emails are always sent. The other rental
+            emails follow &quot;Email me about rentals&quot; in Settings, and each
+            has an unsubscribe link. If emails to your address bounce or are
+            marked as spam, we stop the optional ones until you change your
+            address.
           </li>
           <li>
             <strong>What they contain:</strong> the other person&apos;s name as
@@ -845,7 +860,7 @@ export default function PrivacyPage() {
             every action they take is recorded.
           </li>
         </ul>
-        <p>For your security, you are signed out after 30 days without using Dzirent.</p>
+        <p>For your security, you are signed out after 30 days without using Dzirent, and when you reset your password you are signed out on every other device and browser.</p>
       </section>
 
       <section id="changes">
