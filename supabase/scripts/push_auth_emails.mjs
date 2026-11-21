@@ -7,7 +7,8 @@
 //   node supabase/scripts/push_auth_emails.mjs                 dry run: what would change (default)
 //   node supabase/scripts/push_auth_emails.mjs --apply         send it, then read it back and compare
 //   --confirm-email-on                also turn "Confirm email" on (mailer_autoconfirm = false)
-//   --add-redirect=<url>              also add one address to the redirect allow list (kept as is otherwise)
+//   --add-redirect=<url>              also add an address to the redirect allow list (repeatable)
+//   --replace-redirect=<old>|<new>   also replace one entry of the allow list in place (repeatable)
 //
 // What it sends: for confirmation, recovery, magic_link, email_change and invite, the subject from
 // supabase/config.toml ([auth.email.template.<name>] subject) and the HTML from
@@ -29,7 +30,13 @@ const TEMPLATES = ["confirmation", "recovery", "magic_link", "email_change", "in
 const args = process.argv.slice(2);
 const apply = args.includes("--apply");
 const confirmOn = args.includes("--confirm-email-on");
-const addRedirect = args.find((a) => a.startsWith("--add-redirect="))?.slice("--add-redirect=".length);
+const addRedirects = args.filter((a) => a.startsWith("--add-redirect=")).map((a) => a.slice("--add-redirect=".length));
+// --replace-redirect=<old>|<new>: the entry keeps its place in the list.
+const replaceRedirects = args.filter((a) => a.startsWith("--replace-redirect=")).map((a) => {
+  const [from, to] = a.slice("--replace-redirect=".length).split("|");
+  if (!from || !to) throw new Error("--replace-redirect=<old>|<new>");
+  return { from, to };
+});
 
 function token() {
   if (process.env.SUPABASE_ACCESS_TOKEN) return process.env.SUPABASE_ACCESS_TOKEN.trim();
@@ -75,9 +82,15 @@ for (const name of TEMPLATES) {
 if (confirmOn) wanted.mailer_autoconfirm = false;
 
 const live = await api("GET");
-if (addRedirect) {
-  const list = String(live.uri_allow_list ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  if (!list.includes(addRedirect)) wanted.uri_allow_list = [...list, addRedirect].join(",");
+if (addRedirects.length || replaceRedirects.length) {
+  let list = String(live.uri_allow_list ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  for (const { from, to } of replaceRedirects) {
+    if (!list.includes(from) && !list.includes(to)) throw new Error(`The redirect list has no ${from}`);
+    list = list.map((u) => (u === from ? to : u));
+  }
+  for (const url of addRedirects) if (!list.includes(url)) list.push(url);
+  list = list.filter((u, i) => list.indexOf(u) === i);
+  wanted.uri_allow_list = list.join(",");
 }
 const changes = Object.fromEntries(Object.entries(wanted).filter(([k, v]) => live[k] !== v));
 for (const [k, v] of Object.entries(wanted)) {
